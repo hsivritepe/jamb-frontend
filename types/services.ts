@@ -14,7 +14,9 @@ export interface Step {
     number: string;
     title: string;
     description: string;
-    position: 'top' | 'bottom';
+    row: number;
+    colSpan: number;
+    colStart: number;
 }
 
 export interface Room {

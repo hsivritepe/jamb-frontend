@@ -7,7 +7,9 @@ const steps: Step[] = [
         number: '1',
         title: 'Choose',
         description: 'Choose a service category',
-        position: 'top',
+        row: 1,
+        colSpan: 3,
+        colStart: 1,
     },
     {
         id: 2,
@@ -15,7 +17,9 @@ const steps: Step[] = [
         title: 'Answer',
         description:
             'Fill up simple quiz form, including questions and industry standards for a seamless estimate',
-        position: 'bottom',
+        row: 2,
+        colSpan: 3,
+        colStart: 3,
     },
     {
         id: 3,
@@ -23,7 +27,9 @@ const steps: Step[] = [
         title: 'Wait',
         description:
             'We will automatically assign trusted professionals who will arrive at the agreed time.',
-        position: 'top',
+        row: 1,
+        colSpan: 3,
+        colStart: 5,
     },
     {
         id: 4,
@@ -31,18 +37,15 @@ const steps: Step[] = [
         title: 'Manage',
         description:
             'Monitor the progress of the work through your account',
-        position: 'bottom',
+        row: 2,
+        colSpan: 2,
+        colStart: 7,
     },
 ];
 
 export default function HowItWorks() {
-    const topSteps = steps.filter((step) => step.position === 'top');
-    const bottomSteps = steps.filter(
-        (step) => step.position === 'bottom'
-    );
-
     return (
-        <section className="py-8 px-8 bg-brand-light rounded-xl">
+        <section className="py-8 px-8 bg-brand-light rounded-2xl">
             <div className="container mx-auto">
                 <div className="flex items-center justify-between mb-8">
                     <SectionBoxTitle>How It Works?</SectionBoxTitle>
@@ -55,65 +58,50 @@ export default function HowItWorks() {
                 </div>
 
                 <div className="relative mt-12">
+                    {/* Horizontal dividing line */}
                     <div className="hidden md:block absolute left-0 top-1/2 w-full h-[2px] bg-gray-200" />
 
-                    <div className="grid grid-cols-1 md:grid-cols-8 gap-8 relative">
-                        {/* Top Row Steps */}
-                        {topSteps.map((step) => (
+                    <div className="grid grid-cols-8 gap-y-16 gap-x-4">
+                        {steps.map((step) => (
                             <div
                                 key={step.id}
-                                className={`md:col-span-${
-                                    step.id === 1 ? '3' : '3'
-                                } md:col-start-${
-                                    step.id === 1 ? '1' : '5'
-                                }`}
+                                style={{
+                                    gridColumn: `${step.colStart} / span ${step.colSpan}`,
+                                    gridRow: step.row,
+                                }}
                             >
-                                <div className="relative-32">
-                                    <div className="flex items-start mb-4">
-                                        <div className="flex items-center justify-center w-12 h-12 bg-white text-brand-light font-bold rounded text-2xl">
-                                            {step.number}
-                                        </div>
-                                        <h3 className="text-xl font-semibold ml-4 pt-2">
-                                            {step.title}
-                                        </h3>
-                                    </div>
-                                    <p className="text-gray-600 text-sm">
-                                        {step.description}
-                                    </p>
-                                    <div className="hidden md:block absolute bottom-[-64px] left-6 w-[2px] h-[64px] bg-gray-200" />
-                                </div>
-                            </div>
-                        ))}
-
-                        {/* Bottom Row Steps */}
-                        {bottomSteps.map((step) => (
-                            <div
-                                key={step.id}
-                                className={`md:col-span-${
-                                    step.id === 4 ? '2' : '3'
-                                } md:col-start-${
-                                    step.id === 2 ? '3' : '7'
-                                }`}
-                            >
-                                <div className="relative-32">
-                                    <div className="hidden md:block absolute top-[-64px] left-6 w-[2px] h-[64px] bg-gray-200" />
-                                    <div className="flex items-start mb-4">
-                                        <div className="flex items-center justify-center w-12 h-12 bg-white text-brand-light font-bold rounded text-2xl">
-                                            {step.number}
-                                        </div>
-                                        <h3 className="text-xl font-semibold ml-4 pt-2">
-                                            {step.title}
-                                        </h3>
-                                    </div>
-                                    <p className="text-gray-600 text-sm">
-                                        {step.description}
-                                    </p>
-                                </div>
+                                <StepBox step={step} />
+                                <div
+                                    className={`hidden md:block absolute ${
+                                        step.row === 1
+                                            ? 'bottom-[-32px]'
+                                            : 'top-[-32px]'
+                                    } left-6 w-[2px] h-[32px] bg-gray-200`}
+                                />
                             </div>
                         ))}
                     </div>
                 </div>
             </div>
         </section>
+    );
+}
+
+// Separate StepBox component for cleaner code
+function StepBox({ step }: { step: Step }) {
+    return (
+        <div className="relative">
+            <div className="flex items-start mb-4">
+                <div className="flex items-center justify-center w-12 h-12 bg-white text-brand-light font-bold rounded text-2xl">
+                    {step.number}
+                </div>
+                <h3 className="text-xl font-semibold ml-4 pt-2">
+                    {step.title}
+                </h3>
+            </div>
+            <p className="text-gray-600 text-sm">
+                {step.description}
+            </p>
+        </div>
     );
 }
