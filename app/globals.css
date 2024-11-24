@@ -12,3 +12,9 @@ h6 {
 }
 
 /* Make sure there are no conflicting background colors here */
+
+:root {
+    --color-brand-light: #1948f00d;
+    --color-brand: #1948f0;
+    --color-brand-dark: #1537be;
+}

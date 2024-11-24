@@ -6,6 +6,7 @@ export interface ServiceItem {
     count: number;
     image: string;
     subcategories: string[];
+    type: 'indoor' | 'outdoor';
 }
 
 export interface Step {
