@@ -7,7 +7,7 @@ import PricingPackages from '@/app/components/home/PricingPackages';
 
 export default function Home() {
     return (
-        <main className="min-h-screen bg-white pt-16 max-w-7xl mx-auto">
+        <main className="min-h-screen">
             <HeroSection />
             <ServicesGrid />
             <HowItWorks />

@@ -2,8 +2,9 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Menu, X, ChevronDown, Phone } from 'lucide-react';
+import { NavigationItem } from '@/types/common';
 
-const navigation = [
+const navigation: NavigationItem[] = [
     { name: 'Services', href: '/services' },
     { name: 'Teams', href: '/teams' },
     { name: 'Packages', href: '/packages' },
@@ -11,11 +12,12 @@ const navigation = [
 ];
 
 export default function Header() {
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] =
+        useState<boolean>(false);
 
     return (
         <header className="fixed w-full z-50 bg-gray-100/50 backdrop-blur-sm">
-            <div className="max-w-7xl mx-auto py-4">
+            <div className="max-w-7xl mx-auto px-4 py-4">
                 <nav className="bg-white rounded-2xl shadow-sm">
                     <div className="flex justify-between items-center h-16 px-6">
                         {/* Logo */}
@@ -42,15 +44,23 @@ export default function Header() {
 
                         {/* Right Section */}
                         <div className="hidden md:flex items-center gap-4">
-                            {/* Emergency Button */}
-                            <button className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors">
+                            <button
+                                className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                                onClick={() => {
+                                    /* Add emergency handler */
+                                }}
+                            >
                                 <Phone className="w-4 h-4" />
                                 <span>Emergency</span>
                             </button>
 
-                            {/* Language Selector */}
                             <div className="relative">
-                                <button className="flex items-center gap-2 text-gray-700">
+                                <button
+                                    className="flex items-center gap-2 text-gray-700"
+                                    onClick={() => {
+                                        /* Add language handler */
+                                    }}
+                                >
                                     <span>EN</span>
                                     <ChevronDown className="w-4 h-4" />
                                 </button>
@@ -93,13 +103,11 @@ export default function Header() {
                                     </Link>
                                 ))}
 
-                                {/* Mobile Emergency Button */}
                                 <button className="flex items-center justify-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors">
                                     <Phone className="w-4 h-4" />
                                     <span>Emergency</span>
                                 </button>
 
-                                {/* Mobile Language Selector */}
                                 <button className="flex items-center gap-2 text-gray-700">
                                     <span>EN</span>
                                     <ChevronDown className="w-4 h-4" />
