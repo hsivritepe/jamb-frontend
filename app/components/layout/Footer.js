@@ -59,8 +59,8 @@ export default function Footer() {
                     <div>
                         <Link href="/">
                             <img
-                                src="/logo-white.svg"
-                                alt="Jambi"
+                                src="/logo.png"
+                                alt="Jamb"
                                 className="h-8 w-auto mb-6"
                             />
                         </Link>
