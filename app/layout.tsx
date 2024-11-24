@@ -14,7 +14,7 @@ export default function RootLayout({ children }: LayoutProps) {
         <html lang="en">
             <body className={`${manrope.className} bg-[#F8F9FB]`}>
                 <Header />
-                <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
+                <div className="max-w-7xl mx-auto px-4">
                     {children}
                 </div>
                 <Footer />

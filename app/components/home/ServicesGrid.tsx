@@ -11,11 +11,30 @@ const services: ServiceItem[] = [
     {
         id: 2,
         title: 'Plumbing',
-        count: 11,
+        count: 17,
         image: '/services/plumbing.jpg',
-        subcategories: [],
+        subcategories: [
+            'Pipes',
+            'Shower',
+            'Bath',
+            'Faucet',
+            'Water & Emergency',
+        ],
     },
-    // Add other services...
+    {
+        id: 3,
+        title: 'Painting',
+        count: 8,
+        image: '/services/painting.jpg',
+        subcategories: ['Interior', 'Exterior', 'Wall Painting'],
+    },
+    {
+        id: 4,
+        title: 'Tiling',
+        count: 12,
+        image: '/services/tiling.jpg',
+        subcategories: ['Floor', 'Wall', 'Bathroom', 'Kitchen'],
+    },
 ];
 
 export default function ServicesGrid() {
@@ -32,25 +51,44 @@ export default function ServicesGrid() {
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     {services.map((service) => (
-                        <a
+                        <div
                             key={service.id}
-                            href={service.href}
-                            className="group p-6 bg-white border border-gray-200 rounded-xl hover:shadow-lg transition-shadow"
+                            className="group relative bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
                         >
-                            <img
-                                src={service.icon}
-                                alt={service.title}
-                                className="w-12 h-12 mb-4"
-                            />
-                            <h3 className="text-xl font-semibold mb-2">
-                                {service.title}
-                            </h3>
-                            <p className="text-gray-600">
-                                {service.description}
-                            </p>
-                        </a>
+                            <div className="aspect-[4/3] relative">
+                                <img
+                                    src={service.image}
+                                    alt={service.title}
+                                    className="w-full h-full object-cover"
+                                />
+                            </div>
+
+                            <div className="p-4">
+                                <div className="flex justify-between items-center mb-2">
+                                    <h3 className="text-lg font-semibold">
+                                        {service.title}
+                                    </h3>
+                                    <span className="text-sm text-gray-500">
+                                        {service.count} services
+                                    </span>
+                                </div>
+
+                                <div className="flex flex-wrap gap-2">
+                                    {service.subcategories.map(
+                                        (sub, index) => (
+                                            <span
+                                                key={index}
+                                                className="text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded-full"
+                                            >
+                                                {sub}
+                                            </span>
+                                        )
+                                    )}
+                                </div>
+                            </div>
+                        </div>
                     ))}
                 </div>
             </div>
