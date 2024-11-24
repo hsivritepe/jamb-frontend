@@ -11,9 +11,10 @@ export interface ServiceItem {
 
 export interface Step {
     id: number;
+    number: string;
     title: string;
     description: string;
-    icon: LucideIcon;
+    position: 'top' | 'bottom';
 }
 
 export interface Room {
