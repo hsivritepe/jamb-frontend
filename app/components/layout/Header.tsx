@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
-import { Menu, X, ChevronDown, Phone } from 'lucide-react';
+import { Menu, X, ChevronDown, Bell } from 'lucide-react';
 import { NavigationItem } from '@/types/common';
 
 const navigation: NavigationItem[] = [
@@ -45,12 +45,12 @@ export default function Header() {
                         {/* Right Section */}
                         <div className="hidden md:flex items-center gap-4">
                             <button
-                                className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                                className="flex items-center justify-center gap-2 p-2 px-4 bg-red-50 rounded-lg border-none font-medium text-red-700 cursor-pointer transition duration-[0.2s]"
                                 onClick={() => {
                                     /* Add emergency handler */
                                 }}
                             >
-                                <Phone className="w-4 h-4" />
+                                <Bell className="w-4 h-4" />
                                 <span>Emergency</span>
                             </button>
 
@@ -103,8 +103,13 @@ export default function Header() {
                                     </Link>
                                 ))}
 
-                                <button className="flex items-center justify-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors">
-                                    <Phone className="w-4 h-4" />
+                                <button
+                                    className="flex items-center justify-center gap-2 p-2 px-4 bg-red-50 rounded-lg border-none font-medium text-red-700 cursor-pointer transition duration-[0.2s]"
+                                    onClick={() => {
+                                        /* Add emergency handler */
+                                    }}
+                                >
+                                    <Bell className="w-4 h-4" />
                                     <span>Emergency</span>
                                 </button>
 

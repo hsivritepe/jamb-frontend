@@ -3,103 +3,126 @@
 import { ServiceItem } from '@/types/services';
 import { SectionBoxTitle } from '../ui/SectionBoxTitle';
 import { useState } from 'react';
-import Image from 'next/image';
+import { ImageBoxGrid } from '../ui/ImageBoxGrid';
 
 const services: ServiceItem[] = [
     {
         id: 1,
         title: 'Electrical',
-        count: 11,
         image: '/services/electrical.jpg',
+        url: '/services/electrical',
         subcategories: [
-            'Wiring',
-            'Switches',
-            'LED',
-            'Installation',
-            'Repairs',
-            'Maintenance',
+            'Wiring & Rewiring',
+            'Switches & Outlets',
+            'LED Lighting',
+            'Fixture Installation',
+            'Emergency Repairs',
+            'Circuit Breakers',
         ],
         type: 'indoor',
     },
     {
         id: 2,
         title: 'Plumbing',
-        count: 17,
         image: '/services/plumbing.jpg',
+        url: '/services/plumbing',
         subcategories: [
-            'Pipes',
-            'Shower',
-            'Bath',
-            'Faucet',
-            'Water & Emergency',
+            'Pipe Installation',
+            'Leak Detection',
+            'Shower & Bath',
+            'Emergency Services',
         ],
-        type: 'indoor',
+        type: 'outdoor',
     },
     {
         id: 3,
         title: 'Painting',
-        count: 8,
         image: '/services/painting.jpg',
-        subcategories: ['Interior', 'Exterior', 'Wall Painting'],
+        url: '/services/painting',
+        subcategories: [
+            'Interior Painting',
+            'Exterior Painting',
+            'Wall Preparation',
+            'Wallpaper Removal',
+            'Color Consultation',
+            'Trim & Detail Work',
+            'Cabinet Painting',
+        ],
         type: 'indoor',
     },
     {
         id: 4,
         title: 'Tiling',
-        count: 12,
         image: '/services/tiling.jpg',
-        subcategories: ['Floor', 'Wall', 'Bathroom', 'Kitchen'],
-        type: 'indoor',
+        url: '/services/tiling',
+        subcategories: [
+            'Floor Tiling',
+            'Wall Tiling',
+            'Bathroom Tiling',
+            'Kitchen Backsplash',
+            'Tile Repair',
+        ],
+        type: 'outdoor',
     },
     {
         id: 5,
         title: 'Flooring',
-        count: 14,
         image: '/services/flooring.jpg',
+        url: '/services/flooring',
         subcategories: [
-            'Custom Furniture',
-            'Repairs',
-            'Installation',
-            'Woodwork',
+            'Hardwood Installation',
+            'Laminate Flooring',
+            'Vinyl & LVT',
+            'Carpet Installation',
+            'Floor Repairs',
+            'Refinishing',
+            'Subfloor Repair',
+            'Floor Leveling',
         ],
         type: 'indoor',
     },
     {
         id: 6,
         title: 'Carpentry',
-        count: 14,
         image: '/services/carpentry.jpg',
+        url: '/services/carpentry',
         subcategories: [
             'Custom Furniture',
-            'Repairs',
-            'Installation',
-            'Woodwork',
+            'Cabinet Making',
+            'Door Installation',
+            'Trim & Molding',
         ],
         type: 'indoor',
     },
     {
         id: 7,
         title: 'HVAC',
-        count: 10,
         image: '/services/hvac.jpg',
+        url: '/services/hvac',
         subcategories: [
-            'Installation',
-            'Repair',
+            'AC Installation',
+            'Heating Repair',
             'Maintenance',
-            'Air Quality',
+            'Air Quality Testing',
+            'Duct Cleaning',
+            'Thermostat Install',
+            'Emergency Service',
+            'System Inspection',
         ],
         type: 'indoor',
     },
     {
         id: 8,
         title: 'Cleaning',
-        count: 12,
         image: '/services/cleaning.jpg',
+        url: '/services/cleaning',
         subcategories: [
             'Deep Cleaning',
-            'Regular Cleaning',
-            'Move-in/out',
+            'Regular Maintenance',
+            'Move-in/out Clean',
             'Window Cleaning',
+            'Carpet Cleaning',
+            'Post-Construction',
         ],
         type: 'indoor',
     },
@@ -118,24 +141,24 @@ export default function ServicesGrid() {
                 </SectionBoxTitle>
 
                 {/* Indoor/Outdoor Selector */}
-                <div className="flex justify-center mb-8">
-                    <div className="inline-flex rounded-lg border border-gray-200 p-1">
+                <div className="flex mb-8">
+                    <div className="inline-flex rounded-lg border bg-brand-light border-gray-200 p-1">
                         <button
                             onClick={() => setSelectedType('indoor')}
-                            className={`px-4 py-2 rounded-md text-sm ${
+                            className={`px-4 py-2 rounded-md text-md ${
                                 selectedType === 'indoor'
                                     ? 'bg-blue-600 text-white'
-                                    : 'text-gray-600'
+                                    : 'text-brand'
                             }`}
                         >
                             Indoor
                         </button>
                         <button
                             onClick={() => setSelectedType('outdoor')}
-                            className={`px-4 py-2 rounded-md text-sm ${
+                            className={`px-4 py-2 rounded-md text-md ${
                                 selectedType === 'outdoor'
                                     ? 'bg-blue-600 text-white'
-                                    : 'text-gray-600'
+                                    : 'text-brand'
                             }`}
                         >
                             Outdoor
@@ -144,48 +167,13 @@ export default function ServicesGrid() {
                 </div>
 
                 {/* Primary Services Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {services
-                        .filter(
-                            (service) => service.type === selectedType
-                        )
-                        .map((service) => (
-                            <div
-                                key={service.id}
-                                className="relative group"
-                            >
-                                <div className="relative overflow-hidden rounded-xl aspect-square">
-                                    <Image
-                                        src={service.image}
-                                        alt={service.title}
-                                        fill
-                                        className="object-cover transition-transform group-hover:scale-110"
-                                    />
-
-                                    <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/50 to-transparent">
-                                        <h3 className="font-medium text-white text-3xl">
-                                            {service.title} (
-                                            {service.count})
-                                        </h3>
-                                    </div>
-
-                                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-center p-4">
-                                        <div className="text-white space-y-2">
-                                            {service.subcategories.map(
-                                                (sub, idx) => (
-                                                    <div key={idx}>
-                                                        <span className="text-sm">
-                                                            {sub}
-                                                        </span>
-                                                    </div>
-                                                )
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                </div>
+                <ImageBoxGrid
+                    items={services.filter(
+                        (service) => service.type === selectedType
+                    )}
+                    gridCols={4}
+                    showCount={true}
+                />
 
                 {/* Secondary Services Grid */}
                 <div className="mt-4 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">

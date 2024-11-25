@@ -3,8 +3,8 @@ import { LucideIcon } from 'lucide-react';
 export interface ServiceItem {
     id: number;
     title: string;
-    count: number;
     image: string;
+    url: string;
     subcategories: string[];
     type: 'indoor' | 'outdoor';
 }
@@ -22,8 +22,7 @@ export interface Step {
 export interface Room {
     id: number;
     title: string;
-    description: string;
     image: string;
-    before: string;
-    after: string;
+    url: string;
+    subcategories: string[];
 }
