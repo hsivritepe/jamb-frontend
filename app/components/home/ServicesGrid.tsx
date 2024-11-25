@@ -9,7 +9,7 @@ const services: ServiceItem[] = [
     {
         id: 1,
         title: 'Electrical',
-        image: '/services/electrical.jpg',
+        image: '/images/services/electrical.jpg',
         url: '/services/electrical',
         subcategories: [
             'Wiring & Rewiring',
@@ -24,7 +24,7 @@ const services: ServiceItem[] = [
     {
         id: 2,
         title: 'Plumbing',
-        image: '/services/plumbing.jpg',
+        image: '/images/services/plumbing.jpg',
         url: '/services/plumbing',
         subcategories: [
             'Pipe Installation',
@@ -37,7 +37,7 @@ const services: ServiceItem[] = [
     {
         id: 3,
         title: 'Painting',
-        image: '/services/painting.jpg',
+        image: '/images/services/painting.jpg',
         url: '/services/painting',
         subcategories: [
             'Interior Painting',
@@ -53,7 +53,7 @@ const services: ServiceItem[] = [
     {
         id: 4,
         title: 'Tiling',
-        image: '/services/tiling.jpg',
+        image: '/images/services/tiling.jpg',
         url: '/services/tiling',
         subcategories: [
             'Floor Tiling',
@@ -67,7 +67,7 @@ const services: ServiceItem[] = [
     {
         id: 5,
         title: 'Flooring',
-        image: '/services/flooring.jpg',
+        image: '/images/services/flooring.jpg',
         url: '/services/flooring',
         subcategories: [
             'Hardwood Installation',
@@ -84,7 +84,7 @@ const services: ServiceItem[] = [
     {
         id: 6,
         title: 'Carpentry',
-        image: '/services/carpentry.jpg',
+        image: '/images/services/carpentry.jpg',
         url: '/services/carpentry',
         subcategories: [
             'Custom Furniture',
@@ -97,7 +97,7 @@ const services: ServiceItem[] = [
     {
         id: 7,
         title: 'HVAC',
-        image: '/services/hvac.jpg',
+        image: '/images/services/hvac.jpg',
         url: '/services/hvac',
         subcategories: [
             'AC Installation',
@@ -114,7 +114,7 @@ const services: ServiceItem[] = [
     {
         id: 8,
         title: 'Cleaning',
-        image: '/services/cleaning.jpg',
+        image: '/images/services/cleaning.jpg',
         url: '/services/cleaning',
         subcategories: [
             'Deep Cleaning',

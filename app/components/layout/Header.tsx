@@ -23,7 +23,7 @@ export default function Header() {
                         {/* Logo */}
                         <Link href="/" className="flex-shrink-0">
                             <img
-                                src="/logo.png"
+                                src="/images/logo.png"
                                 alt="Jamb"
                                 className="h-8 w-auto"
                             />

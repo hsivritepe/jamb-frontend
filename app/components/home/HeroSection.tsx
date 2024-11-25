@@ -49,7 +49,7 @@ export default function HeroSection() {
                 {/* Right Box - Image */}
                 <div className="bg-white rounded-2xl overflow-hidden">
                     <img
-                        src="/hero-service-professional.jpg"
+                        src="/images/hero-service-professional.jpg"
                         alt="Professional service provider"
                         className="w-[650px] h-[500px] object-cover"
                     />

@@ -5,7 +5,7 @@ const rooms: Room[] = [
     {
         id: 1,
         title: 'Living Room',
-        image: '/rooms/living-room.jpg',
+        image: '/images/rooms/living-room.jpg',
         url: '/services/living-room',
         subcategories: [
             'Furniture Arrangement',
@@ -20,7 +20,7 @@ const rooms: Room[] = [
     {
         id: 2,
         title: 'Kitchen',
-        image: '/rooms/kitchen.jpg',
+        image: '/images/rooms/kitchen.jpg',
         url: '/services/kitchen',
         subcategories: [
             'Cabinet Installation',
@@ -35,7 +35,7 @@ const rooms: Room[] = [
     {
         id: 3,
         title: 'Bathroom',
-        image: '/rooms/bathroom.jpg',
+        image: '/images/rooms/bathroom.jpg',
         url: '/services/bathroom',
         subcategories: [
             'Tile Installation',
@@ -48,7 +48,7 @@ const rooms: Room[] = [
     {
         id: 4,
         title: 'Bedroom',
-        image: '/rooms/bedroom.jpg',
+        image: '/images/rooms/bedroom.jpg',
         url: '/services/bedroom',
         subcategories: [
             'Closet Organization',
@@ -62,7 +62,7 @@ const rooms: Room[] = [
     {
         id: 5,
         title: 'Patio Upgrading',
-        image: '/rooms/patio.jpg',
+        image: '/images/rooms/patio.jpg',
         url: '/services/patio',
         subcategories: [
             'Deck Building',
@@ -76,7 +76,7 @@ const rooms: Room[] = [
     {
         id: 6,
         title: 'Home Office',
-        image: '/rooms/home-office.jpg',
+        image: '/images/rooms/home-office.jpg',
         url: '/services/home-office',
         subcategories: [
             'Desk Setup',
@@ -89,7 +89,7 @@ const rooms: Room[] = [
     {
         id: 7,
         title: 'Storage',
-        image: '/rooms/storage.jpg',
+        image: '/images/rooms/storage.jpg',
         url: '/services/storage',
         subcategories: [
             'Shelving Installation',
@@ -102,7 +102,7 @@ const rooms: Room[] = [
     {
         id: 8,
         title: 'Basement',
-        image: '/rooms/basement.jpg',
+        image: '/images/rooms/basement.jpg',
         url: '/services/basement',
         subcategories: [
             'Waterproofing',
@@ -116,7 +116,7 @@ const rooms: Room[] = [
     {
         id: 9,
         title: 'Laundry Room',
-        image: '/rooms/laundry-room.jpg',
+        image: '/images/rooms/laundry-room.jpg',
         url: '/services/laundry-room',
         subcategories: [
             'Appliance Installation',
@@ -129,7 +129,7 @@ const rooms: Room[] = [
     {
         id: 10,
         title: 'Attic',
-        image: '/rooms/attic.jpg',
+        image: '/images/rooms/attic.jpg',
         url: '/services/attic',
         subcategories: [
             'Insulation',
@@ -143,7 +143,7 @@ const rooms: Room[] = [
     {
         id: 11,
         title: 'Home Gym',
-        image: '/rooms/home-gym.jpg',
+        image: '/images/rooms/home-gym.jpg',
         url: '/services/home-gym',
         subcategories: [
             'Equipment Layout',
@@ -157,7 +157,7 @@ const rooms: Room[] = [
     {
         id: 12,
         title: "Children's Playroom",
-        image: '/rooms/childrens-playroom.jpg',
+        image: '/images/rooms/childrens-playroom.jpg',
         url: '/services/childrens-playroom',
         subcategories: [
             'Safety Installation',
@@ -171,7 +171,7 @@ const rooms: Room[] = [
     {
         id: 13,
         title: 'Garage',
-        image: '/rooms/garage.jpg',
+        image: '/images/rooms/garage.jpg',
         url: '/services/garage',
         subcategories: [
             'Storage System',
@@ -185,7 +185,7 @@ const rooms: Room[] = [
     {
         id: 14,
         title: 'Smart Home',
-        image: '/rooms/smart-home.jpg',
+        image: '/images/rooms/smart-home.jpg',
         url: '/services/smart-home',
         subcategories: [
             'Security System',

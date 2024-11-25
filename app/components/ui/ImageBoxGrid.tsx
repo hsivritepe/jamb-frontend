@@ -23,15 +23,14 @@ export function ImageBoxGrid({
 }: ImageBoxGridProps) {
     return (
         <div
-            className={`grid grid-cols-2 ${
-                gridCols === 4
-                    ? 'md:grid-cols-4'
-                    : 'md:grid-cols-3 lg:grid-cols-6'
-            } gap-4`}
+            className={`grid gap-4`}
+            style={{
+                gridTemplateColumns: `repeat(auto-fit, minmax(300px, 1fr))`,
+            }}
         >
             {items.map((item) => (
                 <div key={item.id} className="relative group">
-                    <div className="relative overflow-hidden rounded-xl aspect-square">
+                    <div className="relative overflow-hidden rounded-xl aspect-square w-full">
                         <Image
                             src={item.image}
                             alt={item.title}
