@@ -3,7 +3,7 @@ import ServicesGrid from '@/app/components/home/ServicesGrid';
 import HowItWorks from '@/app/components/home/HowItWorks';
 import RoomMakeovers from '@/app/components/home/RoomMakeovers';
 import AppPromotion from '@/app/components/home/AppPromotion';
-import PricingPackages from '@/app/components/home/PricingPackages';
+import ServicePackages from '@/app/components/home/ServicePackages';
 
 export default function Home() {
     return (
@@ -13,7 +13,7 @@ export default function Home() {
             <HowItWorks />
             <RoomMakeovers />
             <AppPromotion />
-            <PricingPackages />
+            <ServicePackages />
         </main>
     );
 }

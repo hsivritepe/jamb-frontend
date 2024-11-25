@@ -26,3 +26,17 @@ export interface Room {
     url: string;
     subcategories: string[];
 }
+
+export interface ServiceFeature {
+    id: number;
+    text: string;
+}
+
+export interface ServicePlan {
+    id: number;
+    name: string;
+    price: number;
+    description: string;
+    features: ServiceFeature[];
+    isPopular?: boolean;
+}
