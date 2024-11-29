@@ -211,11 +211,7 @@ export default function RoomMakeovers() {
                     Comprehensive Home Renovations for Every Room
                 </p>
 
-                <ImageBoxGrid
-                    items={rooms}
-                    gridCols={4}
-                    showCount={false}
-                />
+                <ImageBoxGrid items={rooms} showCount={false} />
             </div>
         </section>
     );

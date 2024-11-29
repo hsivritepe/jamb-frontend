@@ -12,13 +12,11 @@ interface Item {
 
 interface ImageBoxGridProps {
     items: Item[];
-    gridCols?: 4 | 6; // Number of columns
     showCount?: boolean;
 }
 
 export function ImageBoxGrid({
     items,
-    gridCols = 4,
     showCount = true,
 }: ImageBoxGridProps) {
     return (

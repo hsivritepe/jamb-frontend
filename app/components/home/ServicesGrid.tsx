@@ -131,12 +131,6 @@ const services: ServiceItem[] = [
 export default function ServicesGrid() {
     const [selectedType, setSelectedType] = useState('indoor');
 
-    const gridTemplateColumns = {
-        base: 'repeat(1, 1fr)',
-        sm: 'repeat(2, minmax(auto, 300px))',
-        lg: 'repeat(4, minmax(auto, 300px))',
-    };
-
     return (
         <section className="py-16">
             <div>
@@ -174,22 +168,8 @@ export default function ServicesGrid() {
 
                 {/* Primary Services Grid */}
                 <ImageBoxGrid
-                    columns={4}
-                    spacing={8}
                     items={services.filter(
                         (service) => service.type === selectedType
-                    )}
-                    renderItem={(service) => (
-                        <div key={service.id}>
-                            <h3 className="font-medium text-gray-900">
-                                {service.title}
-                            </h3>
-                            <div className="mt-2">
-                                <span className="text-sm text-gray-500">
-                                    {service.subcategories.join(', ')}
-                                </span>
-                            </div>
-                        </div>
                     )}
                 />
 
