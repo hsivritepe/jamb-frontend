@@ -25,7 +25,7 @@ export function ImageBoxGrid({
         <div
             className={`grid gap-4`}
             style={{
-                gridTemplateColumns: `repeat(auto-fit, minmax(300px, 1fr))`,
+                gridTemplateColumns: `repeat(auto-fit, 300px)`,
             }}
         >
             {items.map((item) => (

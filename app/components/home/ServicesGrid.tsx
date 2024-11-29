@@ -131,6 +131,12 @@ const services: ServiceItem[] = [
 export default function ServicesGrid() {
     const [selectedType, setSelectedType] = useState('indoor');
 
+    const gridTemplateColumns = {
+        base: 'repeat(1, 1fr)',
+        sm: 'repeat(2, minmax(auto, 300px))',
+        lg: 'repeat(4, minmax(auto, 300px))',
+    };
+
     return (
         <section className="py-16">
             <div>
@@ -142,23 +148,23 @@ export default function ServicesGrid() {
 
                 {/* Indoor/Outdoor Selector */}
                 <div className="flex mb-8">
-                    <div className="inline-flex rounded-lg border bg-brand-light border-gray-200 p-1">
+                    <div className="inline-flex rounded-lg border border-gray-200 p-1">
                         <button
                             onClick={() => setSelectedType('indoor')}
-                            className={`px-4 py-2 rounded-md text-md ${
+                            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                                 selectedType === 'indoor'
                                     ? 'bg-blue-600 text-white'
-                                    : 'text-brand'
+                                    : 'hover:bg-gray-100 text-gray-600'
                             }`}
                         >
                             Indoor
                         </button>
                         <button
                             onClick={() => setSelectedType('outdoor')}
-                            className={`px-4 py-2 rounded-md text-md ${
+                            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                                 selectedType === 'outdoor'
                                     ? 'bg-blue-600 text-white'
-                                    : 'text-brand'
+                                    : 'hover:bg-gray-100 text-gray-600'
                             }`}
                         >
                             Outdoor
@@ -168,11 +174,23 @@ export default function ServicesGrid() {
 
                 {/* Primary Services Grid */}
                 <ImageBoxGrid
+                    columns={4}
+                    spacing={8}
                     items={services.filter(
                         (service) => service.type === selectedType
                     )}
-                    gridCols={4}
-                    showCount={true}
+                    renderItem={(service) => (
+                        <div key={service.id}>
+                            <h3 className="font-medium text-gray-900">
+                                {service.title}
+                            </h3>
+                            <div className="mt-2">
+                                <span className="text-sm text-gray-500">
+                                    {service.subcategories.join(', ')}
+                                </span>
+                            </div>
+                        </div>
+                    )}
                 />
 
                 {/* Secondary Services Grid */}
