@@ -18,7 +18,6 @@ interface ImageBoxGridProps {
 
 export function ImageBoxGrid({
     items,
-    gridCols = 4,
     showCount = true,
 }: ImageBoxGridProps) {
     return (

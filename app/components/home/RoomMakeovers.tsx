@@ -1,6 +1,9 @@
+'use client';
+
 import { Room } from '@/types/services';
 import { ImageBoxGrid } from '../ui/ImageBoxGrid';
 import { SectionBoxTitle } from '../ui/SectionBoxTitle';
+
 const rooms: Room[] = [
     {
         id: 1,
@@ -211,11 +214,7 @@ export default function RoomMakeovers() {
                     Comprehensive Home Renovations for Every Room
                 </p>
 
-                <ImageBoxGrid
-                    items={rooms}
-                    gridCols={4}
-                    showCount={false}
-                />
+                <ImageBoxGrid items={rooms} />
             </div>
         </section>
     );
