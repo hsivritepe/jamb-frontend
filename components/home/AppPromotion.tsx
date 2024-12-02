@@ -1,5 +1,5 @@
 import { Apple, Play } from 'lucide-react';
-import { SectionBoxTitle } from '@/app/components/ui/SectionBoxTitle';
+import { SectionBoxTitle } from '@/components/ui/SectionBoxTitle';
 
 export default function AppPromotion() {
     return (

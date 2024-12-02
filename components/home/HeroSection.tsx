@@ -1,7 +1,7 @@
 'use client';
 import { useState, ChangeEvent } from 'react';
 import { Search } from 'lucide-react';
-import { SectionBoxTitle } from '@/app/components/ui/SectionBoxTitle';
+import { SectionBoxTitle } from '@/components/ui/SectionBoxTitle';
 
 export default function HeroSection() {
     const [searchQuery, setSearchQuery] = useState<string>('');

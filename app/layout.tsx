@@ -1,6 +1,6 @@
 import { Manrope } from 'next/font/google';
-import Header from '@/app/components/layout/Header';
-import Footer from '@/app/components/layout/Footer';
+import Header from '@/components/layout/Header';
+import Footer from '@/components/layout/Footer';
 import { LayoutProps } from '@/types/layout';
 import './globals.css';
 
