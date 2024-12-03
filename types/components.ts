@@ -31,3 +31,12 @@ export interface StepByStepProps {
 export interface ButtonProps {
     children: React.ReactNode;
 }
+
+export interface BreadCrumbItem {
+    label: string;
+    href: string;
+}
+
+export interface BreadCrumbProps {
+    items: BreadCrumbItem[];
+}
