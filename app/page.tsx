@@ -2,8 +2,8 @@ import HeroSection from '@/components/home/HeroSection';
 import ServicesGrid from '@/components/home/ServicesGrid';
 import HowItWorks from '@/components/home/HowItWorks';
 import RoomMakeovers from '@/components/home/RoomMakeovers';
-import AppPromotion from '@/components/home/AppPromotion';
-import ServicePackages from '@/components/home/ServicePackages';
+import AppPromotion from '@/components/AppPromotion';
+import ServicePackages from '@/components/ServicePackages';
 import Footer from '@/components/layout/Footer';
 export default function Home() {
     return (
