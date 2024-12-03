@@ -128,7 +128,13 @@ const services: ServiceItem[] = [
     },
 ];
 
-export default function ServicesGrid() {
+interface ServicesGridProps {
+    title?: string;
+}
+
+export default function ServicesGrid({
+    title = 'Select a Service', // Default title if none provided
+}: ServicesGridProps) {
     const [selectedType, setSelectedType] = useState('indoor');
 
     const gridTemplateColumns = {
@@ -139,11 +145,11 @@ export default function ServicesGrid() {
 
     return (
         <section className="py-16">
-            <div>
+            <div className="container mx-auto px-4">
                 <SectionBoxTitle>
-                    Comprehensive Home Services
-                    <br />
-                    at Your Fingertips
+                    <div
+                        dangerouslySetInnerHTML={{ __html: title }}
+                    />
                 </SectionBoxTitle>
 
                 {/* Indoor/Outdoor Selector */}

@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import Image from 'next/image';
 
 interface Item {
@@ -12,7 +13,6 @@ interface Item {
 
 interface ImageBoxGridProps {
     items: Item[];
-    gridCols?: 4 | 6; // Number of columns
     showCount?: boolean;
 }
 
@@ -21,14 +21,12 @@ export function ImageBoxGrid({
     showCount = true,
 }: ImageBoxGridProps) {
     return (
-        <div
-            className={`grid gap-4`}
-            style={{
-                gridTemplateColumns: `repeat(auto-fit, 300px)`,
-            }}
-        >
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {items.map((item) => (
-                <div key={item.id} className="relative group">
+                <div
+                    key={item.id}
+                    className="relative group w-full max-w-[300px] mx-auto"
+                >
                     <div className="relative overflow-hidden rounded-xl aspect-square w-full">
                         <Image
                             src={item.image}

@@ -4,14 +4,7 @@ import { useRouter } from 'next/navigation';
 import BreadCrumb from '@/components/ui/BreadCrumb';
 import ServiceSelector from '@/components/calculate/ServiceSelector';
 import type { ServiceOption } from '@/components/calculate/ServiceSelector';
-
-const breadcrumbItems = [
-    { label: 'Home', href: '/calculate' },
-    { label: 'Services', href: '/calculate/services' },
-    { label: 'Details', href: '/calculate/details' },
-    { label: 'Estimate', href: '/calculate/estimate' },
-    { label: 'Login', href: '/login' },
-];
+import { CALCULATE_STEPS } from '@/constants/navigation';
 
 const serviceOptions: ServiceOption[] = [
     {
@@ -44,7 +37,7 @@ export default function Calculate() {
     return (
         <main className="min-h-screen pt-24">
             <div className="container mx-auto px-4">
-                <BreadCrumb items={breadcrumbItems} />
+                <BreadCrumb items={CALCULATE_STEPS} />
                 <ServiceSelector
                     options={serviceOptions}
                     defaultSelected="one-off"

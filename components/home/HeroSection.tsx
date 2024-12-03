@@ -1,15 +1,6 @@
-'use client';
-import { useState, ChangeEvent } from 'react';
-import { Search } from 'lucide-react';
 import { SectionBoxTitle } from '@/components/ui/SectionBoxTitle';
-
+import SearchServices from '@/components/SearchServices';
 export default function HeroSection() {
-    const [searchQuery, setSearchQuery] = useState<string>('');
-
-    const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
-        setSearchQuery(e.target.value);
-    };
-
     return (
         <section className="pt-4">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -31,18 +22,7 @@ export default function HeroSection() {
                             </p>
                         </div>
 
-                        <div className="relative">
-                            <div className="relative flex items-center">
-                                <input
-                                    type="text"
-                                    placeholder="Explore 995 Services"
-                                    value={searchQuery}
-                                    onChange={handleSearchChange}
-                                    className="w-full h-[60px] pl-5 pr-6 rounded-xl border border-brand-light focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-base placeholder-brand bg-brand-light"
-                                />
-                                <Search className="absolute right-6 h-5 w-5 text-blue-600" />
-                            </div>
-                        </div>
+                        <SearchServices />
                     </div>
                 </div>
 

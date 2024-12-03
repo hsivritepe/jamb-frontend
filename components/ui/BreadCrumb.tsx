@@ -5,10 +5,10 @@ import { usePathname } from 'next/navigation';
 import { ChevronRight } from 'lucide-react';
 
 interface BreadCrumbProps {
-    items: {
-        label: string;
-        href: string;
-    }[];
+    items: ReadonlyArray<{
+        readonly label: string;
+        readonly href: string;
+    }>;
 }
 
 export default function BreadCrumb({ items }: BreadCrumbProps) {

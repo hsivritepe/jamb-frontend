@@ -54,7 +54,7 @@ export default function ServiceSelector({
             </div>
 
             <div className="mt-8 flex justify-end">
-                <Button className="px-12" onClick={handleNext}>
+                <Button className="px-8 py-4" onClick={handleNext}>
                     Next →
                 </Button>
             </div>
