@@ -6,9 +6,11 @@ import ServicesGrid from '@/components/home/ServicesGrid';
 import SearchServices from '@/components/SearchServices';
 import Button from '@/components/ui/Button';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 export default function Services() {
     const router = useRouter();
+    const [searchQuery, setSearchQuery] = useState('');
 
     const handleNext = () => {
         // Here you'll handle form submission later
@@ -25,7 +27,12 @@ export default function Services() {
             <div className="container mx-auto pt-12">
                 <div className="flex gap-8">
                     <div className="flex-1">
-                        <SearchServices />
+                        <SearchServices
+                            value={searchQuery}
+                            onChange={(e) =>
+                                setSearchQuery(e.target.value)
+                            }
+                        />
                     </div>
                     <div className="flex-1 flex justify-end">
                         <Button onClick={handleNext}>Next →</Button>

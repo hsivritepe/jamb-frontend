@@ -1,11 +1,11 @@
 'use client';
 
-import { ServiceItem } from '@/types/services';
+import { ServiceCategory } from '@/types/services';
 import { SectionBoxTitle } from '../ui/SectionBoxTitle';
 import { useState } from 'react';
 import { ImageBoxGrid } from '../ui/ImageBoxGrid';
 
-const services: ServiceItem[] = [
+const services: ServiceCategory[] = [
     {
         id: 1,
         title: 'Electrical',
