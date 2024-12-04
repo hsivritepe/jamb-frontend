@@ -1,6 +1,10 @@
 import { SectionBoxTitle } from '@/components/ui/SectionBoxTitle';
 import SearchServices from '@/components/SearchServices';
+import { useState } from 'react';
+
 export default function HeroSection() {
+    const [searchQuery, setSearchQuery] = useState('');
+
     return (
         <section className="pt-4">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -22,7 +26,12 @@ export default function HeroSection() {
                             </p>
                         </div>
 
-                        <SearchServices />
+                        <SearchServices
+                            value={searchQuery}
+                            onChange={(e) =>
+                                setSearchQuery(e.target.value)
+                            }
+                        />
                     </div>
                 </div>
 
