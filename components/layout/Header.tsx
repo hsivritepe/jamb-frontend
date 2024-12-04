@@ -44,15 +44,12 @@ export default function Header() {
 
                         {/* Right Section */}
                         <div className="hidden md:flex items-center gap-4">
-                            <button
-                                className="flex items-center justify-center gap-2 p-2 px-4 bg-red-50 rounded-lg border-none font-medium text-red-700 cursor-pointer transition duration-[0.2s]"
-                                onClick={() => {
-                                    /* Add emergency handler */
-                                }}
+                            <Link
+                                href="/emergency"
+                                className="flex items-center gap-2 text-red-600 font-medium bg-red-100/50 px-4 py-2 rounded-lg"
                             >
-                                <Bell className="w-4 h-4" />
-                                <span>Emergency</span>
-                            </button>
+                                <span>🚨</span> Emergency
+                            </Link>
 
                             <div className="relative">
                                 <button
@@ -103,15 +100,12 @@ export default function Header() {
                                     </Link>
                                 ))}
 
-                                <button
-                                    className="flex items-center justify-center gap-2 p-2 px-4 bg-red-50 rounded-lg border-none font-medium text-red-700 cursor-pointer transition duration-[0.2s]"
-                                    onClick={() => {
-                                        /* Add emergency handler */
-                                    }}
+                                <Link
+                                    href="/emergency"
+                                    className="flex items-center gap-2 text-red-600 font-medium"
                                 >
-                                    <Bell className="w-4 h-4" />
-                                    <span>Emergency</span>
-                                </button>
+                                    <span>🚨</span> Emergency
+                                </Link>
 
                                 <button className="flex items-center gap-2 text-gray-700">
                                     <span>EN</span>
