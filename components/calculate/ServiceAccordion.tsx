@@ -23,13 +23,13 @@ export default function ServiceAccordion({
     const [isOpen, setIsOpen] = useState(false);
 
     return (
-        <div className="border border-gray-200 rounded-lg">
-            <div className="flex items-center justify-between p-4">
+        <div className="border-b border-gray-200 rounded-lg">
+            <div className="flex items-center justify-between p-2">
                 <button
                     onClick={() => setIsOpen(!isOpen)}
                     className="flex items-center gap-2 flex-1 text-left"
                 >
-                    <span className="text-lg font-medium">
+                    <span className="text-md font-medium">
                         {service.title}
                     </span>
                     {isOpen ? (

@@ -47,4 +47,6 @@ export type EstimateService = {
     description: string;
     price: number;
     categoryId?: number;
+    category: string;
+    quantity?: number;
 };
