@@ -1,3 +1,5 @@
+'use client';
+
 import { SectionBoxTitle } from '@/components/ui/SectionBoxTitle';
 import SearchServices from '@/components/SearchServices';
 import { useState } from 'react';
