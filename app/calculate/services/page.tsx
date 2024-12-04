@@ -18,7 +18,7 @@ export default function Services() {
 
     return (
         <main className="min-h-screen pt-24">
-            <div className="container mx-auto px-4">
+            <div className="container mx-auto">
                 <BreadCrumb items={CALCULATE_STEPS} />
             </div>
 
