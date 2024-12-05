@@ -34,6 +34,33 @@ export default function ServicesSelection({
         Set<string>
     >(new Set());
 
+    const handleServiceSelect = (service: EstimateService) => {
+        if (onServiceSelect) {
+            setExpandedCategories(
+                (prev) =>
+                    new Set(
+                        Array.from(prev).concat([
+                            `selected-${service.category}`,
+                            service.category,
+                        ])
+                    )
+            );
+            onServiceSelect(service);
+        }
+    };
+
+    const toggleCategory = (category: string) => {
+        setExpandedCategories((prev) => {
+            const next = new Set(prev);
+            if (next.has(category)) {
+                next.delete(category);
+            } else {
+                next.add(category);
+            }
+            return next;
+        });
+    };
+
     const filteredServices = searchQuery
         ? ALL_SERVICES.filter(
               (service) =>
@@ -50,18 +77,6 @@ export default function ServicesSelection({
         : [];
 
     const groupedServices = groupServicesByCategory(filteredServices);
-
-    const toggleCategory = (category: string) => {
-        setExpandedCategories((prev) => {
-            const next = new Set(prev);
-            if (next.has(category)) {
-                next.delete(category);
-            } else {
-                next.add(category);
-            }
-            return next;
-        });
-    };
 
     return (
         <div className="flex-1">
@@ -86,52 +101,32 @@ export default function ServicesSelection({
                                 key={category}
                                 className="border rounded-lg"
                             >
-                                <button
-                                    onClick={() =>
-                                        toggleCategory(
-                                            `selected-${category}`
-                                        )
-                                    }
-                                    className="w-full p-4 flex justify-between items-center bg-gray-100 hover:bg-gray-200"
-                                >
+                                <div className="w-full p-4 flex justify-between items-center bg-gray-100">
                                     <h2 className="font-medium text-lg">
                                         {category}
                                     </h2>
-                                    <ChevronDown
-                                        className={`w-5 h-5 transform transition-transform ${
-                                            expandedCategories.has(
-                                                `selected-${category}`
-                                            )
-                                                ? 'rotate-180'
-                                                : ''
-                                        }`}
-                                    />
-                                </button>
-                                {expandedCategories.has(
-                                    `selected-${category}`
-                                ) && (
-                                    <div className="p-4 space-y-4">
-                                        {services.map((service) => (
-                                            <ServiceAccordion
-                                                key={service.id}
-                                                service={service}
-                                                isSelected={true}
-                                                onToggle={() =>
-                                                    onServiceSelect?.(
-                                                        service
-                                                    )
-                                                }
-                                            />
-                                        ))}
-                                    </div>
-                                )}
+                                </div>
+                                <div className="p-4 space-y-4">
+                                    {services.map((service) => (
+                                        <ServiceAccordion
+                                            key={service.id}
+                                            service={service}
+                                            isSelected={true}
+                                            onToggle={() =>
+                                                handleServiceSelect(
+                                                    service
+                                                )
+                                            }
+                                        />
+                                    ))}
+                                </div>
                             </div>
                         ))}
                     </div>
                 </div>
             )}
 
-            {/* Search Results */}
+            {/* Search Results - Keep normal collapse behavior */}
             <div className="mt-8 space-y-4">
                 {filteredServices.length > 0 && (
                     <>
@@ -182,7 +177,7 @@ export default function ServicesSelection({
                                                                 service.id
                                                         )}
                                                         onToggle={() =>
-                                                            onServiceSelect?.(
+                                                            handleServiceSelect(
                                                                 service
                                                             )
                                                         }

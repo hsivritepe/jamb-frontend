@@ -1,16 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
 import { Switch } from '@/components/ui/Switch';
+import { EstimateService } from '@/types/services';
 
 interface ServiceAccordionProps {
-    service: {
-        id: string;
-        title: string;
-        description: string;
-        price: number;
-    };
+    service: EstimateService;
     isSelected: boolean;
     onToggle: () => void;
 }
@@ -20,35 +14,17 @@ export default function ServiceAccordion({
     isSelected,
     onToggle,
 }: ServiceAccordionProps) {
-    const [isOpen, setIsOpen] = useState(false);
-
     return (
         <div className="border-b border-gray-200 rounded-lg">
             <div className="flex items-center justify-between p-2">
-                <button
-                    onClick={() => setIsOpen(!isOpen)}
-                    className="flex items-center gap-2 flex-1 text-left"
-                >
-                    <span className="text-md font-medium">
-                        {service.title}
-                    </span>
-                    {isOpen ? (
-                        <ChevronUp className="w-5 h-5" />
-                    ) : (
-                        <ChevronDown className="w-5 h-5" />
-                    )}
-                </button>
+                <span className="text-md font-medium">
+                    {service.title}
+                </span>
                 <Switch
                     checked={isSelected}
                     onCheckedChange={onToggle}
                 />
             </div>
-
-            {isOpen && (
-                <div className="px-4 pb-4 text-gray-600">
-                    {service.description}
-                </div>
-            )}
         </div>
     );
 }
