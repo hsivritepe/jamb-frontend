@@ -1,0 +1,95 @@
+{
+    "tax_rates": [
+        {
+            "province_code": 1,
+            "province": "Alberta",
+            "gst": 5.0,
+            "pst": 0.0,
+            "combined_province_and_local_tax_rate": 5.0
+        },
+        {
+            "province_code": 2,
+            "province": "British Columbia",
+            "gst": 5.0,
+            "pst": 7.0,
+            "combined_province_and_local_tax_rate": 12.0
+        },
+        {
+            "province_code": 3,
+            "province": "Manitoba",
+            "gst": 5.0,
+            "pst": 7.0,
+            "combined_province_and_local_tax_rate": 12.0
+        },
+        {
+            "province_code": 4,
+            "province": "New Brunswick",
+            "gst": 5.0,
+            "pst": 10.0,
+            "combined_province_and_local_tax_rate": 15.0
+        },
+        {
+            "province_code": 5,
+            "province": "Newfoundland and Labrador",
+            "gst": 5.0,
+            "pst": 10.0,
+            "combined_province_and_local_tax_rate": 15.0
+        },
+        {
+            "province_code": 6,
+            "province": "Nova Scotia",
+            "gst": 5.0,
+            "pst": 10.0,
+            "combined_province_and_local_tax_rate": 15.0
+        },
+        {
+            "province_code": 7,
+            "province": "Ontario",
+            "gst": 5.0,
+            "pst": 8.0,
+            "combined_province_and_local_tax_rate": 13.0
+        },
+        {
+            "province_code": 8,
+            "province": "Prince Edward Island",
+            "gst": 5.0,
+            "pst": 10.0,
+            "combined_province_and_local_tax_rate": 15.0
+        },
+        {
+            "province_code": 9,
+            "province": "Quebec",
+            "gst": 5.0,
+            "pst": 9.975,
+            "combined_province_and_local_tax_rate": 14.975
+        },
+        {
+            "province_code": 10,
+            "province": "Saskatchewan",
+            "gst": 5.0,
+            "pst": 6.0,
+            "combined_province_and_local_tax_rate": 11.0
+        },
+        {
+            "province_code": 11,
+            "province": "Northwest Territories",
+            "gst": 5.0,
+            "pst": 0.0,
+            "combined_province_and_local_tax_rate": 5.0
+        },
+        {
+            "province_code": 12,
+            "province": "Nunavut",
+            "gst": 5.0,
+            "pst": 0.0,
+            "combined_province_and_local_tax_rate": 5.0
+        },
+        {
+            "province_code": 13,
+            "province": "Yukon",
+            "gst": 5.0,
+            "pst": 0.0,
+            "combined_province_and_local_tax_rate": 5.0
+        }
+    ]
+}
