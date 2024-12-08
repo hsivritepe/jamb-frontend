@@ -2,62 +2,66 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 
-// Interface for the location structure
 interface Location {
-  city: string; // The city name
-  zip: string; // The ZIP code
-  country?: string; // Optional field for the country
-  province?: string; // Optional field for province, used in Canadian tax logic
-  state?: string; // Optional field for state, used in U.S. tax logic
+  city: string;
+  zip: string;
+  country?: string;
+  province?: string;
+  state?: string;
 }
 
-// Interface for the LocationContext
 interface LocationContextType {
-  location: Location; // Current location state
-  setLocation: (location: Location) => void; // Function to update the location state
+  location: Location;
+  setLocation: (location: Location) => void;
 }
 
-// Create a context for location management
 const LocationContext = createContext<LocationContextType | undefined>(undefined);
 
-// Provider component for the location context
 export const LocationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // State for managing the location
   const [location, setLocation] = useState<Location>({
-    city: "Unknown City", // Default city value
-    zip: "Unknown ZIP", // Default ZIP code
-    country: "Unknown Country", // Default country value
+    city: "City",
+    zip: "ZIP",
+    country: "Country",
   });
 
   useEffect(() => {
-    // Fetch the user's location using Geolocation and Google Maps Geocoding API
+    /**
+     * We will fetch the user's location using the Geolocation API and the Google Maps Geocoding API.
+     * The API key will now be taken from an environment variable, not hard-coded.
+     * Make sure your .env.local file contains `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=...`
+     */
     const fetchLocation = async () => {
       if ("geolocation" in navigator) {
         navigator.geolocation.getCurrentPosition(
           async (position) => {
-            const { latitude, longitude } = position.coords; // Extract latitude and longitude
-            const apiKey = "AIzaSyA_pXZj_hNDd-U-Gsnol2OQ2GHgz8EXW64"; // Google Maps API key
-            const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${apiKey}`; // API request URL
+            const { latitude, longitude } = position.coords;
+            const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY; // Use env variable
+            if (!apiKey) {
+              console.error("Google Maps API key is missing. Please set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY in .env.local");
+              return;
+            }
+
+            const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${apiKey}`;
 
             try {
-              const response = await fetch(url); // Fetch location data
-              const data = await response.json(); // Parse JSON response
+              const response = await fetch(url);
+              const data = await response.json();
               if (data.results?.[0]) {
-                const addressComponents = data.results[0].address_components; // Extract address components
+                const addressComponents = data.results[0].address_components;
 
                 const city = addressComponents.find((comp: { types: string[] }) =>
                   comp.types.includes("locality")
-                )?.long_name; // Find the city
+                )?.long_name;
                 const zip = addressComponents.find((comp: { types: string[] }) =>
                   comp.types.includes("postal_code")
-                )?.long_name; // Find the ZIP code
+                )?.long_name;
                 const country = addressComponents.find((comp: { types: string[] }) =>
                   comp.types.includes("country")
-                )?.long_name; // Find the country
+                )?.long_name;
                 const province = addressComponents.find((comp: { types: string[] }) =>
                   comp.types.includes("administrative_area_level_1")
-                )?.long_name; // Find the province/state
-                const state = province; // Alias province as state for U.S. compatibility
+                )?.long_name;
+                const state = province;
 
                 const newLocation: Location = {
                   city: city || "Unknown City",
@@ -67,15 +71,15 @@ export const LocationProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                   state,
                 };
 
-                setLocation(newLocation); // Update the location state
-                localStorage.setItem("userLocation", JSON.stringify(newLocation)); // Save location in localStorage
+                setLocation(newLocation);
+                localStorage.setItem("userLocation", JSON.stringify(newLocation));
               }
             } catch (error) {
-              console.error("Error fetching location:", error); // Log errors
+              console.error("Error fetching location:", error);
             }
           },
           (error) => {
-            console.error("Geolocation error:", error); // Handle geolocation errors
+            console.error("Geolocation error:", error);
           }
         );
       }
@@ -84,24 +88,24 @@ export const LocationProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     // Check for stored location in localStorage
     const storedLocation = localStorage.getItem("userLocation");
     if (storedLocation) {
-      setLocation(JSON.parse(storedLocation)); // Set location from localStorage if available
+      setLocation(JSON.parse(storedLocation));
     } else {
-      fetchLocation(); // Fetch location if not stored
+      // Only fetch location if not already stored
+      fetchLocation();
     }
   }, []);
 
   return (
     <LocationContext.Provider value={{ location, setLocation }}>
-      {children} {/* Render children within the provider */}
+      {children}
     </LocationContext.Provider>
   );
 };
 
-// Custom hook for accessing the location context
 export const useLocation = (): LocationContextType => {
-  const context = useContext(LocationContext); // Retrieve context value
+  const context = useContext(LocationContext);
   if (!context) {
-    throw new Error("useLocation must be used within a LocationProvider"); // Ensure context is used within provider
+    throw new Error("useLocation must be used within a LocationProvider");
   }
-  return context; // Return the context value
+  return context;
 };
