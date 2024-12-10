@@ -1,0 +1,361 @@
+{
+    "tax_rates": [
+        {
+            "state_code": 1,
+            "state": "Alabama",
+            "state_sales_tax_rate": 4.00,
+            "average_local_sales_tax_rate": 5.24,
+            "combined_state_and_local_tax_rate": 9.24
+        },
+        {
+            "state_code": 2,
+            "state": "Alaska",
+            "state_sales_tax_rate": 0.00,
+            "average_local_sales_tax_rate": 1.81,
+            "combined_state_and_local_tax_rate": 1.81
+        },
+        {
+            "state_code": 3,
+            "state": "Arizona",
+            "state_sales_tax_rate": 5.60,
+            "average_local_sales_tax_rate": 2.77,
+            "combined_state_and_local_tax_rate": 8.37
+        },
+        {
+            "state_code": 4,
+            "state": "Arkansas",
+            "state_sales_tax_rate": 6.50,
+            "average_local_sales_tax_rate": 2.94,
+            "combined_state_and_local_tax_rate": 9.44
+        },
+        {
+            "state_code": 5,
+            "state": "California",
+            "state_sales_tax_rate": 7.25,
+            "average_local_sales_tax_rate": 1.60,
+            "combined_state_and_local_tax_rate": 8.85
+        },
+        {
+            "state_code": 6,
+            "state": "Colorado",
+            "state_sales_tax_rate": 2.90,
+            "average_local_sales_tax_rate": 4.89,
+            "combined_state_and_local_tax_rate": 7.79
+        },
+        {
+            "state_code": 7,
+            "state": "Connecticut",
+            "state_sales_tax_rate": 6.35,
+            "average_local_sales_tax_rate": 0.00,
+            "combined_state_and_local_tax_rate": 6.35
+        },
+        {
+            "state_code": 8,
+            "state": "Delaware",
+            "state_sales_tax_rate": 0.00,
+            "average_local_sales_tax_rate": 0.00,
+            "combined_state_and_local_tax_rate": 0.00
+        },
+        {
+            "state_code": 9,
+            "state": "Florida",
+            "state_sales_tax_rate": 6.00,
+            "average_local_sales_tax_rate": 1.02,
+            "combined_state_and_local_tax_rate": 7.02
+        },
+        {
+            "state_code": 10,
+            "state": "Georgia",
+            "state_sales_tax_rate": 4.00,
+            "average_local_sales_tax_rate": 3.39,
+            "combined_state_and_local_tax_rate": 7.39
+        },
+        {
+            "state_code": 11,
+            "state": "Hawaii",
+            "state_sales_tax_rate": 4.00,
+            "average_local_sales_tax_rate": 0.44,
+            "combined_state_and_local_tax_rate": 4.44
+        },
+        {
+            "state_code": 12,
+            "state": "Idaho",
+            "state_sales_tax_rate": 6.00,
+            "average_local_sales_tax_rate": 0.03,
+            "combined_state_and_local_tax_rate": 6.03
+        },
+        {
+            "state_code": 13,
+            "state": "Illinois",
+            "state_sales_tax_rate": 6.25,
+            "average_local_sales_tax_rate": 2.59,
+            "combined_state_and_local_tax_rate": 8.84
+        },
+        {
+            "state_code": 14,
+            "state": "Indiana",
+            "state_sales_tax_rate": 7.00,
+            "average_local_sales_tax_rate": 0.00,
+            "combined_state_and_local_tax_rate": 7.00
+        },
+        {
+            "state_code": 15,
+            "state": "Iowa",
+            "state_sales_tax_rate": 6.00,
+            "average_local_sales_tax_rate": 0.93,
+            "combined_state_and_local_tax_rate": 6.93
+        },
+        {
+            "state_code": 16,
+            "state": "Kansas",
+            "state_sales_tax_rate": 6.50,
+            "average_local_sales_tax_rate": 2.25,
+            "combined_state_and_local_tax_rate": 8.75
+        },
+        {
+            "state_code": 17,
+            "state": "Kentucky",
+            "state_sales_tax_rate": 6.00,
+            "average_local_sales_tax_rate": 0.00,
+            "combined_state_and_local_tax_rate": 6.00
+        },
+        {
+            "state_code": 18,
+            "state": "Louisiana",
+            "state_sales_tax_rate": 4.45,
+            "average_local_sales_tax_rate": 5.10,
+            "combined_state_and_local_tax_rate": 9.55
+        },
+        {
+            "state_code": 19,
+            "state": "Maine",
+            "state_sales_tax_rate": 5.50,
+            "average_local_sales_tax_rate": 0.00,
+            "combined_state_and_local_tax_rate": 5.50
+        },
+        {
+            "state_code": 20,
+            "state": "Maryland",
+            "state_sales_tax_rate": 6.00,
+            "average_local_sales_tax_rate": 0.00,
+            "combined_state_and_local_tax_rate": 6.00
+        },
+        {
+            "state_code": 21,
+            "state": "Massachusetts",
+            "state_sales_tax_rate": 6.25,
+            "average_local_sales_tax_rate": 0.00,
+            "combined_state_and_local_tax_rate": 6.25
+        },
+        {
+            "state_code": 22,
+            "state": "Michigan",
+            "state_sales_tax_rate": 6.00,
+            "average_local_sales_tax_rate": 0.00,
+            "combined_state_and_local_tax_rate": 6.00
+        },
+        {
+            "state_code": 23,
+            "state": "Minnesota",
+            "state_sales_tax_rate": 6.88,
+            "average_local_sales_tax_rate": 0.65,
+            "combined_state_and_local_tax_rate": 7.53
+        },
+        {
+            "state_code": 24,
+            "state": "Mississippi",
+            "state_sales_tax_rate": 7.00,
+            "average_local_sales_tax_rate": 0.07,
+            "combined_state_and_local_tax_rate": 7.07
+        },
+        {
+            "state_code": 25,
+            "state": "Missouri",
+            "state_sales_tax_rate": 4.23,
+            "average_local_sales_tax_rate": 4.14,
+            "combined_state_and_local_tax_rate": 8.37
+        },
+        {
+            "state_code": 26,
+            "state": "Montana",
+            "state_sales_tax_rate": 0.00,
+            "average_local_sales_tax_rate": 0.00,
+            "combined_state_and_local_tax_rate": 0.00
+        },
+        {
+            "state_code": 27,
+            "state": "Nebraska",
+            "state_sales_tax_rate": 5.50,
+            "average_local_sales_tax_rate": 1.47,
+            "combined_state_and_local_tax_rate": 6.97
+        },
+        {
+            "state_code": 28,
+            "state": "Nevada",
+            "state_sales_tax_rate": 6.85,
+            "average_local_sales_tax_rate": 1.39,
+            "combined_state_and_local_tax_rate": 8.24
+        },
+        {
+            "state_code": 29,
+            "state": "New Hampshire",
+            "state_sales_tax_rate": 0.00,
+            "average_local_sales_tax_rate": 0.00,
+            "combined_state_and_local_tax_rate": 0.00
+        },
+        {
+            "state_code": 30,
+            "state": "New Jersey",
+            "state_sales_tax_rate": 6.63,
+            "average_local_sales_tax_rate": -0.02,
+            "combined_state_and_local_tax_rate": 6.61
+        },
+        {
+            "state_code": 31,
+            "state": "New Mexico",
+            "state_sales_tax_rate": 5.13,
+            "average_local_sales_tax_rate": 2.69,
+            "combined_state_and_local_tax_rate": 7.82
+        },
+        {
+            "state_code": 32,
+            "state": "New York",
+            "state_sales_tax_rate": 4.00,
+            "average_local_sales_tax_rate": 4.53,
+            "combined_state_and_local_tax_rate": 8.53
+        },
+        {
+            "state_code": 33,
+            "state": "North Carolina",
+            "state_sales_tax_rate": 4.75,
+            "average_local_sales_tax_rate": 2.20,
+            "combined_state_and_local_tax_rate": 6.95
+        },
+        {
+            "state_code": 34,
+            "state": "North Dakota",
+            "state_sales_tax_rate": 5.00,
+            "average_local_sales_tax_rate": 2.04,
+            "combined_state_and_local_tax_rate": 7.04
+        },
+        {
+            "state_code": 35,
+            "state": "Ohio",
+            "state_sales_tax_rate": 5.75,
+            "average_local_sales_tax_rate": 1.49,
+            "combined_state_and_local_tax_rate": 7.24
+        },
+        {
+            "state_code": 36,
+            "state": "Oklahoma",
+            "state_sales_tax_rate": 4.50,
+            "average_local_sales_tax_rate": 4.47,
+            "combined_state_and_local_tax_rate": 8.97
+        },
+        {
+            "state_code": 37,
+            "state": "Oregon",
+            "state_sales_tax_rate": 0.00,
+            "average_local_sales_tax_rate": 0.00,
+            "combined_state_and_local_tax_rate": 0.00
+        },
+        {
+            "state_code": 38,
+            "state": "Pennsylvania",
+            "state_sales_tax_rate": 6.00,
+            "average_local_sales_tax_rate": 0.34,
+            "combined_state_and_local_tax_rate": 6.34
+        },
+        {
+            "state_code": 39,
+            "state": "Rhode Island",
+            "state_sales_tax_rate": 7.00,
+            "average_local_sales_tax_rate": 0.00,
+            "combined_state_and_local_tax_rate": 7.00
+        },
+        {
+            "state_code": 40,
+            "state": "South Carolina",
+            "state_sales_tax_rate": 6.00,
+            "average_local_sales_tax_rate": 1.50,
+            "combined_state_and_local_tax_rate": 7.50
+        },
+        {
+            "state_code": 41,
+            "state": "South Dakota",
+            "state_sales_tax_rate": 4.50,
+            "average_local_sales_tax_rate": 1.90,
+            "combined_state_and_local_tax_rate": 6.40
+        },
+        {
+            "state_code": 42,
+            "state": "Tennessee",
+            "state_sales_tax_rate": 7.00,
+            "average_local_sales_tax_rate": 2.55,
+            "combined_state_and_local_tax_rate": 9.55
+        },
+        {
+            "state_code": 43,
+            "state": "Texas",
+            "state_sales_tax_rate": 6.25,
+            "average_local_sales_tax_rate": 1.94,
+            "combined_state_and_local_tax_rate": 8.19
+        },
+        {
+            "state_code": 44,
+            "state": "Utah",
+            "state_sales_tax_rate": 6.10,
+            "average_local_sales_tax_rate": 1.10,
+            "combined_state_and_local_tax_rate": 7.20
+        },
+        {
+            "state_code": 45,
+            "state": "Vermont",
+            "state_sales_tax_rate": 6.00,
+            "average_local_sales_tax_rate": 0.36,
+            "combined_state_and_local_tax_rate": 6.36
+        },
+        {
+            "state_code": 46,
+            "state": "Virginia",
+            "state_sales_tax_rate": 5.30,
+            "average_local_sales_tax_rate": 0.43,
+            "combined_state_and_local_tax_rate": 5.73
+        },
+        {
+            "state_code": 47,
+            "state": "Washington",
+            "state_sales_tax_rate": 6.50,
+            "average_local_sales_tax_rate": 2.90,
+            "combined_state_and_local_tax_rate": 9.40
+        },
+        {
+            "state_code": 48,
+            "state": "West Virginia",
+            "state_sales_tax_rate": 6.00,
+            "average_local_sales_tax_rate": 0.43,
+            "combined_state_and_local_tax_rate": 6.43
+        },
+        {
+            "state_code": 49,
+            "state": "Wisconsin",
+            "state_sales_tax_rate": 5.00,
+            "average_local_sales_tax_rate": 0.43,
+            "combined_state_and_local_tax_rate": 5.43
+        },
+        {
+            "state_code": 50,
+            "state": "Wyoming",
+            "state_sales_tax_rate": 4.00,
+            "average_local_sales_tax_rate": 1.44,
+            "combined_state_and_local_tax_rate": 5.44
+        },
+        {
+            "state_code": 51,
+            "state": "District of Columbia",
+            "state_sales_tax_rate": 6.00,
+            "average_local_sales_tax_rate": 0.00,
+            "combined_state_and_local_tax_rate": 6.00
+        }
+    ]
+}
