@@ -1,228 +1,84 @@
 'use client';
 
-import { ServiceCategory } from '@/types/services';
-import { SectionBoxTitle } from '../ui/SectionBoxTitle';
 import { useState } from 'react';
+import { SectionBoxTitle } from '../ui/SectionBoxTitle';
 import { ImageBoxGrid } from '../ui/ImageBoxGrid';
+import {
+  INDOOR_SERVICE_SECTIONS,
+  OUTDOOR_SERVICE_SECTIONS,
+  ALL_CATEGORIES,
+} from '@/constants/categories';
 
-const services: ServiceCategory[] = [
-    {
-        id: 1,
-        title: 'Electrical',
-        image: '/images/services/electrical.jpg',
-        url: '/services/electrical',
-        subcategories: [
-            'Wiring & Rewiring',
-            'Switches & Outlets',
-            'LED Lighting',
-            'Fixture Installation',
-            'Emergency Repairs',
-            'Circuit Breakers',
-        ],
-        type: 'indoor',
-    },
-    {
-        id: 2,
-        title: 'Plumbing',
-        image: '/images/services/plumbing.jpg',
-        url: '/services/plumbing',
-        subcategories: [
-            'Pipe Installation',
-            'Leak Detection',
-            'Shower & Bath',
-            'Emergency Services',
-        ],
-        type: 'outdoor',
-    },
-    {
-        id: 3,
-        title: 'Painting',
-        image: '/images/services/painting.jpg',
-        url: '/services/painting',
-        subcategories: [
-            'Interior Painting',
-            'Exterior Painting',
-            'Wall Preparation',
-            'Wallpaper Removal',
-            'Color Consultation',
-            'Trim & Detail Work',
-            'Cabinet Painting',
-        ],
-        type: 'indoor',
-    },
-    {
-        id: 4,
-        title: 'Tiling',
-        image: '/images/services/tiling.jpg',
-        url: '/services/tiling',
-        subcategories: [
-            'Floor Tiling',
-            'Wall Tiling',
-            'Bathroom Tiling',
-            'Kitchen Backsplash',
-            'Tile Repair',
-        ],
-        type: 'outdoor',
-    },
-    {
-        id: 5,
-        title: 'Flooring',
-        image: '/images/services/flooring.jpg',
-        url: '/services/flooring',
-        subcategories: [
-            'Hardwood Installation',
-            'Laminate Flooring',
-            'Vinyl & LVT',
-            'Carpet Installation',
-            'Floor Repairs',
-            'Refinishing',
-            'Subfloor Repair',
-            'Floor Leveling',
-        ],
-        type: 'indoor',
-    },
-    {
-        id: 6,
-        title: 'Carpentry',
-        image: '/images/services/carpentry.jpg',
-        url: '/services/carpentry',
-        subcategories: [
-            'Custom Furniture',
-            'Cabinet Making',
-            'Door Installation',
-            'Trim & Molding',
-        ],
-        type: 'indoor',
-    },
-    {
-        id: 7,
-        title: 'HVAC',
-        image: '/images/services/hvac.jpg',
-        url: '/services/hvac',
-        subcategories: [
-            'AC Installation',
-            'Heating Repair',
-            'Maintenance',
-            'Air Quality Testing',
-            'Duct Cleaning',
-            'Thermostat Install',
-            'Emergency Service',
-            'System Inspection',
-        ],
-        type: 'indoor',
-    },
-    {
-        id: 8,
-        title: 'Cleaning',
-        image: '/images/services/cleaning.jpg',
-        url: '/services/cleaning',
-        subcategories: [
-            'Deep Cleaning',
-            'Regular Maintenance',
-            'Move-in/out Clean',
-            'Window Cleaning',
-            'Carpet Cleaning',
-            'Post-Construction',
-        ],
-        type: 'indoor',
-    },
-];
+// Extract services by type
+const indoorServices = Object.values(INDOOR_SERVICE_SECTIONS).map((section) => ({
+  title: section,
+  image: `/images/services/${section.toLowerCase().replace(/ /g, '_')}.jpg`,
+  subcategories: ALL_CATEGORIES.filter((cat) => cat.section === section).map(
+    (cat) => cat.title
+  ),
+}));
 
-interface ServicesGridProps {
-    title?: string;
-}
+const outdoorServices = Object.values(OUTDOOR_SERVICE_SECTIONS).map((section) => ({
+  title: section,
+  image: `/images/services/${section.toLowerCase().replace(/ /g, '_')}.jpg`,
+  subcategories: ALL_CATEGORIES.filter((cat) => cat.section === section).map(
+    (cat) => cat.title
+  ),
+}));
 
 export default function ServicesGrid({
-    title = 'Select a Service', // Default title if none provided
-}: ServicesGridProps) {
-    const [selectedType, setSelectedType] = useState('indoor');
+  title = 'Select a Service',
+}: {
+  title?: string;
+}) {
+  const [selectedType, setSelectedType] = useState<'indoor' | 'outdoor'>('indoor');
 
-    const gridTemplateColumns = {
-        base: 'repeat(1, 1fr)',
-        sm: 'repeat(2, minmax(auto, 300px))',
-        lg: 'repeat(4, minmax(auto, 300px))',
-    };
+  const services = selectedType === 'indoor' ? indoorServices : outdoorServices;
 
-    return (
-        <section className="py-16">
-            <div className="container mx-auto px-4">
-                <SectionBoxTitle>
-                    <div
-                        dangerouslySetInnerHTML={{ __html: title }}
-                    />
-                </SectionBoxTitle>
+  return (
+    <section className="py-16">
+      <div className="container mx-auto px-4">
+        <SectionBoxTitle>
+          <div dangerouslySetInnerHTML={{ __html: title }} />
+        </SectionBoxTitle>
 
-                {/* Indoor/Outdoor Selector */}
-                <div className="flex mb-8">
-                    <div className="inline-flex rounded-lg border border-gray-200 p-1">
-                        <button
-                            onClick={() => setSelectedType('indoor')}
-                            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                                selectedType === 'indoor'
-                                    ? 'bg-blue-600 text-white'
-                                    : 'hover:bg-gray-100 text-gray-600'
-                            }`}
-                        >
-                            Indoor
-                        </button>
-                        <button
-                            onClick={() => setSelectedType('outdoor')}
-                            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                                selectedType === 'outdoor'
-                                    ? 'bg-blue-600 text-white'
-                                    : 'hover:bg-gray-100 text-gray-600'
-                            }`}
-                        >
-                            Outdoor
-                        </button>
-                    </div>
-                </div>
+        {/* Indoor/Outdoor Toggle */}
+        <div className="flex mb-8">
+          <div className="inline-flex rounded-lg border border-gray-200 p-1">
+            <button
+              onClick={() => setSelectedType('indoor')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                selectedType === 'indoor'
+                  ? 'bg-blue-600 text-white'
+                  : 'hover:bg-gray-100 text-gray-600'
+              }`}
+            >
+              Indoor
+            </button>
+            <button
+              onClick={() => setSelectedType('outdoor')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                selectedType === 'outdoor'
+                  ? 'bg-blue-600 text-white'
+                  : 'hover:bg-gray-100 text-gray-600'
+              }`}
+            >
+              Outdoor
+            </button>
+          </div>
+        </div>
 
-                {/* Primary Services Grid */}
-                <ImageBoxGrid
-                    items={services.filter(
-                        (service) => service.type === selectedType
-                    )}
-                />
-
-                {/* Secondary Services Grid */}
-                <div className="mt-4 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                    {[
-                        'Wall and Ceiling',
-                        'Security',
-                        'Furniture',
-                        'Appliance',
-                        'Auto',
-                        'Moving',
-                        'Smart Home',
-                        'Pest Control',
-                        'Window Treatment',
-                        'Home Inspection',
-                    ].map((service, index) => (
-                        <div
-                            key={index}
-                            className="p-4 hover:border-blue-500 cursor-pointer"
-                        >
-                            <h3 className="font-medium text-gray-900">
-                                {service}
-                            </h3>
-                            {[
-                                'Carpet',
-                                'Carpet Pad',
-                                'Vinyl tile',
-                                'Vinyl covering',
-                                'Laminate',
-                            ].map((subservice, subindex) => (
-                                <div key={subindex}>
-                                    <span className="text-sm text-gray-500">
-                                        {subservice}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </section>
-    );
+        {/* Services Grid */}
+        <ImageBoxGrid
+          items={services.map((service) => ({
+            id: service.title,
+            title: service.title,
+            image: service.image,
+            url: `/services/${service.title.toLowerCase().replace(/ /g, '_')}`,
+            subcategories: service.subcategories,
+          }))}
+        />
+      </div>
+    </section>
+  );
 }

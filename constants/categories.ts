@@ -11,7 +11,7 @@ export const INDOOR_SERVICE_SECTIONS = {
   WALL_AND_CEILING: "Wall and Ceiling",
   APPLIANCE: "Appliance",
   SECURITY: "Security",
-  AUDIO_VISUAL: "AUDIO_VISUAL",
+  AUDIO_VISUAL: "Audio-Visual",
   FURNITURE: "Furniture",
   MOVING: "Moving",
 } as const;

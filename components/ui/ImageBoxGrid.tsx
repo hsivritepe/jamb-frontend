@@ -4,7 +4,7 @@ import React from 'react';
 import Image from 'next/image';
 
 interface Item {
-    id: number;
+    id: string; // Updated to match string IDs from categories
     title: string;
     image: string;
     url: string;
@@ -28,6 +28,7 @@ export function ImageBoxGrid({
                     className="relative group w-full max-w-[300px] mx-auto"
                 >
                     <div className="relative overflow-hidden rounded-xl aspect-square w-full">
+                        {/* Service image */}
                         <Image
                             src={item.image}
                             alt={item.title}
@@ -36,6 +37,7 @@ export function ImageBoxGrid({
                             className="object-cover transition-transform group-hover:scale-110"
                         />
 
+                        {/* Title overlay */}
                         <div className="absolute inset-x-0 top-0 p-4 bg-gradient-to-b from-black/50 to-transparent">
                             <h3
                                 className="font-medium text-white text-2xl"
@@ -46,11 +48,12 @@ export function ImageBoxGrid({
                             >
                                 {item.title}
                                 {showCount &&
-                                    item.subcategories.length &&
-                                    `(${item.subcategories.length})`}
+                                    item.subcategories.length > 0 &&
+                                    ` (${item.subcategories.length})`}
                             </h3>
                         </div>
 
+                        {/* Subcategories */}
                         {item.subcategories && (
                             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col pt-16 px-4">
                                 <div
@@ -69,8 +72,7 @@ export function ImageBoxGrid({
                                                 </span>
                                             </div>
                                         ))}
-                                    {item.subcategories.length - 5 >
-                                        0 && (
+                                    {item.subcategories.length > 5 && (
                                         <div className="flex !my-8">
                                             <span className="text-sm">
                                                 More{' '}
