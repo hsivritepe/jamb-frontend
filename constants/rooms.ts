@@ -3,7 +3,7 @@ export const ROOMS = {
     {
       id: "attic",
       title: "Attic",
-      activities: [
+      services: [
         { id: "1-1-1", title: "Battery-Operated Smoke Detector Installation" },
         { id: "1-1-2", title: "Hardwired Smoke Detector Installation" },
         { id: "1-2-1", title: "Ceiling Fan Replacement" },
@@ -76,7 +76,7 @@ export const ROOMS = {
     {
       id: "basement",
       title: "Basement",
-      activities: [
+      services: [
         { id: "1-1-1", title: "Battery-Operated Smoke Detector Installation" },
         { id: "1-1-2", title: "Hardwired Smoke Detector Installation" },
         { id: "1-2-1", title: "Ceiling Fan Replacement" },
@@ -184,7 +184,7 @@ export const ROOMS = {
     {
       id: "bathroom",
       title: "Bathroom",
-      activities: [
+      services: [
         { id: "1-3-1", title: "Light Fixture Removal" },
         { id: "1-3-2", title: "Light Fixture Installation" },
         { id: "1-3-3", title: "Wall Sconce Installation" },
@@ -288,7 +288,7 @@ export const ROOMS = {
     {
       id: "bedroom",
       title: "Bedroom",
-      activities: [
+      services: [
         { id: "1-1-1", title: "Battery-Operated Smoke Detector Installation" },
         { id: "1-1-2", title: "Hardwired Smoke Detector Installation" },
         { id: "1-10-1", title: "Track Lighting Kit Installation" },
@@ -390,7 +390,7 @@ export const ROOMS = {
     {
       id: "garage",
       title: "Garage",
-      activities: [
+      services: [
         { id: "1-1-1", title: "Battery-Operated Smoke Detector Installation" },
         { id: "1-1-2", title: "Hardwired Smoke Detector Installation" },
         { id: "1-3-1", title: "Light Fixture Removal" },
@@ -442,7 +442,7 @@ export const ROOMS = {
     {
       id: "home_cinema",
       title: "Home Cinema",
-      activities: [
+      services: [
         { id: "1-1-1", title: "Battery-Operated Smoke Detector Installation" },
         { id: "1-1-2", title: "Hardwired Smoke Detector Installation" },
         { id: "1-2-1", title: "Ceiling Fan Replacement" },
@@ -501,7 +501,7 @@ export const ROOMS = {
     {
       id: "homeoffice",
       title: "Home Office",
-      activities: [
+      services: [
         { id: "1-1-1", title: "Battery-Operated Smoke Detector Installation" },
         { id: "1-1-2", title: "Hardwired Smoke Detector Installation" },
         { id: "1-2-1", title: "Ceiling Fan Replacement" },
@@ -560,7 +560,7 @@ export const ROOMS = {
     {
       id: "kitchen",
       title: "Kitchen",
-      activities: [
+      services: [
         { id: "1-1-1", title: "Battery-Operated Smoke Detector Installation" },
         { id: "1-1-2", title: "Hardwired Smoke Detector Installation" },
         { id: "1-10-1", title: "Track Lighting Kit Installation" },
@@ -641,7 +641,7 @@ export const ROOMS = {
     {
       id: "laundry",
       title: "Laundry",
-      activities: [
+      services: [
         { id: "1-1-1", title: "Battery-Operated Smoke Detector Installation" },
         { id: "1-1-2", title: "Hardwired Smoke Detector Installation" },
         { id: "1-3-1", title: "Light Fixture Removal" },
@@ -726,7 +726,7 @@ export const ROOMS = {
     {
       id: "living",
       title: "Living Room",
-      activities: [
+      services: [
         { id: "1-1-1", title: "Battery-Operated Smoke Detector Installation" },
         { id: "1-1-2", title: "Hardwired Smoke Detector Installation" },
         { id: "1-10-1", title: "Track Lighting Kit Installation" },
@@ -810,7 +810,7 @@ export const ROOMS = {
     {
       id: "playroom",
       title: "Playroom",
-      activities: [
+      services: [
         { id: "1-1-1", title: "Battery-Operated Smoke Detector Installation" },
         { id: "1-1-2", title: "Hardwired Smoke Detector Installation" },
         { id: "1-2-1", title: "Ceiling Fan Replacement" },
@@ -902,7 +902,7 @@ export const ROOMS = {
     {
       id: "driveway",
       title: "Driveway",
-      activities: [
+      services: [
         { id: "8-10-1", title: "Concrete Epoxy Painting" },
         { id: "8-10-2", title: "Concrete Acrylic Latex Painting" },
         { id: "8-10-3", title: "Concrete Masonry Painting" },
@@ -949,7 +949,7 @@ export const ROOMS = {
     {
       id: "entertainment_area",
       title: "Entertainment Area",
-      activities: [
+      services: [
         { id: "9-1-1", title: "Adjustable Helical Post Foundation Installation" },
         { id: "9-1-2", title: "Plastic Adjustable Pedestal and Framing Installation" },
         { id: "9-1-3", title: "Concrete Blocks and Lumber Foundation Installation" },
@@ -988,7 +988,7 @@ export const ROOMS = {
     {
       id: "exterior_cleaning",
       title: "Exterior Cleaning",
-      activities: [
+      services: [
         { id: "11-1-1", title: "Deck and Patio Pressure Washing" },
         { id: "11-1-2", title: "Deck and Patio Soft Washing" },
         { id: "11-1-3", title: "Deck and Patio Deep Cleaning Solutions" },
@@ -1033,7 +1033,7 @@ export const ROOMS = {
     {
       id: "facade",
       title: "Facade",
-      activities: [
+      services: [
         { id: "8-1-1", title: "Masonry Painting (Two Coats on a Single-Story Building)" },
         { id: "8-1-2", title: "Exterior Wood Stain Painting (Single-Story Building)" },
         { id: "8-1-3", title: "Masonry Painting (One Coat on a Single-Story Building)" },
@@ -1151,7 +1151,7 @@ export const ROOMS = {
     {
       id: "landscape",
       title: "Landscape",
-      activities: [
+      services: [
         { id: "18-1-1", title: "Landscape Path Light Kit (6-10 lights) Installation" },
         { id: "18-1-2", title: "Solar LED In-Ground Path Light Installation" },
         { id: "18-1-3", title: "Deck Post Lighting Installation" },
@@ -1221,7 +1221,7 @@ export const ROOMS = {
     {
       id: "outdoor_kitchen",
       title: "Outdoor Kitchen",
-      activities: [
+      services: [
         { id: "9-4-1", title: "Cedar Gazebo Kit Installation" },
         { id: "9-4-2", title: "Concrete Column Gazebo Installation" },
         { id: "9-4-3", title: "Gazebo Roof Installation" },
@@ -1253,7 +1253,7 @@ export const ROOMS = {
     {
       id: "patio",
       title: "Patio",
-      activities: [
+      services: [
         { id: "8-3-1", title: "Deck Staining and Finishing" },
         { id: "8-3-2", title: "Deck Coating (Acrylic Polymer)" },
         { id: "8-3-3", title: "Deck Painting (One Coat)" },
@@ -1318,7 +1318,7 @@ export const ROOMS = {
     {
       id: "playground",
       title: "Playground",
-      activities: [
+      services: [
         { id: "9-7-1", title: "Swing Sets Installation" },
         { id: "9-7-2", title: "Playhouse Installation" },
         { id: "9-7-3", title: "Sandbox Installation" },
