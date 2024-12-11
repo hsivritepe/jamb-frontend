@@ -403,7 +403,7 @@ export const ROOMS = {
       ],
     },
     {
-      id: "homeoffice",
+      id: "home_office",
       title: "Home Office",
       services: [
         { id: "1-1-1", title: "Battery-Operated Smoke Detector Installation" },
@@ -628,7 +628,7 @@ export const ROOMS = {
       ],
     },
     {
-      id: "living",
+      id: "living_room",
       title: "Living Room",
       services: [
         { id: "1-1-1", title: "Battery-Operated Smoke Detector Installation" },
