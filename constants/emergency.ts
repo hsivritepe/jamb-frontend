@@ -1,4 +1,21 @@
-export const EMERGENCY_SERVICES = {
+export type EmergencyService = {
+    tools: string[];
+    steps: {
+        step_number: number;
+        title: string;
+        description: string;
+    }[];
+    activities: Record<string, { activity: string; unit_of_measurement: string }>;
+};
+
+export type EmergencyServicesType = Record<
+    string,
+    {
+        services: Record<string, EmergencyService>;
+    }
+>;
+
+export const EMERGENCY_SERVICES: EmergencyServicesType = {
   Plumbing: {
     services: {
       burstPipesRepair: {
@@ -1472,7 +1489,7 @@ export const EMERGENCY_SERVICES = {
       },
     },
   },
-  windowsAndDoorsRepairing: {
+  WindowsAndDoorsRepairing: {
     services: {
       brokenWindowRepairs: {
         tools: [
@@ -1762,7 +1779,7 @@ export const EMERGENCY_SERVICES = {
       },
     },
   },
-  cleaning: {
+  Cleaning: {
     services: {
       postDisasterCleanups: {
         tools: [
@@ -1993,7 +2010,7 @@ export const EMERGENCY_SERVICES = {
       },
     },
   },
-  hvac: {
+  HVAC: {
     services: {
       emergencyHeatingCoolingRestoration: {
         tools: [
@@ -2327,7 +2344,7 @@ export const EMERGENCY_SERVICES = {
       },
     },
   },
-  structural: {
+  Structural: {
     services: {
       emergencyStabilization: {
         tools: [
@@ -2570,7 +2587,7 @@ export const EMERGENCY_SERVICES = {
       },
     },
   },
-  gasServices: {
+  GasServices: {
     services: {
       gasLeakDetectionAndRepair: {
         tools: [
@@ -2795,7 +2812,7 @@ export const EMERGENCY_SERVICES = {
       },
     },
   },
-  applianceRepair: {
+  ApplianceRepair: {
     services: {
       urgentRefrigeratorRepairs: {
         tools: [

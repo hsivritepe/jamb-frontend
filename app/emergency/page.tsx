@@ -13,7 +13,7 @@ export default function Emergency() {
     };
 
     return (
-        <main className="min-h-screen pt-24">
+        <main className="min-h-screen pt-24 ">
             <div className="container mx-auto mb-16">
                 {/* BreadCrumb */}
                 <BreadCrumb items={EMERGENCY_STEPS} />

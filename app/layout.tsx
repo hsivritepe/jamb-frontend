@@ -12,7 +12,7 @@ const manrope = Manrope({
 export default function RootLayout({ children }: LayoutProps) {
     return (
         <html lang="en">
-            <body className={`${manrope.className} bg-[#F8F9FB]`}>
+            <body className={`${manrope.className} bg-[#ffffff]`}>
                 <Header />
                 <div className="max-w-7xl mx-auto px-4">
                     {children}
