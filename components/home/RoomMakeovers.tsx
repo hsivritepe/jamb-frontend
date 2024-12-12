@@ -1,221 +1,110 @@
 'use client';
 
-import { Room } from '@/types/services';
-import { ImageBoxGrid } from '../ui/ImageBoxGrid';
+import { useState, useEffect } from 'react';
 import { SectionBoxTitle } from '../ui/SectionBoxTitle';
+import { ImageBoxGrid } from '../ui/ImageBoxGrid';
+import { ROOMS } from '@/constants/rooms';
 
-const rooms: Room[] = [
-    {
-        id: 1,
-        title: 'Living Room',
-        image: '/images/rooms/living-room.jpg',
-        url: '/services/living-room',
-        subcategories: [
-            'Furniture Arrangement',
-            'Lighting Design',
-            'Wall Treatment',
-            'Entertainment Setup',
-            'Window Styling',
-            'Color Consultation',
-            'Acoustic Treatment',
-        ],
-    },
-    {
-        id: 2,
-        title: 'Kitchen',
-        image: '/images/rooms/kitchen.jpg',
-        url: '/services/kitchen',
-        subcategories: [
-            'Cabinet Installation',
-            'Countertop Replacement',
-            'Appliance Upgrade',
-            'Island Design',
-            'Backsplash Installation',
-            'Lighting Setup',
-            'Storage Solutions',
-        ],
-    },
-    {
-        id: 3,
-        title: 'Bathroom',
-        image: '/images/rooms/bathroom.jpg',
-        url: '/services/bathroom',
-        subcategories: [
-            'Tile Installation',
-            'Fixture Upgrade',
-            'Vanity Replacement',
-            'Lighting Design',
-            'Storage Solutions',
-        ],
-    },
-    {
-        id: 4,
-        title: 'Bedroom',
-        image: '/images/rooms/bedroom.jpg',
-        url: '/services/bedroom',
-        subcategories: [
-            'Closet Organization',
-            'Lighting Design',
-            'Wall Treatment',
-            'Furniture Layout',
-            'Window Treatment',
-            'Color Consultation',
-        ],
-    },
-    {
-        id: 5,
-        title: 'Patio Upgrading',
-        image: '/images/rooms/patio.jpg',
-        url: '/services/patio',
-        subcategories: [
-            'Deck Building',
-            'Outdoor Kitchen',
-            'Landscaping',
-            'Lighting Installation',
-            'Furniture Selection',
-            'Pergola Construction',
-        ],
-    },
-    {
-        id: 6,
-        title: 'Home Office',
-        image: '/images/rooms/home-office.jpg',
-        url: '/services/home-office',
-        subcategories: [
-            'Desk Setup',
-            'Storage Solutions',
-            'Lighting Design',
-            'Cable Management',
-            'Ergonomic Planning',
-        ],
-    },
-    {
-        id: 7,
-        title: 'Storage',
-        image: '/images/rooms/storage.jpg',
-        url: '/services/storage',
-        subcategories: [
-            'Shelving Installation',
-            'Custom Cabinets',
-            'Organization System',
-            'Space Planning',
-            'Inventory Management',
-        ],
-    },
-    {
-        id: 8,
-        title: 'Basement',
-        image: '/images/rooms/basement.jpg',
-        url: '/services/basement',
-        subcategories: [
-            'Waterproofing',
-            'Flooring Installation',
-            'Wall Finishing',
-            'Lighting Design',
-            'Entertainment Setup',
-            'Climate Control',
-        ],
-    },
-    {
-        id: 9,
-        title: 'Laundry Room',
-        image: '/images/rooms/laundry-room.jpg',
-        url: '/services/laundry-room',
-        subcategories: [
-            'Appliance Installation',
-            'Storage Solutions',
-            'Countertop Installation',
-            'Sink Setup',
-            'Ventilation',
-        ],
-    },
-    {
-        id: 10,
-        title: 'Attic',
-        image: '/images/rooms/attic.jpg',
-        url: '/services/attic',
-        subcategories: [
-            'Insulation',
-            'Ventilation',
-            'Flooring',
-            'Storage Solutions',
-            'Lighting Installation',
-            'Access Improvement',
-        ],
-    },
-    {
-        id: 11,
-        title: 'Home Gym',
-        image: '/images/rooms/home-gym.jpg',
-        url: '/services/home-gym',
-        subcategories: [
-            'Equipment Layout',
-            'Flooring Installation',
-            'Mirror Installation',
-            'Ventilation Setup',
-            'Storage Solutions',
-            'Sound System',
-        ],
-    },
-    {
-        id: 12,
-        title: "Children's Playroom",
-        image: '/images/rooms/childrens-playroom.jpg',
-        url: '/services/childrens-playroom',
-        subcategories: [
-            'Safety Installation',
-            'Storage Solutions',
-            'Activity Zones',
-            'Wall Art',
-            'Flooring Installation',
-            'Lighting Design',
-        ],
-    },
-    {
-        id: 13,
-        title: 'Garage',
-        image: '/images/rooms/garage.jpg',
-        url: '/services/garage',
-        subcategories: [
-            'Storage System',
-            'Workbench Setup',
-            'Floor Coating',
-            'Lighting Installation',
-            'Organization Solutions',
-            'Door Automation',
-        ],
-    },
-    {
-        id: 14,
-        title: 'Smart Home',
-        image: '/images/rooms/smart-home.jpg',
-        url: '/services/smart-home',
-        subcategories: [
-            'Security System',
-            'Lighting Automation',
-            'Climate Control',
-            'Entertainment Setup',
-            'Voice Control',
-            'Network Setup',
-            'Device Integration',
-        ],
-    },
-];
+// Function to shuffle array elements randomly
+function shuffleArray<T>(array: T[]): T[] {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
 
-export default function RoomMakeovers() {
-    return (
-        <section className="py-16">
-            <div>
-                <SectionBoxTitle>
-                    Whole-Room Makeovers, Done Right
-                </SectionBoxTitle>
+// Prepare indoor room data
+const indoorRooms = ROOMS.indoor.map((room) => ({
+  title: room.title,
+  image: `/images/rooms/${room.id}.jpg`, // Generate the image path dynamically
+  subcategories: room.services.map((service) => service.title), // Extract service titles
+}));
 
-                <p className="text-gray-600 text-2xl pt-2 pb-6">
-                    Comprehensive Home Renovations for Every Room
-                </p>
+// Prepare outdoor room data
+const outdoorRooms = ROOMS.outdoor.map((room) => ({
+  title: room.title,
+  image: `/images/rooms/${room.id}.jpg`, // Generate the image path dynamically
+  subcategories: room.services.map((service) => service.title), // Extract service titles
+}));
 
-                <ImageBoxGrid items={rooms} />
-            </div>
-        </section>
-    );
+export default function RoomsGrid({
+  title = 'Whole-Room Makeovers, Done Right',
+  subtitle = 'Comprehensive Home Renovations for Every Room',
+}: {
+  title?: string;
+  subtitle?: string;
+}) {
+  // State to toggle between indoor and outdoor types
+  const [selectedType, setSelectedType] = useState<'indoor' | 'outdoor'>('indoor');
+  const [rooms, setRooms] = useState(selectedType === 'indoor' ? indoorRooms : outdoorRooms);
+
+  // Update the rooms based on the selected type and shuffle the subcategories
+  useEffect(() => {
+    const shuffledRooms =
+      selectedType === 'indoor'
+        ? indoorRooms.map((room) => ({
+            ...room,
+            subcategories: shuffleArray(room.subcategories),
+          }))
+        : outdoorRooms.map((room) => ({
+            ...room,
+            subcategories: shuffleArray(room.subcategories),
+          }));
+    setRooms(shuffledRooms);
+  }, [selectedType]);
+
+  return (
+    <section className="py-16">
+      <div className="container mx-auto px-4">
+        {/* Section title */}
+        <SectionBoxTitle>
+          <div dangerouslySetInnerHTML={{ __html: title }} />
+          <p className="text-[30px] leading-[41px] font-normal text-gray-500">{subtitle}</p>
+        </SectionBoxTitle>
+
+        {/* Toggle buttons for indoor and outdoor */}
+        <div className="flex mb-8">
+          <div className="inline-flex rounded-lg border border-gray-200 p-1">
+            {/* Button for indoor */}
+            <button
+              onClick={() => setSelectedType('indoor')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                selectedType === 'indoor'
+                  ? 'bg-blue-600 text-white'
+                  : 'hover:bg-gray-100 text-gray-600'
+              }`}
+            >
+              Indoor
+            </button>
+
+            {/* Button for outdoor */}
+            <button
+              onClick={() => setSelectedType('outdoor')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                selectedType === 'outdoor'
+                  ? 'bg-blue-600 text-white'
+                  : 'hover:bg-gray-100 text-gray-600'
+              }`}
+            >
+              Outdoor
+            </button>
+          </div>
+        </div>
+
+        {/* Rooms grid */}
+        <ImageBoxGrid
+          items={rooms.map((room) => ({
+            id: room.title,
+            title: room.title,
+            image: room.image,
+            url: `/rooms/${room.title.toLowerCase().replace(/ /g, '_')}`, // Generate URL dynamically
+            subcategories: room.subcategories, // Pass subcategories
+          }))}
+          moreText="services" // Customize "more" text for this component
+        />
+      </div>
+    </section>
+  );
 }

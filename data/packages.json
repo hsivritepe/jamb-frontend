@@ -1,0 +1,1984 @@
+{
+  "Basic": {
+    "description": "Perfect for homeowners looking for a comprehensive yet cost-effective solution to maintain their home and garden.",
+    "indoor": [
+      {
+        "section_code": "1",
+        "section": "Electrical",
+        "category_code": "1.1",
+        "category": "Smoke detector",
+        "activity_code": "1.1.3",
+        "activity": "Smoke Detector Detach and Reset",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "7",
+        "section": "HVAC",
+        "category_code": "7.1",
+        "category": "Furnace",
+        "activity_code": "7.1.8",
+        "activity": "Routine Furnace Maintenance",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "7",
+        "section": "HVAC",
+        "category_code": "7.2",
+        "category": "Boiler",
+        "activity_code": "7.2.4",
+        "activity": "Boiler Regular Maintenance",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "7",
+        "section": "HVAC",
+        "category_code": "7.3",
+        "category": "Heat Pump",
+        "activity_code": "7.3.4",
+        "activity": "Heat Pump Regular Maintenance",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "7",
+        "section": "HVAC",
+        "category_code": "7.4",
+        "category": "Mini Split AC",
+        "activity_code": "7.4.6",
+        "activity": "Mini Split Air Conditioner Routine Maintenance",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      }
+    ],
+    "outdoor": [
+      {
+        "section_code": "9",
+        "section": "Outdoor Carpentry",
+        "category_code": "9.12",
+        "category": "Maintenance",
+        "activity_code": "9.12.1",
+        "activity": "Outdoor Carpentry Inspection and Assessment",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "9",
+        "section": "Outdoor Carpentry",
+        "category_code": "9.12",
+        "category": "Maintenance",
+        "activity_code": "9.12.2",
+        "activity": "Outdoor Carpentry Pest Prevention",
+        "unit_of_measurement": "sq ft",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "10",
+        "section": "Outdoor Electrical",
+        "category_code": "10.1",
+        "category": "Electrical Panel",
+        "activity_code": "10.1.5",
+        "activity": "Outdoor Electrical Panel Safety Inspection",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "11",
+        "section": "Outdoor Cleaning",
+        "category_code": "11.2",
+        "category": "Driveway",
+        "activity_code": "11.2.1",
+        "activity": "Driveway Pressure Washing",
+        "unit_of_measurement": "sq ft",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "11",
+        "section": "Outdoor Cleaning",
+        "category_code": "11.6",
+        "category": "Gutter",
+        "activity_code": "11.6.1",
+        "activity": "Gutter Debris Removal and Pressure Washing",
+        "unit_of_measurement": "lin ft",
+        "quantity_per_year": 2
+      }
+    ]
+  },
+  "Enhanced": {
+    "description": "Designed for homeowners seeking a more extensive range of home and garden maintenance services.",
+    "indoor": [
+      {
+        "section_code": "1",
+        "section": "Electrical",
+        "category_code": "1.1",
+        "category": "Smoke detector",
+        "activity_code": "1.1.3",
+        "activity": "Smoke Detector Detach and Reset",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "7",
+        "section": "HVAC",
+        "category_code": "7.1",
+        "category": "Furnace",
+        "activity_code": "7.1.8",
+        "activity": "Routine Furnace Maintenance",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "7",
+        "section": "HVAC",
+        "category_code": "7.2",
+        "category": "Boiler",
+        "activity_code": "7.2.4",
+        "activity": "Boiler Regular Maintenance",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "7",
+        "section": "HVAC",
+        "category_code": "7.3",
+        "category": "Heat Pump",
+        "activity_code": "7.3.4",
+        "activity": "Heat Pump Regular Maintenance",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "7",
+        "section": "HVAC",
+        "category_code": "7.4",
+        "category": "Mini Split AC",
+        "activity_code": "7.4.6",
+        "activity": "Mini Split Air Conditioner Routine Maintenance",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "7",
+        "section": "HVAC",
+        "category_code": "7.6",
+        "category": "Ventilation System",
+        "activity_code": "7.6.4",
+        "activity": "Ventilation System Duct Cleaning and Maintenance",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning",
+        "category_code": "12.2",
+        "category": "General Cleaning",
+        "activity_code": "12.2.1",
+        "activity": "1BED/1BATH General Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning",
+        "category_code": "12.2",
+        "category": "General Cleaning",
+        "activity_code": "12.2.2",
+        "activity": "2BED/1BATH General Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning",
+        "category_code": "12.2",
+        "category": "General Cleaning",
+        "activity_code": "12.2.3",
+        "activity": "2BED/2BATH General Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning",
+        "category_code": "12.2",
+        "category": "General Cleaning",
+        "activity_code": "12.2.4",
+        "activity": "3BED/1BATH General Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning",
+        "category_code": "12.2",
+        "category": "General Cleaning",
+        "activity_code": "12.2.5",
+        "activity": "3BED/2BATH General Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning",
+        "category_code": "12.2",
+        "category": "General Cleaning",
+        "activity_code": "12.2.6",
+        "activity": "4BED/3BATH General Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning",
+        "category_code": "12.2",
+        "category": "General Cleaning",
+        "activity_code": "12.2.7",
+        "activity": "4BED/4BATH General Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning",
+        "category_code": "12.2",
+        "category": "General Cleaning",
+        "activity_code": "12.2.8",
+        "activity": "4BED/5BATH General Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning",
+        "category_code": "12.2",
+        "category": "General Cleaning",
+        "activity_code": "12.2.9",
+        "activity": "5BED/5BATH General Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "14",
+        "section": "Appliance",
+        "category_code": "14.8",
+        "category": "Diagnostic",
+        "activity_code": "14.8.6",
+        "activity": "Appliance Water System Diagnostic",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "14",
+        "section": "Appliance",
+        "category_code": "14.8",
+        "category": "Diagnostic",
+        "activity_code": "14.8.7",
+        "activity": "Appliance Thermal Diagnostic",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "14",
+        "section": "Appliance",
+        "category_code": "14.8",
+        "category": "Diagnostic",
+        "activity_code": "14.8.8",
+        "activity": "Appliance Noise and Vibration Diagnostic",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "14",
+        "section": "Appliance",
+        "category_code": "14.8",
+        "category": "Diagnostic",
+        "activity_code": "14.8.9",
+        "activity": "Appliance Connectivity Diagnostic",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "14",
+        "section": "Appliance",
+        "category_code": "14.8",
+        "category": "Diagnostic",
+        "activity_code": "14.8.10",
+        "activity": "Appliance Energy Efficiency Diagnostic",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      }
+    ],
+    "outdoor": [
+      {
+        "section_code": "9",
+        "section": "Outdoor Carpentry",
+        "category_code": "9.12",
+        "category": "Maintenance",
+        "activity_code": "9.12.1",
+        "activity": "Outdoor Carpentry Inspection and Assessment",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "9",
+        "section": "Outdoor Carpentry",
+        "category_code": "9.12",
+        "category": "Maintenance",
+        "activity_code": "9.12.2",
+        "activity": "Outdoor Carpentry Pest Prevention",
+        "unit_of_measurement": "sq ft",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "10",
+        "section": "Outdoor Electrical",
+        "category_code": "10.1",
+        "category": "Electrical Panel",
+        "activity_code": "10.1.5",
+        "activity": "Outdoor Electrical Panel Safety Inspection",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "10",
+        "section": "Outdoor Electrical",
+        "category_code": "10.7",
+        "category": "Backup Power",
+        "activity_code": "10.7.2",
+        "activity": "Whole House Generator Maintenance",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "10",
+        "section": "Outdoor Electrical",
+        "category_code": "10.8",
+        "category": "Safety Inspections",
+        "activity_code": "10.8.3",
+        "activity": "Outdoor Electrical Seasonal Preparation",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "11",
+        "section": "Outdoor Cleaning",
+        "category_code": "11.1",
+        "category": "Deck and Patio",
+        "activity_code": "11.1.1",
+        "activity": "Deck and Patio Pressure Washing",
+        "unit_of_measurement": "sq ft",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "11",
+        "section": "Outdoor Cleaning",
+        "category_code": "11.2",
+        "category": "Driveway",
+        "activity_code": "11.2.1",
+        "activity": "Driveway Pressure Washing",
+        "unit_of_measurement": "sq ft",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "11",
+        "section": "Outdoor Cleaning",
+        "category_code": "11.6",
+        "category": "Gutter",
+        "activity_code": "11.6.1",
+        "activity": "Gutter Debris Removal and Pressure Washing",
+        "unit_of_measurement": "lin ft",
+        "quantity_per_year": 2
+      },
+      {
+        "section_code": "20",
+        "section": "Landscaping",
+        "category_code": "20.1",
+        "category": "Lawn Maintenance",
+        "activity_code": "20.1.4",
+        "activity": "Spring Lawn Revitalization",
+        "unit_of_measurement": "1000 sq ft",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "20",
+        "section": "Landscaping",
+        "category_code": "20.1",
+        "category": "Lawn Maintenance",
+        "activity_code": "20.1.5",
+        "activity": "Autumn Lawn Preparation",
+        "unit_of_measurement": "1000 sq ft",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "20",
+        "section": "Landscaping",
+        "category_code": "20.1",
+        "category": "Lawn Maintenance",
+        "activity_code": "20.1.6",
+        "activity": "Lawn Winterization",
+        "unit_of_measurement": "1000 sq ft",
+        "quantity_per_year": 1
+      }
+    ]
+  },
+  "All-inclusive": {
+    "description": "The most comprehensive offering, tailored for homeowners who demand the highest level of care and attention for their property.",
+    "indoor": [
+      {
+        "section_code": "1",
+        "section": "Electrical",
+        "category_code": "1.1",
+        "category": "Smoke detector",
+        "activity_code": "1.1.3",
+        "activity": "Smoke Detector Detach and Reset",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "7",
+        "section": "HVAC",
+        "category_code": "7.1",
+        "category": "Furnace",
+        "activity_code": "7.1.8",
+        "activity": "Routine Furnace Maintenance",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "7",
+        "section": "HVAC",
+        "category_code": "7.2",
+        "category": "Boiler",
+        "activity_code": "7.2.4",
+        "activity": "Boiler Regular Maintenance",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "7",
+        "section": "HVAC",
+        "category_code": "7.3",
+        "category": "Heat Pump",
+        "activity_code": "7.3.4",
+        "activity": "Heat Pump Regular Maintenance",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "7",
+        "section": "HVAC",
+        "category_code": "7.4",
+        "category": "Mini Split AC",
+        "activity_code": "7.4.6",
+        "activity": "Mini Split Air Conditioner Routine Maintenance",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "7",
+        "section": "HVAC",
+        "category_code": "7.6",
+        "category": "Ventilation System",
+        "activity_code": "7.6.4",
+        "activity": "Ventilation System Duct Cleaning and Maintenance",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "7",
+        "section": "HVAC",
+        "category_code": "7.10",
+        "category": "Air Quality",
+        "activity_code": "7.10.4",
+        "activity": "Humidifier/Dehumidifier Maintenance",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning",
+        "category_code": "12.1",
+        "category": "Regular Cleaning",
+        "activity_code": "12.1.1",
+        "activity": "1BED/1BATH Regular Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning",
+        "category_code": "12.1",
+        "category": "Regular Cleaning",
+        "activity_code": "12.1.2",
+        "activity": "2BED/1BATH Regular Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning",
+        "category_code": "12.1",
+        "category": "Regular Cleaning",
+        "activity_code": "12.1.3",
+        "activity": "2BED/2BATH Regular Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning",
+        "category_code": "12.1",
+        "category": "Regular Cleaning",
+        "activity_code": "12.1.4",
+        "activity": "3BED/1BATH Regular Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning",
+        "category_code": "12.1",
+        "category": "Regular Cleaning",
+        "activity_code": "12.1.5",
+        "activity": "3BED/2BATH Regular Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning",
+        "category_code": "12.1",
+        "category": "Regular Cleaning",
+        "activity_code": "12.1.6",
+        "activity": "4BED/3BATH Regular Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning",
+        "category_code": "12.1",
+        "category": "Regular Cleaning",
+        "activity_code": "12.1.7",
+        "activity": "4BED/4BATH Regular Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning",
+        "category_code": "12.1",
+        "category": "Regular Cleaning",
+        "activity_code": "12.1.8",
+        "activity": "4BED/5BATH Regular Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning",
+        "category_code": "12.1",
+        "category": "Regular Cleaning",
+        "activity_code": "12.1.9",
+        "activity": "5BED/5BATH Regular Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning",
+        "category_code": "12.2",
+        "category": "General Cleaning",
+        "activity_code": "12.2.1",
+        "activity": "1BED/1BATH General Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning",
+        "category_code": "12.2",
+        "category": "General Cleaning",
+        "activity_code": "12.2.2",
+        "activity": "2BED/1BATH General Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning",
+        "category_code": "12.2",
+        "category": "General Cleaning",
+        "activity_code": "12.2.3",
+        "activity": "2BED/2BATH General Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning",
+        "category_code": "12.2",
+        "category": "General Cleaning",
+        "activity_code": "12.2.4",
+        "activity": "3BED/1BATH General Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning",
+        "category_code": "12.2",
+        "category": "General Cleaning",
+        "activity_code": "12.2.5",
+        "activity": "3BED/2BATH General Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning",
+        "category_code": "12.2",
+        "category": "General Cleaning",
+        "activity_code": "12.2.6",
+        "activity": "4BED/3BATH General Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning",
+        "category_code": "12.2",
+        "category": "General Cleaning",
+        "activity_code": "12.2.7",
+        "activity": "4BED/4BATH General Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning",
+        "category_code": "12.2",
+        "category": "General Cleaning",
+        "activity_code": "12.2.8",
+        "activity": "4BED/5BATH General Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning",
+        "category_code": "12.2",
+        "category": "General Cleaning",
+        "activity_code": "12.2.9",
+        "activity": "5BED/5BATH General Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning",
+        "category_code": "12.3",
+        "category": "Specialized",
+        "activity_code": "12.3.1",
+        "activity": "Fireplace Chimney Sweep Cleaning and Service",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning",
+        "category_code": "12.3",
+        "category": "Specialized",
+        "activity_code": "12.3.3",
+        "activity": "Carpet Stairs Cleaning",
+        "unit_of_measurement": "step",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning",
+        "category_code": "12.3",
+        "category": "Specialized",
+        "activity_code": "12.3.4",
+        "activity": "Tile – Heavy Cleaning",
+        "unit_of_measurement": "sq ft",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning",
+        "category_code": "12.3",
+        "category": "Specialized",
+        "activity_code": "12.3.5",
+        "activity": "Natural Marble – Heavy Cleaning",
+        "unit_of_measurement": "sq ft",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning",
+        "category_code": "12.4",
+        "category": "Windows",
+        "activity_code": "12.4.1",
+        "activity": "Window Cleaning (per side)",
+        "unit_of_measurement": "41 - 60 SF",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning",
+        "category_code": "12.4",
+        "category": "Windows",
+        "activity_code": "12.4.2",
+        "activity": "Window Cleaning (Per Side)",
+        "unit_of_measurement": "41 - 60 SF",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning",
+        "category_code": "12.4",
+        "category": "Windows",
+        "activity_code": "12.4.3",
+        "activity": "Window Screen Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "14",
+        "section": "Appliance",
+        "category_code": "14.7",
+        "category": "Range Hood",
+        "activity_code": "14.7.1",
+        "activity": "Range Hood Cleaning and Maintenance",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "14",
+        "section": "Appliance",
+        "category_code": "14.8",
+        "category": "Diagnostic",
+        "activity_code": "14.8.6",
+        "activity": "Appliance Water System Diagnostic",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "14",
+        "section": "Appliance",
+        "category_code": "14.8",
+        "category": "Diagnostic",
+        "activity_code": "14.8.7",
+        "activity": "Appliance Thermal Diagnostic",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "14",
+        "section": "Appliance",
+        "category_code": "14.8",
+        "category": "Diagnostic",
+        "activity_code": "14.8.8",
+        "activity": "Appliance Noise and Vibration Diagnostic",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "14",
+        "section": "Appliance",
+        "category_code": "14.8",
+        "category": "Diagnostic",
+        "activity_code": "14.8.9",
+        "activity": "Appliance Connectivity Diagnostic",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "14",
+        "section": "Appliance",
+        "category_code": "14.8",
+        "category": "Diagnostic",
+        "activity_code": "14.8.10",
+        "activity": "Appliance Energy Efficiency Diagnostic",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "15",
+        "section": "Security",
+        "category_code": "15.3",
+        "category": "Smart Lock",
+        "activity_code": "15.3.2",
+        "activity": "Smart Lock Maintenance and Troubleshooting",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "17",
+        "section": "Furniture",
+        "category_code": "17.4",
+        "category": "Cleaning",
+        "activity_code": "17.4.1",
+        "activity": "Wood Furniture Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "17",
+        "section": "Furniture",
+        "category_code": "17.4",
+        "category": "Cleaning",
+        "activity_code": "17.4.2",
+        "activity": "Stainless Steel Furniture Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "17",
+        "section": "Furniture",
+        "category_code": "17.4",
+        "category": "Cleaning",
+        "activity_code": "17.4.3",
+        "activity": "Copper and Brass Furniture Cleaning",
+        "unit_of_measurement": "item",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "17",
+        "section": "Furniture",
+        "category_code": "17.4",
+        "category": "Cleaning",
+        "activity_code": "17.4.4",
+        "activity": "Metal and Cast Iron Furniture Cleaning",
+        "unit_of_measurement": "item",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "17",
+        "section": "Furniture",
+        "category_code": "17.6",
+        "category": "Upholstery",
+        "activity_code": "17.6.1",
+        "activity": "Leather Upholstery Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "17",
+        "section": "Furniture",
+        "category_code": "17.6",
+        "category": "Upholstery",
+        "activity_code": "17.6.2",
+        "activity": "Fabric Upholstery Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      }
+    ],
+    "outdoor": [
+      {
+        "section_code": "9",
+        "section": "Outdoor Carpentry",
+        "category_code": "9.12",
+        "category": "Maintenance",
+        "activity_code": "9.12.1",
+        "activity": "Outdoor Carpentry Inspection and Assessment",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "9",
+        "section": "Outdoor Carpentry",
+        "category_code": "9.12",
+        "category": "Maintenance",
+        "activity_code": "9.12.2",
+        "activity": "Outdoor Carpentry Pest Prevention",
+        "unit_of_measurement": "sq ft",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "9",
+        "section": "Outdoor Carpentry",
+        "category_code": "9.12",
+        "category": "Maintenance",
+        "activity_code": "9.12.5",
+        "activity": "Outdoor Carpentry Winter Prep",
+        "unit_of_measurement": "sq ft",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "10",
+        "section": "Outdoor Electrical",
+        "category_code": "10.1",
+        "category": "Electrical Panel",
+        "activity_code": "10.1.5",
+        "activity": "Outdoor Electrical Panel Safety Inspection",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "10",
+        "section": "Outdoor Electrical",
+        "category_code": "10.7",
+        "category": "Backup Power",
+        "activity_code": "10.7.2",
+        "activity": "Whole House Generator Maintenance",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "10",
+        "section": "Outdoor Electrical",
+        "category_code": "10.8",
+        "category": "Safety Inspections",
+        "activity_code": "10.8.2",
+        "activity": "Electrical Panel and Circuit Breakers Inspection",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "10",
+        "section": "Outdoor Electrical",
+        "category_code": "10.8",
+        "category": "Safety Inspections",
+        "activity_code": "10.8.3",
+        "activity": "Outdoor Electrical Seasonal Preparation",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "10",
+        "section": "Outdoor Electrical",
+        "category_code": "10.10",
+        "category": "Maintenance",
+        "activity_code": "10.10.3",
+        "activity": "Outdoor Electrical Wiring Maintenance",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "11",
+        "section": "Outdoor Cleaning",
+        "category_code": "11.1",
+        "category": "Deck and Patio",
+        "activity_code": "11.1.1",
+        "activity": "Deck and Patio Pressure Washing",
+        "unit_of_measurement": "sq ft",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "11",
+        "section": "Outdoor Cleaning",
+        "category_code": "11.1",
+        "category": "Deck and Patio",
+        "activity_code": "11.1.2",
+        "activity": "Deck and Patio Soft Washing",
+        "unit_of_measurement": "sq ft",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "11",
+        "section": "Outdoor Cleaning",
+        "category_code": "11.2",
+        "category": "Driveway",
+        "activity_code": "11.2.1",
+        "activity": "Driveway Pressure Washing",
+        "unit_of_measurement": "sq ft",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "11",
+        "section": "Outdoor Cleaning",
+        "category_code": "11.3",
+        "category": "Hot Tub",
+        "activity_code": "11.3.1",
+        "activity": "Hot Tub Regular Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "11",
+        "section": "Outdoor Cleaning",
+        "category_code": "11.5",
+        "category": "Fence",
+        "activity_code": "11.5.1",
+        "activity": "Fence Pressure Washing",
+        "unit_of_measurement": "sq ft",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "11",
+        "section": "Outdoor Cleaning",
+        "category_code": "11.6",
+        "category": "Gutter",
+        "activity_code": "11.6.1",
+        "activity": "Gutter Debris Removal and Pressure Washing",
+        "unit_of_measurement": "lin ft",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "11",
+        "section": "Outdoor Cleaning",
+        "category_code": "11.8",
+        "category": "Exterior Fixture",
+        "activity_code": "11.8.1",
+        "activity": "Exterior Lighting Fixture Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "11",
+        "section": "Outdoor Cleaning",
+        "category_code": "11.8",
+        "category": "Exterior Fixture",
+        "activity_code": "11.8.2",
+        "activity": "Exterior Decorative Element Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "11",
+        "section": "Outdoor Cleaning",
+        "category_code": "11.8",
+        "category": "Exterior Fixture",
+        "activity_code": "11.8.3",
+        "activity": "Exterior Decoration Element Washing",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "11",
+        "section": "Pool",
+        "category_code": "11.9",
+        "category": "Maintenance",
+        "activity_code": "11.9.1",
+        "activity": "Regular Outdoor Pool Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "11",
+        "section": "Doors and Windows",
+        "category_code": "11.10",
+        "category": "Maintenance",
+        "activity_code": "11.10.5",
+        "activity": "Garage Door Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "18",
+        "section": "Outdoor Lighting",
+        "category_code": "18.8",
+        "category": "Maintenance",
+        "activity_code": "18.8.3",
+        "activity": "Outdoor Electrical System Maintenance",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "20",
+        "section": "Landscaping",
+        "category_code": "20.1",
+        "category": "Lawn Maintenance",
+        "activity_code": "20.1.1",
+        "activity": "Regular Lawn Mowing",
+        "unit_of_measurement": "1000 sq ft",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "20",
+        "section": "Landscaping",
+        "category_code": "20.1",
+        "category": "Lawn Maintenance",
+        "activity_code": "20.1.3",
+        "activity": "Lawn Aeration and Scarifying",
+        "unit_of_measurement": "1000 sq ft",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "20",
+        "section": "Landscaping",
+        "category_code": "20.1",
+        "category": "Lawn Maintenance",
+        "activity_code": "20.1.4",
+        "activity": "Spring Lawn Revitalization",
+        "unit_of_measurement": "1000 sq ft",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "20",
+        "section": "Landscaping",
+        "category_code": "20.1",
+        "category": "Lawn Maintenance",
+        "activity_code": "20.1.5",
+        "activity": "Autumn Lawn Preparation",
+        "unit_of_measurement": "1000 sq ft",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "20",
+        "section": "Landscaping",
+        "category_code": "20.1",
+        "category": "Lawn Maintenance",
+        "activity_code": "20.1.6",
+        "activity": "Lawn Winterization",
+        "unit_of_measurement": "1000 sq ft",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "20",
+        "section": "Landscaping",
+        "category_code": "20.3",
+        "category": "Tree Pruning",
+        "activity_code": "20.3.4",
+        "activity": "Tree Stump Grinding",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "20",
+        "section": "Landscaping",
+        "category_code": "20.9",
+        "category": "Hedge",
+        "activity_code": "20.9.2",
+        "activity": "Hedge Pruning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "20",
+        "section": "Water Features",
+        "category_code": "20.11",
+        "category": "Maintenance",
+        "activity_code": "20.11.3",
+        "activity": "Ponds and Fountains Maintenance",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "20",
+        "section": "Irrigation System",
+        "category_code": "20.12",
+        "category": "Maintenance",
+        "activity_code": "20.12.16",
+        "activity": "Irrigation System Maintenance",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "22",
+        "section": "Outdoor Appliance",
+        "category_code": "22.1",
+        "category": "Grills",
+        "activity_code": "22.1.2",
+        "activity": "Outdoor Grill Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "22",
+        "section": "Outdoor Appliance",
+        "category_code": "22.5",
+        "category": "Outdoor Kitchen",
+        "activity_code": "22.5.1",
+        "activity": "Outdoor Kitchen Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      }
+    ]
+  },
+  "Configure your own package": {    
+    "description": "Put together a package of the services you need.",
+    "indoor": [
+      {
+        "section_code": "1",
+        "section": "Electrical - Smoke detector",
+        "activity_code": "1.1.3",
+        "activity": "Smoke Detector Detach and Reset",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "7",
+        "section": "HVAC - Furnace",
+        "activity_code": "7.1.8",
+        "activity": "Routine Furnace Maintenance",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "7",
+        "section": "HVAC - Boiler",
+        "activity_code": "7.2.4",
+        "activity": "Boiler Regular Maintenance",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "7",
+        "section": "HVAC - Heat Pump",
+        "activity_code": "7.3.4",
+        "activity": "Heat Pump Regular Maintenance",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "7",
+        "section": "HVAC - Mini Split AC",
+        "activity_code": "7.4.6",
+        "activity": "Mini Split Air Conditioner Routine Maintenance",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "7",
+        "section": "HVAC - Ventilation System",
+        "activity_code": "7.6.4",
+        "activity": "Ventilation System Duct Cleaning and Maintenance",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "7",
+        "section": "HVAC - Air Quality",
+        "activity_code": "7.10.4",
+        "activity": "Humidifier/Dehumidifier Maintenance",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning - Regular Cleaning",
+        "activity_code": "12.1.1",
+        "activity": "1BED/1BATH Regular Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning - Regular Cleaning",
+        "activity_code": "12.1.2",
+        "activity": "2BED/1BATH Regular Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning - Regular Cleaning",
+        "activity_code": "12.1.3",
+        "activity": "2BED/2BATH Regular Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning - Regular Cleaning",
+        "activity_code": "12.1.4",
+        "activity": "3BED/1BATH Regular Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning - Regular Cleaning",
+        "activity_code": "12.1.5",
+        "activity": "3BED/2BATH Regular Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning - Regular Cleaning",
+        "activity_code": "12.1.6",
+        "activity": "4BED/3BATH Regular Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning - Regular Cleaning",
+        "activity_code": "12.1.7",
+        "activity": "4BED/4BATH Regular Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning - Regular Cleaning",
+        "activity_code": "12.1.8",
+        "activity": "4BED/5BATH Regular Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning - Regular Cleaning",
+        "activity_code": "12.1.9",
+        "activity": "5BED/5BATH Regular Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning - General Cleaning",
+        "activity_code": "12.2.1",
+        "activity": "1BED/1BATH General Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning - General Cleaning",
+        "activity_code": "12.2.2",
+        "activity": "2BED/1BATH General Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning - General Cleaning",
+        "activity_code": "12.2.3",
+        "activity": "2BED/2BATH General Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning - General Cleaning",
+        "activity_code": "12.2.4",
+        "activity": "3BED/1BATH General Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning - General Cleaning",
+        "activity_code": "12.2.5",
+        "activity": "3BED/2BATH General Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning - General Cleaning",
+        "activity_code": "12.2.6",
+        "activity": "4BED/3BATH General Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning - General Cleaning",
+        "activity_code": "12.2.7",
+        "activity": "4BED/4BATH General Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning - General Cleaning",
+        "activity_code": "12.2.8",
+        "activity": "4BED/5BATH General Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning - General Cleaning",
+        "activity_code": "12.2.9",
+        "activity": "5BED/5BATH General Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning - Specialized",
+        "activity_code": "12.3.1",
+        "activity": "Fireplace Chimney Sweep Cleaning and Service",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning - Specialized",
+        "activity_code": "12.3.3",
+        "activity": "Carpet Stairs Cleaning",
+        "unit_of_measurement": "step",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning - Specialized",
+        "activity_code": "12.3.4",
+        "activity": "Tile - Heavy Cleaning",
+        "unit_of_measurement": "sq ft",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning - Specialized",
+        "activity_code": "12.3.5",
+        "activity": "Natural Marble - Heavy Cleaning",
+        "unit_of_measurement": "sq ft",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning - Windows",
+        "activity_code": "12.4.1",
+        "activity": "Window Cleaning (per side)",
+        "unit_of_measurement": "41 - 60 SF",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning - Windows",
+        "activity_code": "12.4.2",
+        "activity": "Window Cleaning (Per Side)",
+        "unit_of_measurement": "41 - 60 SF",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "12",
+        "section": "Cleaning - Windows",
+        "activity_code": "12.4.3",
+        "activity": "Window Screen Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "13",
+        "section": "Wall and Ceiling - Drywall repair",
+        "activity_code": "13.1.1",
+        "activity": "Drywall Cracks Repair",
+        "unit_of_measurement": "lin ft",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "13",
+        "section": "Wall and Ceiling - Drywall repair",
+        "activity_code": "13.1.2",
+        "activity": "Drywall Holes Repair (up to 4 Square Feet)",
+        "unit_of_measurement": "sq ft",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "13",
+        "section": "Wall and Ceiling - Drywall repair",
+        "activity_code": "13.1.3",
+        "activity": "Drywall Patches Repair",
+        "unit_of_measurement": "sq ft",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "13",
+        "section": "Wall and Ceiling - Drywall repair",
+        "activity_code": "13.1.5",
+        "activity": "Drywall Repair and Painting",
+        "unit_of_measurement": "sq ft",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "13",
+        "section": "Wall and Ceiling - Drywall repair",
+        "activity_code": "13.1.6",
+        "activity": "Drywall Ceiling Repair",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "14",
+        "section": "Appliance - Range Hood",
+        "activity_code": "14.7.1",
+        "activity": "Range Hood Cleaning and Maintenance",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "14",
+        "section": "Appliance - Diagnostic",
+        "activity_code": "14.8.6",
+        "activity": "Appliance Water System Diagnostic",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "14",
+        "section": "Appliance - Diagnostic",
+        "activity_code": "14.8.7",
+        "activity": "Appliance Thermal Diagnostic",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "14",
+        "section": "Appliance - Diagnostic",
+        "activity_code": "14.8.8",
+        "activity": "Appliance Noise and Vibration Diagnostic",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "14",
+        "section": "Appliance - Diagnostic",
+        "activity_code": "14.8.9",
+        "activity": "Appliance Connectivity Diagnostic",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "14",
+        "section": "Appliance - Diagnostic",
+        "activity_code": "14.8.10",
+        "activity": "Appliance Energy Efficiency Diagnostic",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "15",
+        "section": "Security - Smart Lock",
+        "activity_code": "15.3.2",
+        "activity": "Smart Lock Maintenance and Troubleshooting",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "17",
+        "section": "Furniture - Cleaning",
+        "activity_code": "17.4.1",
+        "activity": "Wood Furniture Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "17",
+        "section": "Furniture - Cleaning",
+        "activity_code": "17.4.2",
+        "activity": "Stainless Steel Furniture Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "17",
+        "section": "Furniture - Cleaning",
+        "activity_code": "17.4.3",
+        "activity": "Copper and Brass Furniture Cleaning",
+        "unit_of_measurement": "item",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "17",
+        "section": "Furniture - Cleaning",
+        "activity_code": "17.4.4",
+        "activity": "Metal and Cast Iron Furniture Cleaning",
+        "unit_of_measurement": "item",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "17",
+        "section": "Furniture - Upholstery",
+        "activity_code": "17.6.1",
+        "activity": "Leather Upholstery Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "17",
+        "section": "Furniture - Upholstery",
+        "activity_code": "17.6.2",
+        "activity": "Fabric Upholstery Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "17",
+        "section": "Furniture - Upholstery",
+        "activity_code": "17.6.3",
+        "activity": "Upholstery Repair",
+        "unit_of_measurement": "piece",
+        "quantity_per_year": 1
+      }
+    ],
+    "outdoor": [
+      {
+        "section_code": "9",
+        "section": "Outdoor Carpentry - Maintenance",
+        "activity_code": "9.12.1",
+        "activity": "Outdoor Carpentry Inspection and Assessment",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "9",
+        "section": "Outdoor Carpentry - Maintenance",
+        "activity_code": "9.12.2",
+        "activity": "Outdoor Carpentry Pest Prevention",
+        "unit_of_measurement": "sq ft",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "9",
+        "section": "Outdoor Carpentry - Maintenance",
+        "activity_code": "9.12.5",
+        "activity": "Outdoor Carpentry Winter Prep",
+        "unit_of_measurement": "sq ft",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "10",
+        "section": "Outdoor Electrical - Electrical Panel",
+        "activity_code": "10.1.5",
+        "activity": "Outdoor Electrical Panel Safety Inspection",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "10",
+        "section": "Outdoor Electrical - Backup Power",
+        "activity_code": "10.7.2",
+        "activity": "Whole House Generator Maintenance",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "10",
+        "section": "Outdoor Electrical - Safety Inspections",
+        "activity_code": "10.8.2",
+        "activity": "Electrical Panel and Circuit Breakers Inspection",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "10",
+        "section": "Outdoor Electrical - Safety Inspections",
+        "activity_code": "10.8.3",
+        "activity": "Outdoor Electrical Seasonal Preparation",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "10",
+        "section": "Outdoor Electrical - Maintenance",
+        "activity_code": "10.10.3",
+        "activity": "Outdoor Electrical Wiring Maintenance",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "11",
+        "section": "Outdoor Cleaning - Deck and Patio",
+        "activity_code": "11.1.1",
+        "activity": "Deck and Patio Pressure Washing",
+        "unit_of_measurement": "sq ft",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "11",
+        "section": "Outdoor Cleaning - Deck and Patio",
+        "activity_code": "11.1.2",
+        "activity": "Deck and Patio Soft Washing",
+        "unit_of_measurement": "sq ft",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "11",
+        "section": "Outdoor Cleaning - Driveway",
+        "activity_code": "11.2.1",
+        "activity": "Driveway Pressure Washing",
+        "unit_of_measurement": "sq ft",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "11",
+        "section": "Outdoor Cleaning - Hot Tub",
+        "activity_code": "11.3.1",
+        "activity": "Hot Tub Regular Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "11",
+        "section": "Outdoor Cleaning - Fence",
+        "activity_code": "11.5.1",
+        "activity": "Fence Pressure Washing",
+        "unit_of_measurement": "sq ft",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "11",
+        "section": "Outdoor Cleaning - Gutter",
+        "activity_code": "11.6.1",
+        "activity": "Gutter Debris Removal and Pressure Washing",
+        "unit_of_measurement": "lin ft",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "11",
+        "section": "Outdoor Cleaning - Exterior Fixture",
+        "activity_code": "11.8.1",
+        "activity": "Exterior Lighting Fixture Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "11",
+        "section": "Outdoor Cleaning - Exterior Fixture",
+        "activity_code": "11.8.2",
+        "activity": "Exterior Decorative Element Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "11",
+        "section": "Outdoor Cleaning - Exterior Fixture",
+        "activity_code": "11.8.3",
+        "activity": "Exterior Decoration Element Washing",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "11",
+        "section": "Pool - Maintenance",
+        "activity_code": "11.9.1",
+        "activity": "Regular Outdoor Pool Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "11",
+        "section": "Pool - Maintenance",
+        "activity_code": "11.9.3",
+        "activity": "Pool Filter and Equipment Maintenance",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "11",
+        "section": "Doors and Windows - Maintenance",
+        "activity_code": "11.10.1",
+        "activity": "Garage Door Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "18",
+        "section": "Outdoor Lighting - Christmas Lights",
+        "activity_code": "18.7.1",
+        "activity": "Christmas Lights Installation on a One-Story Building",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "18",
+        "section": "Outdoor Lighting - Christmas Lights",
+        "activity_code": "18.7.2",
+        "activity": "Roofline and Eaves Installation on a 2-3 Story Building",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "18",
+        "section": "Outdoor Lighting - Christmas Lights",
+        "activity_code": "18.7.3",
+        "activity": "Christmas Tree and Shrub Wrapping",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "18",
+        "section": "Outdoor Lighting - Christmas Lights",
+        "activity_code": "18.7.4",
+        "activity": "Large Tree and Shrub Wrapping",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "18",
+        "section": "Outdoor Lighting - Christmas Lights",
+        "activity_code": "18.7.5",
+        "activity": "Christmas Lights Installation from Customer Materials (Labor)",
+        "unit_of_measurement": "labor day",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "18",
+        "section": "Outdoor Lighting - Christmas Lights",
+        "activity_code": "18.7.6",
+        "activity": "Christmas Lights Removal",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "18",
+        "section": "Outdoor Lighting - Maintenance",
+        "activity_code": "18.8.3",
+        "activity": "Outdoor Electrical System Maintenance",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "19",
+        "section": "Roofing - Roof Ventilation",
+        "activity_code": "19.8.1",
+        "activity": "Roof Ventilation Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "20",
+        "section": "Landscaping - Lawn Maintenance",
+        "activity_code": "20.1.1",
+        "activity": "Regular Lawn Mowing",
+        "unit_of_measurement": "1000 sq ft",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "20",
+        "section": "Landscaping - Lawn Maintenance",
+        "activity_code": "20.1.2",
+        "activity": "Lawn Edging and Trimming",
+        "unit_of_measurement": "1000 sq ft",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "20",
+        "section": "Landscaping - Lawn Maintenance",
+        "activity_code": "20.1.3",
+        "activity": "Lawn Aeration and Scarifying",
+        "unit_of_measurement": "1000 sq ft",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "20",
+        "section": "Landscaping - Lawn Maintenance",
+        "activity_code": "20.1.4",
+        "activity": "Spring Lawn Revitalization",
+        "unit_of_measurement": "1000 sq ft",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "20",
+        "section": "Landscaping - Lawn Maintenance",
+        "activity_code": "20.1.5",
+        "activity": "Autumn Lawn Preparation",
+        "unit_of_measurement": "1000 sq ft",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "20",
+        "section": "Landscaping - Lawn Maintenance",
+        "activity_code": "20.1.6",
+        "activity": "Lawn Winterization",
+        "unit_of_measurement": "1000 sq ft",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "20",
+        "section": "Landscaping - Tree Pruning",
+        "activity_code": "20.3.2",
+        "activity": "Tree Pruning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "20",
+        "section": "Landscaping - Tree Pruning",
+        "activity_code": "20.3.3",
+        "activity": "Tree Formative Pruning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "20",
+        "section": "Landscaping - Tree Pruning",
+        "activity_code": "20.3.4",
+        "activity": "Tree Stump Grinding",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "20",
+        "section": "Landscaping - Hedge",
+        "activity_code": "20.9.2",
+        "activity": "Hedge Pruning",
+        "unit_of_measurement": "hour",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "20",
+        "section": "Landscaping - Water Features",
+        "activity_code": "20.11.3",
+        "activity": "Ponds and Fountains Maintenance",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "20",
+        "section": "Landscaping - Irrigation System",
+        "activity_code": "20.12.5",
+        "activity": "Irrigation System Winterization",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "20",
+        "section": "Landscaping - Irrigation System",
+        "activity_code": "20.12.6",
+        "activity": "Irrigation System Spring Activation",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "20",
+        "section": "Landscaping - Irrigation System",
+        "activity_code": "20.12.16",
+        "activity": "Irrigation System Maintenance",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "22",
+        "section": "Outdoor Appliance - Grills",
+        "activity_code": "22.1.2",
+        "activity": "Outdoor Grill Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "22",
+        "section": "Outdoor Appliance - Outdoor Kitchen",
+        "activity_code": "22.5.1",
+        "activity": "Outdoor Kitchen Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "22",
+        "section": "Outdoor Appliance - Fire Pit",
+        "activity_code": "22.4.2",
+        "activity": "Fire Pit Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "22",
+        "section": "Outdoor Appliance - Pool",
+        "activity_code": "22.7.1",
+        "activity": "Pool Cleaning",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      },
+      {
+        "section_code": "22",
+        "section": "Outdoor Appliance - Refrigeration",
+        "activity_code": "22.8.3",
+        "activity": "Outdoor Refrigeration System Maintenance",
+        "unit_of_measurement": "each",
+        "quantity_per_year": 1
+      }
+    ]
+  }
+}
