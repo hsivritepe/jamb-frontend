@@ -2,30 +2,8 @@
 
 import { useRouter } from 'next/navigation';
 import BreadCrumb from '@/components/ui/BreadCrumb';
-import ServiceSelector from '@/components/calculate/ServiceSelector';
-import type { ServiceOption } from '@/components/calculate/ServiceSelector';
 import { EMERGENCY_STEPS } from '@/constants/navigation';
 import Button from '@/components/ui/Button';
-const serviceOptions: ServiceOption[] = [
-    {
-        id: 'one-off',
-        title: 'One-off Services',
-        description:
-            'Select from our range of one-time services for quick and efficient home repairs. Ideal for immediate maintenance needs',
-    },
-    {
-        id: 'rooms',
-        title: 'Rooms',
-        description:
-            'Upgrade any room or exterior with our complete renovation services. From design to execution, we ensure a transformative experience',
-    },
-    {
-        id: 'packages',
-        title: 'Packages',
-        description:
-            'Opt for our monthly subscription packages for continuous home maintenance. Customize your plan to meet your specific needs',
-    },
-];
 
 export default function Emergency() {
     const router = useRouter();
@@ -37,49 +15,51 @@ export default function Emergency() {
     return (
         <main className="min-h-screen pt-24">
             <div className="container mx-auto mb-16">
+                {/* BreadCrumb */}
                 <BreadCrumb items={EMERGENCY_STEPS} />
-                <div className="max-w-2xl mx-auto mt-16">
-                    {/* Icon/Image Section */}
-                    <div className="text-center mb-8">
+
+                {/* Next Button: Positioned above the context */}
+                <div className="text-right mb-8" style={{ marginTop: '2rem' }}>
+                    <Button onClick={handleNext}>Next →</Button>
+                </div>
+
+                {/* Main content with equal-width columns */}
+                <div className="grid grid-cols-1 lg:grid-cols-[45%,45%] lg:gap-[10%] lg:min-h-[500px]">
+                    {/* Left Column: Text Content and Checklist */}
+                    <div className="space-y-8">
+                        {/* Text Content */}
+                        <h1 className="text-3xl font-semibold">
+                            Fast assistance for urgent home issues
+                        </h1>
+
+                        {/* Checklist */}
+                        <div className="space-y-5">
+                            <div className="flex items-center gap-2">
+                                <span className="text-green-500">✓</span>
+                                <p className="text-lg">Start by selecting the category of work you need</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="text-green-500">✓</span>
+                                <p className="text-lg">Specify the type and quantity of work</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="text-green-500">✓</span>
+                                <p className="text-lg">Receive a complete estimate instantly</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="text-green-500">✓</span>
+                                <p className="text-lg">Sign up, finalize the details, and place your order</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Right Column: Icon/Image Section */}
+                    <div className="flex items-start justify-center">
                         <img
-                            src="/images/about-emergency.png"
+                            src="/images/about-emergency.jpg"
                             alt="Emergency Service"
-                            className="mx-auto w-64"
+                            className="w-full max-w-[100%] h-auto rounded-lg"
                         />
-                    </div>
-
-                    {/* Text Content */}
-                    <h1 className="text-3xl font-semibold mb-8 text-center">
-                        Fast assistance for urgent home issues
-                    </h1>
-
-                    {/* Checklist */}
-                    <div className="space-y-4 max-w-md mx-auto mb-12">
-                        <div className="flex items-center gap-2">
-                            <span className="text-green-500">✓</span>
-                            <p>Select a service category</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <span className="text-green-500">✓</span>
-                            <p>
-                                Describe your emergency with a photo
-                            </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <span className="text-green-500">✓</span>
-                            <p>
-                                Get an instant estimate and time frame
-                            </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <span className="text-green-500">✓</span>
-                            <p>Customize details</p>
-                        </div>
-                    </div>
-
-                    {/* Next Button */}
-                    <div className="text-center">
-                        <Button onClick={handleNext}>Next →</Button>
                     </div>
                 </div>
             </div>
