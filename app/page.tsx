@@ -7,7 +7,7 @@ import ServicePackages from '@/components/ServicePackages';
 
 export default function Home() {
     return (
-        <main className="min-h-screen pt-20">
+        <main className="min-h-screen pt-20 ">
             <HeroSection />
             <ServicesGrid title="Comprehensive Home Services<br />at Your Fingertips" />
             <HowItWorks />
