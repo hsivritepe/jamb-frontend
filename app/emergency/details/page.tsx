@@ -63,36 +63,52 @@ export default function EmergencyDetails() {
     }));
   };
 
-  const handleQuantityChange = (service: string, activityKey: string, increment: boolean) => {
-    setSelectedActivities((prev) => ({
-      ...prev,
-      [service]: {
-        ...prev[service],
-        [activityKey]: Math.max(
-          1,
-          (prev[service]?.[activityKey] || 1) + (increment ? 1 : -1)
-        ),
-      },
-    }));
+  const handleQuantityChange = (
+    service: string,
+    activityKey: string,
+    increment: boolean,
+    unit: string
+  ) => {
+    setSelectedActivities((prev) => {
+      const currentValue = prev[service]?.[activityKey] || 1;
+      const updatedValue = increment ? currentValue + 1 : Math.max(1, currentValue - 1);
+
+      return {
+        ...prev,
+        [service]: {
+          ...prev[service],
+          [activityKey]: unit === 'each' ? Math.round(updatedValue) : updatedValue,
+        },
+      };
+    });
     setManualInputValue((prev) => ({
       ...prev,
       [service]: { ...prev[service], [activityKey]: null },
     }));
   };
 
-  const handleManualQuantityChange = (service: string, activityKey: string, value: string) => {
+  const handleManualQuantityChange = (
+    service: string,
+    activityKey: string,
+    value: string,
+    unit: string
+  ) => {
+    const numericValue = parseFloat(value.replace(/,/g, '')) || 0;
+
     setManualInputValue((prev) => ({
       ...prev,
       [service]: { ...prev[service], [activityKey]: value },
     }));
-    if (!value || isNaN(Number(value))) return;
-    setSelectedActivities((prev) => ({
-      ...prev,
-      [service]: {
-        ...prev[service],
-        [activityKey]: parseFloat(value),
-      },
-    }));
+
+    if (!isNaN(numericValue)) {
+      setSelectedActivities((prev) => ({
+        ...prev,
+        [service]: {
+          ...prev[service],
+          [activityKey]: unit === 'each' ? Math.round(numericValue) : numericValue,
+        },
+      }));
+    }
   };
 
   const handleBlurInput = (service: string, activityKey: string) => {
@@ -195,7 +211,14 @@ export default function EmergencyDetails() {
                                 <div className="flex justify-between items-center">
                                   <div className="flex items-center gap-1">
                                     <button
-                                      onClick={() => handleQuantityChange(service, activityKey, false)}
+                                      onClick={() =>
+                                        handleQuantityChange(
+                                          service,
+                                          activityKey,
+                                          false,
+                                          activityDetails.unit_of_measurement
+                                        )
+                                      }
                                       className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
                                     >
                                       −
@@ -215,13 +238,25 @@ export default function EmergencyDetails() {
                                       }
                                       onBlur={() => handleBlurInput(service, activityKey)}
                                       onChange={(e) =>
-                                        handleManualQuantityChange(service, activityKey, e.target.value)
+                                        handleManualQuantityChange(
+                                          service,
+                                          activityKey,
+                                          e.target.value,
+                                          activityDetails.unit_of_measurement
+                                        )
                                       }
                                       className="w-20 text-center px-2 py-1 border rounded"
                                       placeholder="1"
                                     />
                                     <button
-                                      onClick={() => handleQuantityChange(service, activityKey, true)}
+                                      onClick={() =>
+                                        handleQuantityChange(
+                                          service,
+                                          activityKey,
+                                          true,
+                                          activityDetails.unit_of_measurement
+                                        )
+                                      }
                                       className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
                                     >
                                       +
@@ -237,7 +272,9 @@ export default function EmergencyDetails() {
                                   </span>
                                 </div>
                               </div>
-                              <hr className="mt-4 border-gray-200" /> {/* Divider */}
+                              {idx !== Object.keys(activities).length - 1 && (
+                                <hr className="mt-4 border-gray-200" />
+                              )}
                             </>
                           )}
                         </div>
