@@ -16,7 +16,7 @@ import { SectionBoxTitle } from "@/components/ui/SectionBoxTitle";
 export default function EmergencyServices() {
   const router = useRouter();
 
-  // State for selected services and categories
+  // State for selected services, expanded categories, and warning message
   const [selectedServices, setSelectedServices] = useState<
     Record<string, string[]>
   >({});
@@ -24,6 +24,7 @@ export default function EmergencyServices() {
     new Set()
   );
   const [searchQuery, setSearchQuery] = useState("");
+  const [warningMessage, setWarningMessage] = useState<string | null>(null);
 
   const totalServices = Object.values(EMERGENCY_SERVICES).flatMap(
     ({ services }) => Object.keys(services)
@@ -33,6 +34,11 @@ export default function EmergencyServices() {
     setSelectedServices((prev) => {
       const currentCategory = prev[category] || [];
       const isSelected = currentCategory.includes(service);
+
+      // Clear the warning message if a service is selected
+      if (!isSelected) {
+        setWarningMessage(null);
+      }
 
       return {
         ...prev,
@@ -57,6 +63,14 @@ export default function EmergencyServices() {
 
   const handleClearSelection = () => {
     setSelectedServices({});
+  };
+
+  const handleNextClick = () => {
+    if (Object.values(selectedServices).flat().length === 0) {
+      setWarningMessage("Please select at least one service before proceeding.");
+    } else {
+      router.push("/emergency/details");
+    }
   };
 
   const filteredServices: EmergencyServicesType = searchQuery
@@ -85,12 +99,7 @@ export default function EmergencyServices() {
           <SectionBoxTitle>
             Let's quickly find the help you need
           </SectionBoxTitle>
-          <Button
-            onClick={() => router.push("/emergency/details")}
-            disabled={Object.values(selectedServices).flat().length === 0}
-          >
-            Next →
-          </Button>
+          <Button onClick={handleNextClick}>Next →</Button>
         </div>
 
         {/* Search and Clear */}
@@ -119,6 +128,13 @@ export default function EmergencyServices() {
               Clear
             </button>
           </div>
+        </div>
+
+        {/* Warning Message */}
+        <div className="h-6 mt-4 text-left">
+          {warningMessage && (
+            <p className="text-red-500">{warningMessage}</p>
+          )}
         </div>
 
         {/* Emergency Services List */}
@@ -171,33 +187,32 @@ export default function EmergencyServices() {
                         .replace(/^./, (str) => str.toUpperCase())
                         .trim();
 
-                        return (
-                          <div
-                            key={serviceKey}
-                            className="flex justify-between items-center"
+                      return (
+                        <div
+                          key={serviceKey}
+                          className="flex justify-between items-center"
+                        >
+                          <span
+                            className={`text-base transition-colors duration-300 ${
+                              isSelected ? "text-[#1948F0]" : "text-gray-800"
+                            }`}
                           >
-                            <span
-                              className={`text-base transition-colors duration-300 ${
-                                isSelected ? "text-[#1948F0]" : "text-gray-800"
-                              }`}
-                            >
-                              {serviceLabel}
-                            </span>
-                            <label className="relative inline-flex items-center cursor-pointer">
-                              {/* Hidden checkbox input */}
-                              <input
-                                type="checkbox"
-                                checked={isSelected}
-                                onChange={() => handleServiceSelect(category, serviceKey)}
-                                className="sr-only peer"
-                              />
-                              {/* Background for switch */}
-                              <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-[#1948F0] transition-colors duration-300"></div>
-                              {/* Circular knob */}
-                              <div className="absolute top-[2px] left-[2px] w-[22px] h-[22px] bg-white rounded-full shadow-md peer-checked:translate-x-[24px] transform transition-transform duration-300"></div>
-                            </label>
-                          </div>
-                        );
+                            {serviceLabel}
+                          </span>
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() =>
+                                handleServiceSelect(category, serviceKey)
+                              }
+                              className="sr-only peer"
+                            />
+                            <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-[#1948F0] transition-colors duration-300"></div>
+                            <div className="absolute top-[2px] left-[2px] w-[22px] h-[22px] bg-white rounded-full shadow-md peer-checked:translate-x-[24px] transform transition-transform duration-300"></div>
+                          </label>
+                        </div>
+                      );
                     })}
                   </div>
                 )}
