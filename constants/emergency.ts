@@ -372,15 +372,7 @@ export const EMERGENCY_SERVICES: EmergencyServicesType = {
           "2-6-4": {
             activity: "Electric Tankless Water Heater Installation",
             unit_of_measurement: "each",
-          },
-          "2-6-5": {
-            activity: "Water Heater Thermostat Replacement",
-            unit_of_measurement: "each",
-          },
-          "2-6-6": {
-            activity: "Water Heater Element Replacement",
-            unit_of_measurement: "each",
-          },
+          }
         },
       },
       brokenWaterHeaters: {
@@ -460,19 +452,7 @@ export const EMERGENCY_SERVICES: EmergencyServicesType = {
           "2-6-4": {
             activity: "Electric Tankless Water Heater Installation",
             unit_of_measurement: "each",
-          },
-          "2-6-5": {
-            activity: "Water Heater Thermostat Replacement",
-            unit_of_measurement: "each",
-          },
-          "2-6-6": {
-            activity: "Water Heater Element Replacement",
-            unit_of_measurement: "each",
-          },
-          "2-6-7": {
-            activity: "Gas Valve Replacement",
-            unit_of_measurement: "each",
-          },
+          }
         },
       },
       majorDrainBlockages: {
@@ -3066,11 +3046,7 @@ export const EMERGENCY_SERVICES: EmergencyServicesType = {
           "11-2-3": {
             activity: "Drain Pump Repair",
             unit_of_measurement: "each",
-          },
-          "11-2-4": {
-            activity: "Vent Cleaning and Maintenance",
-            unit_of_measurement: "each",
-          },
+          }
         },
       },
     },
