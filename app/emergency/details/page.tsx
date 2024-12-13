@@ -368,13 +368,51 @@ export default function EmergencyDetails() {
           </div>
 
           {/* Right Section */}
-          <div className="w-1/2 ml-auto pt-10">
-            <div className="max-w-[500px] ml-auto bg-blue-100 p-4 rounded-lg border border-gray-300">
+          <div className="w-1/2 ml-auto mt-20">
+            <div className="max-w-[500px] ml-auto bg-blue-100 p-4 rounded-lg border border-gray-300 overflow-hidden">
               <h2 className="text-2xl font-medium text-gray-800 mb-4">
                 Summary
               </h2>
+              {/* Selected Activities */}
+              <ul className="mt-4 space-y-2 pb-4">
+                {Object.entries(selectedActivities).flatMap(
+                  ([service, activities]) =>
+                    Object.entries(activities).map(
+                      ([activityKey, quantity]) => {
+                        const activity = ALL_SERVICES.find(
+                          (s) => s.id === activityKey
+                        );
+                        if (!activity) return null;
+                        return (
+                          <li
+                            key={activityKey}
+                            className="grid grid-cols-3 gap-2 text-sm text-gray-600"
+                            style={{
+                              gridTemplateColumns: "46% 25% 25%",
+                              width: "100%",
+                            }} // Ensure 100% width within parent container
+                          >
+                            <span className="truncate overflow-hidden">
+                              {activity.title}
+                            </span>{" "}
+                            {/* Title column */}
+                            <span className="text-right">
+                              {quantity} x $
+                              {formatWithSeparator(activity.price)}
+                            </span>{" "}
+                            {/* Quantity x Price column */}
+                            <span className="text-right">
+                              ${formatWithSeparator(activity.price * quantity)}
+                            </span>{" "}
+                            {/* Total column */}
+                          </li>
+                        );
+                      }
+                    )
+                )}
+              </ul>
               <div className="flex justify-between items-center mb-4">
-                <span className="text-lg text-gray-600">Subtotal:</span>
+                <span className="text-lg font-semibold text-gray-600">Subtotal:</span>
                 <span className="text-2xl font-bold text-blue-600">
                   ${formatWithSeparator(calculateTotal())}
                 </span>
