@@ -69,7 +69,8 @@ export default function EmergencyServices() {
     if (Object.values(selectedServices).flat().length === 0) {
       setWarningMessage("Please select at least one service before proceeding.");
     } else {
-      router.push("/emergency/details");
+      const services = JSON.stringify(selectedServices);
+      router.push(`/emergency/details?services=${encodeURIComponent(services)}`);
     }
   };
 
