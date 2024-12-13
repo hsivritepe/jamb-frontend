@@ -28,7 +28,7 @@ export default function EmergencyDetails() {
   const searchParams = useSearchParams();
   const [expandedServices, setExpandedServices] = useState<Set<string>>(new Set());
   const [selectedActivities, setSelectedActivities] = useState<Record<string, Record<string, number>>>({});
-  const [expandedActivityDetails, setExpandedActivityDetails] = useState<string | null>(null);
+  const [manualInputValue, setManualInputValue] = useState<Record<string, Record<string, string | null>>>({});
 
   const selectedServices: Record<string, string[]> = searchParams.get('services')
     ? JSON.parse(searchParams.get('services') as string)
@@ -43,47 +43,70 @@ export default function EmergencyDetails() {
     });
   };
 
-  const handleActivityToggle = (service: string, activity: string) => {
+  const handleActivityToggle = (service: string, activityKey: string) => {
     setSelectedActivities((prev) => {
       const serviceActivities = prev[service] || {};
-      if (serviceActivities[activity]) {
+      if (serviceActivities[activityKey]) {
         const updatedActivities = { ...serviceActivities };
-        delete updatedActivities[activity];
+        delete updatedActivities[activityKey];
         return { ...prev, [service]: updatedActivities };
       } else {
         return {
           ...prev,
-          [service]: { ...serviceActivities, [activity]: 1 },
+          [service]: { ...serviceActivities, [activityKey]: 1 },
         };
       }
     });
-    setExpandedActivityDetails((prev) => (prev === activity ? null : activity));
+    setManualInputValue((prev) => ({
+      ...prev,
+      [service]: { ...prev[service], [activityKey]: null },
+    }));
   };
 
-  const handleQuantityChange = (service: string, activity: string, increment: boolean) => {
+  const handleQuantityChange = (service: string, activityKey: string, increment: boolean) => {
     setSelectedActivities((prev) => ({
       ...prev,
       [service]: {
         ...prev[service],
-        [activity]: Math.max(1, (prev[service]?.[activity] || 1) + (increment ? 1 : -1)),
+        [activityKey]: Math.max(
+          1,
+          (prev[service]?.[activityKey] || 1) + (increment ? 1 : -1)
+        ),
       },
+    }));
+    setManualInputValue((prev) => ({
+      ...prev,
+      [service]: { ...prev[service], [activityKey]: null },
     }));
   };
 
-  const handleManualQuantityChange = (service: string, activity: string, value: string) => {
-    const numericValue = parseFloat(value.replace(/,/g, '')) || 1;
+  const handleManualQuantityChange = (service: string, activityKey: string, value: string) => {
+    setManualInputValue((prev) => ({
+      ...prev,
+      [service]: { ...prev[service], [activityKey]: value },
+    }));
+    if (!value || isNaN(Number(value))) return;
     setSelectedActivities((prev) => ({
       ...prev,
       [service]: {
         ...prev[service],
-        [activity]: numericValue,
+        [activityKey]: parseFloat(value),
       },
     }));
+  };
+
+  const handleBlurInput = (service: string, activityKey: string) => {
+    if (!manualInputValue[service]?.[activityKey]) {
+      setManualInputValue((prev) => ({
+        ...prev,
+        [service]: { ...prev[service], [activityKey]: null },
+      }));
+    }
   };
 
   const handleClearSelection = () => {
     setSelectedActivities({});
-    setExpandedActivityDetails(null);
+    setManualInputValue({});
   };
 
   const handleNext = () => {
@@ -143,7 +166,7 @@ export default function EmergencyDetails() {
                 </div>
                 {isExpanded && (
                   <div className="mt-4 flex flex-col gap-4">
-                    {Object.entries(activities).map(([activityKey, activityData]) => {
+                    {Object.entries(activities).map(([activityKey, activityData], idx) => {
                       const isSelected = selectedActivities[service]?.[activityKey] !== undefined;
                       const activityLabel = capitalizeAndTransform(activityData.activity);
                       const activityDetails = ALL_SERVICES.find((s) => s.id === activityKey);
@@ -164,42 +187,58 @@ export default function EmergencyDetails() {
                             </label>
                           </div>
                           {isSelected && activityDetails && (
-                            <div className="flex flex-col gap-2">
-                              <p className="text-sm text-gray-500 pr-16 pb-2">{activityDetails.description}</p>
-                              <div className="flex justify-between items-center">
-                                <div className="flex items-center border rounded-lg gap-2">
-                                  <button
-                                    onClick={() => handleQuantityChange(service, activityKey, false)}
-                                    className="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded-l-lg"
-                                  >
-                                    −
-                                  </button>
-                                  <input
-                                    type="text"
-                                    value={formatWithSeparator(selectedActivities[service][activityKey])}
-                                    onChange={(e) =>
-                                      handleManualQuantityChange(service, activityKey, e.target.value)
-                                    }
-                                    className="w-20 text-center px-2"
-                                    placeholder="1"
-                                  />
-                                  <button
-                                    onClick={() => handleQuantityChange(service, activityKey, true)}
-                                    className="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded-r-lg"
-                                  >
-                                    +
-                                  </button>
+                            <>
+                              <div className="flex flex-col gap-2">
+                                <p className="text-sm text-gray-500 pr-16 pb-2">
+                                  {activityDetails.description}
+                                </p>
+                                <div className="flex justify-between items-center">
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      onClick={() => handleQuantityChange(service, activityKey, false)}
+                                      className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
+                                    >
+                                      −
+                                    </button>
+                                    <input
+                                      type="text"
+                                      value={
+                                        manualInputValue[service]?.[activityKey] !== null
+                                          ? manualInputValue[service][activityKey] || ''
+                                          : selectedActivities[service][activityKey]?.toString() || ''
+                                      }
+                                      onClick={(e) =>
+                                        setManualInputValue((prev) => ({
+                                          ...prev,
+                                          [service]: { ...prev[service], [activityKey]: '' },
+                                        }))
+                                      }
+                                      onBlur={() => handleBlurInput(service, activityKey)}
+                                      onChange={(e) =>
+                                        handleManualQuantityChange(service, activityKey, e.target.value)
+                                      }
+                                      className="w-20 text-center px-2 py-1 border rounded"
+                                      placeholder="1"
+                                    />
+                                    <button
+                                      onClick={() => handleQuantityChange(service, activityKey, true)}
+                                      className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
+                                    >
+                                      +
+                                    </button>
+                                    <span className="text-sm text-gray-600">
+                                      {activityDetails.unit_of_measurement}
+                                    </span>
+                                  </div>
+                                  <span className="text-lg text-blue-600 font-medium text-right">
+                                    ${formatWithSeparator(
+                                      activityDetails.price * (selectedActivities[service][activityKey] || 1)
+                                    )}
+                                  </span>
                                 </div>
-                                <span className="text-sm text-gray-600">
-                                  {activityDetails.unit_of_measurement}
-                                </span>
-                                <span className="text-lg text-gray-600 font-medium text-right">
-                                  ${formatWithSeparator(
-                                    activityDetails.price * selectedActivities[service][activityKey]
-                                  )}
-                                </span>
                               </div>
-                            </div>
+                              <hr className="mt-4 border-gray-200" /> {/* Divider */}
+                            </>
                           )}
                         </div>
                       );
