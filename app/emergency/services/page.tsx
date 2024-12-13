@@ -104,7 +104,7 @@ export default function EmergencyServices() {
         </div>
 
         {/* Search and Clear */}
-        <div className="flex flex-col gap-4 mt-8 w-full max-w-[550px]">
+        <div className="flex flex-col gap-4 mt-8 w-full max-w-[600px]">
           <SearchServices
             value={searchQuery}
             onChange={(e: ChangeEvent<HTMLInputElement>) =>
@@ -139,7 +139,7 @@ export default function EmergencyServices() {
         </div>
 
         {/* Emergency Services List */}
-        <div className="flex flex-col gap-3 mt-5 w-full max-w-[550px]">
+        <div className="flex flex-col gap-3 mt-5 w-full max-w-[600px]">
           {Object.entries(filteredServices).map(([category, { services }]) => {
             const categorySelectedCount =
               selectedServices[category]?.length || 0;
