@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useState, ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
@@ -76,7 +76,7 @@ export default function EmergencyServices() {
     : EMERGENCY_SERVICES;
 
   return (
-    <main className="min-h-screen pt-24 pb-16 ">
+    <main className="min-h-screen pt-24 pb-16">
       <div className="container mx-auto">
         <BreadCrumb items={EMERGENCY_STEPS} />
 
@@ -94,7 +94,7 @@ export default function EmergencyServices() {
         </div>
 
         {/* Search and Clear */}
-        <div className="flex flex-col gap-4 mt-8 w-[45%]">
+        <div className="flex flex-col gap-4 mt-8 w-full max-w-[550px]">
           <SearchServices
             value={searchQuery}
             onChange={(e: ChangeEvent<HTMLInputElement>) =>
@@ -102,10 +102,19 @@ export default function EmergencyServices() {
             }
             placeholder={`Explore ${totalServices} emergency services`}
           />
-          <div className="text-right">
+          <div className="flex justify-between items-center text-sm text-gray-500 mt-2">
+            <span>
+              No service?{" "}
+              <a
+                href="#"
+                className="text-blue-600 hover:underline focus:outline-none"
+              >
+                Contact emergency support
+              </a>
+            </span>
             <button
               onClick={handleClearSelection}
-              className="inline text-blue-600 hover:underline focus:outline-none"
+              className="text-blue-600 hover:underline focus:outline-none"
             >
               Clear
             </button>
@@ -113,7 +122,7 @@ export default function EmergencyServices() {
         </div>
 
         {/* Emergency Services List */}
-        <div className="flex flex-col gap-3 mt-5 w-[45%]">
+        <div className="flex flex-col gap-3 mt-5 w-full max-w-[550px]">
           {Object.entries(filteredServices).map(([category, { services }]) => {
             const categorySelectedCount =
               selectedServices[category]?.length || 0;
@@ -122,7 +131,7 @@ export default function EmergencyServices() {
             return (
               <div
                 key={category}
-                className={`p-4 border rounded-xl bg-gray-50 ${
+                className={`p-4 border rounded-xl bg-white ${
                   categorySelectedCount > 0
                     ? "border-blue-500"
                     : "border-gray-300"
@@ -134,7 +143,7 @@ export default function EmergencyServices() {
                 >
                   <h3
                     className={`font-medium text-xl ${
-                      categorySelectedCount > 0 ? "text-blue-600" : "text-black"
+                      categorySelectedCount > 0 ? "text-[#1948F0]" : "text-black"
                     }`}
                   >
                     {categoryLabel}
@@ -162,28 +171,33 @@ export default function EmergencyServices() {
                         .replace(/^./, (str) => str.toUpperCase())
                         .trim();
 
-                      return (
-                        <div
-                          key={serviceKey}
-                          className="flex justify-between items-center"
-                        >
-                          <span className="text-base text-gray-800">
-                            {serviceLabel}
-                          </span>
-                          <label className="relative inline-flex items-center cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={isSelected}
-                              onChange={() =>
-                                handleServiceSelect(category, serviceKey)
-                              }
-                              className="sr-only peer"
-                            />
-                            <div className="w-12 h-6 bg-gray-200 rounded-full peer dark:bg-gray-300 peer-checked:bg-blue-500 transition-colors"></div>
-                            <div className="absolute w-5 h-5 bg-white rounded-full shadow-md peer-checked:translate-x-6 transform transition-transform"></div>
-                          </label>
-                        </div>
-                      );
+                        return (
+                          <div
+                            key={serviceKey}
+                            className="flex justify-between items-center"
+                          >
+                            <span
+                              className={`text-base transition-colors duration-300 ${
+                                isSelected ? "text-[#1948F0]" : "text-gray-800"
+                              }`}
+                            >
+                              {serviceLabel}
+                            </span>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                              {/* Hidden checkbox input */}
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => handleServiceSelect(category, serviceKey)}
+                                className="sr-only peer"
+                              />
+                              {/* Background for switch */}
+                              <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-[#1948F0] transition-colors duration-300"></div>
+                              {/* Circular knob */}
+                              <div className="absolute top-[2px] left-[2px] w-[22px] h-[22px] bg-white rounded-full shadow-md peer-checked:translate-x-[24px] transform transition-transform duration-300"></div>
+                            </label>
+                          </div>
+                        );
                     })}
                   </div>
                 )}

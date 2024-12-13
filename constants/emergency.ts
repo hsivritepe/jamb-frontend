@@ -2346,7 +2346,7 @@ export const EMERGENCY_SERVICES: EmergencyServicesType = {
   },
   Structural: {
     services: {
-      emergencyStabilization: {
+      emergencyStabilizationOfCompromisedStructures: {
         tools: [
           "Support beams",
           "Jacks and shoring",
@@ -2422,7 +2422,7 @@ export const EMERGENCY_SERVICES: EmergencyServicesType = {
           },
         },
       },
-      damageAssessment: {
+      damageAssessmentAndTemporaryFixesPostNaturalDisaster: {
         tools: [
           "Measuring tape",
           "Level",
