@@ -2466,14 +2466,6 @@ export const EMERGENCY_SERVICES: EmergencyServicesType = {
           },
         ],
         activities: {
-          "6-5-1": {
-            activity: "Foundation Crack Repair",
-            unit_of_measurement: "lin ft",
-          },
-          "6-5-2": {
-            activity: "Masonry Wall Crack Repair",
-            unit_of_measurement: "sq ft",
-          },
           "6-5-6": {
             activity: "Concrete Patching (up to 14 sq. ft.)",
             unit_of_measurement: "each",
@@ -2554,15 +2546,7 @@ export const EMERGENCY_SERVICES: EmergencyServicesType = {
           "6-5-4": {
             activity: "Foundation Reinforcement Installation",
             unit_of_measurement: "each",
-          },
-          "6-5-6": {
-            activity: "Concrete Patching (up to 14 sq. ft.)",
-            unit_of_measurement: "each",
-          },
-          "6-3-2": {
-            activity: "Framing Repair and Reinforcement",
-            unit_of_measurement: "sq ft",
-          },
+          }
         },
       },
     },

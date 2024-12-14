@@ -368,7 +368,7 @@ export default function EmergencyDetails() {
           </div>
 
           {/* Right Section */}
-          <div className="w-1/2 ml-auto mt-20">
+          <div className="w-1/2 ml-auto mt-20 pt-1">
             <div className="max-w-[500px] ml-auto bg-blue-100 p-4 rounded-lg border border-gray-300 overflow-hidden">
               <h2 className="text-2xl font-medium text-gray-800 mb-4">
                 Summary

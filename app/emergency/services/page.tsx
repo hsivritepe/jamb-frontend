@@ -159,7 +159,7 @@ export default function EmergencyServices() {
                   className="flex justify-between items-center w-full"
                 >
                   <h3
-                    className={`font-medium text-xl ${
+                    className={`font-medium text-2xl ${
                       categorySelectedCount > 0 ? "text-[#1948F0]" : "text-black"
                     }`}
                   >
@@ -194,7 +194,7 @@ export default function EmergencyServices() {
                           className="flex justify-between items-center"
                         >
                           <span
-                            className={`text-base transition-colors duration-300 ${
+                            className={`text-lg transition-colors duration-300 ${
                               isSelected ? "text-[#1948F0]" : "text-gray-800"
                             }`}
                           >
