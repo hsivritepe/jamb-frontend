@@ -374,11 +374,11 @@ export default function EmergencyDetails() {
 
           {/* Right Section */}
           <div className="w-1/2 ml-auto mt-20 pt-1">
+            {/* Summary Section */}
             <div className="max-w-[500px] ml-auto bg-blue-100 p-4 rounded-lg border border-gray-300 overflow-hidden">
               <h2 className="text-2xl font-medium text-gray-800 mb-4">
                 Summary
               </h2>
-              {/* Selected Activities */}
               {Object.keys(selectedActivities).length === 0 ? (
                 <div className="text-left text-gray-500 mt-4">
                   No services selected
@@ -401,24 +401,21 @@ export default function EmergencyDetails() {
                                 style={{
                                   gridTemplateColumns: "46% 25% 25%",
                                   width: "100%",
-                                }} // Ensure 100% width within parent container
+                                }}
                               >
                                 <span className="truncate overflow-hidden">
                                   {activity.title}
-                                </span>{" "}
-                                {/* Title column */}
+                                </span>
                                 <span className="text-right">
                                   {quantity} x $
                                   {formatWithSeparator(activity.price)}
-                                </span>{" "}
-                                {/* Quantity x Price column */}
+                                </span>
                                 <span className="text-right">
                                   $
                                   {formatWithSeparator(
                                     activity.price * quantity
                                   )}
-                                </span>{" "}
-                                {/* Total column */}
+                                </span>
                               </li>
                             );
                           }
@@ -426,10 +423,10 @@ export default function EmergencyDetails() {
                     )}
                   </ul>
                   <div className="flex justify-between items-center mb-4">
-                    <span className="text-lg font-semibold text-gray-600">
+                    <span className="text-xl font-semibold text-gray-600">
                       Subtotal:
                     </span>
-                    <span className="text-2xl font-bold text-blue-600">
+                    <span className="text-xl font-semibold text-blue-600">
                       ${formatWithSeparator(calculateTotal())}
                     </span>
                   </div>
@@ -468,6 +465,16 @@ export default function EmergencyDetails() {
               {JSON.parse(searchParams.get("photos") || "[]").length === 0 && (
                 <p className="text-sm text-gray-500 mt-2">No photos uploaded</p>
               )}
+            </div>
+
+            {/* Problem Description Section */}
+            <div className="max-w-[500px] ml-auto bg-blue-100 p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
+              <h2 className="text-2xl font-medium text-gray-800 mb-4">
+                Problem Description
+              </h2>
+              <p className="text-gray-600 text-sm whitespace-pre-wrap">
+                {searchParams.get("description") || "No description provided"}
+              </p>
             </div>
           </div>
         </div>
