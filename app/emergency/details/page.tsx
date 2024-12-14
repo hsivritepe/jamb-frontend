@@ -154,7 +154,10 @@ export default function EmergencyDetails() {
   };
 
   const handleNext = () => {
-    router.push("/emergency/estimate");
+    const selectedActivitiesEncoded = encodeURIComponent(
+      JSON.stringify(selectedActivities)
+    );
+    router.push(`/emergency/estimate?selectedActivities=${selectedActivitiesEncoded}`);
   };
 
   const servicesList = Object.entries(selectedServices).flatMap(
@@ -174,7 +177,7 @@ export default function EmergencyDetails() {
 
         {/* Header and Next Button */}
         <div className="flex justify-between items-start mt-8">
-          <SectionBoxTitle>Details</SectionBoxTitle>
+          <SectionBoxTitle>Emergency Details</SectionBoxTitle>
           <Button onClick={handleNext}>Next →</Button>
         </div>
         <div className="container mx-auto relative flex">
@@ -293,7 +296,7 @@ export default function EmergencyDetails() {
                                                     activityKey
                                                   ]?.toString() || ""
                                             }
-                                            onClick={(e) =>
+                                            onClick={() =>
                                               setManualInputValue((prev) => ({
                                                 ...prev,
                                                 [service]: {
