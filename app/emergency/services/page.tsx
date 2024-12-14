@@ -69,17 +69,17 @@ export default function EmergencyServices() {
 
   const handleNextClick = () => {
     if (Object.values(selectedServices).flat().length === 0) {
-      setWarningMessage(
-        "Please select at least one service before proceeding."
-      );
+      setWarningMessage("Please select at least one service before proceeding.");
     } else if (!address.trim()) {
       setWarningMessage("Please enter your address before proceeding.");
     } else {
-      const services = JSON.stringify(selectedServices);
-      const nextQuery = `services=${encodeURIComponent(
-        services
-      )}&address=${encodeURIComponent(address)}`;
-      router.push(`/emergency/details?${nextQuery}`);
+      router.push(
+        `/emergency/details?services=${encodeURIComponent(
+          JSON.stringify(selectedServices)
+        )}&address=${encodeURIComponent(address)}&photos=${encodeURIComponent(
+          JSON.stringify(uploadedPhotos.map((p) => p.url))
+        )}`
+      );
     }
   };
 

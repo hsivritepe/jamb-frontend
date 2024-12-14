@@ -436,6 +436,39 @@ export default function EmergencyDetails() {
                 </>
               )}
             </div>
+
+            {/* Address Section */}
+            <div className="max-w-[500px] ml-auto bg-blue-100 p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
+              <h2 className="text-2xl font-medium text-gray-800 mb-4">
+                Address
+              </h2>
+              <p className="text-gray-600 text-lg">
+                {searchParams.get("address") || "No address provided"}
+              </p>
+            </div>
+
+            {/* Photo Section */}
+            <div className="max-w-[500px] ml-auto bg-blue-100 p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
+              <h2 className="text-2xl font-medium text-gray-800 mb-4">
+                Uploaded Photos
+              </h2>
+              <div className="grid grid-cols-2 gap-4">
+                {JSON.parse(searchParams.get("photos") || "[]").map(
+                  (photo: string, index: number) => (
+                    <div key={index} className="relative group">
+                      <img
+                        src={photo}
+                        alt={`Uploaded photo ${index + 1}`}
+                        className="w-full h-32 object-cover rounded-lg"
+                      />
+                    </div>
+                  )
+                )}
+              </div>
+              {JSON.parse(searchParams.get("photos") || "[]").length === 0 && (
+                <p className="text-sm text-gray-500 mt-2">No photos uploaded</p>
+              )}
+            </div>
           </div>
         </div>
       </div>

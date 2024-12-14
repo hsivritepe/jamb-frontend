@@ -580,10 +580,6 @@ export const EMERGENCY_SERVICES: EmergencyServicesType = {
           },
         ],
         activities: {
-          "10-1-2": {
-            activity: "Circuit Breaker Replacement",
-            unit_of_measurement: "each",
-          },
           "10-1-5": {
             activity: "Outdoor Electrical Panel Safety Inspection",
             unit_of_measurement: "each",
@@ -739,10 +735,6 @@ export const EMERGENCY_SERVICES: EmergencyServicesType = {
         activities: {
           "1-9-1": {
             activity: "Circuit Breaker and Fuse Troubleshooting",
-            unit_of_measurement: "sq ft",
-          },
-          "1-9-2": {
-            activity: "Faulty Wiring and Connection Troubleshooting",
             unit_of_measurement: "sq ft",
           },
           "10-1-2": {
