@@ -260,7 +260,7 @@ export default function EmergencyDetails() {
                                       }
                                       className="sr-only peer"
                                     />
-                                    <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-[#1948F0] transition-colors duration-300"></div>
+                                    <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
                                     <div className="absolute top-[2px] left-[2px] w-[22px] h-[22px] bg-white rounded-full shadow-md peer-checked:translate-x-[24px] transform transition-transform duration-300"></div>
                                   </label>
                                 </div>
