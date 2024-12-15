@@ -16,7 +16,7 @@ const formatWithSeparator = (value: number): string => {
   );
 };
 
-// Utility function to capitalize and transform text
+// Utility function to capitalize and transform camelCase or PascalCase text
 const capitalizeAndTransform = (text: string): string => {
   return text
     .replace(/([A-Z])/g, " $1") // Add spaces before capital letters
@@ -24,12 +24,13 @@ const capitalizeAndTransform = (text: string): string => {
     .replace(/^./, (char) => char.toUpperCase()); // Capitalize the first letter
 };
 
-// EmergencyServices Type Interface
+// Interface for the steps of an emergency service
 interface Step {
   title: string;
   description: string;
 }
 
+// Interface for an emergency service
 interface EmergencyService {
   steps?: Step[];
 }
@@ -42,13 +43,17 @@ export default function EmergencyEstimate() {
   const selectedActivities = JSON.parse(
     searchParams.get("selectedActivities") || "{}"
   ) as Record<string, Record<string, number>>;
+
   const address = searchParams.get("address") || "No address provided";
   const photos = JSON.parse(searchParams.get("photos") || "[]") as string[];
-  const description = searchParams.get("description") || "No description provided";
+  const description =
+    searchParams.get("description") || "No description provided";
 
-  // Calculate total price dynamically
+  // Function to calculate the total cost of selected activities
   const calculateTotal = () => {
     let total = 0;
+
+    // Loop through all selected activities and calculate total price
     for (const service in selectedActivities) {
       for (const activityKey in selectedActivities[service]) {
         const activity = ALL_SERVICES.find((s) => s.id === activityKey);
@@ -62,7 +67,7 @@ export default function EmergencyEstimate() {
   };
 
   const subtotal = calculateTotal();
-  const salesTax = subtotal * 0.0825; // Example 8.25% tax
+  const salesTax = subtotal * 0.0825; // 8.25% sales tax
   const total = subtotal + salesTax;
 
   return (
@@ -74,76 +79,111 @@ export default function EmergencyEstimate() {
 
       <div className="container mx-auto py-12">
         <div className="flex gap-12">
-          {/* Left Column - Steps */}
+          {/* Left Column: Steps for Selected Services */}
           <div className="flex-1">
             <SectionBoxTitle>Next Steps for Selected Services</SectionBoxTitle>
 
-            {/* Loop through all selected services */}
+            {/* Display steps for each unique service */}
             <div className="mt-8 space-y-8 bg-gray-100 p-6 rounded-xl">
-              {Object.entries(selectedActivities).map(([service]) => {
-                const steps: Step[] =
-                  (EMERGENCY_SERVICES as Record<string, EmergencyService>)[
-                    service
-                  ]?.steps || [];
-                return (
-                  <div key={service} className="space-y-4">
-                    <h3 className="text-xl font-medium text-gray-800">
-                      {capitalizeAndTransform(service)}
-                    </h3>
-                    {steps.length > 0 ? (
-                      steps.map((step, index) => (
-                        <div key={index} className="space-y-2">
-                          <h4 className="text-lg font-medium">
-                            {index + 1}. {step.title}
-                          </h4>
-                          <p className="text-gray-600">{step.description}</p>
+              {(() => {
+                const shownServices = new Set<string>(); // To track services that have been displayed
+
+                return Object.entries(selectedActivities).flatMap(
+                  ([_, activities]) =>
+                    Object.keys(activities).map((activityKey) => {
+                      let matchedService = null; // Holds matched service details
+                      let matchedServiceKey = "";
+
+                      // Search for the service that matches the activity key
+                      for (const category of Object.keys(EMERGENCY_SERVICES)) {
+                        const services = EMERGENCY_SERVICES[category]?.services;
+                        for (const serviceKey in services) {
+                          if (services[serviceKey]?.activities?.[activityKey]) {
+                            matchedService = services[serviceKey];
+                            matchedServiceKey = serviceKey;
+                            break;
+                          }
+                        }
+                        if (matchedService) break; // Stop searching if service is found
+                      }
+
+                      // Skip the service if it's already displayed
+                      if (
+                        !matchedService ||
+                        shownServices.has(matchedServiceKey)
+                      )
+                        return null;
+
+                      shownServices.add(matchedServiceKey); // Mark the service as displayed
+
+                      return (
+                        <div key={matchedServiceKey} className="space-y-4">
+                          {/* Service Title */}
+                          <h3 className="text-xl font-medium text-gray-800">
+                            {capitalizeAndTransform(matchedServiceKey)}
+                          </h3>
+
+                          {/* Service Steps */}
+                          {matchedService.steps?.length > 0 ? (
+                            matchedService.steps.map((step) => (
+                              <div key={step.title} className="space-y-2">
+                                <h4 className="text-lg font-medium">
+                                  {step.title}
+                                </h4>
+                                <p className="text-gray-600">
+                                  {step.description}
+                                </p>
+                              </div>
+                            ))
+                          ) : (
+                            <p className="text-gray-600">No steps available.</p>
+                          )}
                         </div>
-                      ))
-                    ) : (
-                      <p className="text-gray-600">No steps available.</p>
-                    )}
-                  </div>
+                      );
+                    })
                 );
-              })}
+              })()}
             </div>
           </div>
 
-          {/* Right Column - Estimate */}
+          {/* Right Column: Estimate Summary */}
           <div className="w-[400px]">
             <div className="bg-brand-light p-6 rounded-xl">
               <SectionBoxSubtitle>Estimate</SectionBoxSubtitle>
 
-              {/* Selected Activities List */}
+              {/* List all selected activities */}
               <div className="mt-4 space-y-4">
                 {Object.entries(selectedActivities).flatMap(
                   ([service, activities]) =>
-                    Object.entries(activities).map(([activityKey, quantity]) => {
-                      const activity = ALL_SERVICES.find(
-                        (s) => s.id === activityKey
-                      );
-                      if (!activity) return null;
+                    Object.entries(activities).map(
+                      ([activityKey, quantity]) => {
+                        const activity = ALL_SERVICES.find(
+                          (s) => s.id === activityKey
+                        );
+                        if (!activity) return null;
 
-                      return (
-                        <div
-                          key={activityKey}
-                          className="flex items-start gap-2"
-                        >
-                          <span className="text-brand">•</span>
-                          <div>
-                            <h3 className="font-medium">{activity.title}</h3>
-                            <div className="text-sm text-gray-500">
-                              <span>{activity.description}</span>
-                              <span> • </span>
-                              <span>Qty: {quantity}</span>
+                        return (
+                          <div
+                            key={activityKey}
+                            className="flex items-start gap-2"
+                          >
+                            <span className="text-brand">•</span>
+                            <div>
+                              <h3 className="font-medium">{activity.title}</h3>
+                              <div className="text-sm text-gray-500">
+                                <span>{activity.description}</span>
+                                <span> • </span>
+                                <span>Qty: {quantity}</span>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      );
-                    })
+                        );
+                      }
+                    )
                 )}
               </div>
 
-              {/* Summary Section */}
+              {/* Summary of costs */}
               <div className="border-t border-gray-200 pt-4 mt-4">
                 <div className="flex justify-between mb-2">
                   <span className="text-gray-600">Subtotal</span>
@@ -159,13 +199,13 @@ export default function EmergencyEstimate() {
                 </div>
               </div>
 
-              {/* Address Section */}
+              {/* Address Display */}
               <div className="mt-6">
                 <SectionBoxSubtitle>Address</SectionBoxSubtitle>
                 <p className="text-gray-500 mt-2">{address}</p>
               </div>
 
-              {/* Uploaded Photos */}
+              {/* Uploaded Photos Display */}
               <div className="mt-6">
                 <SectionBoxSubtitle>Uploaded Photos</SectionBoxSubtitle>
                 <div className="grid grid-cols-2 gap-2 mt-2">
