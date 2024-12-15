@@ -194,9 +194,7 @@ export default function EmergencyEstimate() {
                               <div className="text-medium font-medium text-gray-800 mt-2">
                                 {/* Quantity and Units */}
                                 <span>{quantity} </span>
-                                <span>
-                                  {activity.unit_of_measurement}
-                                </span>
+                                <span>{activity.unit_of_measurement}</span>
                               </div>
                             </div>
 
@@ -216,8 +214,12 @@ export default function EmergencyEstimate() {
               {/* Summary of costs */}
               <div className="pt-4 mt-4">
                 <div className="flex justify-between mb-2">
-                  <span className="font-semibold text-lg text-gray-800">Subtotal</span>
-                  <span className="font-semibold text-lg text-gray-800">${formatWithSeparator(subtotal)}</span>
+                  <span className="font-semibold text-lg text-gray-800">
+                    Subtotal
+                  </span>
+                  <span className="font-semibold text-lg text-gray-800">
+                    ${formatWithSeparator(subtotal)}
+                  </span>
                 </div>
                 <div className="flex justify-between mb-4">
                   <span className="text-gray-600">Sales tax (8.25%)</span>
@@ -237,24 +239,38 @@ export default function EmergencyEstimate() {
 
               {/* Uploaded Photos Display */}
               <div className="mt-6">
-              <h3 className="font-semibold text-xl text-gray-800">Uploaded Photos</h3>
-                <div className="grid grid-cols-2 gap-2 mt-2">
+                {/* Section Title */}
+                <h3 className="font-semibold text-xl text-gray-800">
+                  Uploaded Photos
+                </h3>
+
+                {/* Photo Grid */}
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
                   {photos.map((photo, index) => (
-                    <Image
-                      key={index}
-                      src={photo}
-                      alt={`Uploaded Photo ${index + 1}`}
-                      width={100}
-                      height={100}
-                      className="object-cover rounded-lg"
-                    />
+                    <div key={index} className="relative group">
+                      {/* Photo Image */}
+                      <img
+                        src={photo}
+                        alt={`Uploaded photo ${index + 1}`}
+                        className="w-full h-32 object-cover rounded-lg border border-gray-300 transition-transform duration-300 group-hover:scale-105"
+                      />
+
+                      {/* Hover Overlay */}
+                      <div className="absolute inset-0 bg-black bg-opacity-20 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                        <span className="text-white font-medium">
+                          Photo {index + 1}
+                        </span>
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
 
               {/* Problem Description */}
               <div className="mt-6">
-              <h3 className="font-semibold text-xl text-gray-800">Problem Description</h3>
+                <h3 className="font-semibold text-xl text-gray-800">
+                  Problem Description
+                </h3>
                 <p className="text-gray-500 mt-2 whitespace-pre-wrap">
                   {description}
                 </p>
