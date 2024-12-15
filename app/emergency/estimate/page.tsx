@@ -180,15 +180,32 @@ export default function EmergencyEstimate() {
                         return (
                           <div
                             key={activityKey}
-                            className="flex items-start gap-2"
+                            className="flex justify-between items-start gap-4 border-b pb-2"
                           >
+                            {/* Left: Activity Title */}
                             <div>
-                              <h3 className="font-medium">{activity.title}</h3>
-                              <div className="text-sm text-gray-500">
+                              <h3 className="font-medium text-lg text-gray-800">
+                                {activity.title}
+                              </h3>
+                              <div className="text-sm text-gray-500 mt-1">
+                                {/* Description */}
                                 <span>{activity.description}</span>
-                                <span> • </span>
-                                <span>Qty: {quantity}</span>
                               </div>
+                              <div className="text-medium font-medium text-gray-800 mt-2">
+                                {/* Quantity and Units */}
+                                <span>{quantity} </span>
+                                <span>
+                                  {activity.unit_of_measurement}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Right: Price Information */}
+                            <div className="text-right mt-auto">
+                              <span className="block text-gray-800 font-medium">
+                                $
+                                {formatWithSeparator(activity.price * quantity)}
+                              </span>
                             </div>
                           </div>
                         );
@@ -196,18 +213,17 @@ export default function EmergencyEstimate() {
                     )
                 )}
               </div>
-
               {/* Summary of costs */}
-              <div className="border-t border-gray-200 pt-4 mt-4">
+              <div className="pt-4 mt-4">
                 <div className="flex justify-between mb-2">
-                  <span className="text-gray-600">Subtotal</span>
-                  <span>${formatWithSeparator(subtotal)}</span>
+                  <span className="font-semibold text-lg text-gray-800">Subtotal</span>
+                  <span className="font-semibold text-lg text-gray-800">${formatWithSeparator(subtotal)}</span>
                 </div>
                 <div className="flex justify-between mb-4">
                   <span className="text-gray-600">Sales tax (8.25%)</span>
                   <span>${formatWithSeparator(salesTax)}</span>
                 </div>
-                <div className="flex justify-between text-xl font-semibold">
+                <div className="flex justify-between text-2xl font-semibold">
                   <span>Total</span>
                   <span>${formatWithSeparator(total)}</span>
                 </div>
@@ -215,13 +231,13 @@ export default function EmergencyEstimate() {
 
               {/* Address Display */}
               <div className="mt-6">
-                <SectionBoxSubtitle>Address</SectionBoxSubtitle>
+                <h3 className="font-semibold text-xl text-gray-800">Address</h3>
                 <p className="text-gray-500 mt-2">{address}</p>
               </div>
 
               {/* Uploaded Photos Display */}
               <div className="mt-6">
-                <SectionBoxSubtitle>Uploaded Photos</SectionBoxSubtitle>
+              <h3 className="font-semibold text-xl text-gray-800">Uploaded Photos</h3>
                 <div className="grid grid-cols-2 gap-2 mt-2">
                   {photos.map((photo, index) => (
                     <Image
@@ -238,7 +254,7 @@ export default function EmergencyEstimate() {
 
               {/* Problem Description */}
               <div className="mt-6">
-                <SectionBoxSubtitle>Problem Description</SectionBoxSubtitle>
+              <h3 className="font-semibold text-xl text-gray-800">Problem Description</h3>
                 <p className="text-gray-500 mt-2 whitespace-pre-wrap">
                   {description}
                 </p>
