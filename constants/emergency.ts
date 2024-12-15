@@ -148,10 +148,6 @@ export const EMERGENCY_SERVICES: EmergencyServicesType = {
           },
         ],
         activities: {
-          "2-8-1": {
-            activity: "Drain Line Camera Inspection",
-            unit_of_measurement: "each",
-          },
           "2-9-3": {
             activity: "3/4 inch Pipe Emergency Repair",
             unit_of_measurement: "each",

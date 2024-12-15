@@ -84,17 +84,17 @@ export default function EmergencyEstimate() {
             <SectionBoxTitle>Next Steps for Selected Services</SectionBoxTitle>
 
             {/* Display steps for each unique service */}
-            <div className="mt-8 space-y-8 bg-gray-100 p-6 rounded-xl">
+            <div className="mt-8 space-y-8">
               {(() => {
-                const shownServices = new Set<string>(); // To track services that have been displayed
+                const shownServices = new Set<string>(); // Tracks already displayed services
 
                 return Object.entries(selectedActivities).flatMap(
-                  ([_, activities]) =>
+                  ([, activities]) =>
                     Object.keys(activities).map((activityKey) => {
-                      let matchedService = null; // Holds matched service details
+                      let matchedService = null;
                       let matchedServiceKey = "";
 
-                      // Search for the service that matches the activity key
+                      // Find the matching service for the current activity
                       for (const category of Object.keys(EMERGENCY_SERVICES)) {
                         const services = EMERGENCY_SERVICES[category]?.services;
                         for (const serviceKey in services) {
@@ -104,40 +104,55 @@ export default function EmergencyEstimate() {
                             break;
                           }
                         }
-                        if (matchedService) break; // Stop searching if service is found
+                        if (matchedService) break;
                       }
 
-                      // Skip the service if it's already displayed
+                      // Skip already displayed services
                       if (
                         !matchedService ||
                         shownServices.has(matchedServiceKey)
                       )
                         return null;
 
-                      shownServices.add(matchedServiceKey); // Mark the service as displayed
+                      shownServices.add(matchedServiceKey);
 
                       return (
-                        <div key={matchedServiceKey} className="space-y-4">
-                          {/* Service Title */}
-                          <h3 className="text-xl font-medium text-gray-800">
+                        // Service Card Container
+                        <div
+                          key={matchedServiceKey}
+                          className="bg-white p-6 rounded-lg border border-gray-200"
+                        >
+                          {/* Service Subtitle */}
+                          <SectionBoxSubtitle>
                             {capitalizeAndTransform(matchedServiceKey)}
-                          </h3>
+                          </SectionBoxSubtitle>
 
-                          {/* Service Steps */}
-                          {matchedService.steps?.length > 0 ? (
-                            matchedService.steps.map((step) => (
-                              <div key={step.title} className="space-y-2">
-                                <h4 className="text-lg font-medium">
-                                  {step.title}
-                                </h4>
-                                <p className="text-gray-600">
-                                  {step.description}
-                                </p>
-                              </div>
-                            ))
-                          ) : (
-                            <p className="text-gray-600">No steps available.</p>
-                          )}
+                          {/* Steps for the Service */}
+                          <div className="mt-4 space-y-4">
+                            {matchedService.steps?.length > 0 ? (
+                              matchedService.steps.map((step) => (
+                                <div key={step.title} className="space-y-2">
+                                  {/* Step Number and Title in One Line */}
+                                  <div className="flex items-center gap-2">
+                                    <h4 className="text-lg font-medium">
+                                      {step.step_number}.
+                                    </h4>
+                                    <h4 className="text-lg font-medium">
+                                      {step.title}
+                                    </h4>
+                                  </div>
+                                  {/* Step Description */}
+                                  <p className="text-gray-600">
+                                    {step.description}
+                                  </p>
+                                </div>
+                              ))
+                            ) : (
+                              <p className="text-gray-600">
+                                No steps available.
+                              </p>
+                            )}
+                          </div>
                         </div>
                       );
                     })
@@ -147,7 +162,7 @@ export default function EmergencyEstimate() {
           </div>
 
           {/* Right Column: Estimate Summary */}
-          <div className="w-[400px]">
+          <div className="w-[500px]">
             <div className="bg-brand-light p-6 rounded-xl">
               <SectionBoxSubtitle>Estimate</SectionBoxSubtitle>
 
@@ -167,7 +182,6 @@ export default function EmergencyEstimate() {
                             key={activityKey}
                             className="flex items-start gap-2"
                           >
-                            <span className="text-brand">•</span>
                             <div>
                               <h3 className="font-medium">{activity.title}</h3>
                               <div className="text-sm text-gray-500">
