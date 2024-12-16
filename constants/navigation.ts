@@ -11,7 +11,7 @@ export const EMERGENCY_STEPS = [
     { label: 'Services', href: '/emergency/services' },
     { label: 'Details', href: '/emergency/details' },
     { label: 'Estimate', href: '/emergency/estimate' },
-    { label: 'Login', href: '/login' },
+    { label: 'Checkout', href: '/checkout' },
 ] as const;
 
 // You can add other navigation-related constants here

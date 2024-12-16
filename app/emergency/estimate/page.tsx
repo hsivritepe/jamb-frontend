@@ -9,7 +9,6 @@ import { SectionBoxSubtitle } from "@/components/ui/SectionBoxSubtitle";
 import { EMERGENCY_SERVICES } from "@/constants/emergency";
 import { ALL_SERVICES } from "@/constants/services";
 import ServiceTimePicker from "@/components/ui/ServiceTimePicker";
-import Image from "next/image";
 
 // Utility function to format numbers with thousand separators
 const formatWithSeparator = (value: number): string => {

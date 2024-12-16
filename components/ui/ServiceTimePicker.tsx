@@ -14,23 +14,23 @@ import {
   differenceInCalendarDays,
 } from "date-fns";
 
-// Utility function to format numbers into K format
+// Utility function to format large numbers into K format (e.g., 1500 => 1.5K)
 const formatToK = (value: number): string => {
   return value >= 1000 ? `${(value / 1000).toFixed(2)}K` : value.toFixed(2);
 };
 
-// Function to determine color for price based on its value
+// Function to determine the color of the price based on its relation to the base price
 const getPriceColor = (price: number, basePrice: number): string => {
-  if (price > basePrice) return "text-red-500";
-  if (price < basePrice) return "text-green-500";
-  return "text-gray-800";
+  if (price > basePrice) return "text-red-500"; // Higher price: red
+  if (price < basePrice) return "text-green-500"; // Lower price: green
+  return "text-gray-800"; // Neutral price: gray
 };
 
-// Props interface
+// Props interface for the ServiceTimePicker component
 interface ServiceTimePickerProps {
-  subtotal: number;
-  onClose: () => void;
-  onConfirm: (selectedDate: string, coefficient: number) => void;
+  subtotal: number; // Base subtotal value
+  onClose: () => void; // Function to close the modal
+  onConfirm: (selectedDate: string, coefficient: number) => void; // Function to confirm selected date
 }
 
 export default function ServiceTimePicker({
@@ -38,17 +38,20 @@ export default function ServiceTimePicker({
   onClose,
   onConfirm,
 }: ServiceTimePickerProps) {
+  // States to track selected date, coefficient, and the current month
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedCoefficient, setSelectedCoefficient] = useState<number>(1);
   const [currentMonth, setCurrentMonth] = useState<Date>(startOfTomorrow());
 
+  // Define "tomorrow" as the first valid day for selection
   const tomorrow = startOfTomorrow();
 
-  // Генерация цены и коэффициента на основе индекса
+  // Function to calculate the price and coefficient for a given date
   const getPriceForDate = (date: Date) => {
     const daysDifference = differenceInCalendarDays(date, tomorrow);
     let coefficient = 1;
 
+    // Apply coefficients based on the number of days from tomorrow
     if (daysDifference === 0) coefficient = 1.3;
     else if (daysDifference === 1) coefficient = 1.25;
     else if (daysDifference === 2) coefficient = 1.2;
@@ -57,48 +60,49 @@ export default function ServiceTimePicker({
     else if (daysDifference >= 15 && daysDifference <= 29) coefficient = 0.95;
     else coefficient = 0.9;
 
+    // Add an additional 10% for weekends (Saturday and Sunday)
     if (getDay(date) === 0 || getDay(date) === 6) coefficient += 0.1;
 
     return { price: subtotal * coefficient, coefficient };
   };
 
-  // Генерация календаря для текущего месяца
+  // Function to generate the calendar for the current month
   const generateCalendar = (month: Date) => {
-    const startDay = startOfMonth(month);
-    const endDay = endOfMonth(month);
-    const days = eachDayOfInterval({ start: startDay, end: endDay });
+    const startDay = startOfMonth(month); // First day of the month
+    const endDay = endOfMonth(month); // Last day of the month
+    const days = eachDayOfInterval({ start: startDay, end: endDay }); // All days in the month
     const calendar: Array<Array<any>> = [[]];
 
     let weekIndex = 0;
 
-    // Заполнение ячеек перед первым днем месяца
-    const firstDayOfWeek = getDay(startDay); // Воскресенье = 0
+    // Fill empty cells at the start to align the first day correctly
+    const firstDayOfWeek = getDay(startDay); // Sunday = 0
     for (let i = 0; i < firstDayOfWeek; i++) {
       calendar[weekIndex].push(null);
     }
 
-    // Заполнение дней месяца
+    // Add each day to the calendar grid
     days.forEach((date) => {
       if (calendar[weekIndex].length === 7) {
         weekIndex++;
         calendar[weekIndex] = [];
       }
 
-      const isPastDay = isBefore(date, tomorrow);
+      const isPastDay = isBefore(date, tomorrow); // Check if the date is in the past
       const { price, coefficient } = getPriceForDate(date);
 
       calendar[weekIndex].push({
         date,
-        formattedDate: format(date, "EEE, d MMM"),
-        price: formatToK(price),
+        formattedDate: format(date, "EEE, d MMM"), // Format date as "Day, Month Date"
+        price: formatToK(price), // Price formatted in K format
         rawPrice: price,
         coefficient,
         isPastDay,
-        isWeekend: getDay(date) === 0 || getDay(date) === 6,
+        isWeekend: getDay(date) === 0 || getDay(date) === 6, // Check if it's a weekend
       });
     });
 
-    // Дополнение строк до 6 недель
+    // Fill remaining empty rows to ensure the calendar has 6 rows
     while (calendar.length < 6) {
       calendar.push(new Array(7).fill(null));
     }
@@ -106,6 +110,7 @@ export default function ServiceTimePicker({
     return calendar;
   };
 
+  // Generate the calendar for the current month
   const calendar = generateCalendar(currentMonth);
 
   return (
@@ -162,7 +167,7 @@ export default function ServiceTimePicker({
           <div>Sat</div>
         </div>
 
-        {/* Calendar */}
+        {/* Calendar Grid */}
         <div className="space-y-3">
           {calendar.map((week, weekIndex) => (
             <div key={weekIndex} className="grid grid-cols-7 gap-2">
