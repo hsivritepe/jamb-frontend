@@ -133,7 +133,7 @@ export default function Footer() {
                 <div className="mt-12 flex flex-col md:flex-row justify-between items-center border-t pt-8">
                     <div className="flex flex-col md:flex-row items-center gap-2">
                         <span className="text-gray-500">
-                            All questions by number
+                            We're Here to Help
                         </span>
                         <a
                             href="tel:+14374601830"

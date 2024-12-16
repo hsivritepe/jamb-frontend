@@ -1,12 +1,14 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
 import BreadCrumb from "@/components/ui/BreadCrumb";
 import { EMERGENCY_STEPS } from "@/constants/navigation";
 import { SectionBoxTitle } from "@/components/ui/SectionBoxTitle";
 import { SectionBoxSubtitle } from "@/components/ui/SectionBoxSubtitle";
 import { EMERGENCY_SERVICES } from "@/constants/emergency";
 import { ALL_SERVICES } from "@/constants/services";
+import ServiceTimePicker from "@/components/ui/ServiceTimePicker";
 import Image from "next/image";
 
 // Utility function to format numbers with thousand separators
@@ -38,6 +40,9 @@ interface EmergencyService {
 export default function EmergencyEstimate() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [showModal, setShowModal] = useState(false); // Add modal element
+  const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [timeCoefficient, setTimeCoefficient] = useState<number>(1); // Default coefficient = 1
 
   // Parse URL parameters for dynamic data
   const selectedActivities = JSON.parse(
@@ -67,6 +72,7 @@ export default function EmergencyEstimate() {
   };
 
   const subtotal = calculateTotal();
+  const adjustedSubtotal = subtotal * timeCoefficient;
   const salesTax = subtotal * 0.0825; // 8.25% sales tax
   const total = subtotal + salesTax;
 
@@ -213,21 +219,80 @@ export default function EmergencyEstimate() {
               </div>
               {/* Summary of costs */}
               <div className="pt-4 mt-4">
+                {/* Display surcharge or discount */}
+                {timeCoefficient !== 1 && (
+                  <div className="flex justify-between mb-2">
+                    <span className="text-gray-600">
+                      {timeCoefficient > 1 ? "Surcharge" : "Discount"}
+                    </span>
+                    <span
+                      className={`font-semibold text-lg ${
+                        timeCoefficient > 1 ? "text-red-600" : "text-green-600"
+                      }`}
+                    >
+                      {timeCoefficient > 1 ? "+" : "-"}$
+                      {formatWithSeparator(
+                        Math.abs(subtotal * (timeCoefficient - 1))
+                      )}
+                    </span>
+                  </div>
+                )}
+
+                {/* Subtotal */}
                 <div className="flex justify-between mb-2">
                   <span className="font-semibold text-lg text-gray-800">
                     Subtotal
                   </span>
                   <span className="font-semibold text-lg text-gray-800">
-                    ${formatWithSeparator(subtotal)}
+                    ${formatWithSeparator(adjustedSubtotal)}
                   </span>
                 </div>
+
+                {/* Sales Tax */}
                 <div className="flex justify-between mb-4">
                   <span className="text-gray-600">Sales tax (8.25%)</span>
-                  <span>${formatWithSeparator(salesTax)}</span>
+                  <span>${formatWithSeparator(adjustedSubtotal * 0.0825)}</span>
                 </div>
-                <div className="flex justify-between text-2xl font-semibold">
+
+                {/* Button to Open Modal */}
+                <button
+                  onClick={() => setShowModal(true)} // Open modal
+                  className="w-full text-brand border border-brand py-3 rounded-lg font-medium mt-4"
+                >
+                  {selectedTime ? "Change Date" : "Select Available Time"}{" "}
+                  {/* Dinamic button */}
+                </button>
+
+                {/* Display Selected Date */}
+                {selectedTime && (
+                  <p className="mt-2 text-gray-700 text-center font-medium">
+                    Selected Date:{" "}
+                    <span className="text-blue-600">{selectedTime}</span>
+                  </p>
+                )}
+
+                {/* Render Modal */}
+                {showModal && (
+                  <ServiceTimePicker
+                    subtotal={subtotal}
+                    onClose={() => setShowModal(false)} // Close modal
+                    onConfirm={(date, coefficient) => {
+                      setSelectedTime(date); // Save date
+                      setTimeCoefficient(coefficient); // Update coefficient
+                      setShowModal(false); // Close modal
+                    }}
+                  />
+                )}
+
+                {/* Total */}
+                <div className="flex justify-between text-2xl font-semibold mt-4">
                   <span>Total</span>
-                  <span>${formatWithSeparator(total)}</span>
+                  <span>
+                    $
+                    {formatWithSeparator(
+                      adjustedSubtotal + adjustedSubtotal * 0.0825
+                    )}
+                  </span>
                 </div>
               </div>
 
@@ -279,7 +344,7 @@ export default function EmergencyEstimate() {
               {/* Action Buttons */}
               <div className="mt-6 space-y-4">
                 <button className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium">
-                  Add to order &nbsp;→
+                  Proceed to Checkout &nbsp;→
                 </button>
                 <button
                   onClick={() => router.back()}
