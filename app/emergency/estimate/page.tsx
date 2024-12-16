@@ -87,7 +87,9 @@ export default function EmergencyEstimate() {
         <div className="flex gap-12">
           {/* Left Column: Steps for Selected Services */}
           <div className="flex-1">
-            <SectionBoxTitle>Next Steps for Selected Services</SectionBoxTitle>
+            <SectionBoxTitle>
+              Immediate Steps for Selected Services
+            </SectionBoxTitle>
 
             {/* Display steps for each unique service */}
             <div className="mt-8 space-y-8">
@@ -257,10 +259,13 @@ export default function EmergencyEstimate() {
                 {/* Button to Open Modal */}
                 <button
                   onClick={() => setShowModal(true)} // Open modal
-                  className="w-full text-brand border border-brand py-3 rounded-lg font-medium mt-4"
+                  className={`w-full py-3 rounded-lg font-medium mt-4 border ${
+                    selectedTime
+                      ? "text-red-500 border-red-500"
+                      : "text-brand border-brand"
+                  }`}
                 >
-                  {selectedTime ? "Change Date" : "Select Available Time"}{" "}
-                  {/* Dinamic button */}
+                  {selectedTime ? "Change Date" : "Select Available Time"}
                 </button>
 
                 {/* Display Selected Date */}

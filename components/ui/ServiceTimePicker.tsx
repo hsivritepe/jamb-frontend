@@ -1,18 +1,36 @@
 "use client";
 
 import { useState } from "react";
-import { format, addDays } from "date-fns";
+import {
+  format,
+  addDays,
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval,
+  getDay,
+  addMonths,
+  isBefore,
+  startOfTomorrow,
+  differenceInCalendarDays,
+} from "date-fns";
 
 // Utility function to format numbers into K format
 const formatToK = (value: number): string => {
   return value >= 1000 ? `${(value / 1000).toFixed(2)}K` : value.toFixed(2);
 };
 
+// Function to determine color for price based on its value
+const getPriceColor = (price: number, basePrice: number): string => {
+  if (price > basePrice) return "text-red-500";
+  if (price < basePrice) return "text-green-500";
+  return "text-gray-800";
+};
+
 // Props interface
 interface ServiceTimePickerProps {
-  subtotal: number; // Base subtotal value
-  onClose: () => void; // Function to close the modal
-  onConfirm: (selectedDate: string, coefficient: number) => void; // Function to confirm the selected date and coefficient
+  subtotal: number;
+  onClose: () => void;
+  onConfirm: (selectedDate: string, coefficient: number) => void;
 }
 
 export default function ServiceTimePicker({
@@ -22,55 +40,81 @@ export default function ServiceTimePicker({
 }: ServiceTimePickerProps) {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedCoefficient, setSelectedCoefficient] = useState<number>(1);
+  const [currentMonth, setCurrentMonth] = useState<Date>(startOfTomorrow());
 
-  // Generate price for specific dates and return the coefficient
-  const getPriceForDate = (index: number, isWeekend: boolean) => {
+  const tomorrow = startOfTomorrow();
+
+  // Генерация цены и коэффициента на основе индекса
+  const getPriceForDate = (date: Date) => {
+    const daysDifference = differenceInCalendarDays(date, tomorrow);
     let coefficient = 1;
-    if (index === 0) coefficient = 1.3;
-    else if (index === 1) coefficient = 1.25;
-    else if (index === 2) coefficient = 1.2;
-    else if (index >= 3 && index <= 5) coefficient = 1.15;
-    else if (index >= 6 && index <= 14) coefficient = 1.0;
-    else if (index >= 15 && index <= 29) coefficient = 0.95;
+
+    if (daysDifference === 0) coefficient = 1.3;
+    else if (daysDifference === 1) coefficient = 1.25;
+    else if (daysDifference === 2) coefficient = 1.2;
+    else if (daysDifference >= 3 && daysDifference <= 5) coefficient = 1.15;
+    else if (daysDifference >= 6 && daysDifference <= 14) coefficient = 1.0;
+    else if (daysDifference >= 15 && daysDifference <= 29) coefficient = 0.95;
     else coefficient = 0.9;
 
-    if (isWeekend) coefficient += 0.1; // Extra charge for weekends
+    if (getDay(date) === 0 || getDay(date) === 6) coefficient += 0.1;
 
     return { price: subtotal * coefficient, coefficient };
   };
 
-  // Generate 30 days grouped by weeks
-  const weeks = [];
-  let currentWeek = [];
-  for (let i = 0; i < 30; i++) {
-    const date = addDays(new Date(), i);
-    const dayOfWeek = date.getDay();
-    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+  // Генерация календаря для текущего месяца
+  const generateCalendar = (month: Date) => {
+    const startDay = startOfMonth(month);
+    const endDay = endOfMonth(month);
+    const days = eachDayOfInterval({ start: startDay, end: endDay });
+    const calendar: Array<Array<any>> = [[]];
 
-    const { price, coefficient } = getPriceForDate(i, isWeekend);
+    let weekIndex = 0;
 
-    currentWeek.push({
-      date,
-      formattedDate: format(date, "EEE, d MMM yyyy"), // Add day of week
-      price: formatToK(price),
-      isWeekend,
-      coefficient, // Store coefficient for selected day
+    // Заполнение ячеек перед первым днем месяца
+    const firstDayOfWeek = getDay(startDay); // Воскресенье = 0
+    for (let i = 0; i < firstDayOfWeek; i++) {
+      calendar[weekIndex].push(null);
+    }
+
+    // Заполнение дней месяца
+    days.forEach((date) => {
+      if (calendar[weekIndex].length === 7) {
+        weekIndex++;
+        calendar[weekIndex] = [];
+      }
+
+      const isPastDay = isBefore(date, tomorrow);
+      const { price, coefficient } = getPriceForDate(date);
+
+      calendar[weekIndex].push({
+        date,
+        formattedDate: format(date, "EEE, d MMM"),
+        price: formatToK(price),
+        rawPrice: price,
+        coefficient,
+        isPastDay,
+        isWeekend: getDay(date) === 0 || getDay(date) === 6,
+      });
     });
 
-    // Start a new week if we reach Sunday or end of days
-    if (dayOfWeek === 0 || i === 29) {
-      weeks.push(currentWeek);
-      currentWeek = [];
+    // Дополнение строк до 6 недель
+    while (calendar.length < 6) {
+      calendar.push(new Array(7).fill(null));
     }
-  }
+
+    return calendar;
+  };
+
+  const calendar = generateCalendar(currentMonth);
 
   return (
     <div className="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white p-6 rounded-lg w-full max-w-[900px] shadow-lg">
         {/* Modal Header */}
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-semibold">Select Available Time</h2>
-          <button onClick={onClose} className="text-gray-600 text-lg">
+          <button onClick={onClose} className="text-gray-600 text-3xl">
             &times;
           </button>
         </div>
@@ -83,41 +127,82 @@ export default function ServiceTimePicker({
           Anytime in a Month
         </button>
 
-        {/* Days of the Week Header */}
-        <div className="grid grid-cols-7 gap-2 mb-2 text-center text-sm font-medium text-gray-600">
+        {/* Month Navigation */}
+        <div className="flex justify-between mb-2">
+          <button
+            onClick={() => setCurrentMonth((prev) => addMonths(prev, -1))}
+            disabled={isBefore(addMonths(currentMonth, -1), tomorrow)}
+            className={`text-blue-600 font-medium ${
+              isBefore(addMonths(currentMonth, -1), tomorrow)
+                ? "opacity-50 cursor-not-allowed"
+                : ""
+            }`}
+          >
+            ← Previous Month
+          </button>
+          <span className="text-lg font-semibold">
+            {format(currentMonth, "MMMM yyyy")}
+          </span>
+          <button
+            onClick={() => setCurrentMonth((prev) => addMonths(prev, 1))}
+            className="text-blue-600 font-medium"
+          >
+            Next Month →
+          </button>
+        </div>
+
+        {/* Days of the Week */}
+        <div className="grid grid-cols-7 gap-2 text-center text-sm font-medium text-gray-600 mb-2">
+          <div>Sun</div>
           <div>Mon</div>
           <div>Tue</div>
           <div>Wed</div>
           <div>Thu</div>
           <div>Fri</div>
-          <div className="text-red-500">Sat</div>
-          <div className="text-red-500">Sun</div>
+          <div>Sat</div>
         </div>
 
-        {/* Weekly Calendar */}
-        <div className="space-y-4">
-          {weeks.map((week, weekIndex) => (
-            <div key={weekIndex} className="grid grid-cols-7 gap-3">
+        {/* Calendar */}
+        <div className="space-y-3">
+          {calendar.map((week, weekIndex) => (
+            <div key={weekIndex} className="grid grid-cols-7 gap-2">
               {week.map((day, dayIndex) => (
-                <button
-                  key={dayIndex}
-                  onClick={() => {
-                    setSelectedDate(day.formattedDate);
-                    setSelectedCoefficient(day.coefficient);
-                  }}
-                  className={`p-2 border rounded-lg text-center flex flex-col justify-center ${
-                    day.isWeekend ? "text-red-500" : "text-gray-800"
-                  } ${
-                    selectedDate === day.formattedDate
-                      ? "border-blue-600 bg-blue-50"
-                      : "border-gray-300 hover:bg-gray-100"
-                  }`}
-                >
-                  <div className="text-xs font-medium">{day.formattedDate}</div>
-                  <div className="text-sm font-semibold text-blue-600">
-                    ${day.price}
-                  </div>
-                </button>
+                <div key={dayIndex} className="h-16 flex justify-center items-center">
+                  {day ? (
+                    <button
+                      disabled={day.isPastDay}
+                      onClick={() => {
+                        setSelectedDate(format(day.date, "EEE, d MMM yyyy"));
+                        setSelectedCoefficient(day.coefficient);
+                      }}
+                      className={`p-2 border rounded-lg w-full h-full flex flex-col justify-center items-center ${
+                        day.isWeekend ? "border-red-500" : "border-gray-300"
+                      } ${
+                        day.isPastDay
+                          ? "opacity-50 cursor-not-allowed"
+                          : selectedDate === format(day.date, "EEE, d MMM yyyy")
+                          ? "border-blue-600 bg-blue-100 scale-105 shadow-lg"
+                          : "hover:bg-gray-100"
+                      }`}
+                    >
+                      <span className="text-sm font-medium text-gray-700">
+                        {day.formattedDate}
+                      </span>
+                      {!day.isPastDay && (
+                        <span
+                          className={`text-sm font-semibold ${getPriceColor(
+                            day.rawPrice,
+                            subtotal
+                          )}`}
+                        >
+                          ${day.price}
+                        </span>
+                      )}
+                    </button>
+                  ) : (
+                    <div className="h-full"></div>
+                  )}
+                </div>
               ))}
             </div>
           ))}
