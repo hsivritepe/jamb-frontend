@@ -1,7 +1,7 @@
 "use client";
 
 // Import necessary modules and components
-import { useState, ChangeEvent } from "react";
+import { useState, ChangeEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import BreadCrumb from "@/components/ui/BreadCrumb";
 import SearchServices from "@/components/SearchServices";
@@ -15,44 +15,64 @@ import { ChevronDown } from "lucide-react";
 import { SectionBoxTitle } from "@/components/ui/SectionBoxTitle";
 import { useLocation } from "@/context/LocationContext";
 
+// Helper functions
+const saveToSession = (key: string, value: any) => {
+  sessionStorage.setItem(key, JSON.stringify(value));
+};
+
+const loadFromSession = (key: string, defaultValue: any) => {
+  const savedValue = sessionStorage.getItem(key);
+  try {
+    return savedValue ? JSON.parse(savedValue) : defaultValue;
+  } catch (error) {
+    console.error(`Error parsing sessionStorage for key "${key}"`, error);
+    return defaultValue;
+  }
+};
+
 // Main component for Emergency Services
 export default function EmergencyServices() {
-  const router = useRouter(); // Initialize router for navigation
+  const router = useRouter();
 
-  // State variables
-  const [selectedServices, setSelectedServices] = useState<
-    Record<string, string[]>
-  >({}); // Stores selected services by category
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
-    new Set()
-  ); // Tracks expanded categories
-  const [searchQuery, setSearchQuery] = useState(""); // Tracks the search query
-  const [warningMessage, setWarningMessage] = useState<string | null>(null); // Stores warning messages
-  const [address, setAddress] = useState<string>(""); // Stores the user's address
-  const [description, setDescription] = useState<string>(""); // Stores the problem description
+  // State variables with sessionStorage integration
+  const [selectedServices, setSelectedServices] = useState<Record<string, string[]>>(
+    loadFromSession("selectedServices", {})
+  );
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState<string>(loadFromSession("searchQuery", ""));
+  const [warningMessage, setWarningMessage] = useState<string | null>(null);
+  const [address, setAddress] = useState<string>(loadFromSession("address", ""));
+  const [description, setDescription] = useState<string>(loadFromSession("description", ""));
+  const [uploadedPhotos, setUploadedPhotos] = useState<{ file: File; url: string }[]>(
+    loadFromSession("uploadedPhotos", [])
+  );
 
-  const { location, setLocation } = useLocation(); // Access user location from the context
+  const { location } = useLocation();
 
-  // Calculate total number of services available
-  const totalServices = Object.values(EMERGENCY_SERVICES).flatMap(
-    ({ services }) => Object.keys(services)
+  // Save to sessionStorage when state changes
+  useEffect(() => saveToSession("selectedServices", selectedServices), [selectedServices]);
+  useEffect(() => saveToSession("searchQuery", searchQuery), [searchQuery]);
+  useEffect(() => saveToSession("address", address), [address]);
+  useEffect(() => saveToSession("description", description), [description]);
+  useEffect(() => saveToSession("uploadedPhotos", uploadedPhotos), [uploadedPhotos]);
+
+  const totalServices = Object.values(EMERGENCY_SERVICES).flatMap(({ services }) =>
+    Object.keys(services)
   ).length;
 
-  // Toggle service selection for a given category and service
+  // Toggle service selection
   const handleServiceSelect = (category: string, service: string) => {
     setSelectedServices((prev) => {
       const currentCategory = prev[category] || [];
       const isSelected = currentCategory.includes(service);
 
-      if (!isSelected) {
-        setWarningMessage(null); // Hide warning if any service is selected
-      }
+      if (!isSelected) setWarningMessage(null);
 
       return {
         ...prev,
         [category]: isSelected
-          ? currentCategory.filter((item) => item !== service) // Remove service
-          : [...currentCategory, service], // Add service
+          ? currentCategory.filter((item) => item !== service)
+          : [...currentCategory, service],
       };
     });
   };
@@ -61,28 +81,19 @@ export default function EmergencyServices() {
   const toggleCategory = (category: string) => {
     setExpandedCategories((prev) => {
       const next = new Set(prev);
-      if (next.has(category)) {
-        next.delete(category); // Collapse category
-      } else {
-        next.add(category); // Expand category
-      }
+      next.has(category) ? next.delete(category) : next.add(category);
       return next;
     });
   };
 
-  // Clear all selected services
-  const handleClearSelection = () => {
-    setSelectedServices({});
-  };
+  const handleClearSelection = () => setSelectedServices({});
 
-  // Handle the "Next" button click
   const handleNextClick = () => {
     if (Object.values(selectedServices).flat().length === 0) {
       setWarningMessage("Please select at least one service before proceeding.");
     } else if (!address.trim()) {
       setWarningMessage("Please enter your address before proceeding.");
     } else {
-      // Navigate to the next page with selected services, address, and other details
       router.push(
         `/emergency/details?services=${encodeURIComponent(
           JSON.stringify(selectedServices)
@@ -93,49 +104,33 @@ export default function EmergencyServices() {
     }
   };
 
-  // Handle address input changes
-  const handleAddressChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setAddress(e.target.value);
-  };
+  const handleAddressChange = (e: ChangeEvent<HTMLInputElement>) => setAddress(e.target.value);
 
-  // Handle description input changes
-  const handleDescriptionChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+  const handleDescriptionChange = (e: ChangeEvent<HTMLTextAreaElement>) =>
     setDescription(e.target.value);
+
+  const handleUseMyLocation = () => {
+    if (location?.city && location?.zip) {
+      setAddress(`${location.city}, ${location.zip}, ${location.country || ""}`);
+    } else {
+      setWarningMessage("Location data is unavailable. Please enter manually.");
+    }
   };
 
-  // Use the user's current location to fill the address
-  const handleUseMyLocation = async () => {
-    setAddress(`${location.city}, ${location.zip}, ${location.country || ""}`);
-  };
-
-  const [uploadedPhotos, setUploadedPhotos] = useState<
-    { file: File; url: string }[]
-  >([]); // State for uploaded photos
-
-  // Remove a specific photo from the list
   const handleRemovePhoto = (index: number) => {
-    setUploadedPhotos((prev) => {
-      const updatedPhotos = [...prev];
-      updatedPhotos.splice(index, 1); // Remove photo by index
-      return updatedPhotos;
-    });
+    setUploadedPhotos((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // Filter services based on the search query
   const filteredServices: EmergencyServicesType = searchQuery
-    ? Object.entries(EMERGENCY_SERVICES).reduce(
-        (acc, [category, { services }]) => {
-          const matchingServices = Object.entries(services).filter(
-            ([serviceKey]) =>
-              serviceKey.toLowerCase().includes(searchQuery.toLowerCase()) // Match services with the query
-          );
-          if (matchingServices.length > 0) {
-            acc[category] = { services: Object.fromEntries(matchingServices) }; // Add matching services to the filtered list
-          }
-          return acc;
-        },
-        {} as EmergencyServicesType
-      )
+    ? Object.entries(EMERGENCY_SERVICES).reduce((acc, [category, { services }]) => {
+        const matchingServices = Object.entries(services).filter(([serviceKey]) =>
+          serviceKey.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+        if (matchingServices.length > 0) {
+          acc[category] = { services: Object.fromEntries(matchingServices) };
+        }
+        return acc;
+      }, {} as EmergencyServicesType)
     : EMERGENCY_SERVICES;
 
   return (
