@@ -35,29 +35,43 @@ export default function EmergencyServices() {
   const router = useRouter();
 
   // State variables with sessionStorage integration
-  const [selectedServices, setSelectedServices] = useState<Record<string, string[]>>(
-    loadFromSession("selectedServices", {})
+  const [selectedServices, setSelectedServices] = useState<
+    Record<string, string[]>
+  >(loadFromSession("selectedServices", {}));
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
+    new Set()
   );
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
-  const [searchQuery, setSearchQuery] = useState<string>(loadFromSession("searchQuery", ""));
+  const [searchQuery, setSearchQuery] = useState<string>(
+    loadFromSession("searchQuery", "")
+  );
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
-  const [address, setAddress] = useState<string>(loadFromSession("address", ""));
-  const [description, setDescription] = useState<string>(loadFromSession("description", ""));
-  const [uploadedPhotos, setUploadedPhotos] = useState<{ file: File; url: string }[]>(
-    loadFromSession("uploadedPhotos", [])
+  const [address, setAddress] = useState<string>(
+    loadFromSession("address", "")
   );
+  const [description, setDescription] = useState<string>(
+    loadFromSession("description", "")
+  );
+  const [uploadedPhotos, setUploadedPhotos] = useState<
+    { file: File; url: string }[]
+  >(loadFromSession("uploadedPhotos", []));
 
   const { location } = useLocation();
 
   // Save to sessionStorage when state changes
-  useEffect(() => saveToSession("selectedServices", selectedServices), [selectedServices]);
+  useEffect(
+    () => saveToSession("selectedServices", selectedServices),
+    [selectedServices]
+  );
   useEffect(() => saveToSession("searchQuery", searchQuery), [searchQuery]);
   useEffect(() => saveToSession("address", address), [address]);
   useEffect(() => saveToSession("description", description), [description]);
-  useEffect(() => saveToSession("uploadedPhotos", uploadedPhotos), [uploadedPhotos]);
+  useEffect(
+    () => saveToSession("uploadedPhotos", uploadedPhotos),
+    [uploadedPhotos]
+  );
 
-  const totalServices = Object.values(EMERGENCY_SERVICES).flatMap(({ services }) =>
-    Object.keys(services)
+  const totalServices = Object.values(EMERGENCY_SERVICES).flatMap(
+    ({ services }) => Object.keys(services)
   ).length;
 
   // Toggle service selection
@@ -90,7 +104,9 @@ export default function EmergencyServices() {
 
   const handleNextClick = () => {
     if (Object.values(selectedServices).flat().length === 0) {
-      setWarningMessage("Please select at least one service before proceeding.");
+      setWarningMessage(
+        "Please select at least one service before proceeding."
+      );
     } else if (!address.trim()) {
       setWarningMessage("Please enter your address before proceeding.");
     } else {
@@ -98,20 +114,23 @@ export default function EmergencyServices() {
         `/emergency/details?services=${encodeURIComponent(
           JSON.stringify(selectedServices)
         )}&address=${encodeURIComponent(address)}&photos=${encodeURIComponent(
-          JSON.stringify(uploadedPhotos.map((p) => p.url))
+          JSON.stringify(uploadedPhotos.filter((p) => p?.url).map((p) => p.url))
         )}&description=${encodeURIComponent(description)}`
       );
     }
   };
 
-  const handleAddressChange = (e: ChangeEvent<HTMLInputElement>) => setAddress(e.target.value);
+  const handleAddressChange = (e: ChangeEvent<HTMLInputElement>) =>
+    setAddress(e.target.value);
 
   const handleDescriptionChange = (e: ChangeEvent<HTMLTextAreaElement>) =>
     setDescription(e.target.value);
 
   const handleUseMyLocation = () => {
     if (location?.city && location?.zip) {
-      setAddress(`${location.city}, ${location.zip}, ${location.country || ""}`);
+      setAddress(
+        `${location.city}, ${location.zip}, ${location.country || ""}`
+      );
     } else {
       setWarningMessage("Location data is unavailable. Please enter manually.");
     }
@@ -122,36 +141,40 @@ export default function EmergencyServices() {
   };
 
   const filteredServices: EmergencyServicesType = searchQuery
-    ? Object.entries(EMERGENCY_SERVICES).reduce((acc, [category, { services }]) => {
-        const matchingServices = Object.entries(services).filter(([serviceKey]) =>
-          serviceKey.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-        if (matchingServices.length > 0) {
-          acc[category] = { services: Object.fromEntries(matchingServices) };
-        }
-        return acc;
-      }, {} as EmergencyServicesType)
+    ? Object.entries(EMERGENCY_SERVICES).reduce(
+        (acc, [category, { services }]) => {
+          const matchingServices = Object.entries(services).filter(
+            ([serviceKey]) =>
+              serviceKey.toLowerCase().includes(searchQuery.toLowerCase())
+          );
+          if (matchingServices.length > 0) {
+            acc[category] = { services: Object.fromEntries(matchingServices) };
+          }
+          return acc;
+        },
+        {} as EmergencyServicesType
+      )
     : EMERGENCY_SERVICES;
 
   return (
     <main className="min-h-screen pt-24 pb-16">
       <div className="container mx-auto">
         <BreadCrumb items={EMERGENCY_STEPS} /> {/* Breadcrumb navigation */}
-
         {/* Title and Next button */}
         <div className="flex justify-between items-start mt-8">
           <SectionBoxTitle>
             Let's Quickly Find the Help You Need
           </SectionBoxTitle>
-          <Button onClick={handleNextClick}>Next →</Button> {/* Navigate to the next page */}
+          <Button onClick={handleNextClick}>Next →</Button>{" "}
+          {/* Navigate to the next page */}
         </div>
-
         {/* Search and Clear */}
         <div className="flex flex-col gap-4 mt-8 w-full max-w-[600px]">
           <SearchServices
             value={searchQuery} // Search query value
-            onChange={(e: ChangeEvent<HTMLInputElement>) =>
-              setSearchQuery(e.target.value) // Update search query
+            onChange={
+              (e: ChangeEvent<HTMLInputElement>) =>
+                setSearchQuery(e.target.value) // Update search query
             }
             placeholder={`Explore ${totalServices} emergency services`} // Placeholder with the total number of services
           />
@@ -173,12 +196,10 @@ export default function EmergencyServices() {
             </button>
           </div>
         </div>
-
         {/* Warning Message */}
         <div className="h-6 mt-4 text-left">
           {warningMessage && <p className="text-red-500">{warningMessage}</p>}
         </div>
-
         <div className="container mx-auto relative flex">
           {/* Left Section */}
           <div className="flex-1">
@@ -258,8 +279,12 @@ export default function EmergencyServices() {
                                   <input
                                     type="checkbox"
                                     checked={isSelected} // Set checkbox state
-                                    onChange={() =>
-                                      handleServiceSelect(category, serviceKey) // Select or deselect service
+                                    onChange={
+                                      () =>
+                                        handleServiceSelect(
+                                          category,
+                                          serviceKey
+                                        ) // Select or deselect service
                                     }
                                     className="sr-only peer"
                                   />
@@ -291,9 +316,7 @@ export default function EmergencyServices() {
                   value={address} // Address input value
                   onChange={handleAddressChange} // Update address state
                   onFocus={(e) => (e.target.placeholder = "")} // Clear placeholder on focus
-                  onBlur={(e) =>
-                    (e.target.placeholder = "Enter your address")
-                  } // Reset placeholder on blur
+                  onBlur={(e) => (e.target.placeholder = "Enter your address")} // Reset placeholder on blur
                   placeholder="Enter your address"
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
@@ -349,22 +372,24 @@ export default function EmergencyServices() {
 
                   {/* Preview Section */}
                   <div className="mt-4 grid grid-cols-3 gap-4">
-                    {uploadedPhotos.map((photo, index) => (
-                      <div key={index} className="relative group">
-                        <img
-                          src={photo.url} // Show preview of uploaded photo
-                          alt={`Uploaded preview ${index + 1}`}
-                          className="w-full h-24 object-cover rounded-md border border-gray-300"
-                        />
-                        <button
-                          onClick={() => handleRemovePhoto(index)} // Remove the photo
-                          className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                          aria-label="Remove photo"
-                        >
-                          <span className="text-sm">✕</span>
-                        </button>
-                      </div>
-                    ))}
+                    {uploadedPhotos
+                      .filter((photo) => photo?.url) // Фильтруем только валидные объекты с URL
+                      .map((photo, index) => (
+                        <div key={index} className="relative group">
+                          <img
+                            src={photo.url} // Show preview of uploaded photo
+                            alt={`Uploaded preview ${index + 1}`}
+                            className="w-full h-24 object-cover rounded-md border border-gray-300"
+                          />
+                          <button
+                            onClick={() => handleRemovePhoto(index)} // Remove the photo
+                            className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            aria-label="Remove photo"
+                          >
+                            <span className="text-sm">✕</span>
+                          </button>
+                        </div>
+                      ))}
                   </div>
                 </div>
 
