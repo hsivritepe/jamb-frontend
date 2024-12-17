@@ -347,7 +347,24 @@ export default function EmergencyEstimate() {
 
               {/* Action Buttons */}
               <div className="mt-6 space-y-4">
-                <button className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium">
+                <button
+                  className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium"
+                  onClick={() => {
+                    router.push(
+                      `/emergency/checkout?address=${encodeURIComponent(
+                        address
+                      )}&photos=${encodeURIComponent(
+                        JSON.stringify(photos)
+                      )}&description=${encodeURIComponent(
+                        description
+                      )}&date=${encodeURIComponent(
+                        selectedTime || "No date selected"
+                      )}&selectedActivities=${encodeURIComponent(
+                        JSON.stringify(selectedActivities)
+                      )}`
+                    );
+                  }}
+                >
                   Proceed to Checkout &nbsp;→
                 </button>
                 <button

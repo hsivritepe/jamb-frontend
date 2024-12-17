@@ -158,8 +158,16 @@ export default function EmergencyDetails() {
     const selectedActivitiesEncoded = encodeURIComponent(
       JSON.stringify(selectedActivities)
     );
+    
+    const address = searchParams.get("address") || "";
+    const photos = searchParams.get("photos") || "[]";
+    const description = searchParams.get("description") || "";
+
     router.push(
-      `/emergency/estimate?selectedActivities=${selectedActivitiesEncoded}`
+      `/emergency/estimate?selectedActivities=${selectedActivitiesEncoded}` +
+      `&address=${encodeURIComponent(address)}` +
+      `&photos=${encodeURIComponent(photos)}` +
+      `&description=${encodeURIComponent(description)}`
     );
   };
 
