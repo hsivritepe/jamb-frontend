@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import BreadCrumb from "@/components/ui/BreadCrumb";
 import Button from "@/components/ui/Button";
 import { SectionBoxTitle } from "@/components/ui/SectionBoxTitle";
@@ -9,35 +10,49 @@ import { EMERGENCY_STEPS } from "@/constants/navigation";
 import { EMERGENCY_SERVICES } from "@/constants/emergency";
 import { ALL_SERVICES } from "@/constants/services";
 import { ChevronDown } from "lucide-react";
-import { useState } from "react";
 
-// Utility function to transform text
-const capitalizeAndTransform = (text: string): string => {
-  return text
-    .replace(/([A-Z])/g, " $1") // Add spaces before capital letters
-    .trim() // Remove extra spaces
-    .replace(/^./, (char) => char.toUpperCase()); // Capitalize the first letter
+// Utility functions
+const capitalizeAndTransform = (text: string): string =>
+  text
+    .replace(/([A-Z])/g, " $1")
+    .trim()
+    .replace(/^./, (char) => char.toUpperCase());
+
+const formatWithSeparator = (value: number): string =>
+  new Intl.NumberFormat("en-US", { minimumFractionDigits: 2 }).format(value);
+
+const saveToSession = (key: string, value: any) => {
+  sessionStorage.setItem(key, JSON.stringify(value));
 };
 
-// Utility function to format numbers with thousand separators
-const formatWithSeparator = (value: number): string => {
-  return new Intl.NumberFormat("en-US", { minimumFractionDigits: 2 }).format(
-    value
-  );
+const loadFromSession = (key: string, defaultValue: any = {}) => {
+  const savedValue = sessionStorage.getItem(key);
+  return savedValue ? JSON.parse(savedValue) : defaultValue;
 };
 
 export default function EmergencyDetails() {
   const router = useRouter();
   const searchParams = useSearchParams();
+
   const [expandedServices, setExpandedServices] = useState<Set<string>>(
     new Set()
   );
   const [selectedActivities, setSelectedActivities] = useState<
     Record<string, Record<string, number>>
-  >({});
+  >(() => loadFromSession("selectedActivities", {}));
   const [manualInputValue, setManualInputValue] = useState<
     Record<string, Record<string, string | null>>
   >({});
+  const [address, setAddress] = useState<string>(
+    searchParams.get("address") || loadFromSession("address", "")
+  );
+  const [photos, setPhotos] = useState<string[]>(
+    JSON.parse(searchParams.get("photos") || "[]") ||
+      loadFromSession("photos", [])
+  );
+  const [description, setDescription] = useState<string>(
+    searchParams.get("description") || loadFromSession("description", "")
+  );
 
   const selectedServices: Record<string, string[]> = searchParams.get(
     "services"
@@ -45,11 +60,15 @@ export default function EmergencyDetails() {
     ? JSON.parse(searchParams.get("services") as string)
     : {};
 
+  // Save data to session storage when state changes
+  useEffect(() => {
+    saveToSession("selectedActivities", selectedActivities);
+  }, [selectedActivities]);
+
   const handleToggleExpand = (service: string) => {
     setExpandedServices((prev) => {
       const updated = new Set(prev);
-      if (updated.has(service)) updated.delete(service);
-      else updated.add(service);
+      updated.has(service) ? updated.delete(service) : updated.add(service);
       return updated;
     });
   };
@@ -61,12 +80,8 @@ export default function EmergencyDetails() {
         const updatedActivities = { ...serviceActivities };
         delete updatedActivities[activityKey];
         return { ...prev, [service]: updatedActivities };
-      } else {
-        return {
-          ...prev,
-          [service]: { ...serviceActivities, [activityKey]: 1 },
-        };
       }
+      return { ...prev, [service]: { ...serviceActivities, [activityKey]: 1 } };
     });
     setManualInputValue((prev) => ({
       ...prev,
@@ -138,6 +153,7 @@ export default function EmergencyDetails() {
   const handleClearSelection = () => {
     setSelectedActivities({});
     setManualInputValue({});
+    saveToSession("selectedActivities", {});
   };
 
   const calculateTotal = (): number => {
@@ -155,19 +171,17 @@ export default function EmergencyDetails() {
   };
 
   const handleNext = () => {
-    const selectedActivitiesEncoded = encodeURIComponent(
-      JSON.stringify(selectedActivities)
-    );
-    
-    const address = searchParams.get("address") || "";
-    const photos = searchParams.get("photos") || "[]";
-    const description = searchParams.get("description") || "";
+    saveToSession("selectedActivities", selectedActivities);
+    saveToSession("address", address);
+    saveToSession("photos", photos);
+    saveToSession("description", description);
 
     router.push(
-      `/emergency/estimate?selectedActivities=${selectedActivitiesEncoded}` +
-      `&address=${encodeURIComponent(address)}` +
-      `&photos=${encodeURIComponent(photos)}` +
-      `&description=${encodeURIComponent(description)}`
+      `/emergency/estimate?selectedActivities=${encodeURIComponent(
+        JSON.stringify(selectedActivities)
+      )}&address=${encodeURIComponent(address)}&photos=${encodeURIComponent(
+        JSON.stringify(photos)
+      )}&description=${encodeURIComponent(description)}`
     );
   };
 
