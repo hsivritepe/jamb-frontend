@@ -148,14 +148,6 @@ export const EMERGENCY_SERVICES: EmergencyServicesType = {
           },
         ],
         activities: {
-          "2-8-1": {
-            activity: "Drain Line Camera Inspection",
-            unit_of_measurement: "each",
-          },
-          "2-8-2": {
-            activity: "Clog Clearing",
-            unit_of_measurement: "each",
-          },
           "2-9-3": {
             activity: "3/4 inch Pipe Emergency Repair",
             unit_of_measurement: "each",
@@ -372,15 +364,7 @@ export const EMERGENCY_SERVICES: EmergencyServicesType = {
           "2-6-4": {
             activity: "Electric Tankless Water Heater Installation",
             unit_of_measurement: "each",
-          },
-          "2-6-5": {
-            activity: "Water Heater Thermostat Replacement",
-            unit_of_measurement: "each",
-          },
-          "2-6-6": {
-            activity: "Water Heater Element Replacement",
-            unit_of_measurement: "each",
-          },
+          }
         },
       },
       brokenWaterHeaters: {
@@ -460,19 +444,7 @@ export const EMERGENCY_SERVICES: EmergencyServicesType = {
           "2-6-4": {
             activity: "Electric Tankless Water Heater Installation",
             unit_of_measurement: "each",
-          },
-          "2-6-5": {
-            activity: "Water Heater Thermostat Replacement",
-            unit_of_measurement: "each",
-          },
-          "2-6-6": {
-            activity: "Water Heater Element Replacement",
-            unit_of_measurement: "each",
-          },
-          "2-6-7": {
-            activity: "Gas Valve Replacement",
-            unit_of_measurement: "each",
-          },
+          }
         },
       },
       majorDrainBlockages: {
@@ -600,10 +572,6 @@ export const EMERGENCY_SERVICES: EmergencyServicesType = {
           },
         ],
         activities: {
-          "10-1-2": {
-            activity: "Circuit Breaker Replacement",
-            unit_of_measurement: "each",
-          },
           "10-1-5": {
             activity: "Outdoor Electrical Panel Safety Inspection",
             unit_of_measurement: "each",
@@ -759,10 +727,6 @@ export const EMERGENCY_SERVICES: EmergencyServicesType = {
         activities: {
           "1-9-1": {
             activity: "Circuit Breaker and Fuse Troubleshooting",
-            unit_of_measurement: "sq ft",
-          },
-          "1-9-2": {
-            activity: "Faulty Wiring and Connection Troubleshooting",
             unit_of_measurement: "sq ft",
           },
           "10-1-2": {
@@ -2346,7 +2310,7 @@ export const EMERGENCY_SERVICES: EmergencyServicesType = {
   },
   Structural: {
     services: {
-      emergencyStabilization: {
+      emergencyStabilizationOfCompromisedStructures: {
         tools: [
           "Support beams",
           "Jacks and shoring",
@@ -2422,7 +2386,7 @@ export const EMERGENCY_SERVICES: EmergencyServicesType = {
           },
         },
       },
-      damageAssessment: {
+      damageAssessmentAndTemporaryFixesPostNaturalDisaster: {
         tools: [
           "Measuring tape",
           "Level",
@@ -2486,14 +2450,6 @@ export const EMERGENCY_SERVICES: EmergencyServicesType = {
           },
         ],
         activities: {
-          "6-5-1": {
-            activity: "Foundation Crack Repair",
-            unit_of_measurement: "lin ft",
-          },
-          "6-5-2": {
-            activity: "Masonry Wall Crack Repair",
-            unit_of_measurement: "sq ft",
-          },
           "6-5-6": {
             activity: "Concrete Patching (up to 14 sq. ft.)",
             unit_of_measurement: "each",
@@ -2574,15 +2530,7 @@ export const EMERGENCY_SERVICES: EmergencyServicesType = {
           "6-5-4": {
             activity: "Foundation Reinforcement Installation",
             unit_of_measurement: "each",
-          },
-          "6-5-6": {
-            activity: "Concrete Patching (up to 14 sq. ft.)",
-            unit_of_measurement: "each",
-          },
-          "6-3-2": {
-            activity: "Framing Repair and Reinforcement",
-            unit_of_measurement: "sq ft",
-          },
+          }
         },
       },
     },
@@ -3066,11 +3014,7 @@ export const EMERGENCY_SERVICES: EmergencyServicesType = {
           "11-2-3": {
             activity: "Drain Pump Repair",
             unit_of_measurement: "each",
-          },
-          "11-2-4": {
-            activity: "Vent Cleaning and Maintenance",
-            unit_of_measurement: "each",
-          },
+          }
         },
       },
     },

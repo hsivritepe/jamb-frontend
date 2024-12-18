@@ -6525,7 +6525,7 @@ export const ALL_SERVICES = [
         category: SERVICE_CATEGORIES.GUTTER,
     },
     {
-        id: "19-7-5-",
+        id: "19-7-5",
         unit_of_measurement: "lin ft",
         title: "Gutter Removal",
         description: "Removal of existing gutters in preparation for new installation or other projects. This service includes detaching gutters, disposing of debris, and preparing the structure for new gutters. Includes comprehensive labor and rough materials. Ensures a clean and ready surface for new gutter installation.",
