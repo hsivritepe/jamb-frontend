@@ -11,13 +11,13 @@ import { ALL_SERVICES } from "@/constants/services";
 import ServiceTimePicker from "@/components/ui/ServiceTimePicker";
 
 // Utility function to format numbers with thousand separators
+// This ensures prices and totals are formatted nicely for the user
 const formatWithSeparator = (value: number): string => {
-  return new Intl.NumberFormat("en-US", { minimumFractionDigits: 2 }).format(
-    value
-  );
+  return new Intl.NumberFormat("en-US", { minimumFractionDigits: 2 }).format(value);
 };
 
-// Utility function to capitalize and transform camelCase or PascalCase text
+// Utility function to capitalize and transform camelCase or PascalCase strings
+// into more readable labels for display
 const capitalizeAndTransform = (text: string): string => {
   return text
     .replace(/([A-Z])/g, " $1")
@@ -25,6 +25,8 @@ const capitalizeAndTransform = (text: string): string => {
     .replace(/^./, (char) => char.toUpperCase());
 };
 
+// Functions for loading and saving data to sessionStorage,
+// allowing state persistence between pages without using query parameters
 const loadFromSession = (key: string, defaultValue: any = {}) => {
   const savedValue = sessionStorage.getItem(key);
   return savedValue ? JSON.parse(savedValue) : defaultValue;
@@ -36,10 +38,17 @@ const saveToSession = (key: string, value: any) => {
 
 export default function EmergencyEstimate() {
   const router = useRouter();
+  
+  // showModal: Whether the modal for selecting date/time is currently visible
   const [showModal, setShowModal] = useState(false);
+  
+  // selectedTime: The selected date/time chosen by the user
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  
+  // timeCoefficient: A factor by which the total cost may be adjusted (e.g., surcharge or discount)
   const [timeCoefficient, setTimeCoefficient] = useState<number>(1);
 
+  // Load previously selected activities, address, photos, and description from sessionStorage
   const selectedActivities: Record<string, Record<string, number>> = loadFromSession(
     "selectedActivities",
     {}
@@ -48,16 +57,14 @@ export default function EmergencyEstimate() {
   const photos: string[] = loadFromSession("photos", []);
   const description: string = loadFromSession("description", "");
 
+  // If required data is missing (no selected activities or no address), go back to the first page
   useEffect(() => {
-    if (
-      !selectedActivities ||
-      Object.keys(selectedActivities).length === 0 ||
-      !address
-    ) {
+    if (!selectedActivities || Object.keys(selectedActivities).length === 0 || !address) {
       router.push("/emergency");
     }
   }, [selectedActivities, address, router]);
 
+  // Save the selected time and time coefficient whenever they change
   useEffect(() => {
     saveToSession("selectedTime", selectedTime);
   }, [selectedTime]);
@@ -66,61 +73,73 @@ export default function EmergencyEstimate() {
     saveToSession("timeCoefficient", timeCoefficient);
   }, [timeCoefficient]);
 
+  // Calculate the total cost of the selected activities
   const calculateTotal = () => {
     let total = 0;
     for (const service in selectedActivities) {
       for (const activityKey in selectedActivities[service]) {
         const activity = ALL_SERVICES.find((s) => s.id === activityKey);
         if (activity) {
-          total +=
-            activity.price * (selectedActivities[service][activityKey] || 1);
+          total += activity.price * (selectedActivities[service][activityKey] || 1);
         }
       }
     }
     return total;
   };
 
+  // Subtotal before any surcharge/discount
   const subtotal = calculateTotal();
+  
+  // Adjusted subtotal after applying time coefficient (e.g., after-hour surcharge)
   const adjustedSubtotal = subtotal * timeCoefficient;
+  
+  // Calculate sales tax (8.25% of the adjusted subtotal)
   const salesTax = adjustedSubtotal * 0.0825;
+  
+  // The final total after tax
   const total = adjustedSubtotal + salesTax;
 
-  // Формируем список сервисов со степами
+  // Generate a list of steps for the selected services.
+  // Similar to the first and second pages, we find which services the user chose,
+  // then match them to EMERGENCY_SERVICES to retrieve their steps.
   const shownServices = new Set<string>();
-  const stepsList = Object.entries(selectedActivities).flatMap(
-    ([, activities]) =>
-      Object.keys(activities).map((activityKey) => {
-        let matchedService = null;
-        let matchedServiceKey = "";
+  const stepsList = Object.entries(selectedActivities).flatMap(([, activities]) =>
+    Object.keys(activities).map((activityKey) => {
+      let matchedService = null;
+      let matchedServiceKey = "";
 
-        for (const category of Object.keys(EMERGENCY_SERVICES)) {
-          const services = EMERGENCY_SERVICES[category]?.services;
-          for (const serviceKey in services) {
-            if (services[serviceKey]?.activities?.[activityKey]) {
-              matchedService = services[serviceKey];
-              matchedServiceKey = serviceKey;
-              break;
-            }
+      // Find the service that contains the activity
+      for (const category of Object.keys(EMERGENCY_SERVICES)) {
+        const services = EMERGENCY_SERVICES[category]?.services;
+        for (const serviceKey in services) {
+          if (services[serviceKey]?.activities?.[activityKey]) {
+            matchedService = services[serviceKey];
+            matchedServiceKey = serviceKey;
+            break;
           }
-          if (matchedService) break;
         }
+        if (matchedService) break;
+      }
 
-        if (!matchedService || shownServices.has(matchedServiceKey)) return null;
-        shownServices.add(matchedServiceKey);
+      // Avoid duplicates if we've already shown this service
+      if (!matchedService || shownServices.has(matchedServiceKey)) return null;
+      shownServices.add(matchedServiceKey);
 
-        // Возвращаем объект с именем сервиса и его шагами
-        return {
-          serviceName: capitalizeAndTransform(matchedServiceKey),
-          steps: matchedService.steps && matchedService.steps.length > 0 ? matchedService.steps : []
-        };
-      })
+      return {
+        serviceName: capitalizeAndTransform(matchedServiceKey),
+        steps: matchedService.steps && matchedService.steps.length > 0
+          ? matchedService.steps
+          : []
+      };
+    })
   ).filter(Boolean) as { serviceName: string; steps: any[] }[];
 
-  // Сохраняем отфильтрованные шаги в sessionStorage
+  // Save the filtered steps to sessionStorage so that the next page (checkout) can display them without recalculating
   useEffect(() => {
     saveToSession("filteredSteps", stepsList);
   }, [stepsList]);
 
+  // Move forward to the checkout page
   const handleProceedToCheckout = () => {
     router.push("/emergency/checkout");
   };
@@ -133,13 +152,15 @@ export default function EmergencyEstimate() {
 
       <div className="container mx-auto py-12">
         <div className="flex gap-12">
-          {/* Left Column: Steps */}
+          {/* Left Column: Shows immediate steps for the selected services */}
           <div className="flex-1">
             <SectionBoxTitle>
               Immediate Steps for Selected Services
             </SectionBoxTitle>
+
             <div className="mt-8 space-y-8">
               {stepsList.map((serviceObj, index) => {
+                // If the service has steps, display them; otherwise indicate none available
                 if (serviceObj && serviceObj.steps.length > 0) {
                   return (
                     <div
@@ -181,17 +202,17 @@ export default function EmergencyEstimate() {
             </div>
           </div>
 
-          {/* Right Column: Estimate Summary */}
+          {/* Right Column: Displaying the estimate summary and details (address, photos, description) */}
           <div className="w-[500px]">
             <div className="bg-brand-light p-6 rounded-xl">
               <SectionBoxSubtitle>Estimate</SectionBoxSubtitle>
+
+              {/* Listing all selected activities with their quantities and unit prices */}
               <div className="mt-4 space-y-4">
                 {Object.entries(selectedActivities).flatMap(
                   ([, activities]) =>
                     Object.entries(activities).map(([activityKey, quantity]) => {
-                      const activity = ALL_SERVICES.find(
-                        (s) => s.id === activityKey
-                      );
+                      const activity = ALL_SERVICES.find((s) => s.id === activityKey);
                       if (!activity) return null;
 
                       return (
@@ -222,6 +243,7 @@ export default function EmergencyEstimate() {
                 )}
               </div>
 
+              {/* Summary of costs including potential surcharge/discount and sales tax */}
               <div className="pt-4 mt-4">
                 {timeCoefficient !== 1 && (
                   <div className="flex justify-between mb-2">
@@ -234,9 +256,7 @@ export default function EmergencyEstimate() {
                       }`}
                     >
                       {timeCoefficient > 1 ? "+" : "-"}$
-                      {formatWithSeparator(
-                        Math.abs(subtotal * (timeCoefficient - 1))
-                      )}
+                      {formatWithSeparator(Math.abs(subtotal * (timeCoefficient - 1)))}
                     </span>
                   </div>
                 )}
@@ -255,6 +275,7 @@ export default function EmergencyEstimate() {
                   <span>${formatWithSeparator(salesTax)}</span>
                 </div>
 
+                {/* Button to select or change the available time slot */}
                 <button
                   onClick={() => setShowModal(true)}
                   className={`w-full py-3 rounded-lg font-medium mt-4 border ${
@@ -273,6 +294,7 @@ export default function EmergencyEstimate() {
                   </p>
                 )}
 
+                {/* Modal to pick a date/time and possibly adjust cost factor */}
                 {showModal && (
                   <ServiceTimePicker
                     subtotal={subtotal}
@@ -285,17 +307,20 @@ export default function EmergencyEstimate() {
                   />
                 )}
 
+                {/* Total after tax */}
                 <div className="flex justify-between text-2xl font-semibold mt-4">
                   <span>Total</span>
                   <span>${formatWithSeparator(total)}</span>
                 </div>
               </div>
 
+              {/* Displaying Address */}
               <div className="mt-6">
                 <h3 className="font-semibold text-xl text-gray-800">Address</h3>
                 <p className="text-gray-500 mt-2">{address}</p>
               </div>
 
+              {/* Displaying Uploaded Photos */}
               <div className="mt-6">
                 <h3 className="font-semibold text-xl text-gray-800">
                   Uploaded Photos
@@ -318,6 +343,7 @@ export default function EmergencyEstimate() {
                 </div>
               </div>
 
+              {/* Displaying Problem Description */}
               <div className="mt-6">
                 <h3 className="font-semibold text-xl text-gray-800">
                   Problem Description
@@ -327,6 +353,7 @@ export default function EmergencyEstimate() {
                 </p>
               </div>
 
+              {/* Action Buttons: Proceed to Checkout or go back to add more services */}
               <div className="mt-6 space-y-4">
                 <button
                   className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium"
