@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import BreadCrumb from "@/components/ui/BreadCrumb";
 import Button from "@/components/ui/Button";
@@ -32,35 +32,37 @@ const loadFromSession = (key: string, defaultValue: any = {}) => {
 
 export default function EmergencyDetails() {
   const router = useRouter();
-  const searchParams = useSearchParams();
 
-  const [expandedServices, setExpandedServices] = useState<Set<string>>(
-    new Set()
+  // Читаем все данные из sessionStorage
+  const selectedServices: Record<string, string[]> = loadFromSession(
+    "selectedServices",
+    {}
   );
+  const address: string = loadFromSession("address", "");
+  const photos: string[] = loadFromSession("photos", []);
+  const description: string = loadFromSession("description", "");
   const [selectedActivities, setSelectedActivities] = useState<
     Record<string, Record<string, number>>
   >(() => loadFromSession("selectedActivities", {}));
   const [manualInputValue, setManualInputValue] = useState<
     Record<string, Record<string, string | null>>
   >({});
-  const [address, setAddress] = useState<string>(
-    searchParams.get("address") || loadFromSession("address", "")
-  );
-  const [photos, setPhotos] = useState<string[]>(
-    JSON.parse(searchParams.get("photos") || "[]") ||
-      loadFromSession("photos", [])
-  );
-  const [description, setDescription] = useState<string>(
-    searchParams.get("description") || loadFromSession("description", "")
+  const [expandedServices, setExpandedServices] = useState<Set<string>>(
+    new Set()
   );
 
-  const selectedServices: Record<string, string[]> = searchParams.get(
-    "services"
-  )
-    ? JSON.parse(searchParams.get("services") as string)
-    : {};
+  // Если нет данных (например, нет selectedServices или адреса), возвращаем на первую страницу
+  useEffect(() => {
+    if (
+      !selectedServices ||
+      Object.values(selectedServices).flat().length === 0 ||
+      !address
+    ) {
+      router.push("/emergency");
+    }
+  }, [selectedServices, address, router]);
 
-  // Save data to session storage when state changes
+  // Сохраняем selectedActivities при изменении
   useEffect(() => {
     saveToSession("selectedActivities", selectedActivities);
   }, [selectedActivities]);
@@ -171,18 +173,14 @@ export default function EmergencyDetails() {
   };
 
   const handleNext = () => {
+    // Сохраняем текущее состояние перед переходом
     saveToSession("selectedActivities", selectedActivities);
     saveToSession("address", address);
     saveToSession("photos", photos);
     saveToSession("description", description);
 
-    router.push(
-      `/emergency/estimate?selectedActivities=${encodeURIComponent(
-        JSON.stringify(selectedActivities)
-      )}&address=${encodeURIComponent(address)}&photos=${encodeURIComponent(
-        JSON.stringify(photos)
-      )}&description=${encodeURIComponent(description)}`
-    );
+    // Переходим на следующую страницу без передачи параметров
+    router.push("/emergency/estimate");
   };
 
   const servicesList = Object.entries(selectedServices).flatMap(
@@ -232,6 +230,9 @@ export default function EmergencyDetails() {
               {servicesList.map(({ service, category, activities }, index) => {
                 const serviceLabel = capitalizeAndTransform(service);
                 const isExpanded = expandedServices.has(service);
+                const selectedCount = Object.keys(
+                  selectedActivities[service] || {}
+                ).length;
 
                 return (
                   <div
@@ -242,8 +243,17 @@ export default function EmergencyDetails() {
                       className="flex justify-between items-center cursor-pointer"
                       onClick={() => handleToggleExpand(service)}
                     >
-                      <span className="text-2xl font-medium text-gray-800">
+                      <span
+                        className={`text-2xl font-medium ${
+                          selectedCount > 0 ? "text-blue-600" : "text-gray-800"
+                        }`}
+                      >
                         {serviceLabel}
+                        {selectedCount > 0 && (
+                          <span className="text-sm text-gray-500 ml-2">
+                            ({selectedCount} selected)
+                          </span>
+                        )}
                       </span>
                       <ChevronDown
                         className={`w-5 h-5 transform transition-transform ${
@@ -314,10 +324,10 @@ export default function EmergencyDetails() {
                                               manualInputValue[service]?.[
                                                 activityKey
                                               ] !== null
-                                                ? manualInputValue[service][
+                                                ? manualInputValue[service]?.[
                                                     activityKey
                                                   ] || ""
-                                                : selectedActivities[service][
+                                                : selectedActivities[service]?.[
                                                     activityKey
                                                   ]?.toString() || ""
                                             }
@@ -461,7 +471,7 @@ export default function EmergencyDetails() {
                 Address
               </h2>
               <p className="text-gray-500 text-lg">
-                {searchParams.get("address") || "No address provided"}
+                {address || "No address provided"}
               </p>
             </div>
 
@@ -471,19 +481,17 @@ export default function EmergencyDetails() {
                 Uploaded Photos
               </h2>
               <div className="grid grid-cols-2 gap-4">
-                {JSON.parse(searchParams.get("photos") || "[]").map(
-                  (photo: string, index: number) => (
-                    <div key={index} className="relative group">
-                      <img
-                        src={photo}
-                        alt={`Uploaded photo ${index + 1}`}
-                        className="w-full h-32 object-cover rounded-lg"
-                      />
-                    </div>
-                  )
-                )}
+                {photos.map((photo: string, index: number) => (
+                  <div key={index} className="relative group">
+                    <img
+                      src={photo}
+                      alt={`Uploaded photo ${index + 1}`}
+                      className="w-full h-32 object-cover rounded-lg"
+                    />
+                  </div>
+                ))}
               </div>
-              {JSON.parse(searchParams.get("photos") || "[]").length === 0 && (
+              {photos.length === 0 && (
                 <p className="text-lg text-gray-500 mt-2">No photos uploaded</p>
               )}
             </div>
@@ -494,7 +502,7 @@ export default function EmergencyDetails() {
                 Problem Description
               </h2>
               <p className="text-gray-500 text-lg whitespace-pre-wrap">
-                {searchParams.get("description") || "No description provided"}
+                {description || "No description provided"}
               </p>
             </div>
           </div>

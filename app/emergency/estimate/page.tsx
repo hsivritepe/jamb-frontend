@@ -1,7 +1,7 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import BreadCrumb from "@/components/ui/BreadCrumb";
 import { EMERGENCY_STEPS } from "@/constants/navigation";
 import { SectionBoxTitle } from "@/components/ui/SectionBoxTitle";
@@ -20,44 +20,54 @@ const formatWithSeparator = (value: number): string => {
 // Utility function to capitalize and transform camelCase or PascalCase text
 const capitalizeAndTransform = (text: string): string => {
   return text
-    .replace(/([A-Z])/g, " $1") // Add spaces before capital letters
+    .replace(/([A-Z])/g, " $1")
     .trim()
-    .replace(/^./, (char) => char.toUpperCase()); // Capitalize the first letter
+    .replace(/^./, (char) => char.toUpperCase());
 };
 
-// Interface for the steps of an emergency service
-interface Step {
-  title: string;
-  description: string;
-}
+const loadFromSession = (key: string, defaultValue: any = {}) => {
+  const savedValue = sessionStorage.getItem(key);
+  return savedValue ? JSON.parse(savedValue) : defaultValue;
+};
 
-// Interface for an emergency service
-interface EmergencyService {
-  steps?: Step[];
-}
+const saveToSession = (key: string, value: any) => {
+  sessionStorage.setItem(key, JSON.stringify(value));
+};
 
 export default function EmergencyEstimate() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const [showModal, setShowModal] = useState(false); // Add modal element
+  const [showModal, setShowModal] = useState(false);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
-  const [timeCoefficient, setTimeCoefficient] = useState<number>(1); // Default coefficient = 1
+  const [timeCoefficient, setTimeCoefficient] = useState<number>(1);
 
-  // Parse URL parameters for dynamic data
-  const selectedActivities = JSON.parse(
-    searchParams.get("selectedActivities") || "{}"
-  ) as Record<string, Record<string, number>>;
+  const selectedActivities: Record<string, Record<string, number>> = loadFromSession(
+    "selectedActivities",
+    {}
+  );
+  const address: string = loadFromSession("address", "");
+  const photos: string[] = loadFromSession("photos", []);
+  const description: string = loadFromSession("description", "");
 
-  const address = searchParams.get("address") || "No address provided";
-  const photos = JSON.parse(searchParams.get("photos") || "[]") as string[];
-  const description =
-    searchParams.get("description") || "No description provided";
+  useEffect(() => {
+    if (
+      !selectedActivities ||
+      Object.keys(selectedActivities).length === 0 ||
+      !address
+    ) {
+      router.push("/emergency");
+    }
+  }, [selectedActivities, address, router]);
 
-  // Function to calculate the total cost of selected activities
+  useEffect(() => {
+    saveToSession("selectedTime", selectedTime);
+  }, [selectedTime]);
+
+  useEffect(() => {
+    saveToSession("timeCoefficient", timeCoefficient);
+  }, [timeCoefficient]);
+
   const calculateTotal = () => {
     let total = 0;
-
-    // Loop through all selected activities and calculate total price
     for (const service in selectedActivities) {
       for (const activityKey in selectedActivities[service]) {
         const activity = ALL_SERVICES.find((s) => s.id === activityKey);
@@ -72,99 +82,102 @@ export default function EmergencyEstimate() {
 
   const subtotal = calculateTotal();
   const adjustedSubtotal = subtotal * timeCoefficient;
-  const salesTax = subtotal * 0.0825; // 8.25% sales tax
-  const total = subtotal + salesTax;
+  const salesTax = adjustedSubtotal * 0.0825;
+  const total = adjustedSubtotal + salesTax;
+
+  // Формируем список сервисов со степами
+  const shownServices = new Set<string>();
+  const stepsList = Object.entries(selectedActivities).flatMap(
+    ([, activities]) =>
+      Object.keys(activities).map((activityKey) => {
+        let matchedService = null;
+        let matchedServiceKey = "";
+
+        for (const category of Object.keys(EMERGENCY_SERVICES)) {
+          const services = EMERGENCY_SERVICES[category]?.services;
+          for (const serviceKey in services) {
+            if (services[serviceKey]?.activities?.[activityKey]) {
+              matchedService = services[serviceKey];
+              matchedServiceKey = serviceKey;
+              break;
+            }
+          }
+          if (matchedService) break;
+        }
+
+        if (!matchedService || shownServices.has(matchedServiceKey)) return null;
+        shownServices.add(matchedServiceKey);
+
+        // Возвращаем объект с именем сервиса и его шагами
+        return {
+          serviceName: capitalizeAndTransform(matchedServiceKey),
+          steps: matchedService.steps && matchedService.steps.length > 0 ? matchedService.steps : []
+        };
+      })
+  ).filter(Boolean) as { serviceName: string; steps: any[] }[];
+
+  // Сохраняем отфильтрованные шаги в sessionStorage
+  useEffect(() => {
+    saveToSession("filteredSteps", stepsList);
+  }, [stepsList]);
+
+  const handleProceedToCheckout = () => {
+    router.push("/emergency/checkout");
+  };
 
   return (
     <main className="min-h-screen pt-24">
-      {/* Breadcrumb Navigation */}
       <div className="container mx-auto">
         <BreadCrumb items={EMERGENCY_STEPS} />
       </div>
 
       <div className="container mx-auto py-12">
         <div className="flex gap-12">
-          {/* Left Column: Steps for Selected Services */}
+          {/* Left Column: Steps */}
           <div className="flex-1">
             <SectionBoxTitle>
               Immediate Steps for Selected Services
             </SectionBoxTitle>
-
-            {/* Display steps for each unique service */}
             <div className="mt-8 space-y-8">
-              {(() => {
-                const shownServices = new Set<string>(); // Tracks already displayed services
-
-                return Object.entries(selectedActivities).flatMap(
-                  ([, activities]) =>
-                    Object.keys(activities).map((activityKey) => {
-                      let matchedService = null;
-                      let matchedServiceKey = "";
-
-                      // Find the matching service for the current activity
-                      for (const category of Object.keys(EMERGENCY_SERVICES)) {
-                        const services = EMERGENCY_SERVICES[category]?.services;
-                        for (const serviceKey in services) {
-                          if (services[serviceKey]?.activities?.[activityKey]) {
-                            matchedService = services[serviceKey];
-                            matchedServiceKey = serviceKey;
-                            break;
-                          }
-                        }
-                        if (matchedService) break;
-                      }
-
-                      // Skip already displayed services
-                      if (
-                        !matchedService ||
-                        shownServices.has(matchedServiceKey)
-                      )
-                        return null;
-
-                      shownServices.add(matchedServiceKey);
-
-                      return (
-                        // Service Card Container
-                        <div
-                          key={matchedServiceKey}
-                          className="bg-white p-6 rounded-lg border border-gray-200"
-                        >
-                          {/* Service Subtitle */}
-                          <SectionBoxSubtitle>
-                            {capitalizeAndTransform(matchedServiceKey)}
-                          </SectionBoxSubtitle>
-
-                          {/* Steps for the Service */}
-                          <div className="mt-4 space-y-4">
-                            {matchedService.steps?.length > 0 ? (
-                              matchedService.steps.map((step) => (
-                                <div key={step.title} className="space-y-2">
-                                  {/* Step Number and Title in One Line */}
-                                  <div className="flex items-center gap-2">
-                                    <h4 className="text-lg font-medium">
-                                      {step.step_number}.
-                                    </h4>
-                                    <h4 className="text-lg font-medium">
-                                      {step.title}
-                                    </h4>
-                                  </div>
-                                  {/* Step Description */}
-                                  <p className="text-gray-600">
-                                    {step.description}
-                                  </p>
-                                </div>
-                              ))
-                            ) : (
-                              <p className="text-gray-600">
-                                No steps available.
-                              </p>
-                            )}
+              {stepsList.map((serviceObj, index) => {
+                if (serviceObj && serviceObj.steps.length > 0) {
+                  return (
+                    <div
+                      key={serviceObj.serviceName + index}
+                      className="bg-white p-6 rounded-lg border border-gray-200"
+                    >
+                      <SectionBoxSubtitle>
+                        {serviceObj.serviceName}
+                      </SectionBoxSubtitle>
+                      <div className="mt-4 space-y-4">
+                        {serviceObj.steps.map((step) => (
+                          <div key={step.title} className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <h4 className="text-lg font-medium">
+                                {step.step_number}.
+                              </h4>
+                              <h4 className="text-lg font-medium">{step.title}</h4>
+                            </div>
+                            <p className="text-gray-600">{step.description}</p>
                           </div>
-                        </div>
-                      );
-                    })
-                );
-              })()}
+                        ))}
+                      </div>
+                    </div>
+                  );
+                } else {
+                  return (
+                    <div
+                      key={serviceObj?.serviceName + index}
+                      className="bg-white p-6 rounded-lg border border-gray-200"
+                    >
+                      <SectionBoxSubtitle>
+                        {serviceObj?.serviceName}
+                      </SectionBoxSubtitle>
+                      <p className="text-gray-600 mt-4">No steps available.</p>
+                    </div>
+                  );
+                }
+              })}
             </div>
           </div>
 
@@ -172,55 +185,44 @@ export default function EmergencyEstimate() {
           <div className="w-[500px]">
             <div className="bg-brand-light p-6 rounded-xl">
               <SectionBoxSubtitle>Estimate</SectionBoxSubtitle>
-
-              {/* List all selected activities */}
               <div className="mt-4 space-y-4">
                 {Object.entries(selectedActivities).flatMap(
-                  ([service, activities]) =>
-                    Object.entries(activities).map(
-                      ([activityKey, quantity]) => {
-                        const activity = ALL_SERVICES.find(
-                          (s) => s.id === activityKey
-                        );
-                        if (!activity) return null;
+                  ([, activities]) =>
+                    Object.entries(activities).map(([activityKey, quantity]) => {
+                      const activity = ALL_SERVICES.find(
+                        (s) => s.id === activityKey
+                      );
+                      if (!activity) return null;
 
-                        return (
-                          <div
-                            key={activityKey}
-                            className="flex justify-between items-start gap-4 border-b pb-2"
-                          >
-                            {/* Left: Activity Title */}
-                            <div>
-                              <h3 className="font-medium text-lg text-gray-800">
-                                {activity.title}
-                              </h3>
-                              <div className="text-sm text-gray-500 mt-1">
-                                {/* Description */}
-                                <span>{activity.description}</span>
-                              </div>
-                              <div className="text-medium font-medium text-gray-800 mt-2">
-                                {/* Quantity and Units */}
-                                <span>{quantity} </span>
-                                <span>{activity.unit_of_measurement}</span>
-                              </div>
+                      return (
+                        <div
+                          key={activityKey}
+                          className="flex justify-between items-start gap-4 border-b pb-2"
+                        >
+                          <div>
+                            <h3 className="font-medium text-lg text-gray-800">
+                              {activity.title}
+                            </h3>
+                            <div className="text-sm text-gray-500 mt-1">
+                              <span>{activity.description}</span>
                             </div>
-
-                            {/* Right: Price Information */}
-                            <div className="text-right mt-auto">
-                              <span className="block text-gray-800 font-medium">
-                                $
-                                {formatWithSeparator(activity.price * quantity)}
-                              </span>
+                            <div className="text-medium font-medium text-gray-800 mt-2">
+                              <span>{quantity} </span>
+                              <span>{activity.unit_of_measurement}</span>
                             </div>
                           </div>
-                        );
-                      }
-                    )
+                          <div className="text-right mt-auto">
+                            <span className="block text-gray-800 font-medium">
+                              ${formatWithSeparator(activity.price * quantity)}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })
                 )}
               </div>
-              {/* Summary of costs */}
+
               <div className="pt-4 mt-4">
-                {/* Display surcharge or discount */}
                 {timeCoefficient !== 1 && (
                   <div className="flex justify-between mb-2">
                     <span className="text-gray-600">
@@ -239,7 +241,6 @@ export default function EmergencyEstimate() {
                   </div>
                 )}
 
-                {/* Subtotal */}
                 <div className="flex justify-between mb-2">
                   <span className="font-semibold text-lg text-gray-800">
                     Subtotal
@@ -249,15 +250,13 @@ export default function EmergencyEstimate() {
                   </span>
                 </div>
 
-                {/* Sales Tax */}
                 <div className="flex justify-between mb-4">
                   <span className="text-gray-600">Sales tax (8.25%)</span>
-                  <span>${formatWithSeparator(adjustedSubtotal * 0.0825)}</span>
+                  <span>${formatWithSeparator(salesTax)}</span>
                 </div>
 
-                {/* Button to Open Modal */}
                 <button
-                  onClick={() => setShowModal(true)} // Open modal
+                  onClick={() => setShowModal(true)}
                   className={`w-full py-3 rounded-lg font-medium mt-4 border ${
                     selectedTime
                       ? "text-red-500 border-red-500"
@@ -267,7 +266,6 @@ export default function EmergencyEstimate() {
                   {selectedTime ? "Change Date" : "Select Available Time"}
                 </button>
 
-                {/* Display Selected Date */}
                 {selectedTime && (
                   <p className="mt-2 text-gray-700 text-center font-medium">
                     Selected Date:{" "}
@@ -275,56 +273,41 @@ export default function EmergencyEstimate() {
                   </p>
                 )}
 
-                {/* Render Modal */}
                 {showModal && (
                   <ServiceTimePicker
                     subtotal={subtotal}
-                    onClose={() => setShowModal(false)} // Close modal
+                    onClose={() => setShowModal(false)}
                     onConfirm={(date, coefficient) => {
-                      setSelectedTime(date); // Save date
-                      setTimeCoefficient(coefficient); // Update coefficient
-                      setShowModal(false); // Close modal
+                      setSelectedTime(date);
+                      setTimeCoefficient(coefficient);
+                      setShowModal(false);
                     }}
                   />
                 )}
 
-                {/* Total */}
                 <div className="flex justify-between text-2xl font-semibold mt-4">
                   <span>Total</span>
-                  <span>
-                    $
-                    {formatWithSeparator(
-                      adjustedSubtotal + adjustedSubtotal * 0.0825
-                    )}
-                  </span>
+                  <span>${formatWithSeparator(total)}</span>
                 </div>
               </div>
 
-              {/* Address Display */}
               <div className="mt-6">
                 <h3 className="font-semibold text-xl text-gray-800">Address</h3>
                 <p className="text-gray-500 mt-2">{address}</p>
               </div>
 
-              {/* Uploaded Photos Display */}
               <div className="mt-6">
-                {/* Section Title */}
                 <h3 className="font-semibold text-xl text-gray-800">
                   Uploaded Photos
                 </h3>
-
-                {/* Photo Grid */}
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
                   {photos.map((photo, index) => (
                     <div key={index} className="relative group">
-                      {/* Photo Image */}
                       <img
                         src={photo}
                         alt={`Uploaded photo ${index + 1}`}
                         className="w-full h-32 object-cover rounded-lg border border-gray-300 transition-transform duration-300 group-hover:scale-105"
                       />
-
-                      {/* Hover Overlay */}
                       <div className="absolute inset-0 bg-black bg-opacity-20 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
                         <span className="text-white font-medium">
                           Photo {index + 1}
@@ -335,7 +318,6 @@ export default function EmergencyEstimate() {
                 </div>
               </div>
 
-              {/* Problem Description */}
               <div className="mt-6">
                 <h3 className="font-semibold text-xl text-gray-800">
                   Problem Description
@@ -345,25 +327,10 @@ export default function EmergencyEstimate() {
                 </p>
               </div>
 
-              {/* Action Buttons */}
               <div className="mt-6 space-y-4">
                 <button
                   className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium"
-                  onClick={() => {
-                    router.push(
-                      `/emergency/checkout?address=${encodeURIComponent(
-                        address
-                      )}&photos=${encodeURIComponent(
-                        JSON.stringify(photos)
-                      )}&description=${encodeURIComponent(
-                        description
-                      )}&date=${encodeURIComponent(
-                        selectedTime || "No date selected"
-                      )}&selectedActivities=${encodeURIComponent(
-                        JSON.stringify(selectedActivities)
-                      )}`
-                    );
-                  }}
+                  onClick={handleProceedToCheckout}
                 >
                   Proceed to Checkout &nbsp;→
                 </button>
