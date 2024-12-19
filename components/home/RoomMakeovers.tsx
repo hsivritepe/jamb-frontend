@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { SectionBoxTitle } from '../ui/SectionBoxTitle';
-import { ImageBoxGrid } from '../ui/ImageBoxGrid';
-import Button from '@/components/ui/Button';
-import { ROOMS } from '@/constants/rooms';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { SectionBoxTitle } from "../ui/SectionBoxTitle";
+import { ImageBoxGrid } from "../ui/ImageBoxGrid";
+import Button from "@/components/ui/Button";
+import { ROOMS } from "@/constants/rooms";
 
 // Function to shuffle array elements randomly
 function shuffleArray<T>(array: T[]): T[] {
@@ -16,6 +16,21 @@ function shuffleArray<T>(array: T[]): T[] {
   }
   return shuffled;
 }
+
+// Helper functions for session storage
+const saveToSession = (key: string, value: any) => {
+  sessionStorage.setItem(key, JSON.stringify(value));
+};
+
+const loadFromSession = (key: string, defaultValue: any) => {
+  const savedValue = sessionStorage.getItem(key);
+  try {
+    return savedValue ? JSON.parse(savedValue) : defaultValue;
+  } catch (error) {
+    console.error(`Error parsing sessionStorage for key "${key}"`, error);
+    return defaultValue;
+  }
+};
 
 // Prepare indoor and outdoor room data
 const indoorRooms = ROOMS.indoor.map((room) => ({
@@ -32,21 +47,42 @@ const outdoorRooms = ROOMS.outdoor.map((room) => ({
   subcategories: room.services.map((service) => service.title),
 }));
 
-export default function RoomsGrid({
-  title = 'Whole-Room Makeovers, Done Right',
-  subtitle = 'Comprehensive Home Renovations for Every Room',
-  searchQuery,
-}: {
+interface RoomsGridProps {
   title?: string;
   subtitle?: string;
   searchQuery?: string;
-}) {
-  const [selectedType, setSelectedType] = useState<'indoor' | 'outdoor'>('indoor');
-  const [selectedSections, setSelectedSections] = useState<string[]>([]);
-  const [rooms, setRooms] = useState(selectedType === 'indoor' ? indoorRooms : outdoorRooms);
+}
+
+export default function RoomsGrid({
+  title = "Whole-Room Makeovers, Done Right",
+  subtitle = "Comprehensive Home Renovations for Every Room",
+  searchQuery = ""
+}: RoomsGridProps) {
   const router = useRouter();
 
-  // Update the rooms based on the selected type and shuffle the subcategories
+  // Load selectedType and selectedSections from session storage
+  const [selectedType, setSelectedType] = useState<'indoor' | 'outdoor'>(
+    loadFromSession("rooms_selectedType", "indoor")
+  );
+  const [selectedSections, setSelectedSections] = useState<string[]>(
+    loadFromSession("rooms_selectedSections", [])
+  );
+
+  // Update rooms list based on selectedType
+  const [rooms, setRooms] = useState(
+    selectedType === 'indoor' ? indoorRooms : outdoorRooms
+  );
+
+  // Save state changes to session storage
+  useEffect(() => {
+    saveToSession("rooms_selectedType", selectedType);
+  }, [selectedType]);
+
+  useEffect(() => {
+    saveToSession("rooms_selectedSections", selectedSections);
+  }, [selectedSections]);
+
+  // Recompute rooms when selectedType changes, shuffle subcategories
   useEffect(() => {
     const shuffledRooms =
       selectedType === 'indoor'
@@ -64,61 +100,58 @@ export default function RoomsGrid({
   // Filter rooms based on search query
   const filteredRooms = rooms.filter(
     (room) =>
-      room.title.toLowerCase().includes(searchQuery?.toLowerCase() || '') ||
+      room.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       room.subcategories.some((sub) =>
-        sub.toLowerCase().includes(searchQuery?.toLowerCase() || '')
+        sub.toLowerCase().includes(searchQuery.toLowerCase())
       )
   );
 
-  // Handle section click to add/remove a room section
+  // Handle selecting or deselecting a room
   const handleSectionClick = (sectionId: string) => {
     setSelectedSections((prev) =>
       prev.includes(sectionId)
-        ? prev.filter((s) => s !== sectionId) // Remove if already selected
-        : [...prev, sectionId] // Add if not selected
+        ? prev.filter((s) => s !== sectionId)
+        : [...prev, sectionId]
     );
   };
 
-  // Handle Next button click to navigate to details page
+  // Next button handler
   const handleNext = () => {
     if (selectedSections.length === 0) {
-      alert('Please select at least one room section before proceeding.');
+      alert("Please select at least one room before proceeding.");
       return;
     }
-    router.push(`/rooms/details?sections=${encodeURIComponent(selectedSections.join(','))}`);
+    // Sections are saved in session, so just navigate
+    router.push("/rooms/details");
   };
 
   return (
     <section className="py-8">
       <div className="container mx-auto">
-        {/* Section title */}
         <SectionBoxTitle>
           <div dangerouslySetInnerHTML={{ __html: title }} />
           <p className="text-[30px] leading-[41px] font-normal text-gray-500">{subtitle}</p>
         </SectionBoxTitle>
 
-        {/* Toggle buttons for indoor and outdoor */}
+        {/* Indoor/Outdoor Toggle */}
         <div className="flex justify-between items-center mb-8">
           <div className="inline-flex rounded-lg border border-gray-200 p-1">
-            {/* Button for indoor */}
             <button
-              onClick={() => setSelectedType('indoor')}
+              onClick={() => setSelectedType("indoor")}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                selectedType === 'indoor'
-                  ? 'bg-blue-600 text-white'
-                  : 'hover:bg-gray-100 text-gray-600'
+                selectedType === "indoor"
+                  ? "bg-blue-600 text-white"
+                  : "hover:bg-gray-100 text-gray-600"
               }`}
             >
               Indoor
             </button>
-
-            {/* Button for outdoor */}
             <button
-              onClick={() => setSelectedType('outdoor')}
+              onClick={() => setSelectedType("outdoor")}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                selectedType === 'outdoor'
-                  ? 'bg-blue-600 text-white'
-                  : 'hover:bg-gray-100 text-gray-600'
+                selectedType === "outdoor"
+                  ? "bg-blue-600 text-white"
+                  : "hover:bg-gray-100 text-gray-600"
               }`}
             >
               Outdoor
@@ -129,7 +162,7 @@ export default function RoomsGrid({
           <Button onClick={handleNext}>Next →</Button>
         </div>
 
-        {/* Rooms grid */}
+        {/* Rooms Grid */}
         <ImageBoxGrid
           items={filteredRooms.map((room) => ({
             id: room.id,
@@ -137,9 +170,9 @@ export default function RoomsGrid({
             image: room.image,
             url: `/rooms/${room.title.toLowerCase().replace(/ /g, '_')}`,
             subcategories: room.subcategories,
-            isSelected: selectedSections.includes(room.id), // Highlight selected sections
+            isSelected: selectedSections.includes(room.id),
           }))}
-          onSectionClick={handleSectionClick} // Pass click handler
+          onSectionClick={handleSectionClick}
           moreText="services"
         />
       </div>

@@ -1,15 +1,39 @@
-'use client';
+"use client";
 
-import { useState, ChangeEvent } from 'react';
-import { useRouter } from 'next/navigation';
-import BreadCrumb from '@/components/ui/BreadCrumb';
-import SearchServices from '@/components/SearchServices';
-import RoomsGrid from '@/components/home/RoomMakeovers';
-import { ROOMS_STEPS } from '@/constants/navigation';
+import { useState, ChangeEvent, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import BreadCrumb from "@/components/ui/BreadCrumb";
+import SearchServices from "@/components/SearchServices";
+import RoomsGrid from "@/components/home/RoomMakeovers";
+import { ROOMS_STEPS } from "@/constants/navigation";
+
+// Helper functions for session storage
+const saveToSession = (key: string, value: any) => {
+  sessionStorage.setItem(key, JSON.stringify(value));
+};
+
+const loadFromSession = (key: string, defaultValue: any) => {
+  const savedValue = sessionStorage.getItem(key);
+  try {
+    return savedValue ? JSON.parse(savedValue) : defaultValue;
+  } catch (error) {
+    console.error(`Error parsing sessionStorage for key "${key}"`, error);
+    return defaultValue;
+  }
+};
 
 export default function Rooms() {
   const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState<string>(''); // State for search input
+
+  // Load search query from session storage if available
+  const [searchQuery, setSearchQuery] = useState<string>(
+    loadFromSession("rooms_searchQuery", "")
+  );
+
+  // Save search query whenever it changes
+  useEffect(() => {
+    saveToSession("rooms_searchQuery", searchQuery);
+  }, [searchQuery]);
 
   return (
     <main className="min-h-screen pt-24">
@@ -32,7 +56,7 @@ export default function Rooms() {
         <RoomsGrid
           title="Select a room"
           subtitle="Specify the Required Services on the Next Page"
-          searchQuery={searchQuery} // Pass search query to filter rooms
+          searchQuery={searchQuery}
         />
       </div>
     </main>
