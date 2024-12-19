@@ -15,7 +15,7 @@ export default function Calculate() {
         <BreadCrumb items={CALCULATE_STEPS} />
 
         {/* Displaying ServicesGrid */}
-        <ServicesGrid title="Select a Service" />
+        <ServicesGrid />
       </div>
     </main>
   );

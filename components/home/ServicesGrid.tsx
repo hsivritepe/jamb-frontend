@@ -1,15 +1,16 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { SectionBoxTitle } from '../ui/SectionBoxTitle';
 import { ImageBoxGrid } from '../ui/ImageBoxGrid';
+import Button from '@/components/ui/Button';
 import {
   INDOOR_SERVICE_SECTIONS,
   OUTDOOR_SERVICE_SECTIONS,
   ALL_CATEGORIES,
 } from '@/constants/categories';
 
-// Extract services by type
 const indoorServices = Object.values(INDOOR_SERVICE_SECTIONS).map((section) => ({
   title: section,
   image: `/images/services/${section.toLowerCase().replace(/ /g, '_')}.jpg`,
@@ -27,23 +28,41 @@ const outdoorServices = Object.values(OUTDOOR_SERVICE_SECTIONS).map((section) =>
 }));
 
 export default function ServicesGrid({
-  title = 'Select a Service',
+  title = '',
 }: {
   title?: string;
 }) {
   const [selectedType, setSelectedType] = useState<'indoor' | 'outdoor'>('indoor');
+  const [selectedSections, setSelectedSections] = useState<string[]>([]);
+  const router = useRouter();
 
   const services = selectedType === 'indoor' ? indoorServices : outdoorServices;
 
+  const handleSectionClick = (section: string) => {
+    setSelectedSections((prev) =>
+      prev.includes(section)
+        ? prev.filter((s) => s !== section) // Remove if already selected
+        : [...prev, section] // Add if not selected
+    );
+  };
+
+  const handleNext = () => {
+    if (selectedSections.length === 0) {
+      alert('Please select at least one service section before proceeding.');
+      return;
+    }
+    router.push(`/calculate/services?sections=${encodeURIComponent(selectedSections.join(','))}`);
+  };
+
   return (
-    <section className="py-16">
-      <div className="container mx-auto px-4">
+    <section className="py-8">
+      <div className="container mx-auto">
         <SectionBoxTitle>
           <div dangerouslySetInnerHTML={{ __html: title }} />
         </SectionBoxTitle>
 
         {/* Indoor/Outdoor Toggle */}
-        <div className="flex mb-8">
+        <div className="flex justify-between items-center mb-8">
           <div className="inline-flex rounded-lg border border-gray-200 p-1">
             <button
               onClick={() => setSelectedType('indoor')}
@@ -66,6 +85,9 @@ export default function ServicesGrid({
               Outdoor
             </button>
           </div>
+
+          {/* Next Button */}
+          <Button onClick={handleNext}>Next →</Button>
         </div>
 
         {/* Services Grid */}
@@ -74,9 +96,11 @@ export default function ServicesGrid({
             id: service.title,
             title: service.title,
             image: service.image,
-            url: `/services/${service.title.toLowerCase().replace(/ /g, '_')}`,
+            url: '#', // Placeholder for now
             subcategories: service.subcategories,
+            isSelected: selectedSections.includes(service.title), // Pass selected state
           }))}
+          onSectionClick={handleSectionClick} // Pass click handler
         />
       </div>
     </section>

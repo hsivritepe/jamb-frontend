@@ -3,7 +3,7 @@ export const CALCULATE_STEPS = [
     { label: 'Services', href: '/calculate/services' },
     { label: 'Details', href: '/calculate/details' },
     { label: 'Estimate', href: '/calculate/estimate' },
-    { label: 'Login', href: '/login' },
+    { label: 'Checkout', href: '/calculate/checkout' },
 ] as const;
 
 export const EMERGENCY_STEPS = [

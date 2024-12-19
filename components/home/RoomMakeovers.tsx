@@ -15,18 +15,19 @@ function shuffleArray<T>(array: T[]): T[] {
   return shuffled;
 }
 
-// Prepare indoor room data
+// Prepare indoor and outdoor room data
 const indoorRooms = ROOMS.indoor.map((room) => ({
+  id: room.id,
   title: room.title,
-  image: `/images/rooms/${room.id}.jpg`, // Generate the image path dynamically
-  subcategories: room.services.map((service) => service.title), // Extract service titles
+  image: `/images/rooms/${room.id}.jpg`,
+  subcategories: room.services.map((service) => service.title),
 }));
 
-// Prepare outdoor room data
 const outdoorRooms = ROOMS.outdoor.map((room) => ({
+  id: room.id,
   title: room.title,
-  image: `/images/rooms/${room.id}.jpg`, // Generate the image path dynamically
-  subcategories: room.services.map((service) => service.title), // Extract service titles
+  image: `/images/rooms/${room.id}.jpg`,
+  subcategories: room.services.map((service) => service.title),
 }));
 
 export default function RoomsGrid({
@@ -36,9 +37,9 @@ export default function RoomsGrid({
   title?: string;
   subtitle?: string;
 }) {
-  // State to toggle between indoor and outdoor types
   const [selectedType, setSelectedType] = useState<'indoor' | 'outdoor'>('indoor');
   const [rooms, setRooms] = useState(selectedType === 'indoor' ? indoorRooms : outdoorRooms);
+  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
 
   // Update the rooms based on the selected type and shuffle the subcategories
   useEffect(() => {
@@ -55,9 +56,14 @@ export default function RoomsGrid({
     setRooms(shuffledRooms);
   }, [selectedType]);
 
+  // Handle section click to set the selected room
+  const handleSectionClick = (sectionId: string) => {
+    setSelectedRoomId(sectionId === selectedRoomId ? null : sectionId);
+  };
+
   return (
     <section className="py-16">
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto">
         {/* Section title */}
         <SectionBoxTitle>
           <div dangerouslySetInnerHTML={{ __html: title }} />
@@ -96,13 +102,15 @@ export default function RoomsGrid({
         {/* Rooms grid */}
         <ImageBoxGrid
           items={rooms.map((room) => ({
-            id: room.title,
+            id: room.id,
             title: room.title,
             image: room.image,
-            url: `/rooms/${room.title.toLowerCase().replace(/ /g, '_')}`, // Generate URL dynamically
-            subcategories: room.subcategories, // Pass subcategories
+            url: `/rooms/${room.title.toLowerCase().replace(/ /g, '_')}`,
+            subcategories: room.subcategories,
+            isSelected: room.id === selectedRoomId, // Add isSelected property
           }))}
-          moreText="services" // Customize "more" text for this component
+          onSectionClick={handleSectionClick} // Pass section click handler
+          moreText="services"
         />
       </div>
     </section>
