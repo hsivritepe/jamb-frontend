@@ -11,7 +11,7 @@ import { ChevronDown } from "lucide-react";
 import { useLocation } from "@/context/LocationContext";
 import { ALL_CATEGORIES } from "@/constants/categories";
 
-// Helper functions for session storage
+// Session storage helpers
 const saveToSession = (key: string, value: any) => {
   sessionStorage.setItem(key, JSON.stringify(value));
 };
@@ -30,118 +30,117 @@ export default function Services() {
   const router = useRouter();
   const { location } = useLocation();
 
-  // Load the previously chosen sections from the previous page
-  // The user previously selected certain categories (sections) on the previous screen.
-  // Now we will show only those sections and let the user pick specific services within them.
+  // Load previously chosen sections from the first page
   const selectedSections: string[] = loadFromSession("services_selectedSections", []);
 
-  // Load search query from session
-  const [searchQuery, setSearchQuery] = useState<string>(
-    loadFromSession("services_searchQuery", "")
-  );
+  // If no sections were chosen, go back to the initial page
+  useEffect(() => {
+    if (selectedSections.length === 0) {
+      router.push("/calculate");
+    }
+  }, [selectedSections, router]);
 
-  // Load address, description, photos from session
+  // Load search query and other data from session
+  const [searchQuery, setSearchQuery] = useState<string>(loadFromSession("services_searchQuery", ""));
   const [address, setAddress] = useState<string>(loadFromSession("address", ""));
   const [description, setDescription] = useState<string>(loadFromSession("description", ""));
   const [photos, setPhotos] = useState<string[]>(loadFromSession("photos", []));
-
-  // Warnings
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
 
-  // Expanded categories for UI
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
-
-  // Map all categories from ALL_CATEGORIES by their section
-  // This allows us to find which services belong to the chosen sections
-  const categoryMap: Record<string, string[]> = {};
+  // Map sections to categories with IDs and titles
+  const categoriesBySection: Record<string, {id: string; title: string;}[]> = {};
   ALL_CATEGORIES.forEach((cat) => {
-    const section = cat.section;
-    if (!categoryMap[section]) {
-      categoryMap[section] = [];
+    if (!categoriesBySection[cat.section]) {
+      categoriesBySection[cat.section] = [];
     }
-    categoryMap[section].push(cat.title);
+    categoriesBySection[cat.section].push({ id: cat.id, title: cat.title });
   });
 
-  // Initially, no services are selected. The user must now pick from the chosen categories.
-  const [selectedServices, setSelectedServices] = useState<Record<string, string[]>>(() => {
+  // Load previously chosen categories from session if any (to restore state after going back)
+  const [selectedCategories, setSelectedCategories] = useState<Record<string, string[]>>(() => {
+    // Try to load a previously saved map
+    const loadedMap = loadFromSession("selectedCategoriesMap", null);
+    if (loadedMap) return loadedMap;
+
     const initial: Record<string, string[]> = {};
     selectedSections.forEach((section) => {
-      // Start with no preselected services
       initial[section] = [];
     });
     return initial;
   });
 
-  // Save changes to session storage
+  // Save states to session
   useEffect(() => saveToSession("services_searchQuery", searchQuery), [searchQuery]);
   useEffect(() => saveToSession("address", address), [address]);
   useEffect(() => saveToSession("description", description), [description]);
   useEffect(() => saveToSession("photos", photos), [photos]);
-  useEffect(() => saveToSession("selectedServices", selectedServices), [selectedServices]);
+  useEffect(() => saveToSession("selectedCategoriesMap", selectedCategories), [selectedCategories]);
 
-  // Filter chosen sections and their services by search query
-  const filteredSelectedServices = Object.entries(selectedServices).reduce(
-    (acc, [category, servicesArr]) => {
-      // Find all available services for this category
-      const allServices = categoryMap[category] || [];
-      // Filter by search query
-      const filtered = allServices.filter((service) =>
-        service.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      acc[category] = filtered;
+  // Filter categories by search query
+  const filteredCategoriesBySection = Object.entries(selectedCategories).reduce(
+    (acc, [section, catIds]) => {
+      const allCats = categoriesBySection[section] || [];
+      const filtered = searchQuery
+        ? allCats.filter((c) =>
+            c.title.toLowerCase().includes(searchQuery.toLowerCase())
+          )
+        : allCats;
+      acc[section] = filtered;
       return acc;
     },
-    {} as Record<string, string[]>
+    {} as Record<string, {id:string; title:string}[]>
   );
 
-  // Handle toggling a category's expanded state
-  const toggleCategory = (category: string) => {
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+
+  const toggleCategory = (section: string) => {
     setExpandedCategories((prev) => {
       const next = new Set(prev);
-      next.has(category) ? next.delete(category) : next.add(category);
+      next.has(section) ? next.delete(section) : next.add(section);
       return next;
     });
   };
 
-  // Handle selecting/deselecting a service
-  const handleServiceSelect = (category: string, service: string) => {
-    setSelectedServices((prev) => {
-      const current = prev[category] || [];
-      const isSelected = current.includes(service);
+  const handleCategorySelect = (section: string, catId: string) => {
+    setSelectedCategories((prev) => {
+      const current = prev[section] || [];
+      const isSelected = current.includes(catId);
       if (!isSelected) setWarningMessage(null);
       return {
         ...prev,
-        [category]: isSelected ? current.filter((s) => s !== service) : [...current, service],
+        [section]: isSelected ? current.filter((s) => s !== catId) : [...current, catId],
       };
     });
   };
 
-  // Clear all chosen services
   const handleClearSelection = () => {
     const cleared: Record<string, string[]> = {};
     selectedSections.forEach((section) => {
       cleared[section] = [];
     });
-    setSelectedServices(cleared);
+    setSelectedCategories(cleared);
   };
 
-  // Move to the next step
   const handleNext = () => {
-    const totalChosen = Object.values(selectedServices).flat().length;
+    const totalChosen = Object.values(selectedCategories).flat().length;
     if (totalChosen === 0) {
-      setWarningMessage("Please select at least one service before proceeding.");
+      setWarningMessage("Please select at least one category before proceeding.");
       return;
     }
     if (!address.trim()) {
       setWarningMessage("Please enter your address before proceeding.");
       return;
     }
+
+    // Flatten chosen category IDs
+    const chosenCategoryIDs = Object.values(selectedCategories).flat();
+    saveToSession("services_selectedCategories", chosenCategoryIDs);
+
     router.push("/calculate/details");
   };
 
   const handleAddressChange = (e: ChangeEvent<HTMLInputElement>) => setAddress(e.target.value);
-  const handleDescriptionChange = (e: ChangeEvent<HTMLTextAreaElement>) =>
-    setDescription(e.target.value);
+  const handleDescriptionChange = (e: ChangeEvent<HTMLTextAreaElement>) => setDescription(e.target.value);
 
   const handleUseMyLocation = () => {
     if (location?.city && location?.zip) {
@@ -155,26 +154,21 @@ export default function Services() {
     setPhotos((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const totalChosen = Object.values(selectedServices).reduce((sum, arr) => sum + arr.length, 0);
-
   return (
     <main className="min-h-screen pt-24 pb-16">
       <div className="container mx-auto">
-        {/* Breadcrumb */}
         <BreadCrumb items={CALCULATE_STEPS} />
 
-        {/* Header and Next Button */}
         <div className="flex justify-between items-start mt-8">
-          <SectionBoxTitle>Select Your Services</SectionBoxTitle>
+          <SectionBoxTitle>Select Your Categories</SectionBoxTitle>
           <Button onClick={handleNext}>Next →</Button>
         </div>
 
-        {/* Search and Clear */}
         <div className="flex flex-col gap-4 mt-8 w-full max-w-[600px]">
           <SearchServices
             value={searchQuery}
             onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
-            placeholder="Search within your chosen categories..."
+            placeholder="Search within selected sections..."
           />
           <div className="flex justify-between items-center text-sm text-gray-500 mt-2">
             <span>
@@ -192,28 +186,26 @@ export default function Services() {
           </div>
         </div>
 
-        {/* Warning Message */}
         <div className="h-6 mt-4 text-left">
           {warningMessage && <p className="text-red-500">{warningMessage}</p>}
         </div>
-
+        
         <div className="flex container mx-auto relative">
-          {/* Left Section: Show only chosen sections */}
           <div className="flex-1">
             <div className="flex flex-col gap-3 mt-5 w-full max-w-[600px]">
-              {selectedSections.map((category) => {
-                const allServicesForCategory = filteredSelectedServices[category] || [];
-                const selectedCount = (selectedServices[category] || []).length;
+              {selectedSections.map((section) => {
+                const allCats = filteredCategoriesBySection[section] || [];
+                const selectedCount = (selectedCategories[section] || []).length;
 
                 return (
                   <div
-                    key={category}
+                    key={section}
                     className={`p-4 border rounded-xl bg-white ${
                       selectedCount > 0 ? "border-blue-500" : "border-gray-300"
                     }`}
                   >
                     <button
-                      onClick={() => toggleCategory(category)}
+                      onClick={() => toggleCategory(section)}
                       className="flex justify-between items-center w-full"
                     >
                       <h3
@@ -221,7 +213,7 @@ export default function Services() {
                           selectedCount > 0 ? "text-blue-600" : "text-black"
                         }`}
                       >
-                        {category}
+                        {section}
                         {selectedCount > 0 && (
                           <span className="text-sm text-gray-500 ml-2">
                             ({selectedCount} selected)
@@ -230,29 +222,29 @@ export default function Services() {
                       </h3>
                       <ChevronDown
                         className={`h-5 w-5 transform transition-transform ${
-                          expandedCategories.has(category) ? "rotate-180" : ""
+                          expandedCategories.has(section) ? "rotate-180" : ""
                         }`}
                       />
                     </button>
 
-                    {expandedCategories.has(category) && (
+                    {expandedCategories.has(section) && (
                       <div className="mt-4 flex flex-col gap-3">
-                        {allServicesForCategory.map((service) => {
-                          const isSelected = selectedServices[category]?.includes(service) || false;
+                        {allCats.map((cat) => {
+                          const isSelected = selectedCategories[section]?.includes(cat.id) || false;
                           return (
-                            <div key={service} className="flex justify-between items-center">
+                            <div key={cat.id} className="flex justify-between items-center">
                               <span
                                 className={`text-lg transition-colors duration-300 ${
                                   isSelected ? "text-blue-600" : "text-gray-800"
                                 }`}
                               >
-                                {service}
+                                {cat.title}
                               </span>
                               <label className="relative inline-flex items-center cursor-pointer">
                                 <input
                                   type="checkbox"
                                   checked={isSelected}
-                                  onChange={() => handleServiceSelect(category, service)}
+                                  onChange={() => handleCategorySelect(section, cat.id)}
                                   className="sr-only peer"
                                 />
                                 <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
@@ -269,9 +261,7 @@ export default function Services() {
             </div>
           </div>
 
-          {/* Right Section: Address and Photos/Description input */}
           <div className="w-1/2 ml-auto mt-4 pt-0">
-            {/* Address Section */}
             <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mb-6">
               <h2 className="text-2xl font-medium text-gray-800 mb-4">We Need Your Address</h2>
               <div className="flex flex-col gap-4">
@@ -290,7 +280,6 @@ export default function Services() {
               </div>
             </div>
 
-            {/* Photos & Description Section */}
             <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden">
               <h2 className="text-2xl font-medium text-gray-800 mb-4">
                 Upload Photos & Description

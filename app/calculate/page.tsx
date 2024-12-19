@@ -7,7 +7,7 @@ import ServicesGrid from "@/components/home/ServicesGrid";
 import SearchServices from "@/components/SearchServices";
 import { CALCULATE_STEPS } from "@/constants/navigation";
 
-// Helper functions for session storage (similar to emergency flow)
+// Helper functions for session storage
 const saveToSession = (key: string, value: any) => {
   sessionStorage.setItem(key, JSON.stringify(value));
 };
@@ -25,7 +25,7 @@ const loadFromSession = (key: string, defaultValue: any) => {
 export default function Calculate() {
   const router = useRouter();
   
-  // Load search query from sessionStorage, if available
+  // Load search query from sessionStorage
   const [searchQuery, setSearchQuery] = useState<string>(
     loadFromSession("services_searchQuery", "")
   );
@@ -52,8 +52,7 @@ export default function Calculate() {
           />
         </div>
 
-        {/* Displaying ServicesGrid */}
-        {/* Pass the searchQuery as a prop so that ServicesGrid can also handle session state */}
+        {/* Displaying ServicesGrid - user chooses sections here */}
         <ServicesGrid searchQuery={searchQuery} />
       </div>
     </main>

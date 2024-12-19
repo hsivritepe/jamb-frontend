@@ -11,7 +11,7 @@ import {
   ALL_CATEGORIES,
 } from "@/constants/categories";
 
-// Helper functions for session storage (similar to emergency flow)
+// Helper functions for session storage
 const saveToSession = (key: string, value: any) => {
   sessionStorage.setItem(key, JSON.stringify(value));
 };
@@ -26,7 +26,7 @@ const loadFromSession = (key: string, defaultValue: any) => {
   }
 };
 
-// Prepare indoor and outdoor services arrays
+// Prepare indoor and outdoor arrays
 const indoorServices = Object.values(INDOOR_SERVICE_SECTIONS).map((section) => ({
   title: section,
   image: `/images/services/${section.toLowerCase().replace(/ /g, '_')}.jpg`,
@@ -54,7 +54,7 @@ export default function ServicesGrid({
 }: ServicesGridProps) {
   const router = useRouter();
 
-  // Load selectedType and selectedSections from session, fallback to defaults
+  // Load selected type and selected sections from session
   const [selectedType, setSelectedType] = useState<'indoor' | 'outdoor'>(
     loadFromSession("services_selectedType", "indoor")
   );
@@ -83,22 +83,22 @@ export default function ServicesGrid({
       )
   );
 
-  // Handle section selection or deselection
+  // Handle section click - user chooses main categories here (like "Electrical")
   const handleSectionClick = (section: string) => {
     setSelectedSections((prev) =>
       prev.includes(section)
-        ? prev.filter((s) => s !== section) // Remove if already selected
-        : [...prev, section] // Add if not selected
+        ? prev.filter((s) => s !== section)
+        : [...prev, section]
     );
   };
 
-  // Move to the next step
+  // Move to the next step - going to /calculate/services
   const handleNext = () => {
     if (selectedSections.length === 0) {
       alert("Please select at least one service section before proceeding.");
       return;
     }
-    // Proceed to the next page, sections are stored in session anyway
+    // Proceed to next page
     router.push(`/calculate/services`);
   };
 
@@ -144,7 +144,7 @@ export default function ServicesGrid({
             id: service.title,
             title: service.title,
             image: service.image,
-            url: '#', // Placeholder
+            url: '#',
             subcategories: service.subcategories,
             isSelected: selectedSections.includes(service.title),
           }))}
