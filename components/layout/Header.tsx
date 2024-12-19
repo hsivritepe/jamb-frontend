@@ -9,7 +9,7 @@ import { useLocation } from "@/context/LocationContext";
 
 // Navigation items (no automatic fetching here, just static navigation links)
 const navigation: NavigationItem[] = [
-  { name: "Services", href: "/services" },
+  { name: "Services", href: "/calculate" },
   { name: "Rooms", href: "/rooms" },
   { name: "Packages", href: "/packages" },
   { name: "About", href: "/about" },
