@@ -14,4 +14,12 @@ export const EMERGENCY_STEPS = [
     { label: 'Checkout', href: '/emergency/checkout' },
 ] as const;
 
+export const ROOMS_STEPS = [
+    { label: 'Rooms', href: '/rooms' },
+    { label: 'Services', href: '/rooms/services' },
+    { label: 'Details', href: '/rooms/details' },
+    { label: 'Estimate', href: '/rooms/estimate' },
+    { label: 'Checkout', href: '/rooms/checkout' },
+] as const;
+
 // You can add other navigation-related constants here

@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { SectionBoxTitle } from '../ui/SectionBoxTitle';
 import { ImageBoxGrid } from '../ui/ImageBoxGrid';
+import Button from '@/components/ui/Button';
 import { ROOMS } from '@/constants/rooms';
 
 // Function to shuffle array elements randomly
@@ -38,8 +40,9 @@ export default function RoomsGrid({
   subtitle?: string;
 }) {
   const [selectedType, setSelectedType] = useState<'indoor' | 'outdoor'>('indoor');
+  const [selectedSections, setSelectedSections] = useState<string[]>([]);
   const [rooms, setRooms] = useState(selectedType === 'indoor' ? indoorRooms : outdoorRooms);
-  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
+  const router = useRouter();
 
   // Update the rooms based on the selected type and shuffle the subcategories
   useEffect(() => {
@@ -56,13 +59,26 @@ export default function RoomsGrid({
     setRooms(shuffledRooms);
   }, [selectedType]);
 
-  // Handle section click to set the selected room
+  // Handle section click to add/remove a room section
   const handleSectionClick = (sectionId: string) => {
-    setSelectedRoomId(sectionId === selectedRoomId ? null : sectionId);
+    setSelectedSections((prev) =>
+      prev.includes(sectionId)
+        ? prev.filter((s) => s !== sectionId) // Remove if already selected
+        : [...prev, sectionId] // Add if not selected
+    );
+  };
+
+  // Handle Next button click to navigate to details page
+  const handleNext = () => {
+    if (selectedSections.length === 0) {
+      alert('Please select at least one room section before proceeding.');
+      return;
+    }
+    router.push(`/rooms/details?sections=${encodeURIComponent(selectedSections.join(','))}`);
   };
 
   return (
-    <section className="py-16">
+    <section className="py-8">
       <div className="container mx-auto">
         {/* Section title */}
         <SectionBoxTitle>
@@ -71,7 +87,7 @@ export default function RoomsGrid({
         </SectionBoxTitle>
 
         {/* Toggle buttons for indoor and outdoor */}
-        <div className="flex mb-8">
+        <div className="flex justify-between items-center mb-8">
           <div className="inline-flex rounded-lg border border-gray-200 p-1">
             {/* Button for indoor */}
             <button
@@ -97,6 +113,9 @@ export default function RoomsGrid({
               Outdoor
             </button>
           </div>
+
+          {/* Next Button */}
+          <Button onClick={handleNext}>Next →</Button>
         </div>
 
         {/* Rooms grid */}
@@ -107,9 +126,9 @@ export default function RoomsGrid({
             image: room.image,
             url: `/rooms/${room.title.toLowerCase().replace(/ /g, '_')}`,
             subcategories: room.subcategories,
-            isSelected: room.id === selectedRoomId, // Add isSelected property
+            isSelected: selectedSections.includes(room.id), // Highlight selected sections
           }))}
-          onSectionClick={handleSectionClick} // Pass section click handler
+          onSectionClick={handleSectionClick} // Pass click handler
           moreText="services"
         />
       </div>

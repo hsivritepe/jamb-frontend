@@ -2,12 +2,13 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Menu, X, ChevronDown } from "lucide-react";
-import Image from "next/image";
 import { NavigationItem } from "@/types/common";
 import { useLocation } from "@/context/LocationContext";
 
-// Navigation items (no automatic fetching here, just static navigation links)
+// Navigation items
+// We will highlight the active page by checking if the current pathname starts with the item's href
 const navigation: NavigationItem[] = [
   { name: "Services", href: "/calculate" },
   { name: "Rooms", href: "/rooms" },
@@ -36,6 +37,9 @@ export default function Header() {
   // Reference to the modal element for outside-click detection
   const modalRef = useRef<HTMLDivElement>(null);
 
+  // Get the current pathname to determine the active page
+  const pathname = usePathname();
+
   /**
    * Handles saving the manually entered location:
    * - Updates the global location context with the entered city and ZIP.
@@ -53,7 +57,6 @@ export default function Header() {
    * Handles fetching the location automatically when the "Auto" button is clicked:
    * - Fetches user's location from the API.
    * - Updates local manualLocation and global location context with fetched data.
-   * - NOTE: This is triggered only by user action (button click), not on navigation.
    */
   const handleAutoFill = async () => {
     try {
@@ -64,7 +67,6 @@ export default function Header() {
       const data = await response.json();
       const fullZip = data.postal || "0000000";
 
-      // Update local state and global context only once, on user request
       setManualLocation({
         city: data.city || "City",
         zip: fullZip,
@@ -97,7 +99,6 @@ export default function Header() {
 
   /**
    * Adds or removes the outside click listener depending on whether the modal is shown.
-   * This ensures that clicking outside the modal closes it, but no unnecessary listeners remain active.
    */
   useEffect(() => {
     if (showModal) {
@@ -111,17 +112,13 @@ export default function Header() {
     };
   }, [showModal]);
 
-  // NOTE: We do not automatically fetch location data on navigation.
-  // The handleAutoFill function is only called when the user explicitly clicks the "Auto" button in the modal.
-  // Hence, no automatic API calls are made just by page navigation or link clicks.
-
   return (
     <>
       <header className="fixed w-full z-50 bg-gray-100/50 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <nav className="bg-white rounded-2xl shadow-sm">
             <div className="flex justify-between items-center h-16 px-6">
-              {/* Logo - Static link, no automatic fetch */}
+              {/* Logo */}
               <Link href="/" prefetch={false} className="flex-shrink-0">
                 <img src="/images/logo.png" alt="Jamb" className="h-8 w-auto" />
               </Link>
@@ -142,18 +139,26 @@ export default function Header() {
                 </strong>
               </div>
 
-              {/* Desktop Navigation - no automatic fetch here */}
+              {/* Desktop Navigation */}
               <div className="hidden md:flex items-center gap-8">
-                {navigation.map((item) => (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className="text-gray-700 hover:text-blue-600 font-medium"
-                    prefetch={false} 
-                  >
-                    {item.name}
-                  </Link>
-                ))}
+                {navigation.map((item) => {
+                  // Check if current item's href is a prefix of the current pathname
+                  const isActive = pathname.startsWith(item.href);
+                  return (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      className={`font-medium transition-colors duration-200 ${
+                        isActive
+                          ? "text-blue-600"
+                          : "text-gray-700 hover:text-blue-600"
+                      }`}
+                      prefetch={false}
+                    >
+                      {item.name}
+                    </Link>
+                  );
+                })}
               </div>
 
               {/* Right Section */}
@@ -189,21 +194,28 @@ export default function Header() {
               </div>
             </div>
 
-            {/* Mobile Navigation (no automatic fetch) */}
+            {/* Mobile Navigation */}
             {isMobileMenuOpen && (
               <div className="md:hidden py-4 px-6 border-t">
                 <div className="flex flex-col gap-4">
-                  {navigation.map((item) => (
-                    <Link
-                      key={item.name}
-                      href={item.href}
-                      className="text-gray-700 hover:text-blue-600 font-medium"
-                      prefetch={false}
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      {item.name}
-                    </Link>
-                  ))}
+                  {navigation.map((item) => {
+                    const isActive = pathname.startsWith(item.href);
+                    return (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        className={`font-medium transition-colors duration-200 ${
+                          isActive
+                            ? "text-blue-600"
+                            : "text-gray-700 hover:text-blue-600"
+                        }`}
+                        prefetch={false}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        {item.name}
+                      </Link>
+                    );
+                  })}
 
                   <Link
                     href="/emergency"
@@ -230,7 +242,6 @@ export default function Header() {
 
       {/* Modal for Setting Location */}
       {showModal && (
-        // Modal placed outside the header to avoid clipping or partial visibility
         <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-[9999]">
           <div
             ref={modalRef}
