@@ -35,9 +35,11 @@ const outdoorRooms = ROOMS.outdoor.map((room) => ({
 export default function RoomsGrid({
   title = 'Whole-Room Makeovers, Done Right',
   subtitle = 'Comprehensive Home Renovations for Every Room',
+  searchQuery,
 }: {
   title?: string;
   subtitle?: string;
+  searchQuery?: string;
 }) {
   const [selectedType, setSelectedType] = useState<'indoor' | 'outdoor'>('indoor');
   const [selectedSections, setSelectedSections] = useState<string[]>([]);
@@ -58,6 +60,15 @@ export default function RoomsGrid({
           }));
     setRooms(shuffledRooms);
   }, [selectedType]);
+
+  // Filter rooms based on search query
+  const filteredRooms = rooms.filter(
+    (room) =>
+      room.title.toLowerCase().includes(searchQuery?.toLowerCase() || '') ||
+      room.subcategories.some((sub) =>
+        sub.toLowerCase().includes(searchQuery?.toLowerCase() || '')
+      )
+  );
 
   // Handle section click to add/remove a room section
   const handleSectionClick = (sectionId: string) => {
@@ -120,7 +131,7 @@ export default function RoomsGrid({
 
         {/* Rooms grid */}
         <ImageBoxGrid
-          items={rooms.map((room) => ({
+          items={filteredRooms.map((room) => ({
             id: room.id,
             title: room.title,
             image: room.image,

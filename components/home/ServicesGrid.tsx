@@ -28,16 +28,29 @@ const outdoorServices = Object.values(OUTDOOR_SERVICE_SECTIONS).map((section) =>
 }));
 
 export default function ServicesGrid({
-  title = '',
+  title = 'Select a Service Category',
+  searchQuery,
 }: {
   title?: string;
+  searchQuery?: string;
 }) {
   const [selectedType, setSelectedType] = useState<'indoor' | 'outdoor'>('indoor');
   const [selectedSections, setSelectedSections] = useState<string[]>([]);
   const router = useRouter();
 
+  // Select services based on type
   const services = selectedType === 'indoor' ? indoorServices : outdoorServices;
 
+  // Filter services based on search query
+  const filteredServices = services.filter(
+    (service) =>
+      service.title.toLowerCase().includes(searchQuery?.toLowerCase() || '') ||
+      service.subcategories.some((sub) =>
+        sub.toLowerCase().includes(searchQuery?.toLowerCase() || '')
+      )
+  );
+
+  // Handle section selection
   const handleSectionClick = (section: string) => {
     setSelectedSections((prev) =>
       prev.includes(section)
@@ -46,6 +59,7 @@ export default function ServicesGrid({
     );
   };
 
+  // Handle navigation to the next step
   const handleNext = () => {
     if (selectedSections.length === 0) {
       alert('Please select at least one service section before proceeding.');
@@ -92,7 +106,7 @@ export default function ServicesGrid({
 
         {/* Services Grid */}
         <ImageBoxGrid
-          items={services.map((service) => ({
+          items={filteredServices.map((service) => ({
             id: service.title,
             title: service.title,
             image: service.image,
