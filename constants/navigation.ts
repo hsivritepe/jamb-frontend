@@ -17,7 +17,6 @@ export const EMERGENCY_STEPS = [
 export const ROOMS_STEPS = [
     { label: 'Rooms', href: '/rooms' },
     { label: 'Services', href: '/rooms/services' },
-    { label: 'Details', href: '/rooms/details' },
     { label: 'Estimate', href: '/rooms/estimate' },
     { label: 'Checkout', href: '/rooms/checkout' },
 ] as const;

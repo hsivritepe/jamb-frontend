@@ -14,19 +14,19 @@ import { ROOMS } from "@/constants/rooms";
 import { useLocation } from "@/context/LocationContext";
 import { ChevronDown } from "lucide-react";
 
-// Utility function to format numbers nicely for prices.
+// Utility function to format numbers nicely for prices
 const formatWithSeparator = (value: number): string =>
   new Intl.NumberFormat("en-US", { minimumFractionDigits: 2 }).format(value);
 
 // Session storage helpers
-// Save data to sessionStorage as a JSON string (client-side check for safety).
+// Save data to sessionStorage as a JSON string (client-side check for safety)
 const saveToSession = (key: string, value: any) => {
   if (typeof window !== 'undefined') {
     sessionStorage.setItem(key, JSON.stringify(value));
   }
 };
 
-// Load data from sessionStorage and parse from JSON, safely fallback if any error or server-side.
+// Load data from sessionStorage and parse from JSON, safely fallback if any error or server-side
 const loadFromSession = (key: string, defaultValue: any) => {
   if (typeof window === 'undefined') return defaultValue;
   const savedValue = sessionStorage.getItem(key);
@@ -42,59 +42,63 @@ export default function RoomDetails() {
   const router = useRouter();
   const { location } = useLocation();
 
-  // Load states from session
+  // Basic states: searchQuery, address, description, photos
   const [searchQuery, setSearchQuery] = useState<string>(loadFromSession("rooms_searchQuery", ""));
   const [address, setAddress] = useState<string>(loadFromSession("address", ""));
   const [description, setDescription] = useState<string>(loadFromSession("description", ""));
   const [photos, setPhotos] = useState<string[]>(loadFromSession("photos", []));
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
 
-  // Load the chosen rooms from session
+  // The list of room IDs the user selected on the first page
   const selectedRooms: string[] = loadFromSession("rooms_selectedSections", []);
 
-  // If no rooms were selected, go back to the previous page.
+  // If no rooms were selected, go back
   useEffect(() => {
     if (selectedRooms.length === 0) {
       router.push("/rooms");
     }
   }, [selectedRooms, router]);
 
-  // Save changes back to session on state updates
+  // Save changes to sessionStorage on state updates
   useEffect(() => saveToSession("rooms_searchQuery", searchQuery), [searchQuery]);
   useEffect(() => saveToSession("address", address), [address]);
   useEffect(() => saveToSession("description", description), [description]);
   useEffect(() => saveToSession("photos", photos), [photos]);
 
-  // Load all rooms and filter to just the chosen rooms
+  // Gather all rooms (indoor + outdoor) for quick lookup
   const allRooms = [...ROOMS.indoor, ...ROOMS.outdoor];
+
+  // Filter only the rooms that match the selected IDs
   const chosenRooms = selectedRooms
     .map(roomId => allRooms.find(r => r.id === roomId))
     .filter((r): r is Exclude<typeof r, undefined> => r !== undefined);
 
-  // If any selected room is not found, redirect back.
+  // If any selected room wasn't found in ROOMS, redirect back
   useEffect(() => {
     if (chosenRooms.length !== selectedRooms.length) {
       router.push("/rooms");
     }
   }, [chosenRooms, selectedRooms, router]);
 
-  // If still no chosen rooms found, show loading or redirect.
+  // If still no chosen rooms, show loading or redirect
   if (chosenRooms.length === 0) {
     return <p>Loading...</p>;
   }
 
-  // Prepare categories and services for each chosen room
+  // We'll create a type that holds categoriesBySection and categoryServicesMap for each room
   type RoomData = {
     categoriesBySection: Record<string, string[]>;
     categoryServicesMap: Record<string, typeof ALL_SERVICES[number][]>;
   };
 
+  // We'll store that data in roomsData keyed by room.id
   const roomsData: Record<string, RoomData> = {};
 
+  // Prepare the categories and services for each chosen room
   for (const room of chosenRooms) {
     const chosenRoomServiceIDs = room.services.map(s => s.id);
 
-    // Map services to categories (catId is first two parts of the ID, e.g. "1-1")
+    // First, figure out the categories that appear in this room
     const categoriesWithSection = room.services
       .map(s => {
         const catId = s.id.split("-").slice(0, 2).join("-");
@@ -102,7 +106,7 @@ export default function RoomDetails() {
       })
       .filter(Boolean) as typeof ALL_CATEGORIES[number][];
 
-    // Group categories by their sections
+    // Group these categories by their section name
     const categoriesBySection: Record<string, string[]> = {};
     categoriesWithSection.forEach(cat => {
       if (!categoriesBySection[cat.section]) {
@@ -113,7 +117,7 @@ export default function RoomDetails() {
       }
     });
 
-    // Map categories to their corresponding services
+    // Next, map categories to their actual services (IDs)
     const categoryServicesMap: Record<string, typeof ALL_SERVICES[number][]> = {};
     chosenRoomServiceIDs.forEach((serviceId) => {
       const catId = serviceId.split("-").slice(0, 2).join("-");
@@ -126,7 +130,7 @@ export default function RoomDetails() {
       }
     });
 
-    // Filter services by search query if provided
+    // If there's a search query, filter services by it
     if (searchQuery) {
       for (const catId in categoryServicesMap) {
         categoryServicesMap[catId] = categoryServicesMap[catId].filter(svc =>
@@ -136,35 +140,55 @@ export default function RoomDetails() {
       }
     }
 
-    roomsData[room.id] = { categoriesBySection, categoryServicesMap };
+    roomsData[room.id] = {
+      categoriesBySection,
+      categoryServicesMap
+    };
   }
 
-  // State for selected services and their quantities:
-  // { [roomId]: { [serviceId]: quantity } }
+  // Our main state for selected services: { [roomId]: { [serviceId]: quantity } }
   const [selectedServicesState, setSelectedServicesState] = useState<Record<string, Record<string, number>>>(
     () => loadFromSession("rooms_selectedServicesWithQuantity", {})
   );
 
+  // Persist changes to session whenever selectedServicesState changes
   useEffect(() => {
     saveToSession("rooms_selectedServicesWithQuantity", selectedServicesState);
   }, [selectedServicesState]);
 
-  // Track manual input values for quantities
+  // Store manual input for each service ID. This is global, but we only track input for the currently changed service
   const [manualInputValue, setManualInputValue] = useState<Record<string, string | null>>({});
 
-  // Track expanded categories
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  // Here we store expansion states for categories on a **per-room** basis:
+  // expandedCategoriesByRoom[roomId] = Set<catId>
+  const [expandedCategoriesByRoom, setExpandedCategoriesByRoom] = useState<
+    Record<string, Set<string>>
+  >({});
 
-  // Toggle expanded/collapsed state for a category
-  const toggleCategory = (catId: string) => {
-    setExpandedCategories((prev) => {
-      const next = new Set(prev);
-      next.has(catId) ? next.delete(catId) : next.add(catId);
-      return next;
+  // Helper to initialize expansion sets if not present
+  function getRoomExpansions(roomId: string): Set<string> {
+    if (!expandedCategoriesByRoom[roomId]) {
+      expandedCategoriesByRoom[roomId] = new Set<string>();
+    }
+    return expandedCategoriesByRoom[roomId];
+  }
+
+  // Toggle expanded state for a category in a specific room
+  function toggleCategory(roomId: string, catId: string) {
+    setExpandedCategoriesByRoom((prev) => {
+      const newObj = { ...prev };
+      const expansions = newObj[roomId] ? new Set(newObj[roomId]) : new Set<string>();
+      if (expansions.has(catId)) {
+        expansions.delete(catId);
+      } else {
+        expansions.add(catId);
+      }
+      newObj[roomId] = expansions;
+      return newObj;
     });
-  };
+  }
 
-  // Helper to get and set services for a specific room
+  // Helper to retrieve the services object for a room
   function getRoomServices(roomId: string) {
     if (!selectedServicesState[roomId]) {
       selectedServicesState[roomId] = {};
@@ -172,6 +196,7 @@ export default function RoomDetails() {
     return selectedServicesState[roomId];
   }
 
+  // Helper to set the services object for a room
   function setRoomServices(roomId: string, services: Record<string, number>) {
     setSelectedServicesState((prev) => ({
       ...prev,
@@ -179,7 +204,7 @@ export default function RoomDetails() {
     }));
   }
 
-  // Handle toggling a service in a room
+  // Handler for toggling a service in a specific room
   const handleServiceToggle = (roomId: string, serviceId: string) => {
     const roomServices = { ...getRoomServices(roomId) };
     if (roomServices[serviceId]) {
@@ -191,21 +216,23 @@ export default function RoomDetails() {
     setWarningMessage(null);
   };
 
-  // Handle increment/decrement of service quantity
+  // Handler for increment/decrement quantity
   const handleQuantityChange = (roomId: string, serviceId: string, increment: boolean, unit: string) => {
     const roomServices = { ...getRoomServices(roomId) };
     const currentValue = roomServices[serviceId] || 1;
     const updatedValue = increment ? currentValue + 1 : Math.max(1, currentValue - 1);
+
     roomServices[serviceId] = unit === "each" ? Math.round(updatedValue) : updatedValue;
     setRoomServices(roomId, roomServices);
-    // Reset manual input if we used buttons
+
+    // If quantity changed via plus/minus, reset any manual input
     setManualInputValue((prev) => ({
       ...prev,
       [serviceId]: null,
     }));
   };
 
-  // Handle manual quantity input changes
+  // Handler for manual quantity changes in the text field
   const handleManualQuantityChange = (roomId: string, serviceId: string, value: string, unit: string) => {
     setManualInputValue((prev) => ({
       ...prev,
@@ -220,7 +247,7 @@ export default function RoomDetails() {
     }
   };
 
-  // Handle blur event for quantity input field
+  // Handler for onBlur event in the manual input
   const handleBlurInput = (serviceId: string) => {
     if (!manualInputValue[serviceId]) {
       setManualInputValue((prev) => ({
@@ -230,16 +257,24 @@ export default function RoomDetails() {
     }
   };
 
-  // Clear all services selections in all rooms
-  const clearAllSelections = () => {
+  // Clear all services in all rooms, plus close all categories
+  const handleClearAll = () => {
+    // Confirm the action
+    const confirmed = window.confirm("Are you sure you want to clear all selections?");
+    if (!confirmed) return;
+
+    // Clear all selected services
     const cleared: Record<string, Record<string, number>> = {};
     for (const room of chosenRooms) {
       cleared[room.id] = {};
     }
     setSelectedServicesState(cleared);
+
+    // Reset all expansions
+    setExpandedCategoriesByRoom({});
   };
 
-  // Calculate total cost for a single room
+  // Calculate the total for a single room
   const calculateTotalForRoom = (roomId: string): number => {
     let total = 0;
     const roomServices = selectedServicesState[roomId] || {};
@@ -252,7 +287,7 @@ export default function RoomDetails() {
     return total;
   };
 
-  // Calculate total cost for all chosen rooms combined
+  // Calculate the overall subtotal for all rooms
   const calculateTotalAllRooms = (): number => {
     let total = 0;
     for (const room of chosenRooms) {
@@ -261,9 +296,9 @@ export default function RoomDetails() {
     return total;
   };
 
-  // Proceed to the next step
+  // Handler for Next → button
   const handleNext = () => {
-    // Check if any service is selected
+    // Check if there's at least one service selected
     const anySelected = chosenRooms.some(room => {
       const roomServices = selectedServicesState[room.id] || {};
       return Object.keys(roomServices).length > 0;
@@ -273,13 +308,12 @@ export default function RoomDetails() {
       setWarningMessage("Please select at least one service before proceeding.");
       return;
     }
-
     if (!address.trim()) {
       setWarningMessage("Please enter your address before proceeding.");
       return;
     }
 
-    // Collect all selected services for storage
+    // Collect all selected service IDs across all rooms
     const allSelectedServices: string[] = [];
     for (const room of chosenRooms) {
       const roomServices = selectedServicesState[room.id] || {};
@@ -287,13 +321,21 @@ export default function RoomDetails() {
     }
     saveToSession("rooms_selectedServices", allSelectedServices);
 
+    // Go to the estimate page
     router.push("/rooms/estimate");
   };
 
+  // For display of category name
+  function getCategoryNameById(catId: string) {
+    const categoryObj = ALL_CATEGORIES.find((c) => c.id === catId);
+    return categoryObj ? categoryObj.title : catId;
+  }
+
+  // For address changes
   const handleAddressChange = (e: ChangeEvent<HTMLInputElement>) => setAddress(e.target.value);
   const handleDescriptionChange = (e: ChangeEvent<HTMLTextAreaElement>) => setDescription(e.target.value);
 
-  // Attempt to auto-fill the address if location is available
+  // Attempt using location data if available
   const handleUseMyLocation = () => {
     if (location?.city && location?.zip) {
       setAddress(`${location.city}, ${location.zip}, ${location.country || ""}`);
@@ -302,20 +344,15 @@ export default function RoomDetails() {
     }
   };
 
-  // Remove a photo
+  // Remove a photo from the list
   const handleRemovePhoto = (index: number) => {
     setPhotos((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // Get category name by ID
-  function getCategoryNameById(catId: string) {
-    const categoryObj = ALL_CATEGORIES.find((c) => c.id === catId);
-    return categoryObj ? categoryObj.title : catId;
-  }
-
   return (
     <main className="min-h-screen pt-24 pb-16">
       <div className="container mx-auto">
+        {/* Breadcrumb for the rooms flow */}
         <BreadCrumb items={ROOMS_STEPS} />
 
         <div className="flex justify-between items-start mt-8">
@@ -331,6 +368,7 @@ export default function RoomDetails() {
           <Button onClick={handleNext}>Next →</Button>
         </div>
 
+        {/* Clear button with confirmation */}
         <div className="flex justify-between items-center text-sm text-gray-500 mt-8 w-full max-w-[600px]">
           <span>
             No service?{" "}
@@ -339,13 +377,14 @@ export default function RoomDetails() {
             </a>
           </span>
           <button
-            onClick={clearAllSelections}
+            onClick={handleClearAll}
             className="text-blue-600 hover:underline focus:outline-none"
           >
             Clear
           </button>
         </div>
 
+        {/* Warning message if any */}
         <div className="h-6 mt-4 text-left">
           {warningMessage && <p className="text-red-500">{warningMessage}</p>}
         </div>
@@ -360,7 +399,7 @@ export default function RoomDetails() {
         </div>
 
         <div className="container mx-auto relative flex mt-8">
-          {/* Left column with rooms and services */}
+          {/* Left column: one section for each chosen room */}
           <div className="flex-1 space-y-8">
             {chosenRooms.map((room) => {
               const { categoriesBySection, categoryServicesMap } = roomsData[room.id];
@@ -368,9 +407,8 @@ export default function RoomDetails() {
 
               return (
                 <div key={room.id}>
-                  {/* Wrap background image and categories in a max-w container to match widths */}
+                  {/* Background image header with room title */}
                   <div className="max-w-[600px] mx-auto">
-                    {/* Background image header with room title */}
                     <div
                       className="relative overflow-hidden rounded-xl border border-gray-300 h-32 bg-center bg-cover"
                       style={{ backgroundImage: `url(/images/rooms/${room.id}.jpg)` }}
@@ -384,7 +422,7 @@ export default function RoomDetails() {
                       </div>
                     </div>
 
-                    {/* Categories and services for this room */}
+                    {/* Display each section of categories for this room */}
                     {Object.entries(categoriesBySection).map(([sectionName, catIds]) => (
                       <div key={sectionName} className="mb-8 mt-4">
                         <SectionBoxSubtitle>{sectionName}</SectionBoxSubtitle>
@@ -399,6 +437,10 @@ export default function RoomDetails() {
 
                             const categoryName = getCategoryNameById(catId);
 
+                            // Check if this category is expanded for this specific room
+                            const expandedSet = getRoomExpansions(room.id);
+                            const isExpanded = expandedSet.has(catId);
+
                             return (
                               <div
                                 key={catId}
@@ -406,8 +448,9 @@ export default function RoomDetails() {
                                   selectedInThisCategory > 0 ? "border-blue-500" : "border-gray-300"
                                 }`}
                               >
+                                {/* Toggle expansion for this catId in this specific room */}
                                 <button
-                                  onClick={() => toggleCategory(catId)}
+                                  onClick={() => toggleCategory(room.id, catId)}
                                   className="flex justify-between items-center w-full"
                                 >
                                   <h3
@@ -424,12 +467,12 @@ export default function RoomDetails() {
                                   </h3>
                                   <ChevronDown
                                     className={`h-5 w-5 transform transition-transform ${
-                                      expandedCategories.has(catId) ? "rotate-180" : ""
+                                      isExpanded ? "rotate-180" : ""
                                     }`}
                                   />
                                 </button>
 
-                                {expandedCategories.has(catId) && (
+                                {isExpanded && (
                                   <div className="mt-4 flex flex-col gap-3">
                                     {servicesForCategory.map((svc, svcIndex) => {
                                       const isSelected = roomServices[svc.id] !== undefined;
@@ -441,6 +484,7 @@ export default function RoomDetails() {
 
                                       return (
                                         <div key={svc.id} className="space-y-2">
+                                          {/* Row for a single service */}
                                           <div className="flex justify-between items-center">
                                             <span
                                               className={`text-lg transition-colors duration-300 ${
@@ -463,11 +507,13 @@ export default function RoomDetails() {
 
                                           {isSelected && (
                                             <>
+                                              {/* Service description */}
                                               {svc.description && (
                                                 <p className="text-sm text-gray-500 pr-16">
                                                   {svc.description}
                                                 </p>
                                               )}
+                                              {/* Quantity controls */}
                                               <div className="flex justify-between items-center">
                                                 <div className="flex items-center gap-1">
                                                   <button
@@ -525,7 +571,7 @@ export default function RoomDetails() {
                                                   ${formatWithSeparator(svc.price * quantity)}
                                                 </span>
                                               </div>
-                                              {/* Add a divider line if not the last chosen service in this category */}
+                                              {/* Divider if not the last chosen service in this category */}
                                               {isSelected &&
                                                 (() => {
                                                   const chosenInThisCat = servicesForCategory.filter(
@@ -555,8 +601,9 @@ export default function RoomDetails() {
             })}
           </div>
 
-          {/* Right column: Summary, Address, and Photos/Description */}
+          {/* Right column: summary, address, photos/description */}
           <div className="w-1/2 ml-auto pt-0 space-y-6">
+            {/* Summary */}
             <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden">
               <SectionBoxSubtitle>Summary</SectionBoxSubtitle>
               {chosenRooms.every(room => {
@@ -574,23 +621,23 @@ export default function RoomDetails() {
                     const hasSelectedInRoom = Object.keys(roomServices).length > 0;
                     if (!hasSelectedInRoom) return null;
 
+                    // Calculate this room's total
                     const roomTotal = Object.entries(roomServices).reduce((sum, [serviceId, qty]) => {
-                      const svc = ALL_SERVICES.find(s=>s.id===serviceId);
+                      const svc = ALL_SERVICES.find(s => s.id === serviceId);
                       return svc ? sum + svc.price * qty : sum;
-                    },0);
+                    }, 0);
 
                     return (
                       <div key={room.id} className="mb-6">
-                        {chosenRooms.length > 1 && (
-                          <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                            {room.title}
-                          </h3>
-                        )}
+                        {/* Always display room title, even if there's just one */}
+                        <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                          {room.title}
+                        </h3>
                         {Object.entries(categoriesBySection).map(([sectionName, catIds]) => {
                           const categoriesWithSelected = catIds.filter(catId =>
-                            (categoryServicesMap[catId]||[]).some(svc => roomServices[svc.id] !== undefined)
+                            (categoryServicesMap[catId] || []).some(svc => roomServices[svc.id] !== undefined)
                           );
-                          if (categoriesWithSelected.length===0) return null;
+                          if (categoriesWithSelected.length === 0) return null;
 
                           return (
                             <div key={sectionName} className="mb-4 ml-2">
@@ -598,28 +645,31 @@ export default function RoomDetails() {
                                 {sectionName}
                               </h4>
                               {categoriesWithSelected.map(catId => {
-                                const categoryObj = ALL_CATEGORIES.find((c) => c.id===catId);
-                                const categoryName = categoryObj?categoryObj.title:catId;
-                                const servicesForCategory = categoryServicesMap[catId]||[];
-                                const chosenServices = servicesForCategory.filter(svc=> roomServices[svc.id]!==undefined);
+                                const servicesForCategory = categoryServicesMap[catId] || [];
+                                const chosenServices = servicesForCategory.filter(
+                                  svc => roomServices[svc.id] !== undefined
+                                );
+                                if (chosenServices.length === 0) return null;
 
-                                if(chosenServices.length===0) return null;
+                                // Show category name
+                                const catObj = ALL_CATEGORIES.find(c => c.id === catId);
+                                const catName = catObj ? catObj.title : catId;
 
                                 return (
                                   <div key={catId} className="mb-4 ml-4">
                                     <h5 className="text-md font-medium text-gray-700 mb-2">
-                                      {categoryName}
+                                      {catName}
                                     </h5>
                                     <ul className="space-y-2 pb-4">
-                                      {chosenServices.map(svc=>{
-                                        const quantity=roomServices[svc.id]||1;
+                                      {chosenServices.map(svc => {
+                                        const quantity = roomServices[svc.id] || 1;
                                         return (
                                           <li
                                             key={svc.id}
                                             className="grid grid-cols-3 gap-2 text-sm text-gray-600"
                                             style={{
-                                              gridTemplateColumns:"40% 30% 25%",
-                                              width:"100%",
+                                              gridTemplateColumns: "40% 30% 25%",
+                                              width: "100%",
                                             }}
                                           >
                                             <span className="truncate overflow-hidden">
@@ -630,7 +680,7 @@ export default function RoomDetails() {
                                               ${formatWithSeparator(svc.price)}
                                             </span>
                                             <span className="text-right">
-                                              ${formatWithSeparator(svc.price*quantity)}
+                                              ${formatWithSeparator(svc.price * quantity)}
                                             </span>
                                           </li>
                                         );
@@ -642,6 +692,7 @@ export default function RoomDetails() {
                             </div>
                           );
                         })}
+
                         <div className="flex justify-between items-center mb-2 ml-2">
                           <span className="font-medium text-gray-800">Room Total:</span>
                           <span className="font-medium text-blue-600">
@@ -663,7 +714,7 @@ export default function RoomDetails() {
               )}
             </div>
 
-            {/* Address Section */}
+            {/* Address section */}
             <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden">
               <h2 className="text-2xl font-medium text-gray-800 mb-4">We Need Your Address</h2>
               <div className="flex flex-col gap-4">
@@ -682,7 +733,7 @@ export default function RoomDetails() {
               </div>
             </div>
 
-            {/* Upload Photos & Description Section */}
+            {/* Upload Photos & Description section */}
             <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden">
               <h2 className="text-2xl font-medium text-gray-800 mb-4">
                 Upload Photos & Description

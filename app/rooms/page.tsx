@@ -7,14 +7,17 @@ import SearchServices from "@/components/SearchServices";
 import RoomsGrid from "@/components/home/RoomMakeovers";
 import { ROOMS_STEPS } from "@/constants/navigation";
 
-// Helper functions for session storage
-// Save data to sessionStorage as JSON string
+// saveToSession: Save data to sessionStorage as JSON (client-side only)
 const saveToSession = (key: string, value: any) => {
-  sessionStorage.setItem(key, JSON.stringify(value));
+  if (typeof window !== "undefined") {
+    sessionStorage.setItem(key, JSON.stringify(value));
+  }
 };
 
-// Load data from sessionStorage and parse it from JSON string
+// loadFromSession: Safely load data from sessionStorage, parse JSON
+// If an error or server-side, return defaultValue
 const loadFromSession = (key: string, defaultValue: any) => {
+  if (typeof window === "undefined") return defaultValue;
   const savedValue = sessionStorage.getItem(key);
   try {
     return savedValue ? JSON.parse(savedValue) : defaultValue;
@@ -27,12 +30,28 @@ const loadFromSession = (key: string, defaultValue: any) => {
 export default function Rooms() {
   const router = useRouter();
 
-  // Load the search query from sessionStorage, if available
+  // Load previous search query from session if available
   const [searchQuery, setSearchQuery] = useState<string>(
     loadFromSession("rooms_searchQuery", "")
   );
 
-  // Save the search query to sessionStorage whenever it changes
+  // On page load, clear previous calculation data to ensure a fresh start
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      // Clear previously selected time and coefficient from old estimates
+      sessionStorage.removeItem("selectedTime");
+      sessionStorage.removeItem("timeCoefficient");
+
+      // Clear previously selected services from old estimates
+      sessionStorage.removeItem("selectedServicesWithQuantity");
+      sessionStorage.removeItem("services_selectedCategories");
+      sessionStorage.removeItem("rooms_selectedServices");
+      sessionStorage.removeItem("rooms_selectedServicesWithQuantity");
+      // Remove or add other keys as needed to ensure a clean slate
+    }
+  }, []);
+
+  // Save search query to session whenever it changes
   useEffect(() => {
     saveToSession("rooms_searchQuery", searchQuery);
   }, [searchQuery]);
@@ -40,7 +59,7 @@ export default function Rooms() {
   return (
     <main className="min-h-screen pt-24">
       <div className="container mx-auto">
-        {/* Breadcrumb navigation */}
+        {/* Breadcrumb for the rooms flow */}
         <BreadCrumb items={ROOMS_STEPS} />
 
         {/* Search bar for rooms */}
@@ -54,7 +73,7 @@ export default function Rooms() {
           />
         </div>
 
-        {/* RoomsGrid handles room selection and navigation to the next page */}
+        {/* RoomsGrid component handles displaying and selecting rooms */}
         <RoomsGrid
           title="Select a room"
           subtitle="Specify the Required Services on the Next Page"

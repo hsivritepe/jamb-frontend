@@ -7,7 +7,7 @@ import { ImageBoxGrid } from "../ui/ImageBoxGrid";
 import Button from "@/components/ui/Button";
 import { ROOMS } from "@/constants/rooms";
 
-// Function to shuffle array elements randomly
+// shuffleArray: Randomly shuffle an array
 function shuffleArray<T>(array: T[]): T[] {
   const shuffled = [...array];
   for (let i = shuffled.length - 1; i > 0; i--) {
@@ -17,8 +17,7 @@ function shuffleArray<T>(array: T[]): T[] {
   return shuffled;
 }
 
-// Helper functions for session storage
-// We must ensure 'window' is defined before accessing sessionStorage
+// Session helpers
 const saveToSession = (key: string, value: any) => {
   if (typeof window !== "undefined") {
     sessionStorage.setItem(key, JSON.stringify(value));
@@ -27,10 +26,8 @@ const saveToSession = (key: string, value: any) => {
 
 const loadFromSession = (key: string, defaultValue: any) => {
   if (typeof window === "undefined") {
-    // sessionStorage is not defined on the server or during build
     return defaultValue;
   }
-
   const savedValue = sessionStorage.getItem(key);
   try {
     return savedValue ? JSON.parse(savedValue) : defaultValue;
@@ -68,8 +65,7 @@ export default function RoomsGrid({
 }: RoomsGridProps) {
   const router = useRouter();
 
-  // Load selectedType ('indoor' or 'outdoor') and selectedSections from session
-  // Using loadFromSession is now safe because we check for typeof window above
+  // Load previously saved type and selected rooms
   const [selectedType, setSelectedType] = useState<'indoor' | 'outdoor'>(
     loadFromSession("rooms_selectedType", "indoor")
   );
@@ -82,17 +78,16 @@ export default function RoomsGrid({
     selectedType === 'indoor' ? indoorRooms : outdoorRooms
   );
 
-  // Save selectedType to session whenever it changes
+  // Save changes to session
   useEffect(() => {
     saveToSession("rooms_selectedType", selectedType);
   }, [selectedType]);
 
-  // Save selectedSections to session whenever they change
   useEffect(() => {
     saveToSession("rooms_selectedSections", selectedSections);
   }, [selectedSections]);
 
-  // Recompute rooms when selectedType changes; shuffle subcategories for variety
+  // Recompute rooms when selectedType changes (shuffle subcategories for variety)
   useEffect(() => {
     const shuffledRooms =
       selectedType === 'indoor'
@@ -108,7 +103,7 @@ export default function RoomsGrid({
     setRooms(shuffledRooms);
   }, [selectedType]);
 
-  // Filter rooms based on the searchQuery
+  // Filter rooms by searchQuery
   const filteredRooms = rooms.filter(
     (room) =>
       room.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -117,7 +112,7 @@ export default function RoomsGrid({
       )
   );
 
-  // Toggle selection of a room
+  // Toggle room selection
   const handleSectionClick = (sectionId: string) => {
     setSelectedSections((prev) =>
       prev.includes(sectionId)
@@ -126,12 +121,13 @@ export default function RoomsGrid({
     );
   };
 
-  // Proceed to the next page
+  // Proceed to next page after selecting rooms
   const handleNext = () => {
     if (selectedSections.length === 0) {
       alert("Please select at least one room before proceeding.");
       return;
     }
+    // Proceed to the next step: /rooms/services
     router.push("/rooms/services");
   };
 
@@ -145,7 +141,7 @@ export default function RoomsGrid({
           </p>
         </SectionBoxTitle>
 
-        {/* Indoor/Outdoor Toggle */}
+        {/* Indoor/Outdoor toggle */}
         <div className="flex justify-between items-center mb-8">
           <div className="inline-flex rounded-lg border border-gray-200 p-1">
             <button
@@ -170,11 +166,11 @@ export default function RoomsGrid({
             </button>
           </div>
 
-          {/* Next Button */}
+          {/* Next button */}
           <Button onClick={handleNext}>Next →</Button>
         </div>
 
-        {/* Rooms Grid: display filtered rooms based on searchQuery */}
+        {/* Rooms grid display */}
         <ImageBoxGrid
           items={filteredRooms.map((room) => ({
             id: room.id,
