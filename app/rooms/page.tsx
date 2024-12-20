@@ -40,7 +40,7 @@ export default function Rooms() {
   return (
     <main className="min-h-screen pt-24">
       <div className="container mx-auto">
-        {/* Breadcrumb navigation, similar to Services flow */}
+        {/* Breadcrumb navigation */}
         <BreadCrumb items={ROOMS_STEPS} />
 
         {/* Search bar for rooms */}
@@ -54,6 +54,7 @@ export default function Rooms() {
           />
         </div>
 
+        {/* RoomsGrid handles room selection and navigation to the next page */}
         <RoomsGrid
           title="Select a room"
           subtitle="Specify the Required Services on the Next Page"

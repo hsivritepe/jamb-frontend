@@ -132,7 +132,7 @@ export default function RoomsGrid({
       alert("Please select at least one room before proceeding.");
       return;
     }
-    router.push("/rooms/details");
+    router.push("/rooms/services");
   };
 
   return (
