@@ -169,10 +169,9 @@ export default function Services() {
         <BreadCrumb items={CALCULATE_STEPS} />
 
         <div className="flex justify-between items-start mt-8">
-          <SectionBoxTitle>Select Your Categories</SectionBoxTitle>
+          <SectionBoxTitle>Select Your Categories</SectionBoxTitle>         
           <Button onClick={handleNext}>Next →</Button>
-        </div>
-
+        </div>       
         <div className="flex flex-col gap-4 mt-8 w-full max-w-[600px]">
           <SearchServices
             value={searchQuery}

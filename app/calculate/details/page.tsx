@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, ChangeEvent, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import BreadCrumb from "@/components/ui/BreadCrumb";
 import Button from "@/components/ui/Button";
@@ -16,14 +16,15 @@ import { ChevronDown } from "lucide-react";
 const formatWithSeparator = (value: number): string =>
   new Intl.NumberFormat("en-US", { minimumFractionDigits: 2 }).format(value);
 
-// Session helpers
-// Save data to sessionStorage as JSON string
+// Session helpers with environment check
 const saveToSession = (key: string, value: any) => {
-  sessionStorage.setItem(key, JSON.stringify(value));
+  if (typeof window !== 'undefined') {
+    sessionStorage.setItem(key, JSON.stringify(value));
+  }
 };
 
-// Load and parse data from sessionStorage
 const loadFromSession = (key: string, defaultValue: any) => {
+  if (typeof window === 'undefined') return defaultValue;
   const savedValue = sessionStorage.getItem(key);
   try {
     return savedValue ? JSON.parse(savedValue) : defaultValue;
@@ -33,21 +34,12 @@ const loadFromSession = (key: string, defaultValue: any) => {
   }
 };
 
-// Utility to capitalize and transform service/activity names
-const capitalizeAndTransform = (text: string): string =>
-  text
-    .replace(/([A-Z])/g, " $1")
-    .trim()
-    .replace(/^./, (char) => char.toUpperCase());
-
 export default function Details() {
   const router = useRouter();
   const { location } = useLocation();
 
-  // Load chosen category IDs
+  // Load chosen categories and other data only if window is defined
   const selectedCategories: string[] = loadFromSession("services_selectedCategories", []);
-
-  // Load read-only data (address, description, photos)
   const address: string = loadFromSession("address", "");
   const description: string = loadFromSession("description", "");
   const photos: string[] = loadFromSession("photos", []);
@@ -55,8 +47,8 @@ export default function Details() {
 
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
 
-  // If no categories or no address, go back
   useEffect(() => {
+    // If no categories or no address, go back
     if (selectedCategories.length === 0 || !address) {
       router.push("/calculate");
     }
@@ -64,22 +56,19 @@ export default function Details() {
 
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
-  // Find categories with their sections
   const categoriesWithSection = selectedCategories
-    .map(catId => ALL_CATEGORIES.find(c => c.id === catId) || null)
-    .filter(Boolean) as typeof ALL_CATEGORIES[number][];
+    .map((catId) => ALL_CATEGORIES.find((c) => c.id === catId) || null)
+    .filter(Boolean) as (typeof ALL_CATEGORIES)[number][];
 
-  // Group selected categories by their section
   const categoriesBySection: Record<string, string[]> = {};
-  categoriesWithSection.forEach(cat => {
+  categoriesWithSection.forEach((cat) => {
     if (!categoriesBySection[cat.section]) {
       categoriesBySection[cat.section] = [];
     }
     categoriesBySection[cat.section].push(cat.id);
   });
 
-  // Find services for each category ID
-  const categoryServicesMap: Record<string, typeof ALL_SERVICES[number][]> = {};
+  const categoryServicesMap: Record<string, (typeof ALL_SERVICES)[number][]> = {};
   selectedCategories.forEach((catId) => {
     let matchedServices = ALL_SERVICES.filter((svc) => svc.id.startsWith(`${catId}-`));
     if (searchQuery) {
@@ -90,15 +79,12 @@ export default function Details() {
     categoryServicesMap[catId] = matchedServices;
   });
 
-  // Load previously chosen services with quantity
   const [selectedServicesState, setSelectedServicesState] = useState<Record<string, number>>(
     () => loadFromSession("selectedServicesWithQuantity", {})
   );
 
-  // Track manual input for quantities
   const [manualInputValue, setManualInputValue] = useState<Record<string, string | null>>({});
 
-  // Save changes to session
   useEffect(() => {
     saveToSession("selectedServicesWithQuantity", selectedServicesState);
   }, [selectedServicesState]);
@@ -239,10 +225,6 @@ export default function Details() {
 
                     const categoryName = getCategoryNameById(catId);
 
-                    const chosenServices = servicesForCategory.filter(
-                      (svc) => selectedServicesState[svc.id] !== undefined
-                    );
-
                     return (
                       <div
                         key={catId}
@@ -275,12 +257,13 @@ export default function Details() {
 
                         {expandedCategories.has(catId) && (
                           <div className="mt-4 flex flex-col gap-3">
-                            {servicesForCategory.map((svc, svcIndex) => {
+                            {servicesForCategory.map((svc) => {
                               const isSelected = selectedServicesState[svc.id] !== undefined;
                               const quantity = selectedServicesState[svc.id] || 1;
-                              const manualValue = manualInputValue[svc.id] !== null
-                                ? manualInputValue[svc.id] || ""
-                                : quantity.toString();
+                              const manualValue =
+                                manualInputValue[svc.id] !== null
+                                  ? manualInputValue[svc.id] || ""
+                                  : quantity.toString();
 
                               return (
                                 <div key={svc.id} className="space-y-2">
@@ -368,14 +351,16 @@ export default function Details() {
                                           ${formatWithSeparator(svc.price * quantity)}
                                         </span>
                                       </div>
-                                      {/* Separator line between chosen services (only if not the last chosen service) */}
-                                      {isSelected && (() => {
-                                        const chosen = servicesForCategory.filter(s => selectedServicesState[s.id] !== undefined);
-                                        const currentIndex = chosen.findIndex(s => s.id === svc.id);
-                                        return currentIndex !== chosen.length - 1 ? (
-                                          <hr className="mt-4 border-gray-200" />
-                                        ) : null;
-                                      })()}
+                                      {isSelected &&
+                                        (() => {
+                                          const chosen = servicesForCategory.filter(
+                                            (s) => selectedServicesState[s.id] !== undefined
+                                          );
+                                          const currentIndex = chosen.findIndex((s) => s.id === svc.id);
+                                          return currentIndex !== chosen.length - 1 ? (
+                                            <hr className="mt-4 border-gray-200" />
+                                          ) : null;
+                                        })()}
                                     </>
                                   )}
                                 </div>
@@ -392,7 +377,7 @@ export default function Details() {
           </div>
 
           {/* Right Section: Summary, Address, Photos, and Description */}
-          <div className="w-1/2 ml-auto mt-4 pt-1">
+          <div className="w-1/2 ml-auto mt-14 pt-1">
             <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden">
               <SectionBoxSubtitle>Summary</SectionBoxSubtitle>
               {Object.keys(selectedServicesState).length === 0 ? (
@@ -401,32 +386,85 @@ export default function Details() {
                 </div>
               ) : (
                 <>
-                  <ul className="mt-4 space-y-2 pb-4">
-                    {Object.entries(selectedServicesState).map(([serviceId, quantity]) => {
-                      const svc = ALL_SERVICES.find((s) => s.id === serviceId);
-                      if (!svc) return null;
-                      return (
-                        <li
-                          key={serviceId}
-                          className="grid grid-cols-3 gap-2 text-sm text-gray-600"
-                          style={{
-                            gridTemplateColumns: "46% 25% 25%",
-                            width: "100%",
-                          }}
-                        >
-                          <span className="truncate overflow-hidden">
-                            {svc.title}
-                          </span>
-                          <span className="text-right">
-                            {quantity} x ${formatWithSeparator(svc.price)}
-                          </span>
-                          <span className="text-right">
-                            ${formatWithSeparator(svc.price * quantity)}
-                          </span>
-                        </li>
+                  {Object.entries(categoriesBySection).map(
+                    ([sectionName, catIds]) => {
+                      const categoriesWithSelectedServices = catIds.filter(
+                        (catId) => {
+                          const servicesForCategory =
+                            categoryServicesMap[catId] || [];
+                          return servicesForCategory.some(
+                            (svc) => selectedServicesState[svc.id] !== undefined
+                          );
+                        }
                       );
-                    })}
-                  </ul>
+
+                      if (categoriesWithSelectedServices.length === 0)
+                        return null;
+
+                      return (
+                        <div key={sectionName} className="mb-6">
+                          <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                            {sectionName}
+                          </h3>
+                          {categoriesWithSelectedServices.map((catId) => {
+                            const categoryObj = ALL_CATEGORIES.find(
+                              (c) => c.id === catId
+                            );
+                            const categoryName = categoryObj
+                              ? categoryObj.title
+                              : catId;
+
+                            const servicesForCategory =
+                              categoryServicesMap[catId] || [];
+                            const chosenServices = servicesForCategory.filter(
+                              (svc) =>
+                                selectedServicesState[svc.id] !== undefined
+                            );
+
+                            if (chosenServices.length === 0) return null;
+
+                            return (
+                              <div key={catId} className="mb-4 ml-4">
+                                <h4 className="text-lg font-medium text-gray-700 mb-2">
+                                  {categoryName}
+                                </h4>
+                                <ul className="space-y-2 pb-4">
+                                  {chosenServices.map((svc) => {
+                                    const quantity =
+                                      selectedServicesState[svc.id] || 1;
+                                    return (
+                                      <li
+                                        key={svc.id}
+                                        className="grid grid-cols-3 gap-2 text-sm text-gray-600"
+                                        style={{
+                                          gridTemplateColumns: "40% 30% 25%",
+                                          width: "100%",
+                                        }}
+                                      >
+                                        <span className="truncate overflow-hidden">
+                                          {svc.title}
+                                        </span>
+                                        <span className="text-right">
+                                          {quantity} {svc.unit_of_measurement} x
+                                          ${formatWithSeparator(svc.price)}
+                                        </span>
+                                        <span className="text-right">
+                                          $
+                                          {formatWithSeparator(
+                                            svc.price * quantity
+                                          )}
+                                        </span>
+                                      </li>
+                                    );
+                                  })}
+                                </ul>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    }
+                  )}
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-2xl font-semibold text-gray-800">
                       Subtotal:
@@ -440,8 +478,12 @@ export default function Details() {
             </div>
 
             <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
-              <h2 className="text-2xl font-medium text-gray-800 mb-4">Address</h2>
-              <p className="text-gray-500 text-medium">{address || "No address provided"}</p>
+              <h2 className="text-2xl font-medium text-gray-800 mb-4">
+                Address
+              </h2>
+              <p className="text-gray-500 text-medium">
+                {address || "No address provided"}
+              </p>
             </div>
 
             <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
@@ -460,7 +502,9 @@ export default function Details() {
                 ))}
               </div>
               {photos.length === 0 && (
-                <p className="text-medium text-gray-500 mt-2">No photos uploaded</p>
+                <p className="text-medium text-gray-500 mt-2">
+                  No photos uploaded
+                </p>
               )}
             </div>
 
