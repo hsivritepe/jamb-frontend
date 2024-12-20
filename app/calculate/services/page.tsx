@@ -12,10 +12,12 @@ import { useLocation } from "@/context/LocationContext";
 import { ALL_CATEGORIES } from "@/constants/categories";
 
 // Session storage helpers
+// Save data to sessionStorage as JSON string
 const saveToSession = (key: string, value: any) => {
   sessionStorage.setItem(key, JSON.stringify(value));
 };
 
+// Load and parse data from sessionStorage
 const loadFromSession = (key: string, defaultValue: any) => {
   const savedValue = sessionStorage.getItem(key);
   try {
@@ -40,14 +42,15 @@ export default function Services() {
     }
   }, [selectedSections, router]);
 
-  // State from session
+  // Load states from session
   const [searchQuery, setSearchQuery] = useState<string>(loadFromSession("services_searchQuery", ""));
   const [address, setAddress] = useState<string>(loadFromSession("address", ""));
   const [description, setDescription] = useState<string>(loadFromSession("description", ""));
   const [photos, setPhotos] = useState<string[]>(loadFromSession("photos", []));
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
 
-  // Build a map section -> categories
+  // Build a map: section -> categories
+  // ALL_CATEGORIES is a constant list of categories with their sections
   const categoriesBySection: Record<string, {id: string; title: string;}[]> = {};
   ALL_CATEGORIES.forEach((cat) => {
     if (!categoriesBySection[cat.section]) {
@@ -70,7 +73,7 @@ export default function Services() {
     initialSelectedCategories
   );
 
-  // Save states
+  // Save states to session whenever they change
   useEffect(() => saveToSession("services_searchQuery", searchQuery), [searchQuery]);
   useEffect(() => saveToSession("address", address), [address]);
   useEffect(() => saveToSession("description", description), [description]);
@@ -78,8 +81,10 @@ export default function Services() {
   useEffect(() => saveToSession("selectedCategoriesMap", selectedCategories), [selectedCategories]);
 
   // Filter categories by search query
+  // IMPORTANT FIX: Use selectedSections instead of selectedCategories keys here.
+  // This ensures that even if no categories are selected yet, we still display categories.
   const filteredCategoriesBySection = Object.fromEntries(
-    Object.entries(selectedCategories).map(([section]) => {
+    selectedSections.map((section) => {
       const allCats = categoriesBySection[section] || [];
       const filtered = searchQuery
         ? allCats.filter((c) =>
@@ -90,7 +95,7 @@ export default function Services() {
     })
   ) as Record<string, {id:string; title:string}[]>;
 
-  // expandedCategories local state
+  // expandedCategories local state to track which sections are expanded
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
   const toggleCategory = (section: string) => {
@@ -101,6 +106,7 @@ export default function Services() {
     });
   };
 
+  // Handle category selection inside each section
   const handleCategorySelect = (section: string, catId: string) => {
     setSelectedCategories((prev) => {
       const current = prev[section] || [];
@@ -113,6 +119,7 @@ export default function Services() {
     });
   };
 
+  // Clear all selected categories
   const handleClearSelection = () => {
     const cleared: Record<string, string[]> = {};
     selectedSections.forEach((section) => {
@@ -121,6 +128,7 @@ export default function Services() {
     setSelectedCategories(cleared);
   };
 
+  // Proceed to the next page after checks
   const handleNext = () => {
     const totalChosen = Object.values(selectedCategories).flat().length;
     if (totalChosen === 0) {
@@ -138,9 +146,11 @@ export default function Services() {
     router.push("/calculate/details");
   };
 
+  // Handle address changes
   const handleAddressChange = (e: ChangeEvent<HTMLInputElement>) => setAddress(e.target.value);
   const handleDescriptionChange = (e: ChangeEvent<HTMLTextAreaElement>) => setDescription(e.target.value);
 
+  // Attempt to use user location
   const handleUseMyLocation = () => {
     if (location?.city && location?.zip) {
       setAddress(`${location.city}, ${location.zip}, ${location.country || ""}`);

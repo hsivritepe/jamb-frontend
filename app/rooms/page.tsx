@@ -8,10 +8,12 @@ import RoomsGrid from "@/components/home/RoomMakeovers";
 import { ROOMS_STEPS } from "@/constants/navigation";
 
 // Helper functions for session storage
+// Save data to sessionStorage as JSON string
 const saveToSession = (key: string, value: any) => {
   sessionStorage.setItem(key, JSON.stringify(value));
 };
 
+// Load data from sessionStorage and parse it from JSON string
 const loadFromSession = (key: string, defaultValue: any) => {
   const savedValue = sessionStorage.getItem(key);
   try {
@@ -25,12 +27,12 @@ const loadFromSession = (key: string, defaultValue: any) => {
 export default function Rooms() {
   const router = useRouter();
 
-  // Load search query from session storage if available
+  // Load the search query from sessionStorage, if available
   const [searchQuery, setSearchQuery] = useState<string>(
     loadFromSession("rooms_searchQuery", "")
   );
 
-  // Save search query whenever it changes
+  // Save the search query to sessionStorage whenever it changes
   useEffect(() => {
     saveToSession("rooms_searchQuery", searchQuery);
   }, [searchQuery]);
@@ -38,10 +40,10 @@ export default function Rooms() {
   return (
     <main className="min-h-screen pt-24">
       <div className="container mx-auto">
-        {/* Breadcrumb for navigation */}
+        {/* Breadcrumb navigation, similar to Services flow */}
         <BreadCrumb items={ROOMS_STEPS} />
 
-        {/* Search bar */}
+        {/* Search bar for rooms */}
         <div className="mt-8 mb-4">
           <SearchServices
             value={searchQuery}
@@ -52,7 +54,6 @@ export default function Rooms() {
           />
         </div>
 
-        {/* Displaying RoomMakeovers */}
         <RoomsGrid
           title="Select a room"
           subtitle="Specify the Required Services on the Next Page"

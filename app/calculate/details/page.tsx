@@ -17,10 +17,12 @@ const formatWithSeparator = (value: number): string =>
   new Intl.NumberFormat("en-US", { minimumFractionDigits: 2 }).format(value);
 
 // Session helpers
+// Save data to sessionStorage as JSON string
 const saveToSession = (key: string, value: any) => {
   sessionStorage.setItem(key, JSON.stringify(value));
 };
 
+// Load and parse data from sessionStorage
 const loadFromSession = (key: string, defaultValue: any) => {
   const savedValue = sessionStorage.getItem(key);
   try {
@@ -93,9 +95,10 @@ export default function Details() {
     () => loadFromSession("selectedServicesWithQuantity", {})
   );
 
-  // manualInputValue: Tracks manual text input for service quantities
+  // Track manual input for quantities
   const [manualInputValue, setManualInputValue] = useState<Record<string, string | null>>({});
 
+  // Save changes to session
   useEffect(() => {
     saveToSession("selectedServicesWithQuantity", selectedServicesState);
   }, [selectedServicesState]);
@@ -130,7 +133,6 @@ export default function Details() {
         [serviceId]: unit === "each" ? Math.round(updatedValue) : updatedValue,
       };
     });
-    // Reset manual input if we used buttons
     setManualInputValue((prev) => ({
       ...prev,
       [serviceId]: null,
@@ -186,7 +188,6 @@ export default function Details() {
       return;
     }
 
-    // Already saved selectedServicesWithQuantity above, address, photos, description also saved previously.
     router.push("/calculate/estimate");
   };
 
@@ -238,7 +239,6 @@ export default function Details() {
 
                     const categoryName = getCategoryNameById(catId);
 
-                    // Для вывода разделителя между выбранными сервисами, отфильтруем только выбранные
                     const chosenServices = servicesForCategory.filter(
                       (svc) => selectedServicesState[svc.id] !== undefined
                     );
@@ -368,18 +368,14 @@ export default function Details() {
                                           ${formatWithSeparator(svc.price * quantity)}
                                         </span>
                                       </div>
-                                      {/* Разделитель между выбранными сервисами */}
-                                      {isSelected && (
-                                        // Если это не последний выбранный сервис, тогда показываем разделитель
-                                        (() => {
-                                          // Фильтруем только выбранные сервисы чтобы понять позицию этого svc среди них
-                                          const chosen = servicesForCategory.filter(s => selectedServicesState[s.id] !== undefined);
-                                          const currentIndex = chosen.findIndex(s => s.id === svc.id);
-                                          return currentIndex !== chosen.length - 1 ? (
-                                            <hr className="mt-4 border-gray-200" />
-                                          ) : null;
-                                        })()
-                                      )}
+                                      {/* Separator line between chosen services (only if not the last chosen service) */}
+                                      {isSelected && (() => {
+                                        const chosen = servicesForCategory.filter(s => selectedServicesState[s.id] !== undefined);
+                                        const currentIndex = chosen.findIndex(s => s.id === svc.id);
+                                        return currentIndex !== chosen.length - 1 ? (
+                                          <hr className="mt-4 border-gray-200" />
+                                        ) : null;
+                                      })()}
                                     </>
                                   )}
                                 </div>

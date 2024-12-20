@@ -8,10 +8,12 @@ import SearchServices from "@/components/SearchServices";
 import { CALCULATE_STEPS } from "@/constants/navigation";
 
 // Helper functions for session storage
+// Save data to sessionStorage as JSON string
 const saveToSession = (key: string, value: any) => {
   sessionStorage.setItem(key, JSON.stringify(value));
 };
 
+// Load data from sessionStorage and parse it from JSON string
 const loadFromSession = (key: string, defaultValue: any) => {
   const savedValue = sessionStorage.getItem(key);
   try {

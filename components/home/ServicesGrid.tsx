@@ -11,12 +11,20 @@ import {
   ALL_CATEGORIES,
 } from "@/constants/categories";
 
-// Helper functions for session storage (similar to emergency flow)
+// Helper functions for session storage
+// We must check if 'window' is defined before accessing sessionStorage,
+// because sessionStorage is not available on the server side.
 const saveToSession = (key: string, value: any) => {
-  sessionStorage.setItem(key, JSON.stringify(value));
+  if (typeof window !== 'undefined') {
+    sessionStorage.setItem(key, JSON.stringify(value));
+  }
 };
 
 const loadFromSession = (key: string, defaultValue: any) => {
+  if (typeof window === 'undefined') {
+    // If we are on the server or during build, sessionStorage is not available.
+    return defaultValue;
+  }
   const savedValue = sessionStorage.getItem(key);
   try {
     return savedValue ? JSON.parse(savedValue) : defaultValue;
@@ -54,7 +62,8 @@ export default function ServicesGrid({
 }: ServicesGridProps) {
   const router = useRouter();
 
-  // Load selectedType and selectedSections from session, fallback to defaults
+  // Load selectedType and selectedSections from session, fallback to defaults.
+  // We can safely call loadFromSession here due to the check for typeof window.
   const [selectedType, setSelectedType] = useState<'indoor' | 'outdoor'>(
     loadFromSession("services_selectedType", "indoor")
   );

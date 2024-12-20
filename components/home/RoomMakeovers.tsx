@@ -18,11 +18,19 @@ function shuffleArray<T>(array: T[]): T[] {
 }
 
 // Helper functions for session storage
+// We must ensure 'window' is defined before accessing sessionStorage
 const saveToSession = (key: string, value: any) => {
-  sessionStorage.setItem(key, JSON.stringify(value));
+  if (typeof window !== "undefined") {
+    sessionStorage.setItem(key, JSON.stringify(value));
+  }
 };
 
 const loadFromSession = (key: string, defaultValue: any) => {
+  if (typeof window === "undefined") {
+    // sessionStorage is not defined on the server or during build
+    return defaultValue;
+  }
+
   const savedValue = sessionStorage.getItem(key);
   try {
     return savedValue ? JSON.parse(savedValue) : defaultValue;
@@ -60,7 +68,8 @@ export default function RoomsGrid({
 }: RoomsGridProps) {
   const router = useRouter();
 
-  // Load selectedType and selectedSections from session storage
+  // Load selectedType ('indoor' or 'outdoor') and selectedSections from session
+  // Using loadFromSession is now safe because we check for typeof window above
   const [selectedType, setSelectedType] = useState<'indoor' | 'outdoor'>(
     loadFromSession("rooms_selectedType", "indoor")
   );
@@ -68,21 +77,22 @@ export default function RoomsGrid({
     loadFromSession("rooms_selectedSections", [])
   );
 
-  // Update rooms list based on selectedType
+  // Initialize rooms based on selectedType
   const [rooms, setRooms] = useState(
     selectedType === 'indoor' ? indoorRooms : outdoorRooms
   );
 
-  // Save state changes to session storage
+  // Save selectedType to session whenever it changes
   useEffect(() => {
     saveToSession("rooms_selectedType", selectedType);
   }, [selectedType]);
 
+  // Save selectedSections to session whenever they change
   useEffect(() => {
     saveToSession("rooms_selectedSections", selectedSections);
   }, [selectedSections]);
 
-  // Recompute rooms when selectedType changes, shuffle subcategories
+  // Recompute rooms when selectedType changes; shuffle subcategories for variety
   useEffect(() => {
     const shuffledRooms =
       selectedType === 'indoor'
@@ -94,10 +104,11 @@ export default function RoomsGrid({
             ...room,
             subcategories: shuffleArray(room.subcategories),
           }));
+
     setRooms(shuffledRooms);
   }, [selectedType]);
 
-  // Filter rooms based on search query
+  // Filter rooms based on the searchQuery
   const filteredRooms = rooms.filter(
     (room) =>
       room.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -106,7 +117,7 @@ export default function RoomsGrid({
       )
   );
 
-  // Handle selecting or deselecting a room
+  // Toggle selection of a room
   const handleSectionClick = (sectionId: string) => {
     setSelectedSections((prev) =>
       prev.includes(sectionId)
@@ -115,13 +126,12 @@ export default function RoomsGrid({
     );
   };
 
-  // Next button handler
+  // Proceed to the next page
   const handleNext = () => {
     if (selectedSections.length === 0) {
       alert("Please select at least one room before proceeding.");
       return;
     }
-    // Sections are saved in session, so just navigate
     router.push("/rooms/details");
   };
 
@@ -130,7 +140,9 @@ export default function RoomsGrid({
       <div className="container mx-auto">
         <SectionBoxTitle>
           <div dangerouslySetInnerHTML={{ __html: title }} />
-          <p className="text-[30px] leading-[41px] font-normal text-gray-500">{subtitle}</p>
+          <p className="text-[30px] leading-[41px] font-normal text-gray-500">
+            {subtitle}
+          </p>
         </SectionBoxTitle>
 
         {/* Indoor/Outdoor Toggle */}
@@ -162,7 +174,7 @@ export default function RoomsGrid({
           <Button onClick={handleNext}>Next →</Button>
         </div>
 
-        {/* Rooms Grid */}
+        {/* Rooms Grid: display filtered rooms based on searchQuery */}
         <ImageBoxGrid
           items={filteredRooms.map((room) => ({
             id: room.id,
