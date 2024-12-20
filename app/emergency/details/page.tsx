@@ -410,7 +410,7 @@ export default function EmergencyDetails() {
             <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden">
               <SectionBoxSubtitle>Summary</SectionBoxSubtitle>
               {Object.keys(selectedActivities).length === 0 ? (
-                <div className="text-left text-gray-500 text-lg mt-4">
+                <div className="text-left text-gray-500 text-medium mt-4">
                   No services selected
                 </div>
               ) : (
@@ -459,7 +459,7 @@ export default function EmergencyDetails() {
             {/* Address Section */}
             <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
               <h2 className="text-2xl font-medium text-gray-800 mb-4">Address</h2>
-              <p className="text-gray-500 text-lg">{address || "No address provided"}</p>
+              <p className="text-gray-500 text-medium">{address || "No address provided"}</p>
             </div>
 
             {/* Photos Section */}
@@ -479,7 +479,7 @@ export default function EmergencyDetails() {
                 ))}
               </div>
               {photos.length === 0 && (
-                <p className="text-lg text-gray-500 mt-2">No photos uploaded</p>
+                <p className="text-medium text-gray-500 mt-2">No photos uploaded</p>
               )}
             </div>
 
@@ -488,7 +488,7 @@ export default function EmergencyDetails() {
               <h2 className="text-2xl font-medium text-gray-800 mb-4">
                 Problem Description
               </h2>
-              <p className="text-gray-500 text-lg whitespace-pre-wrap">
+              <p className="text-gray-500 text-medium whitespace-pre-wrap">
                 {description || "No description provided"}
               </p>
             </div>

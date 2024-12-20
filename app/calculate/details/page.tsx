@@ -31,17 +31,25 @@ const loadFromSession = (key: string, defaultValue: any) => {
   }
 };
 
+// Utility to capitalize and transform service/activity names
+const capitalizeAndTransform = (text: string): string =>
+  text
+    .replace(/([A-Z])/g, " $1")
+    .trim()
+    .replace(/^./, (char) => char.toUpperCase());
+
 export default function Details() {
   const router = useRouter();
   const { location } = useLocation();
 
-  // Load chosen category IDs (like "1-1", "1-2", etc.)
+  // Load chosen category IDs
   const selectedCategories: string[] = loadFromSession("services_selectedCategories", []);
 
-  const [address, setAddress] = useState<string>(loadFromSession("address", ""));
-  const [description, setDescription] = useState<string>(loadFromSession("description", ""));
-  const [photos, setPhotos] = useState<string[]>(loadFromSession("photos", []));
-  const [searchQuery, setSearchQuery] = useState<string>(loadFromSession("services_searchQuery", ""));
+  // Load read-only data (address, description, photos)
+  const address: string = loadFromSession("address", "");
+  const description: string = loadFromSession("description", "");
+  const photos: string[] = loadFromSession("photos", []);
+  const searchQuery: string = loadFromSession("services_searchQuery", "");
 
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
 
@@ -54,7 +62,21 @@ export default function Details() {
 
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
-  // For each selected category ID, find all services under it
+  // Find categories with their sections
+  const categoriesWithSection = selectedCategories
+    .map(catId => ALL_CATEGORIES.find(c => c.id === catId) || null)
+    .filter(Boolean) as typeof ALL_CATEGORIES[number][];
+
+  // Group selected categories by their section
+  const categoriesBySection: Record<string, string[]> = {};
+  categoriesWithSection.forEach(cat => {
+    if (!categoriesBySection[cat.section]) {
+      categoriesBySection[cat.section] = [];
+    }
+    categoriesBySection[cat.section].push(cat.id);
+  });
+
+  // Find services for each category ID
   const categoryServicesMap: Record<string, typeof ALL_SERVICES[number][]> = {};
   selectedCategories.forEach((catId) => {
     let matchedServices = ALL_SERVICES.filter((svc) => svc.id.startsWith(`${catId}-`));
@@ -70,6 +92,9 @@ export default function Details() {
   const [selectedServicesState, setSelectedServicesState] = useState<Record<string, number>>(
     () => loadFromSession("selectedServicesWithQuantity", {})
   );
+
+  // manualInputValue: Tracks manual text input for service quantities
+  const [manualInputValue, setManualInputValue] = useState<Record<string, string | null>>({});
 
   useEffect(() => {
     saveToSession("selectedServicesWithQuantity", selectedServicesState);
@@ -99,11 +124,41 @@ export default function Details() {
     setSelectedServicesState((prev) => {
       const currentValue = prev[serviceId] || 1;
       const updatedValue = increment ? currentValue + 1 : Math.max(1, currentValue - 1);
+
       return {
         ...prev,
         [serviceId]: unit === "each" ? Math.round(updatedValue) : updatedValue,
       };
     });
+    // Reset manual input if we used buttons
+    setManualInputValue((prev) => ({
+      ...prev,
+      [serviceId]: null,
+    }));
+  };
+
+  const handleManualQuantityChange = (serviceId: string, value: string, unit: string) => {
+    setManualInputValue((prev) => ({
+      ...prev,
+      [serviceId]: value,
+    }));
+
+    const numericValue = parseFloat(value.replace(/,/g, "")) || 0;
+    if (!isNaN(numericValue)) {
+      setSelectedServicesState((prev) => ({
+        ...prev,
+        [serviceId]: unit === "each" ? Math.round(numericValue) : numericValue,
+      }));
+    }
+  };
+
+  const handleBlurInput = (serviceId: string) => {
+    if (!manualInputValue[serviceId]) {
+      setManualInputValue((prev) => ({
+        ...prev,
+        [serviceId]: null,
+      }));
+    }
   };
 
   const clearAllSelections = () => {
@@ -131,37 +186,14 @@ export default function Details() {
       return;
     }
 
-    saveToSession("selectedServicesWithQuantity", selectedServicesState);
-    saveToSession("address", address);
-    saveToSession("photos", photos);
-    saveToSession("description", description);
-
+    // Already saved selectedServicesWithQuantity above, address, photos, description also saved previously.
     router.push("/calculate/estimate");
   };
 
-  const handleAddressChange = (e: ChangeEvent<HTMLInputElement>) => setAddress(e.target.value);
-  const handleDescriptionChange = (e: ChangeEvent<HTMLTextAreaElement>) =>
-    setDescription(e.target.value);
-
-  const handleUseMyLocation = () => {
-    if (location?.city && location?.zip) {
-      setAddress(`${location.city}, ${location.zip}, ${location.country || ""}`);
-    } else {
-      setWarningMessage("Location data is unavailable. Please enter manually.");
-    }
-  };
-
-  const handleRemovePhoto = (index: number) => {
-    setPhotos((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  // Function to get the category name from ALL_CATEGORIES by ID
   const getCategoryNameById = (catId: string): string => {
     const categoryObj = ALL_CATEGORIES.find((c) => c.id === catId);
     return categoryObj ? categoryObj.title : catId;
   };
-
-  const totalSelectedCount = Object.keys(selectedServicesState).length;
 
   return (
     <main className="min-h-screen pt-24 pb-16">
@@ -169,7 +201,7 @@ export default function Details() {
         <BreadCrumb items={CALCULATE_STEPS} />
 
         <div className="flex justify-between items-start mt-8">
-          <SectionBoxTitle>Service Details</SectionBoxTitle>
+          <SectionBoxTitle>Choose a Service and Quantity</SectionBoxTitle>
           <Button onClick={handleNext}>Next →</Button>
         </div>
 
@@ -192,119 +224,183 @@ export default function Details() {
           {warningMessage && <p className="text-red-500">{warningMessage}</p>}
         </div>
 
-        <div className="container mx-auto relative flex">
+        <div className="container mx-auto relative flex mt-8">
           <div className="flex-1">
-            <div className="flex flex-col gap-4 mt-8 w-full max-w-[600px]">
-              {selectedCategories.map((catId) => {
-                const servicesForCategory = categoryServicesMap[catId] || [];
-                const selectedInThisCategory = servicesForCategory.filter((svc) =>
-                  Object.keys(selectedServicesState).includes(svc.id)
-                ).length;
+            {Object.entries(categoriesBySection).map(([sectionName, catIds]) => (
+              <div key={sectionName} className="mb-8">
+                <SectionBoxSubtitle>{sectionName}</SectionBoxSubtitle>
+                <div className="flex flex-col gap-4 mt-4 w-full max-w-[600px]">
+                  {catIds.map((catId) => {
+                    const servicesForCategory = categoryServicesMap[catId] || [];
+                    const selectedInThisCategory = servicesForCategory.filter((svc) =>
+                      Object.keys(selectedServicesState).includes(svc.id)
+                    ).length;
 
-                // Get category name instead of ID
-                const categoryName = getCategoryNameById(catId);
+                    const categoryName = getCategoryNameById(catId);
 
-                return (
-                  <div
-                    key={catId}
-                    className={`p-4 border rounded-xl bg-white ${
-                      selectedInThisCategory > 0 ? "border-blue-500" : "border-gray-300"
-                    }`}
-                  >
-                    <button
-                      onClick={() => toggleCategory(catId)}
-                      className="flex justify-between items-center w-full"
-                    >
-                      <h3
-                        className={`font-medium text-2xl ${
-                          selectedInThisCategory > 0 ? "text-blue-600" : "text-black"
+                    // Для вывода разделителя между выбранными сервисами, отфильтруем только выбранные
+                    const chosenServices = servicesForCategory.filter(
+                      (svc) => selectedServicesState[svc.id] !== undefined
+                    );
+
+                    return (
+                      <div
+                        key={catId}
+                        className={`p-4 border rounded-xl bg-white ${
+                          selectedInThisCategory > 0 ? "border-blue-500" : "border-gray-300"
                         }`}
                       >
-                        {categoryName}
-                        {selectedInThisCategory > 0 && (
-                          <span className="text-sm text-gray-500 ml-2">
-                            ({selectedInThisCategory} selected)
-                          </span>
-                        )}
-                      </h3>
-                      <ChevronDown
-                        className={`h-5 w-5 transform transition-transform ${
-                          expandedCategories.has(catId) ? "rotate-180" : ""
-                        }`}
-                      />
-                    </button>
+                        <button
+                          onClick={() => toggleCategory(catId)}
+                          className="flex justify-between items-center w-full"
+                        >
+                          <h3
+                            className={`font-medium text-2xl ${
+                              selectedInThisCategory > 0 ? "text-blue-600" : "text-black"
+                            }`}
+                          >
+                            {categoryName}
+                            {selectedInThisCategory > 0 && (
+                              <span className="text-sm text-gray-500 ml-2">
+                                ({selectedInThisCategory} selected)
+                              </span>
+                            )}
+                          </h3>
+                          <ChevronDown
+                            className={`h-5 w-5 transform transition-transform ${
+                              expandedCategories.has(catId) ? "rotate-180" : ""
+                            }`}
+                          />
+                        </button>
 
-                    {expandedCategories.has(catId) && (
-                      <div className="mt-4 flex flex-col gap-3">
-                        {servicesForCategory.map((svc) => {
-                          const isSelected = selectedServicesState[svc.id] !== undefined;
-                          return (
-                            <div key={svc.id} className="space-y-2">
-                              <div className="flex justify-between items-center">
-                                <span
-                                  className={`text-lg transition-colors duration-300 ${
-                                    isSelected ? "text-blue-600" : "text-gray-800"
-                                  }`}
-                                >
-                                  {svc.title}
-                                </span>
-                                <label className="relative inline-flex items-center cursor-pointer">
-                                  <input
-                                    type="checkbox"
-                                    checked={isSelected}
-                                    onChange={() => handleServiceToggle(svc.id)}
-                                    className="sr-only peer"
-                                  />
-                                  <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
-                                  <div className="absolute top-[2px] left-[2px] w-[22px] h-[22px] bg-white rounded-full shadow-md peer-checked:translate-x-[24px] transform transition-transform duration-300"></div>
-                                </label>
-                              </div>
+                        {expandedCategories.has(catId) && (
+                          <div className="mt-4 flex flex-col gap-3">
+                            {servicesForCategory.map((svc, svcIndex) => {
+                              const isSelected = selectedServicesState[svc.id] !== undefined;
+                              const quantity = selectedServicesState[svc.id] || 1;
+                              const manualValue = manualInputValue[svc.id] !== null
+                                ? manualInputValue[svc.id] || ""
+                                : quantity.toString();
 
-                              {isSelected && (
-                                <div className="flex items-center gap-2 pl-4">
-                                  <button
-                                    onClick={() =>
-                                      handleQuantityChange(svc.id, false, svc.unit_of_measurement)
-                                    }
-                                    className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
-                                  >
-                                    −
-                                  </button>
-                                  <span className="w-10 text-center">
-                                    {selectedServicesState[svc.id] || 1}
-                                  </span>
-                                  <button
-                                    onClick={() =>
-                                      handleQuantityChange(svc.id, true, svc.unit_of_measurement)
-                                    }
-                                    className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
-                                  >
-                                    +
-                                  </button>
-                                  <span className="text-sm text-gray-600">
-                                    {svc.unit_of_measurement}
-                                  </span>
-                                  <span className="text-lg text-blue-600 font-medium ml-auto">
-                                    ${formatWithSeparator(svc.price * (selectedServicesState[svc.id] || 1))}
-                                  </span>
+                              return (
+                                <div key={svc.id} className="space-y-2">
+                                  <div className="flex justify-between items-center">
+                                    <span
+                                      className={`text-lg transition-colors duration-300 ${
+                                        isSelected ? "text-blue-600" : "text-gray-800"
+                                      }`}
+                                    >
+                                      {svc.title}
+                                    </span>
+                                    <label className="relative inline-flex items-center cursor-pointer">
+                                      <input
+                                        type="checkbox"
+                                        checked={isSelected}
+                                        onChange={() => handleServiceToggle(svc.id)}
+                                        className="sr-only peer"
+                                      />
+                                      <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
+                                      <div className="absolute top-[2px] left-[2px] w-[22px] h-[22px] bg-white rounded-full shadow-md peer-checked:translate-x-[24px] transform transition-transform duration-300"></div>
+                                    </label>
+                                  </div>
+
+                                  {isSelected && (
+                                    <>
+                                      {svc.description && (
+                                        <p className="text-sm text-gray-500 pr-16">
+                                          {svc.description}
+                                        </p>
+                                      )}
+                                      <div className="flex justify-between items-center">
+                                        <div className="flex items-center gap-1">
+                                          {/* Decrement button */}
+                                          <button
+                                            onClick={() =>
+                                              handleQuantityChange(
+                                                svc.id,
+                                                false,
+                                                svc.unit_of_measurement
+                                              )
+                                            }
+                                            className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
+                                          >
+                                            −
+                                          </button>
+                                          {/* Manual input field */}
+                                          <input
+                                            type="text"
+                                            value={manualValue}
+                                            onClick={() =>
+                                              setManualInputValue((prev) => ({
+                                                ...prev,
+                                                [svc.id]: "",
+                                              }))
+                                            }
+                                            onBlur={() => handleBlurInput(svc.id)}
+                                            onChange={(e) =>
+                                              handleManualQuantityChange(
+                                                svc.id,
+                                                e.target.value,
+                                                svc.unit_of_measurement
+                                              )
+                                            }
+                                            className="w-20 text-center px-2 py-1 border rounded"
+                                            placeholder="1"
+                                          />
+                                          {/* Increment button */}
+                                          <button
+                                            onClick={() =>
+                                              handleQuantityChange(
+                                                svc.id,
+                                                true,
+                                                svc.unit_of_measurement
+                                              )
+                                            }
+                                            className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
+                                          >
+                                            +
+                                          </button>
+                                          <span className="text-sm text-gray-600">
+                                            {svc.unit_of_measurement}
+                                          </span>
+                                        </div>
+                                        <span className="text-lg text-blue-600 font-medium text-right">
+                                          ${formatWithSeparator(svc.price * quantity)}
+                                        </span>
+                                      </div>
+                                      {/* Разделитель между выбранными сервисами */}
+                                      {isSelected && (
+                                        // Если это не последний выбранный сервис, тогда показываем разделитель
+                                        (() => {
+                                          // Фильтруем только выбранные сервисы чтобы понять позицию этого svc среди них
+                                          const chosen = servicesForCategory.filter(s => selectedServicesState[s.id] !== undefined);
+                                          const currentIndex = chosen.findIndex(s => s.id === svc.id);
+                                          return currentIndex !== chosen.length - 1 ? (
+                                            <hr className="mt-4 border-gray-200" />
+                                          ) : null;
+                                        })()
+                                      )}
+                                    </>
+                                  )}
                                 </div>
-                              )}
-                            </div>
-                          );
-                        })}
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
 
-          <div className="w-1/2 ml-auto mt-20 pt-1">
+          {/* Right Section: Summary, Address, Photos, and Description */}
+          <div className="w-1/2 ml-auto mt-4 pt-1">
             <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden">
               <SectionBoxSubtitle>Summary</SectionBoxSubtitle>
               {Object.keys(selectedServicesState).length === 0 ? (
-                <div className="text-left text-gray-500 text-lg mt-4">
+                <div className="text-left text-gray-500 text-medium mt-4">
                   No services selected
                 </div>
               ) : (
@@ -349,84 +445,36 @@ export default function Details() {
 
             <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
               <h2 className="text-2xl font-medium text-gray-800 mb-4">Address</h2>
-              <input
-                type="text"
-                value={address}
-                onChange={handleAddressChange}
-                onFocus={(e) => (e.target.placeholder = "")}
-                onBlur={(e) => (e.target.placeholder = "Enter your address")}
-                placeholder="Enter your address"
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
-              />
-              <button onClick={handleUseMyLocation} className="text-blue-600 text-left">
-                Use my location
-              </button>
+              <p className="text-gray-500 text-medium">{address || "No address provided"}</p>
             </div>
 
             <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
               <h2 className="text-2xl font-medium text-gray-800 mb-4">
                 Uploaded Photos
               </h2>
-              <div className="flex flex-col gap-4">
-                <div>
-                  <label
-                    htmlFor="photo-upload"
-                    className="block w-full px-4 py-2 text-center bg-blue-500 text-white rounded-md cursor-pointer hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                  >
-                    Choose Files
-                  </label>
-                  <input
-                    type="file"
-                    id="photo-upload"
-                    accept="image/*"
-                    multiple
-                    onChange={(e) => {
-                      const files = Array.from(e.target.files || []);
-                      if (files.length > 12 || photos.length + files.length > 12) {
-                        alert("You can upload up to 12 photos total.");
-                        e.target.value = "";
-                        return;
-                      }
-                      const fileUrls = files.map((file) => URL.createObjectURL(file));
-                      setPhotos((prev) => [...prev, ...fileUrls]);
-                    }}
-                    className="hidden"
-                  />
-                  <p className="text-sm text-gray-500 mt-1">
-                    Maximum 12 images. Supported formats: JPG, PNG.
-                  </p>
-
-                  <div className="mt-4 grid grid-cols-3 gap-4">
-                    {photos.map((photo, index) => (
-                      <div key={index} className="relative group">
-                        <img
-                          src={photo}
-                          alt={`Uploaded preview ${index + 1}`}
-                          className="w-full h-24 object-cover rounded-md border border-gray-300"
-                        />
-                        <button
-                          onClick={() => setPhotos((prev) => prev.filter((_, i) => i !== index))}
-                          className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                          aria-label="Remove photo"
-                        >
-                          <span className="text-sm">✕</span>
-                        </button>
-                      </div>
-                    ))}
+              <div className="grid grid-cols-2 gap-4">
+                {photos.map((photo: string, index: number) => (
+                  <div key={index} className="relative group">
+                    <img
+                      src={photo}
+                      alt={`Uploaded photo ${index + 1}`}
+                      className="w-full h-32 object-cover rounded-lg"
+                    />
                   </div>
-                </div>
-
-                <div>
-                  <textarea
-                    id="problem-description"
-                    rows={5}
-                    value={description}
-                    onChange={handleDescriptionChange}
-                    placeholder="Please, describe us your problem (optional)..."
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  ></textarea>
-                </div>
+                ))}
               </div>
+              {photos.length === 0 && (
+                <p className="text-medium text-gray-500 mt-2">No photos uploaded</p>
+              )}
+            </div>
+
+            <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
+              <h2 className="text-2xl font-medium text-gray-800 mb-4">
+                Additional details
+              </h2>
+              <p className="text-gray-500 text-medium whitespace-pre-wrap">
+                {description || "No details provided"}
+              </p>
             </div>
           </div>
         </div>

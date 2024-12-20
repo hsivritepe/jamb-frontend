@@ -30,24 +30,24 @@ export default function Services() {
   const router = useRouter();
   const { location } = useLocation();
 
-  // Load previously chosen sections from the first page
+  // Load previously chosen sections
   const selectedSections: string[] = loadFromSession("services_selectedSections", []);
 
-  // If no sections were chosen, go back to the initial page
+  // If no sections chosen, go back
   useEffect(() => {
     if (selectedSections.length === 0) {
       router.push("/calculate");
     }
   }, [selectedSections, router]);
 
-  // Load search query and other data from session
+  // State from session
   const [searchQuery, setSearchQuery] = useState<string>(loadFromSession("services_searchQuery", ""));
   const [address, setAddress] = useState<string>(loadFromSession("address", ""));
   const [description, setDescription] = useState<string>(loadFromSession("description", ""));
   const [photos, setPhotos] = useState<string[]>(loadFromSession("photos", []));
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
 
-  // Map sections to categories with IDs and titles
+  // Build a map section -> categories
   const categoriesBySection: Record<string, {id: string; title: string;}[]> = {};
   ALL_CATEGORIES.forEach((cat) => {
     if (!categoriesBySection[cat.section]) {
@@ -56,20 +56,21 @@ export default function Services() {
     categoriesBySection[cat.section].push({ id: cat.id, title: cat.title });
   });
 
-  // Load previously chosen categories from session if any (to restore state after going back)
-  const [selectedCategories, setSelectedCategories] = useState<Record<string, string[]>>(() => {
-    // Try to load a previously saved map
-    const loadedMap = loadFromSession("selectedCategoriesMap", null);
-    if (loadedMap) return loadedMap;
-
-    const initial: Record<string, string[]> = {};
+  // Initialize selectedCategories from session or from selectedSections
+  const storedSelectedCategories = loadFromSession("selectedCategoriesMap", null);
+  const initialSelectedCategories: Record<string, string[]> = storedSelectedCategories || (() => {
+    const init: Record<string, string[]> = {};
     selectedSections.forEach((section) => {
-      initial[section] = [];
+      init[section] = [];
     });
-    return initial;
-  });
+    return init;
+  })();
 
-  // Save states to session
+  const [selectedCategories, setSelectedCategories] = useState<Record<string, string[]>>(
+    initialSelectedCategories
+  );
+
+  // Save states
   useEffect(() => saveToSession("services_searchQuery", searchQuery), [searchQuery]);
   useEffect(() => saveToSession("address", address), [address]);
   useEffect(() => saveToSession("description", description), [description]);
@@ -77,20 +78,19 @@ export default function Services() {
   useEffect(() => saveToSession("selectedCategoriesMap", selectedCategories), [selectedCategories]);
 
   // Filter categories by search query
-  const filteredCategoriesBySection = Object.entries(selectedCategories).reduce(
-    (acc, [section, catIds]) => {
+  const filteredCategoriesBySection = Object.fromEntries(
+    Object.entries(selectedCategories).map(([section]) => {
       const allCats = categoriesBySection[section] || [];
       const filtered = searchQuery
         ? allCats.filter((c) =>
             c.title.toLowerCase().includes(searchQuery.toLowerCase())
           )
         : allCats;
-      acc[section] = filtered;
-      return acc;
-    },
-    {} as Record<string, {id:string; title:string}[]>
-  );
+      return [section, filtered];
+    })
+  ) as Record<string, {id:string; title:string}[]>;
 
+  // expandedCategories local state
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
   const toggleCategory = (section: string) => {
@@ -132,7 +132,6 @@ export default function Services() {
       return;
     }
 
-    // Flatten chosen category IDs
     const chosenCategoryIDs = Object.values(selectedCategories).flat();
     saveToSession("services_selectedCategories", chosenCategoryIDs);
 
@@ -229,30 +228,34 @@ export default function Services() {
 
                     {expandedCategories.has(section) && (
                       <div className="mt-4 flex flex-col gap-3">
-                        {allCats.map((cat) => {
-                          const isSelected = selectedCategories[section]?.includes(cat.id) || false;
-                          return (
-                            <div key={cat.id} className="flex justify-between items-center">
-                              <span
-                                className={`text-lg transition-colors duration-300 ${
-                                  isSelected ? "text-blue-600" : "text-gray-800"
-                                }`}
-                              >
-                                {cat.title}
-                              </span>
-                              <label className="relative inline-flex items-center cursor-pointer">
-                                <input
-                                  type="checkbox"
-                                  checked={isSelected}
-                                  onChange={() => handleCategorySelect(section, cat.id)}
-                                  className="sr-only peer"
-                                />
-                                <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
-                                <div className="absolute top-[2px] left-[2px] w-[22px] h-[22px] bg-white rounded-full shadow-md peer-checked:translate-x-[24px] transform transition-transform duration-300"></div>
-                              </label>
-                            </div>
-                          );
-                        })}
+                        {allCats.length === 0 ? (
+                          <p className="text-sm text-gray-500">No categories match your search.</p>
+                        ) : (
+                          allCats.map((cat) => {
+                            const isSelected = selectedCategories[section]?.includes(cat.id) || false;
+                            return (
+                              <div key={cat.id} className="flex justify-between items-center">
+                                <span
+                                  className={`text-lg transition-colors duration-300 ${
+                                    isSelected ? "text-blue-600" : "text-gray-800"
+                                  }`}
+                                >
+                                  {cat.title}
+                                </span>
+                                <label className="relative inline-flex items-center cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={() => handleCategorySelect(section, cat.id)}
+                                    className="sr-only peer"
+                                  />
+                                  <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
+                                  <div className="absolute top-[2px] left-[2px] w-[22px] h-[22px] bg-white rounded-full shadow-md peer-checked:translate-x-[24px] transform transition-transform duration-300"></div>
+                                </label>
+                              </div>
+                            );
+                          })
+                        )}
                       </div>
                     )}
                   </div>
@@ -335,11 +338,11 @@ export default function Services() {
 
                 <div>
                   <textarea
-                    id="problem-description"
+                    id="details"
                     rows={5}
                     value={description}
                     onChange={handleDescriptionChange}
-                    placeholder="Please, describe us your problem (optional)..."
+                    placeholder="Please provide more details about your issue (optional)..."
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   ></textarea>
                 </div>
