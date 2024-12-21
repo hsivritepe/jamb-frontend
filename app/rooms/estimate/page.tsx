@@ -287,12 +287,12 @@ export default function RoomsEstimate() {
                                               </div>
 
                                               {/* Quantity + Unit */}
-                                              <div className="text-right">
+                                              <div className="text-right font-medium">
                                                 {quantity} {svc.unit_of_measurement}
                                               </div>
 
                                               {/* Price */}
-                                              <div className="text-right">
+                                              <div className="text-right font-medium">
                                                 ${formatWithSeparator(svc.price * quantity)}
                                               </div>
                                             </li>

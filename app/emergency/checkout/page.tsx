@@ -2,26 +2,74 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import BreadCrumb from "@/components/ui/BreadCrumb";
+import ActionIconsBar from "@/components/ui/ActionIconsBar"; // <-- import icon bar
 import { SectionBoxTitle } from "@/components/ui/SectionBoxTitle";
 import { SectionBoxSubtitle } from "@/components/ui/SectionBoxSubtitle";
-import BreadCrumb from "@/components/ui/BreadCrumb";
 import { EMERGENCY_STEPS } from "@/constants/navigation";
 import { ALL_SERVICES } from "@/constants/services";
 
-// Helper functions for loading and saving session data
+/** 
+ * Save data to sessionStorage as JSON.
+ */
 const saveToSession = (key: string, value: any) => {
   sessionStorage.setItem(key, JSON.stringify(value));
 };
 
+/** 
+ * Load JSON-parsed data from sessionStorage (or null if not found).
+ */
 const loadFromSession = (key: string) => {
   const savedValue = sessionStorage.getItem(key);
   return savedValue ? JSON.parse(savedValue) : null;
 };
 
-// Utility function to format numbers with thousand separators
-// Used for displaying prices and totals nicely
+/** 
+ * Formats a number with comma separators and **exactly two** decimal places.
+ */
 const formatWithSeparator = (value: number): string =>
-  new Intl.NumberFormat("en-US", { minimumFractionDigits: 2 }).format(value);
+  new Intl.NumberFormat("en-US", { 
+    minimumFractionDigits: 2, 
+    maximumFractionDigits: 2 
+  }).format(value);
+
+/**
+ * Builds a "temporary estimate number" from the address + current date/time.
+ * Format: AAA-ZZZZZ-YYYYDDMM-HHMM
+ *   - AAA = first 3 uppercase letters of city (or fallback "NOC")
+ *   - ZZZZZ = numeric zip from second part of address (or fallback "00000")
+ *   - YYYYDDMM = year + day + month
+ *   - HHMM = hour + minute
+ */
+function buildEstimateNumber(address: string): string {
+  let city = "NOC";
+  let zip = "00000";
+
+  if (address) {
+    const parts = address.split(",").map((p) => p.trim());
+    if (parts.length > 0) {
+      city = parts[0].slice(0, 3).toUpperCase(); // e.g. "New" from "New York"
+    }
+    if (parts.length > 1) {
+      // second part might be zip code
+      zip = parts[1].replace(/\D/g, "") || "00000";
+    }
+  }
+
+  const now = new Date();
+  const yyyy = String(now.getFullYear());
+  const dd = String(now.getDate()).padStart(2, "0");
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+
+  // user wants "ГГГГДДММ" => year + day + month
+  const dateString = `${yyyy}${dd}${mm}`;
+
+  const hh = String(now.getHours()).padStart(2, "0");
+  const mins = String(now.getMinutes()).padStart(2, "0");
+  const timeString = hh + mins;
+
+  return `${city}-${zip}-${dateString}-${timeString}`;
+}
 
 interface SelectedActivities {
   [service: string]: {
@@ -32,7 +80,7 @@ interface SelectedActivities {
 export default function CheckoutPage() {
   const router = useRouter();
 
-  // checkoutData: Final aggregated data including address, photos, description, date, and activities
+  // The final combined data: address, photos, description, date, selectedActivities
   const [checkoutData, setCheckoutData] = useState<{
     address: string;
     photos: string[];
@@ -41,14 +89,14 @@ export default function CheckoutPage() {
     selectedActivities: SelectedActivities;
   } | null>(null);
 
-  // Load the filtered steps that we previously saved on the Estimate page
+  // Load any pre-filtered steps from an "Estimate" page
   const filteredSteps =
     (loadFromSession("filteredSteps") as {
       serviceName: string;
       steps: any[];
     }[]) || [];
 
-  // On component mount, load all necessary data from sessionStorage
+  // On mount: gather essential data from session
   useEffect(() => {
     const selectedActivities: SelectedActivities =
       loadFromSession("selectedActivities") || {};
@@ -58,7 +106,7 @@ export default function CheckoutPage() {
     const date: string | null =
       loadFromSession("selectedTime") || "No date selected";
 
-    // If essential data is missing, return the user back to the Estimate page
+    // If crucial data is missing, redirect to estimate
     if (
       !selectedActivities ||
       Object.keys(selectedActivities).length === 0 ||
@@ -80,37 +128,40 @@ export default function CheckoutPage() {
     saveToSession("checkoutData", data);
   }, [router]);
 
-  if (!checkoutData) return <p>Loading...</p>;
+  if (!checkoutData) {
+    return <p>Loading...</p>;
+  }
 
   const selectedActivities = checkoutData.selectedActivities;
+  const address = checkoutData.address;
+  const photos = checkoutData.photos;
+  const description = checkoutData.description;
+  const date = checkoutData.date;
 
-  // Load the timeCoefficient which may represent surcharges or discounts
+  // The timeCoefficient: may represent a surcharge (>1) or discount (<1)
   const timeCoefficient: number = loadFromSession("timeCoefficient") || 1;
 
-  // Calculate the subtotal cost of all selected activities
+  // Summation of the selected activities
   const calculateSubtotal = (): number => {
     let total = 0;
     for (const service in selectedActivities) {
       for (const activityKey in selectedActivities[service]) {
         const activity = ALL_SERVICES.find((a) => a.id === activityKey);
         if (activity) {
-          total +=
-            activity.price * (selectedActivities[service][activityKey] || 1);
+          total += activity.price * (selectedActivities[service][activityKey] || 1);
         }
       }
     }
     return total;
   };
 
+  // 1) Original total
   const subtotal = calculateSubtotal();
-  
-  // Adjust the subtotal by the timeCoefficient (e.g., if there's a surcharge or discount)
+  // 2) Adjusted by timeCoefficient
   const adjustedSubtotal = subtotal * timeCoefficient;
-  
-  // Sales tax at 8.25%
+  // 3) Sales tax 8.25%
   const salesTax = adjustedSubtotal * 0.0825;
-  
-  // Final total including sales tax
+  // 4) Final total
   const total = adjustedSubtotal + salesTax;
 
   const hasSurchargeOrDiscount = timeCoefficient !== 1;
@@ -118,12 +169,33 @@ export default function CheckoutPage() {
     ? Math.abs(subtotal * (timeCoefficient - 1))
     : 0;
 
+  // Build a "temporary" estimate number
+  const estimateNumber = buildEstimateNumber(address);
+
+  // Handlers for printing, sharing, saving
+  const handlePrint = () => {
+    router.push("/emergency/checkout/print"); // <-- Link to print page
+  };
+  const handleShare = () => {
+    alert("Sharing your estimate...");
+  };
+  const handleSave = () => {
+    alert("Saving your estimate as a PDF...");
+  };
+
+  // Place your order logic (stub)
+  const handlePlaceOrder = () => {
+    alert("Your emergency order has been placed!");
+  };
+
   return (
     <main className="min-h-screen py-24">
       <div className="container mx-auto">
         <BreadCrumb items={EMERGENCY_STEPS} />
+      </div>
 
-        {/* Top section: Back link and Place your order button */}
+      <div className="container mx-auto py-4">
+        {/* Back link + Place order */}
         <div className="flex justify-between items-center mt-8">
           <span
             className="text-blue-600 cursor-pointer"
@@ -131,24 +203,42 @@ export default function CheckoutPage() {
           >
             ← Back
           </span>
-          {/* "Place your order" button, currently not functional */}
           <button
             className="bg-yellow-400 hover:bg-yellow-500 text-black py-3 px-6 rounded-md font-semibold text-lg shadow-sm transition-colors duration-200"
-            onClick={() => {}}
+            onClick={handlePlaceOrder}
           >
             Place your order
           </button>
         </div>
       </div>
 
-      <div className="container mx-auto py-12">
-        <SectionBoxTitle>Checkout</SectionBoxTitle>
+      <div className="container mx-auto">
+        {/* Title + icon bar */}
+        <div className="flex items-center justify-between mt-8">
+          <SectionBoxTitle>Checkout</SectionBoxTitle>
+          <ActionIconsBar
+            onPrint={handlePrint}
+            onShare={handleShare}
+            onSave={handleSave}
+          />
+        </div>
 
-        <div className="bg-white border-gray-300 mt-8 p-6 rounded-lg space-y-6">
-          {/* Estimate Section: Displaying final details of all activities and costs */}
+        {/* Main content container */}
+        <div className="bg-white border border-gray-300 mt-8 p-6 rounded-lg space-y-6">
+          {/* 1) Final Estimate + Temporary ID */}
           <div>
-            <SectionBoxSubtitle>Estimate</SectionBoxSubtitle>
-            {/* List all selected activities with their details */}
+            <SectionBoxSubtitle>
+              Estimate{" "}
+              <span className="ml-2 text-sm text-gray-500">
+                ({estimateNumber})
+              </span>
+            </SectionBoxSubtitle>
+            <p className="text-xs text-gray-400 -mt-2 ml-1">
+              *This number is temporary and will be replaced with a permanent
+              order number after confirmation.
+            </p>
+
+            {/* List all selected activities with final cost */}
             <div className="mt-4 space-y-4">
               {Object.entries(selectedActivities).flatMap(([, activities]) =>
                 Object.entries(activities).map(([activityKey, quantity]) => {
@@ -164,9 +254,11 @@ export default function CheckoutPage() {
                         <h3 className="font-medium text-lg text-gray-800">
                           {activity.title}
                         </h3>
-                        <div className="text-sm text-gray-500 mt-1">
-                          <span>{activity.description}</span>
-                        </div>
+                        {activity.description && (
+                          <div className="text-sm text-gray-500 mt-1">
+                            <span>{activity.description}</span>
+                          </div>
+                        )}
                         <div className="text-medium font-medium text-gray-800 mt-2">
                           <span>{quantity} </span>
                           <span>{activity.unit_of_measurement}</span>
@@ -183,7 +275,7 @@ export default function CheckoutPage() {
               )}
             </div>
 
-            {/* Summary of additional charges/discounts, tax, and total */}
+            {/* Additional charges/discount, tax, total */}
             <div className="pt-4 mt-4">
               {hasSurchargeOrDiscount && (
                 <div className="flex justify-between mb-2">
@@ -224,48 +316,55 @@ export default function CheckoutPage() {
 
           <hr className="my-6 border-gray-200" />
 
-          {/* Date Section */}
+          {/* 2) Date of Service */}
           <div>
             <SectionBoxSubtitle>Date of Service</SectionBoxSubtitle>
-            <p className="text-gray-800">{checkoutData.date}</p>
+            <p className="text-gray-800">
+              {date || "No date selected"}
+            </p>
           </div>
 
           <hr className="my-6 border-gray-200" />
 
-          {/* Problem Description Section */}
+          {/* 3) Problem Description */}
           <div>
             <SectionBoxSubtitle>Problem Description</SectionBoxSubtitle>
-            <p className="text-gray-700">{checkoutData.description}</p>
+            <p className="text-gray-700">
+              {description || "No details provided"}
+            </p>
           </div>
 
           <hr className="my-6 border-gray-200" />
 
-          {/* Address Section */}
+          {/* 4) Address */}
           <div>
             <SectionBoxSubtitle>Address</SectionBoxSubtitle>
-            <p className="text-gray-800">{checkoutData.address}</p>
+            <p className="text-gray-800">{address || "No address provided"}</p>
           </div>
 
           <hr className="my-6 border-gray-200" />
 
-          {/* Uploaded Photos Section: Up to 6 in a row, all uniform size */}
+          {/* 5) Uploaded Photos */}
           <div>
             <SectionBoxSubtitle>Uploaded Photos</SectionBoxSubtitle>
             <div className="grid grid-cols-6 gap-2">
-              {checkoutData.photos.map((photo, index) => (
+              {photos.map((photo, index) => (
                 <img
                   key={index}
                   src={photo}
                   alt={`Photo ${index + 1}`}
-                  className="w-full h-24 object-cover rounded"
+                  className="w-full h-24 object-cover rounded border border-gray-300"
                 />
               ))}
             </div>
+            {photos.length === 0 && (
+              <p className="text-gray-500 mt-2">No photos uploaded</p>
+            )}
           </div>
 
           <hr className="my-6 border-gray-200" />
 
-          {/* Emergency Steps Section: Displaying pre-filtered steps from sessionStorage */}
+          {/* 6) Emergency Steps if any (from filteredSteps) */}
           <div>
             <SectionBoxSubtitle>Emergency Steps</SectionBoxSubtitle>
             {filteredSteps.length > 0 ? (

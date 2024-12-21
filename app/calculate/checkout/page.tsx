@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import BreadCrumb from "@/components/ui/BreadCrumb";
 import { SectionBoxTitle } from "@/components/ui/SectionBoxTitle";
 import { SectionBoxSubtitle } from "@/components/ui/SectionBoxSubtitle";
+import ActionIconsBar from "@/components/ui/ActionIconsBar"; // if you want icons like Print/Share/Save
 import { CALCULATE_STEPS } from "@/constants/navigation";
 import { ALL_SERVICES } from "@/constants/services";
 import { ALL_CATEGORIES } from "@/constants/categories";
@@ -33,10 +34,49 @@ const formatWithSeparator = (value: number): string =>
     maximumFractionDigits: 2,
   }).format(value);
 
+/**
+ * Builds a "temporary estimate number" from the address + current date/time.
+ * Format: AAA-ZZZZZ-YYYYDDMM-HHMM
+ *  - AAA = first 3 uppercase letters of city (or fallback)
+ *  - ZZZZZ = zip from second part of address (or fallback)
+ *  - YYYYDDMM (year + day + month)
+ *  - HHMM (hour + minute)
+ */
+function buildEstimateNumber(address: string): string {
+  let city = "NOC"; // fallback
+  let zip = "00000"; // fallback
+
+  if (address) {
+    const parts = address.split(",").map((p) => p.trim());
+    if (parts.length > 0) {
+      city = parts[0].slice(0, 3).toUpperCase(); // e.g. "New" in "New York"
+    }
+    if (parts.length > 1) {
+      // often the 2nd element is zip code
+      zip = parts[1].replace(/\D/g, "") || "00000";
+    }
+  }
+
+  const now = new Date();
+  const yyyy = String(now.getFullYear());
+  const dd = String(now.getDate()).padStart(2, "0");
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+
+  // user wants "ГГГГДДММ" => year + day + month
+  const dateString = `${yyyy}${dd}${mm}`;
+
+  // HHMM
+  const hh = String(now.getHours()).padStart(2, "0");
+  const mins = String(now.getMinutes()).padStart(2, "0");
+  const timeString = hh + mins;
+
+  return `${city}-${zip}-${dateString}-${timeString}`;
+}
+
 export default function CheckoutPage() {
   const router = useRouter();
 
-  // Load required data from session
+  // 1) Load required data from session
   const selectedServicesState: Record<string, number> = loadFromSession(
     "selectedServicesWithQuantity",
     {}
@@ -76,13 +116,14 @@ export default function CheckoutPage() {
     ? Math.abs(subtotal * (timeCoefficient - 1))
     : 0;
 
+  // For grouping services by section/category
   const selectedCategories: string[] = loadFromSession(
     "services_selectedCategories",
     []
   );
   const searchQuery: string = loadFromSession("services_searchQuery", "");
 
-  // Reconstruct category->section mapping
+  // Build the category -> section structure
   const categoriesWithSection = selectedCategories
     .map((catId) => ALL_CATEGORIES.find((c) => c.id === catId) || null)
     .filter(Boolean) as typeof ALL_CATEGORIES[number][];
@@ -114,10 +155,22 @@ export default function CheckoutPage() {
   };
 
   const handlePlaceOrder = () => {
-    // Here you can handle final order placement logic.
-    // For now, just alert or console log
     alert("Your order has been placed!");
   };
+
+  // Optionally, handle Print, Share, Save (like the rooms page)
+  const handlePrint = () => {
+    router.push("/calculate/checkout/print");
+  };
+  const handleShare = () => {
+    alert("Sharing your estimate...");
+  };
+  const handleSave = () => {
+    alert("Saving your estimate as a PDF...");
+  };
+
+  // Build a "temporary estimate number"
+  const estimateNumber = buildEstimateNumber(address);
 
   return (
     <main className="min-h-screen py-24">
@@ -126,6 +179,7 @@ export default function CheckoutPage() {
       </div>
 
       <div className="container mx-auto">
+        {/* Top bar with back link + place order button */}
         <div className="flex justify-between items-center mt-8">
           <span
             className="text-blue-600 cursor-pointer"
@@ -141,82 +195,106 @@ export default function CheckoutPage() {
           </button>
         </div>
 
-        <SectionBoxTitle className="mt-8">Checkout</SectionBoxTitle>
+        {/* Title and icon bar, just like rooms */}
+        <div className="flex items-center justify-between mt-8">
+          <SectionBoxTitle>Checkout</SectionBoxTitle>
+          {/* If you want the ActionIconsBar here */}
+          <ActionIconsBar
+            onPrint={handlePrint}
+            onShare={handleShare}
+            onSave={handleSave}
+          />
+        </div>
 
         <div className="bg-white border-gray-300 mt-8 p-6 rounded-lg space-y-6 border">
           {/* Final Estimate Section */}
           <div>
-            <SectionBoxSubtitle>Final Estimate</SectionBoxSubtitle>
+            <SectionBoxSubtitle>
+              Estimate{" "}
+              <span className="ml-2 text-sm text-gray-500">
+                ({estimateNumber})
+              </span>
+            </SectionBoxSubtitle>
+            <p className="text-xs text-gray-400 -mt-2 ml-1">
+              *This number is temporary and will be replaced with a permanent
+              order number after confirmation.
+            </p>
             <div className="mt-4 space-y-4">
               {/* Display services grouped by section and category */}
-              {Object.entries(categoriesBySection).map(([sectionName, catIds]) => {
-                const categoriesWithSelected = catIds.filter((catId) => {
-                  const servicesForCategory = categoryServicesMap[catId] || [];
-                  return servicesForCategory.some(
-                    (svc) => selectedServicesState[svc.id] !== undefined
-                  );
-                });
-                if (categoriesWithSelected.length === 0) return null;
+              {Object.entries(categoriesBySection).map(
+                ([sectionName, catIds]) => {
+                  const categoriesWithSelected = catIds.filter((catId) => {
+                    const servicesForCategory = categoryServicesMap[catId] || [];
+                    return servicesForCategory.some(
+                      (svc) => selectedServicesState[svc.id] !== undefined
+                    );
+                  });
+                  if (categoriesWithSelected.length === 0) return null;
 
-                return (
-                  <div key={sectionName} className="space-y-4">
-                    <h3 className="text-xl font-semibold text-gray-800">
-                      {sectionName}
-                    </h3>
-                    {categoriesWithSelected.map((catId) => {
-                      const categoryName = getCategoryNameById(catId);
-                      const servicesForCategory = categoryServicesMap[catId] || [];
-                      const chosenServices = servicesForCategory.filter(
-                        (svc) => selectedServicesState[svc.id] !== undefined
-                      );
+                  return (
+                    <div key={sectionName} className="space-y-4">
+                      <h3 className="text-xl font-semibold text-gray-800">
+                        {sectionName}
+                      </h3>
+                      {categoriesWithSelected.map((catId) => {
+                        const categoryName = getCategoryNameById(catId);
+                        const servicesForCategory =
+                          categoryServicesMap[catId] || [];
+                        const chosenServices = servicesForCategory.filter(
+                          (svc) => selectedServicesState[svc.id] !== undefined
+                        );
 
-                      if (chosenServices.length === 0) return null;
+                        if (chosenServices.length === 0) return null;
 
-                      return (
-                        <div key={catId} className="ml-4 space-y-4">
-                          <h4 className="text-lg font-medium text-gray-700">
-                            {categoryName}
-                          </h4>
-                          {chosenServices.map((activity) => {
-                            const quantity = selectedServicesState[activity.id] || 1;
-                            return (
-                              <div
-                                key={activity.id}
-                                className="flex justify-between items-start gap-4 border-b pb-2"
-                              >
-                                <div>
-                                  <h3 className="font-medium text-lg text-gray-800">
-                                    {activity.title}
-                                  </h3>
-                                  {activity.description && (
-                                    <div className="text-sm text-gray-500 mt-1">
-                                      <span>{activity.description}</span>
+                        return (
+                          <div key={catId} className="ml-4 space-y-4">
+                            <h4 className="text-lg font-medium text-gray-700">
+                              {categoryName}
+                            </h4>
+                            {chosenServices.map((activity) => {
+                              const quantity =
+                                selectedServicesState[activity.id] || 1;
+                              return (
+                                <div
+                                  key={activity.id}
+                                  className="flex justify-between items-start gap-4 border-b pb-2"
+                                >
+                                  <div>
+                                    <h3 className="font-medium text-lg text-gray-800">
+                                      {activity.title}
+                                    </h3>
+                                    {activity.description && (
+                                      <div className="text-sm text-gray-500 mt-1">
+                                        <span>{activity.description}</span>
+                                      </div>
+                                    )}
+                                    <div className="text-medium font-medium text-gray-800 mt-2">
+                                      <span>
+                                        {quantity.toLocaleString("en-US")}{" "}
+                                      </span>
+                                      <span>
+                                        {activity.unit_of_measurement}
+                                      </span>
                                     </div>
-                                  )}
-                                  <div className="text-medium font-medium text-gray-800 mt-2">
-                                    <span>
-                                      {quantity.toLocaleString("en-US")}{" "}
+                                  </div>
+                                  <div className="text-right mt-auto">
+                                    <span className="block text-gray-800 font-medium">
+                                      $
+                                      {formatWithSeparator(
+                                        activity.price * quantity
+                                      )}
                                     </span>
-                                    <span>{activity.unit_of_measurement}</span>
                                   </div>
                                 </div>
-                                <div className="text-right mt-auto">
-                                  <span className="block text-gray-800 font-medium">
-                                    $
-                                    {formatWithSeparator(
-                                      activity.price * quantity
-                                    )}
-                                  </span>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
-              })}
+                              );
+                            })}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                }
+              )}
             </div>
 
             {/* Summary of costs */}
@@ -265,7 +343,9 @@ export default function CheckoutPage() {
           {/* Selected Date */}
           <div>
             <SectionBoxSubtitle>Date of Service</SectionBoxSubtitle>
-            <p className="text-gray-800">{selectedTime || "No date selected"}</p>
+            <p className="text-gray-800">
+              {selectedTime || "No date selected"}
+            </p>
           </div>
 
           <hr className="my-6 border-gray-200" />

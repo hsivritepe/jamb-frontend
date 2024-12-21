@@ -5,10 +5,11 @@ import { useEffect, useState } from "react";
 import BreadCrumb from "@/components/ui/BreadCrumb";
 import { SectionBoxTitle } from "@/components/ui/SectionBoxTitle";
 import { SectionBoxSubtitle } from "@/components/ui/SectionBoxSubtitle";
+import ActionIconsBar from "@/components/ui/ActionIconsBar";
 import { ROOMS_STEPS } from "@/constants/navigation";
 import { ALL_SERVICES } from "@/constants/services";
 import { ALL_CATEGORIES } from "@/constants/categories";
-import { ROOMS } from "@/constants/rooms"; // For retrieving full room info (title, etc.)
+import { ROOMS } from "@/constants/rooms";
 
 // Session storage helper: Save data to sessionStorage
 const saveToSession = (key: string, value: any) => {
@@ -30,24 +31,20 @@ const loadFromSession = (key: string, defaultValue: any = null) => {
 
 /**
  * Utility function to format numeric values (e.g., prices) with commas
- * and **exactly two** decimal places (e.g., 100 -> 100.00).
+ * and exactly two decimal places (e.g., 100 -> 100.00).
  */
 const formatWithSeparator = (value: number): string =>
   new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 2,
-    maximumFractionDigits: 2
+    maximumFractionDigits: 2,
   }).format(value);
 
 export default function RoomsEstimatePage() {
   const router = useRouter();
 
   // 1) Load all the key data from session
-  //    - selectedServicesState: { [roomId]: { [serviceId]: quantity } }
-  //    - selectedTime & timeCoefficient
-  const selectedServicesState: Record<string, Record<string, number>> = loadFromSession(
-    "rooms_selectedServicesWithQuantity",
-    {}
-  );
+  const selectedServicesState: Record<string, Record<string, number>> =
+    loadFromSession("rooms_selectedServicesWithQuantity", {});
   const address: string = loadFromSession("address", "");
   const photos: string[] = loadFromSession("photos", []);
   const description: string = loadFromSession("description", "");
@@ -68,12 +65,13 @@ export default function RoomsEstimatePage() {
     }
   }, [selectedServicesState, address, router]);
 
-  // 3) Calculate the total cost
-  //    (subtotal + surcharge/discount) + sales tax
+  // 3) Calculate total cost
   function calculateSubtotal(): number {
     let total = 0;
     for (const roomId in selectedServicesState) {
-      for (const [serviceId, quantity] of Object.entries(selectedServicesState[roomId])) {
+      for (const [serviceId, quantity] of Object.entries(
+        selectedServicesState[roomId]
+      )) {
         const svc = ALL_SERVICES.find((s) => s.id === serviceId);
         if (svc) {
           total += svc.price * (quantity || 1);
@@ -95,8 +93,6 @@ export default function RoomsEstimatePage() {
 
   // 4) Retrieve all rooms so we can match up the IDs with their titles
   const allRooms = [...ROOMS.indoor, ...ROOMS.outdoor];
-
-  // Helper: get the room object by ID
   function getRoomById(roomId: string) {
     return allRooms.find((r) => r.id === roomId);
   }
@@ -107,26 +103,82 @@ export default function RoomsEstimatePage() {
     return catObj ? catObj.title : catId;
   }
 
-  // Helper: derive category ID from serviceId (e.g. "3-5-2" -> "3-5")
+  // Helper: derive category ID from serviceId
   function getCategoryId(serviceId: string): string {
     return serviceId.split("-").slice(0, 2).join("-");
   }
 
-  // The user can place the order (or rename to "Proceed to checkout" logic)
+  // Place the order logic
   const handlePlaceOrder = () => {
     alert("Rooms: Your order has been placed!");
-    // router.push("/rooms/checkout"); // Or whichever next step
+    // router.push(...) or any next step
   };
+
+  // Print: navigate to your dedicated print page
+  const handlePrint = () => {
+    router.push("/rooms/checkout/print");
+  };
+
+  // Share: real logic to share via messenger or email
+  const handleShare = () => {
+    alert("Sharing via email or messenger...");
+  };
+
+  // Save: export or save PDF
+  const handleSave = () => {
+    alert("Saving as PDF to your computer...");
+  };
+
+  /**
+   * Build a "temporary estimate number" from address and current date/time.
+   * Format: AAA-ZZZZZ-YYYYDDMM-HHMM
+   * Where:
+   *   - AAA = first 3 letters of city (uppercase)
+   *   - ZZZZZ = zip code
+   *   - YYYYDDMM = year, day, month
+   *   - HHMM = hour + minute
+   */
+  const buildEstimateNumber = (): string => {
+    // Attempt to parse city and zip from the address
+    // e.g. "Philadelphia, 19107, USA"
+    let city = "NOC";
+    let zip = "00000";
+    if (address) {
+      const parts = address.split(",").map((p) => p.trim());
+      if (parts.length > 0) {
+        city = parts[0].slice(0, 3).toUpperCase(); // first 3 letters
+      }
+      if (parts.length > 1) {
+        zip = parts[1];
+      }
+    }
+    // Format the date/time
+    const now = new Date();
+    const yyyy = String(now.getFullYear());
+    const dd = String(now.getDate()).padStart(2, "0"); // day
+    const mm = String(now.getMonth() + 1).padStart(2, "0"); // month
+    // user wants "ГГГГДДММ" => year + day + month
+    const dateString = `${yyyy}${mm}${dd}`;
+    // time in HHMM
+    const hh = String(now.getHours()).padStart(2, "0");
+    const mins = String(now.getMinutes()).padStart(2, "0");
+    const timeString = hh + mins;
+
+    return `${city}-${zip}-${dateString}-${timeString}`;
+  };
+
+  const estimateNumber = buildEstimateNumber();
 
   return (
     <main className="min-h-screen pt-24 pb-16">
+      {/* Typically your site header is here, but it remains visible */}
       <div className="container mx-auto">
         <BreadCrumb items={ROOMS_STEPS} />
       </div>
 
       <div className="container mx-auto pt-8">
-        {/* Top actions: back link & place order */}
-        <div className="flex justify-between items-center">
+        {/* If you want a back link, keep it here */}
+        <div className="flex items-center justify-between mb-6">
           <span
             className="text-blue-600 cursor-pointer"
             onClick={() => router.back()}
@@ -141,111 +193,126 @@ export default function RoomsEstimatePage() {
           </button>
         </div>
 
-        <SectionBoxTitle className="mt-8">
-          Checkout
-        </SectionBoxTitle>
+        {/* Title + Icons aligned: Title left, icons right */}
+        <div className="flex items-center justify-between">
+          <SectionBoxTitle>Checkout</SectionBoxTitle>
+          <ActionIconsBar
+            onPrint={handlePrint}
+            onShare={handleShare}
+            onSave={handleSave}
+          />
+        </div>
 
+        {/* Final Estimate Area */}
         <div className="bg-white border border-gray-300 mt-8 p-6 rounded-lg space-y-6">
-          {/* 1) Final Estimate Section */}
+          {/* 1) Final Estimate + Temporary ID */}
           <div>
-            <SectionBoxSubtitle>Final Estimate</SectionBoxSubtitle>
+            <SectionBoxSubtitle>
+              Estimate{" "}
+              <span className="ml-2 text-sm text-gray-500">
+                ({estimateNumber})
+              </span>
+            </SectionBoxSubtitle>
+            <p className="text-xs text-gray-400 -mt-2 ml-1">
+              *This number is temporary and will be replaced with a permanent order number
+              after confirmation.
+            </p>
 
-            {/* For each room ID, list the room name, grouped categories, etc. */}
             <div className="mt-4 space-y-8">
-              {Object.entries(selectedServicesState).map(([roomId, servicesMap]) => {
-                // If this room has no selected services, skip
-                const roomServiceIds = Object.keys(servicesMap);
-                if (roomServiceIds.length === 0) return null;
+              {Object.entries(selectedServicesState).map(
+                ([roomId, servicesMap]) => {
+                  const roomServiceIds = Object.keys(servicesMap);
+                  if (roomServiceIds.length === 0) return null;
 
-                // Find the room object to get the room title
-                const roomObj = getRoomById(roomId);
-                const roomTitle = roomObj ? roomObj.title : roomId;
+                  const roomObj = getRoomById(roomId);
+                  const roomTitle = roomObj ? roomObj.title : roomId;
 
-                // Build a map: categoryId -> array of service IDs
-                const categoryMap: Record<string, string[]> = {};
-                for (const serviceId of roomServiceIds) {
-                  const catId = getCategoryId(serviceId);
-                  if (!categoryMap[catId]) {
-                    categoryMap[catId] = [];
+                  // Group services by category
+                  const categoryMap: Record<string, string[]> = {};
+                  for (const serviceId of roomServiceIds) {
+                    const catId = getCategoryId(serviceId);
+                    if (!categoryMap[catId]) categoryMap[catId] = [];
+                    categoryMap[catId].push(serviceId);
                   }
-                  categoryMap[catId].push(serviceId);
-                }
 
-                // Compute this room's subtotal
-                const roomSubtotal = roomServiceIds.reduce((acc, svcId) => {
-                  const qty = servicesMap[svcId];
-                  const found = ALL_SERVICES.find((s) => s.id === svcId);
-                  return found ? acc + found.price * qty : acc;
-                }, 0);
+                  // Sum up total for this room
+                  const roomSubtotal = roomServiceIds.reduce((acc, svcId) => {
+                    const qty = servicesMap[svcId];
+                    const found = ALL_SERVICES.find((s) => s.id === svcId);
+                    return found ? acc + found.price * qty : acc;
+                  }, 0);
 
-                return (
-                  <div key={roomId} className="space-y-4">
-                    {/* Show the room name */}
-                    <h3 className="text-xl font-semibold text-gray-800">
-                      {roomTitle}
-                    </h3>
+                  return (
+                    <div key={roomId} className="space-y-4">
+                      <h3 className="text-xl font-semibold text-gray-800">
+                        {roomTitle}
+                      </h3>
 
-                    {Object.entries(categoryMap).map(([catId, serviceIds]) => {
-                      const catTitle = getCategoryNameById(catId);
+                      {Object.entries(categoryMap).map(([catId, sIds]) => {
+                        const catTitle = getCategoryNameById(catId);
+                        const chosenServices = sIds
+                          .map((id) => ALL_SERVICES.find((s) => s.id === id))
+                          .filter(Boolean) as (typeof ALL_SERVICES)[number][];
 
-                      // Build the list of services in that category
-                      const chosenServices = serviceIds
-                        .map((svId) => ALL_SERVICES.find((s) => s.id === svId))
-                        .filter(Boolean) as (typeof ALL_SERVICES)[number][];
-
-                      return (
-                        <div key={catId} className="ml-4 space-y-4">
-                          <h4 className="text-lg font-medium text-gray-700">
-                            {catTitle}
-                          </h4>
-                          {chosenServices.map((svc) => {
-                            const quantity = servicesMap[svc.id] || 1;
-                            return (
-                              <div
-                                key={svc.id}
-                                className="flex justify-between items-start gap-4 border-b pb-2"
-                              >
-                                <div>
-                                  <h3 className="font-medium text-lg text-gray-800">
-                                    {svc.title}
-                                  </h3>
-                                  {svc.description && (
-                                    <div className="text-sm text-gray-500 mt-1">
-                                      <span>{svc.description}</span>
+                        return (
+                          <div key={catId} className="ml-4 space-y-4">
+                            <h4 className="text-lg font-medium text-gray-700">
+                              {catTitle}
+                            </h4>
+                            {chosenServices.map((svc) => {
+                              const quantity = servicesMap[svc.id] || 1;
+                              return (
+                                <div
+                                  key={svc.id}
+                                  className="flex justify-between items-start gap-4 border-b pb-2"
+                                >
+                                  <div>
+                                    <h3 className="font-medium text-lg text-gray-800">
+                                      {svc.title}
+                                    </h3>
+                                    {svc.description && (
+                                      <div className="text-sm text-gray-500 mt-1">
+                                        <span>{svc.description}</span>
+                                      </div>
+                                    )}
+                                    <div className="text-medium font-medium text-gray-800 mt-2">
+                                      <span>
+                                        {quantity.toLocaleString("en-US")}{" "}
+                                      </span>
+                                      <span>{svc.unit_of_measurement}</span>
                                     </div>
-                                  )}
-                                  <div className="text-medium font-medium text-gray-800 mt-2">
-                                    <span>{quantity.toLocaleString("en-US")} </span>
-                                    <span>{svc.unit_of_measurement}</span>
+                                  </div>
+                                  <div className="text-right mt-auto">
+                                    <span className="block text-gray-800 font-medium">
+                                      $
+                                      {formatWithSeparator(
+                                        svc.price * quantity
+                                      )}
+                                    </span>
                                   </div>
                                 </div>
-                                <div className="text-right mt-auto">
-                                  <span className="block text-gray-800 font-medium">
-                                    ${formatWithSeparator(svc.price * quantity)}
-                                  </span>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      );
-                    })}
+                              );
+                            })}
+                          </div>
+                        );
+                      })}
 
-                    {/* Show this room's total */}
-                    <div className="flex justify-between items-center ml-4 mt-2">
-                      <span className="font-semibold text-gray-800">
-                        {roomTitle} Total:
-                      </span>
-                      <span className="font-semibold text-blue-600">
-                        ${formatWithSeparator(roomSubtotal)}
-                      </span>
+                      {/* Room total */}
+                      <div className="flex justify-between items-center ml-4 mt-2">
+                        <span className="font-semibold text-gray-800">
+                          {roomTitle} Total:
+                        </span>
+                        <span className="font-semibold text-blue-600">
+                          ${formatWithSeparator(roomSubtotal)}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                }
+              )}
             </div>
 
-            {/* 2) Overall cost summary (all rooms combined) */}
+            {/* 2) Overall cost summary */}
             <div className="pt-4 mt-4">
               {hasSurchargeOrDiscount && (
                 <div className="flex justify-between mb-2">
@@ -274,7 +341,7 @@ export default function RoomsEstimatePage() {
 
               <div className="flex justify-between mb-4">
                 <span className="text-gray-600">Sales tax (8.25%)</span>
-                <span>${formatWithSeparator(salesTax)}</span>
+                <span>${formatWithSeparator(adjustedSubtotal * 0.0825)}</span>
               </div>
 
               <div className="flex justify-between text-2xl font-semibold mt-4">
@@ -309,9 +376,7 @@ export default function RoomsEstimatePage() {
           {/* 5) Address */}
           <div>
             <SectionBoxSubtitle>Address</SectionBoxSubtitle>
-            <p className="text-gray-800">
-              {address || "No address provided"}
-            </p>
+            <p className="text-gray-800">{address || "No address provided"}</p>
           </div>
 
           <hr className="my-6 border-gray-200" />

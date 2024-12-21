@@ -11,9 +11,14 @@ import { ALL_SERVICES } from "@/constants/services";
 import ServiceTimePicker from "@/components/ui/ServiceTimePicker";
 
 // Utility function to format numbers with thousand separators
-// This ensures prices and totals are formatted nicely for the user
+// This ensures prices and totals are formatted nicely for the user.
+// We specify minimumFractionDigits and maximumFractionDigits = 2 
+// to ensure exactly two decimal places are shown.
 const formatWithSeparator = (value: number): string => {
-  return new Intl.NumberFormat("en-US", { minimumFractionDigits: 2 }).format(value);
+  return new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
 };
 
 // Utility function to capitalize and transform camelCase or PascalCase strings
@@ -25,8 +30,7 @@ const capitalizeAndTransform = (text: string): string => {
     .replace(/^./, (char) => char.toUpperCase());
 };
 
-// Functions for loading and saving data to sessionStorage,
-// allowing state persistence between pages without using query parameters
+// Functions for loading and saving data to sessionStorage
 const loadFromSession = (key: string, defaultValue: any = {}) => {
   const savedValue = sessionStorage.getItem(key);
   return savedValue ? JSON.parse(savedValue) : defaultValue;
@@ -57,7 +61,7 @@ export default function EmergencyEstimate() {
   const photos: string[] = loadFromSession("photos", []);
   const description: string = loadFromSession("description", "");
 
-  // If required data is missing (no selected activities or no address), go back to the first page
+  // If required data is missing (no selected activities or no address), go back
   useEffect(() => {
     if (!selectedActivities || Object.keys(selectedActivities).length === 0 || !address) {
       router.push("/emergency");
@@ -100,8 +104,7 @@ export default function EmergencyEstimate() {
   const total = adjustedSubtotal + salesTax;
 
   // Generate a list of steps for the selected services.
-  // Similar to the first and second pages, we find which services the user chose,
-  // then match them to EMERGENCY_SERVICES to retrieve their steps.
+  // We find which services the user chose, then match them to EMERGENCY_SERVICES to retrieve their steps.
   const shownServices = new Set<string>();
   const stepsList = Object.entries(selectedActivities).flatMap(([, activities]) =>
     Object.keys(activities).map((activityKey) => {
@@ -127,14 +130,15 @@ export default function EmergencyEstimate() {
 
       return {
         serviceName: capitalizeAndTransform(matchedServiceKey),
-        steps: matchedService.steps && matchedService.steps.length > 0
-          ? matchedService.steps
-          : []
+        steps:
+          matchedService.steps && matchedService.steps.length > 0
+            ? matchedService.steps
+            : [],
       };
     })
   ).filter(Boolean) as { serviceName: string; steps: any[] }[];
 
-  // Save the filtered steps to sessionStorage so that the next page (checkout) can display them without recalculating
+  // Save the filtered steps to sessionStorage for the next page
   useEffect(() => {
     saveToSession("filteredSteps", stepsList);
   }, [stepsList]);
@@ -154,22 +158,16 @@ export default function EmergencyEstimate() {
         <div className="flex gap-12">
           {/* Left Column: Shows immediate steps for the selected services */}
           <div className="flex-1">
-            <SectionBoxTitle>
-              Immediate Steps for Selected Services
-            </SectionBoxTitle>
-
+            <SectionBoxTitle>Immediate Steps for Selected Services</SectionBoxTitle>
             <div className="mt-8 space-y-8">
               {stepsList.map((serviceObj, index) => {
-                // If the service has steps, display them; otherwise indicate none available
                 if (serviceObj && serviceObj.steps.length > 0) {
                   return (
                     <div
                       key={serviceObj.serviceName + index}
                       className="bg-white p-6 rounded-lg border border-gray-200"
                     >
-                      <SectionBoxSubtitle>
-                        {serviceObj.serviceName}
-                      </SectionBoxSubtitle>
+                      <SectionBoxSubtitle>{serviceObj.serviceName}</SectionBoxSubtitle>
                       <div className="mt-4 space-y-4">
                         {serviceObj.steps.map((step) => (
                           <div key={step.title} className="space-y-2">
@@ -191,9 +189,7 @@ export default function EmergencyEstimate() {
                       key={serviceObj?.serviceName + index}
                       className="bg-white p-6 rounded-lg border border-gray-200"
                     >
-                      <SectionBoxSubtitle>
-                        {serviceObj?.serviceName}
-                      </SectionBoxSubtitle>
+                      <SectionBoxSubtitle>{serviceObj?.serviceName}</SectionBoxSubtitle>
                       <p className="text-gray-600 mt-4">No steps available.</p>
                     </div>
                   );
@@ -202,48 +198,47 @@ export default function EmergencyEstimate() {
             </div>
           </div>
 
-          {/* Right Column: Displaying the estimate summary and details (address, photos, description) */}
+          {/* Right Column: Displaying the estimate summary and details */}
           <div className="w-[500px]">
             <div className="bg-brand-light p-6 rounded-xl">
               <SectionBoxSubtitle>Estimate</SectionBoxSubtitle>
 
-              {/* Listing all selected activities with their quantities and unit prices */}
+              {/* Listing all selected activities with their quantity and cost */}
               <div className="mt-4 space-y-4">
-                {Object.entries(selectedActivities).flatMap(
-                  ([, activities]) =>
-                    Object.entries(activities).map(([activityKey, quantity]) => {
-                      const activity = ALL_SERVICES.find((s) => s.id === activityKey);
-                      if (!activity) return null;
+                {Object.entries(selectedActivities).flatMap(([, activities]) =>
+                  Object.entries(activities).map(([activityKey, quantity]) => {
+                    const activity = ALL_SERVICES.find((s) => s.id === activityKey);
+                    if (!activity) return null;
 
-                      return (
-                        <div
-                          key={activityKey}
-                          className="flex justify-between items-start gap-4 border-b pb-2"
-                        >
-                          <div>
-                            <h3 className="font-medium text-lg text-gray-800">
-                              {activity.title}
-                            </h3>
-                            <div className="text-sm text-gray-500 mt-1">
-                              <span>{activity.description}</span>
-                            </div>
-                            <div className="text-medium font-medium text-gray-800 mt-2">
-                              <span>{quantity} </span>
-                              <span>{activity.unit_of_measurement}</span>
-                            </div>
+                    return (
+                      <div
+                        key={activityKey}
+                        className="flex justify-between items-start gap-4 border-b pb-2"
+                      >
+                        <div>
+                          <h3 className="font-medium text-lg text-gray-800">
+                            {activity.title}
+                          </h3>
+                          <div className="text-sm text-gray-500 mt-1">
+                            <span>{activity.description}</span>
                           </div>
-                          <div className="text-right mt-auto">
-                            <span className="block text-gray-800 font-medium">
-                              ${formatWithSeparator(activity.price * quantity)}
-                            </span>
+                          <div className="text-medium font-medium text-gray-800 mt-2">
+                            <span>{quantity} </span>
+                            <span>{activity.unit_of_measurement}</span>
                           </div>
                         </div>
-                      );
-                    })
+                        <div className="text-right mt-auto">
+                          <span className="block text-gray-800 font-medium">
+                            ${formatWithSeparator(activity.price * quantity)}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })
                 )}
               </div>
 
-              {/* Summary of costs including potential surcharge/discount and sales tax */}
+              {/* Summary of costs including potential surcharge/discount and tax */}
               <div className="pt-4 mt-4">
                 {timeCoefficient !== 1 && (
                   <div className="flex justify-between mb-2">
@@ -275,7 +270,7 @@ export default function EmergencyEstimate() {
                   <span>${formatWithSeparator(salesTax)}</span>
                 </div>
 
-                {/* Button to select or change the available time slot */}
+                {/* Button to select or change date/time */}
                 <button
                   onClick={() => setShowModal(true)}
                   className={`w-full py-3 rounded-lg font-medium mt-4 border ${
@@ -289,12 +284,11 @@ export default function EmergencyEstimate() {
 
                 {selectedTime && (
                   <p className="mt-2 text-gray-700 text-center font-medium">
-                    Selected Date:{" "}
-                    <span className="text-blue-600">{selectedTime}</span>
+                    Selected Date: <span className="text-blue-600">{selectedTime}</span>
                   </p>
                 )}
 
-                {/* Modal to pick a date/time and possibly adjust cost factor */}
+                {/* Modal for time selection */}
                 {showModal && (
                   <ServiceTimePicker
                     subtotal={subtotal}
@@ -307,24 +301,22 @@ export default function EmergencyEstimate() {
                   />
                 )}
 
-                {/* Total after tax */}
+                {/* Final total after tax */}
                 <div className="flex justify-between text-2xl font-semibold mt-4">
                   <span>Total</span>
                   <span>${formatWithSeparator(total)}</span>
                 </div>
               </div>
 
-              {/* Displaying Address */}
+              {/* Address */}
               <div className="mt-6">
                 <h3 className="font-semibold text-xl text-gray-800">Address</h3>
                 <p className="text-gray-500 mt-2">{address}</p>
               </div>
 
-              {/* Displaying Uploaded Photos */}
+              {/* Uploaded Photos */}
               <div className="mt-6">
-                <h3 className="font-semibold text-xl text-gray-800">
-                  Uploaded Photos
-                </h3>
+                <h3 className="font-semibold text-xl text-gray-800">Uploaded Photos</h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
                   {photos.map((photo, index) => (
                     <div key={index} className="relative group">
@@ -343,17 +335,15 @@ export default function EmergencyEstimate() {
                 </div>
               </div>
 
-              {/* Displaying Problem Description */}
+              {/* Description */}
               <div className="mt-6">
                 <h3 className="font-semibold text-xl text-gray-800">
                   Problem Description
                 </h3>
-                <p className="text-gray-500 mt-2 whitespace-pre-wrap">
-                  {description}
-                </p>
+                <p className="text-gray-500 mt-2 whitespace-pre-wrap">{description}</p>
               </div>
 
-              {/* Action Buttons: Proceed to Checkout or go back to add more services */}
+              {/* Next steps */}
               <div className="mt-6 space-y-4">
                 <button
                   className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium"
