@@ -454,7 +454,7 @@ export default function RoomsEstimate() {
             </div>
           </div>
 
-          {/* (Optional) RIGHT COLUMN: You can keep empty or add something else if needed. */}
+          {/* (Optional) RIGHT COLUMN: We'll add something else */}
         </div>
       </div>
     </main>

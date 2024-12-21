@@ -17,12 +17,18 @@ const formatWithSeparator = (value: number): string =>
   new Intl.NumberFormat("en-US", { minimumFractionDigits: 2 }).format(value);
 
 // Session helpers with environment check
+/**
+ * saveToSession: Saves a value to sessionStorage as JSON (only when window is available).
+ */
 const saveToSession = (key: string, value: any) => {
   if (typeof window !== 'undefined') {
     sessionStorage.setItem(key, JSON.stringify(value));
   }
 };
 
+/**
+ * loadFromSession: Loads and parses a value from sessionStorage or returns defaultValue if not found/SSR.
+ */
 const loadFromSession = (key: string, defaultValue: any) => {
   if (typeof window === 'undefined') return defaultValue;
   const savedValue = sessionStorage.getItem(key);
@@ -38,7 +44,7 @@ export default function Details() {
   const router = useRouter();
   const { location } = useLocation();
 
-  // Load chosen categories and other data only if window is defined
+  // Load chosen categories and other data from session
   const selectedCategories: string[] = loadFromSession("services_selectedCategories", []);
   const address: string = loadFromSession("address", "");
   const description: string = loadFromSession("description", "");
@@ -47,15 +53,17 @@ export default function Details() {
 
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
 
+  // If no categories or no address, redirect back
   useEffect(() => {
-    // If no categories or no address, go back
     if (selectedCategories.length === 0 || !address) {
       router.push("/calculate");
     }
   }, [selectedCategories, address, router]);
 
+  // Track which categories (by ID) are expanded
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
+  // Build data structures: categories -> sections, etc.
   const categoriesWithSection = selectedCategories
     .map((catId) => ALL_CATEGORIES.find((c) => c.id === catId) || null)
     .filter(Boolean) as (typeof ALL_CATEGORIES)[number][];
@@ -70,7 +78,9 @@ export default function Details() {
 
   const categoryServicesMap: Record<string, (typeof ALL_SERVICES)[number][]> = {};
   selectedCategories.forEach((catId) => {
-    let matchedServices = ALL_SERVICES.filter((svc) => svc.id.startsWith(`${catId}-`));
+    let matchedServices = ALL_SERVICES.filter((svc) =>
+      svc.id.startsWith(`${catId}-`)
+    );
     if (searchQuery) {
       matchedServices = matchedServices.filter((svc) =>
         svc.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -79,16 +89,22 @@ export default function Details() {
     categoryServicesMap[catId] = matchedServices;
   });
 
+  // Load previously chosen services with quantity
   const [selectedServicesState, setSelectedServicesState] = useState<Record<string, number>>(
     () => loadFromSession("selectedServicesWithQuantity", {})
   );
 
+  // Track manual input for numeric quantities
   const [manualInputValue, setManualInputValue] = useState<Record<string, string | null>>({});
 
+  // Save changes to session whenever selectedServicesState changes
   useEffect(() => {
     saveToSession("selectedServicesWithQuantity", selectedServicesState);
   }, [selectedServicesState]);
 
+  /**
+   * Toggle expand/collapse for a given category ID.
+   */
   const toggleCategory = (catId: string) => {
     setExpandedCategories((prev) => {
       const next = new Set(prev);
@@ -97,6 +113,9 @@ export default function Details() {
     });
   };
 
+  /**
+   * Select or deselect an individual service.
+   */
   const handleServiceToggle = (serviceId: string) => {
     setSelectedServicesState((prev) => {
       if (prev[serviceId]) {
@@ -109,6 +128,9 @@ export default function Details() {
     setWarningMessage(null);
   };
 
+  /**
+   * Increment/decrement the quantity for a given service.
+   */
   const handleQuantityChange = (serviceId: string, increment: boolean, unit: string) => {
     setSelectedServicesState((prev) => {
       const currentValue = prev[serviceId] || 1;
@@ -119,12 +141,16 @@ export default function Details() {
         [serviceId]: unit === "each" ? Math.round(updatedValue) : updatedValue,
       };
     });
+    // Reset manual input if user used the +/- buttons
     setManualInputValue((prev) => ({
       ...prev,
       [serviceId]: null,
     }));
   };
 
+  /**
+   * Handle manual quantity input changes.
+   */
   const handleManualQuantityChange = (serviceId: string, value: string, unit: string) => {
     setManualInputValue((prev) => ({
       ...prev,
@@ -140,6 +166,9 @@ export default function Details() {
     }
   };
 
+  /**
+   * If user leaves the input field with an empty string, reset manual input to null
+   */
   const handleBlurInput = (serviceId: string) => {
     if (!manualInputValue[serviceId]) {
       setManualInputValue((prev) => ({
@@ -149,10 +178,25 @@ export default function Details() {
     }
   };
 
+  /**
+   * Confirmation prompt and clearing all selected services and expanded categories.
+   */
   const clearAllSelections = () => {
+    const confirmed = window.confirm(
+      "Are you sure you want to clear all selected services? This will also collapse all expanded categories."
+    );
+    if (!confirmed) {
+      return;
+    }
+    // Clear all selections
     setSelectedServicesState({});
+    // Reset expanded categories
+    setExpandedCategories(new Set());
   };
 
+  /**
+   * Calculate the total cost of all selected services.
+   */
   const calculateTotal = (): number => {
     let total = 0;
     for (const [serviceId, quantity] of Object.entries(selectedServicesState)) {
@@ -164,6 +208,9 @@ export default function Details() {
     return total;
   };
 
+  /**
+   * Validate and proceed to the next page (Estimate).
+   */
   const handleNext = () => {
     if (Object.keys(selectedServicesState).length === 0) {
       setWarningMessage("Please select at least one service before proceeding.");
@@ -177,6 +224,9 @@ export default function Details() {
     router.push("/calculate/estimate");
   };
 
+  /**
+   * Get a category name by its ID (fallback to catId if not found).
+   */
   const getCategoryNameById = (catId: string): string => {
     const categoryObj = ALL_CATEGORIES.find((c) => c.id === catId);
     return categoryObj ? categoryObj.title : catId;
@@ -199,6 +249,7 @@ export default function Details() {
               Contact support
             </a>
           </span>
+          {/* Clear all button triggers confirmation */}
           <button
             onClick={clearAllSelections}
             className="text-blue-600 hover:underline focus:outline-none"
@@ -207,18 +258,22 @@ export default function Details() {
           </button>
         </div>
 
+        {/* Possible warning messages */}
         <div className="h-6 mt-4 text-left">
           {warningMessage && <p className="text-red-500">{warningMessage}</p>}
         </div>
 
         <div className="container mx-auto relative flex mt-8">
+          {/* Left side: categories & services */}
           <div className="flex-1">
             {Object.entries(categoriesBySection).map(([sectionName, catIds]) => (
               <div key={sectionName} className="mb-8">
                 <SectionBoxSubtitle>{sectionName}</SectionBoxSubtitle>
                 <div className="flex flex-col gap-4 mt-4 w-full max-w-[600px]">
                   {catIds.map((catId) => {
+                    // List of services in this category
                     const servicesForCategory = categoryServicesMap[catId] || [];
+                    // Count how many are selected in this category
                     const selectedInThisCategory = servicesForCategory.filter((svc) =>
                       Object.keys(selectedServicesState).includes(svc.id)
                     ).length;
@@ -232,6 +287,7 @@ export default function Details() {
                           selectedInThisCategory > 0 ? "border-blue-500" : "border-gray-300"
                         }`}
                       >
+                        {/* Category header toggler */}
                         <button
                           onClick={() => toggleCategory(catId)}
                           className="flex justify-between items-center w-full"
@@ -255,6 +311,7 @@ export default function Details() {
                           />
                         </button>
 
+                        {/* If category is expanded, list all services */}
                         {expandedCategories.has(catId) && (
                           <div className="mt-4 flex flex-col gap-3">
                             {servicesForCategory.map((svc) => {
@@ -267,6 +324,7 @@ export default function Details() {
 
                               return (
                                 <div key={svc.id} className="space-y-2">
+                                  {/* Service Title Toggle */}
                                   <div className="flex justify-between items-center">
                                     <span
                                       className={`text-lg transition-colors duration-300 ${
@@ -287,6 +345,7 @@ export default function Details() {
                                     </label>
                                   </div>
 
+                                  {/* If service is selected, show description, quantity controls, and price */}
                                   {isSelected && (
                                     <>
                                       {svc.description && (
@@ -351,16 +410,19 @@ export default function Details() {
                                           ${formatWithSeparator(svc.price * quantity)}
                                         </span>
                                       </div>
-                                      {isSelected &&
-                                        (() => {
-                                          const chosen = servicesForCategory.filter(
-                                            (s) => selectedServicesState[s.id] !== undefined
-                                          );
-                                          const currentIndex = chosen.findIndex((s) => s.id === svc.id);
-                                          return currentIndex !== chosen.length - 1 ? (
-                                            <hr className="mt-4 border-gray-200" />
-                                          ) : null;
-                                        })()}
+                                      {/* Separator if not the last chosen service in this category */}
+                                      {(() => {
+                                        const chosenServices = servicesForCategory.filter(
+                                          (s) => selectedServicesState[s.id] !== undefined
+                                        );
+                                        const currentIndex = chosenServices.findIndex(
+                                          (s) => s.id === svc.id
+                                        );
+                                        if (currentIndex !== chosenServices.length - 1) {
+                                          return <hr className="mt-4 border-gray-200" />;
+                                        }
+                                        return null;
+                                      })()}
                                     </>
                                   )}
                                 </div>
@@ -386,85 +448,70 @@ export default function Details() {
                 </div>
               ) : (
                 <>
-                  {Object.entries(categoriesBySection).map(
-                    ([sectionName, catIds]) => {
-                      const categoriesWithSelectedServices = catIds.filter(
-                        (catId) => {
-                          const servicesForCategory =
-                            categoryServicesMap[catId] || [];
-                          return servicesForCategory.some(
+                  {Object.entries(categoriesBySection).map(([sectionName, catIds]) => {
+                    // Filter categories that actually have selected services
+                    const categoriesWithSelectedServices = catIds.filter((catId) => {
+                      const servicesForCategory = categoryServicesMap[catId] || [];
+                      return servicesForCategory.some(
+                        (svc) => selectedServicesState[svc.id] !== undefined
+                      );
+                    });
+
+                    if (categoriesWithSelectedServices.length === 0) return null;
+
+                    return (
+                      <div key={sectionName} className="mb-6">
+                        <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                          {sectionName}
+                        </h3>
+                        {categoriesWithSelectedServices.map((catId) => {
+                          const categoryObj = ALL_CATEGORIES.find((c) => c.id === catId);
+                          const categoryName = categoryObj ? categoryObj.title : catId;
+
+                          const servicesForCategory = categoryServicesMap[catId] || [];
+                          const chosenServices = servicesForCategory.filter(
                             (svc) => selectedServicesState[svc.id] !== undefined
                           );
-                        }
-                      );
 
-                      if (categoriesWithSelectedServices.length === 0)
-                        return null;
+                          if (chosenServices.length === 0) return null;
 
-                      return (
-                        <div key={sectionName} className="mb-6">
-                          <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                            {sectionName}
-                          </h3>
-                          {categoriesWithSelectedServices.map((catId) => {
-                            const categoryObj = ALL_CATEGORIES.find(
-                              (c) => c.id === catId
-                            );
-                            const categoryName = categoryObj
-                              ? categoryObj.title
-                              : catId;
-
-                            const servicesForCategory =
-                              categoryServicesMap[catId] || [];
-                            const chosenServices = servicesForCategory.filter(
-                              (svc) =>
-                                selectedServicesState[svc.id] !== undefined
-                            );
-
-                            if (chosenServices.length === 0) return null;
-
-                            return (
-                              <div key={catId} className="mb-4 ml-4">
-                                <h4 className="text-lg font-medium text-gray-700 mb-2">
-                                  {categoryName}
-                                </h4>
-                                <ul className="space-y-2 pb-4">
-                                  {chosenServices.map((svc) => {
-                                    const quantity =
-                                      selectedServicesState[svc.id] || 1;
-                                    return (
-                                      <li
-                                        key={svc.id}
-                                        className="grid grid-cols-3 gap-2 text-sm text-gray-600"
-                                        style={{
-                                          gridTemplateColumns: "40% 30% 25%",
-                                          width: "100%",
-                                        }}
-                                      >
-                                        <span className="truncate overflow-hidden">
-                                          {svc.title}
-                                        </span>
-                                        <span className="text-right">
-                                          {quantity} {svc.unit_of_measurement} x
-                                          ${formatWithSeparator(svc.price)}
-                                        </span>
-                                        <span className="text-right">
-                                          $
-                                          {formatWithSeparator(
-                                            svc.price * quantity
-                                          )}
-                                        </span>
-                                      </li>
-                                    );
-                                  })}
-                                </ul>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      );
-                    }
-                  )}
+                          return (
+                            <div key={catId} className="mb-4 ml-4">
+                              <h4 className="text-lg font-medium text-gray-700 mb-2">
+                                {categoryName}
+                              </h4>
+                              <ul className="space-y-2 pb-4">
+                                {chosenServices.map((svc) => {
+                                  const quantity = selectedServicesState[svc.id] || 1;
+                                  return (
+                                    <li
+                                      key={svc.id}
+                                      className="grid grid-cols-3 gap-2 text-sm text-gray-600"
+                                      style={{
+                                        gridTemplateColumns: "40% 30% 25%",
+                                        width: "100%",
+                                      }}
+                                    >
+                                      <span className="truncate overflow-hidden">
+                                        {svc.title}
+                                      </span>
+                                      <span className="text-right">
+                                        {quantity} {svc.unit_of_measurement} x $
+                                        {formatWithSeparator(svc.price)}
+                                      </span>
+                                      <span className="text-right">
+                                        ${formatWithSeparator(svc.price * quantity)}
+                                      </span>
+                                    </li>
+                                  );
+                                })}
+                              </ul>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-2xl font-semibold text-gray-800">
                       Subtotal:
@@ -477,15 +524,15 @@ export default function Details() {
               )}
             </div>
 
+            {/* Address */}
             <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
-              <h2 className="text-2xl font-medium text-gray-800 mb-4">
-                Address
-              </h2>
+              <h2 className="text-2xl font-medium text-gray-800 mb-4">Address</h2>
               <p className="text-gray-500 text-medium">
                 {address || "No address provided"}
               </p>
             </div>
 
+            {/* Photos */}
             <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
               <h2 className="text-2xl font-medium text-gray-800 mb-4">
                 Uploaded Photos
@@ -508,6 +555,7 @@ export default function Details() {
               )}
             </div>
 
+            {/* Additional details */}
             <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
               <h2 className="text-2xl font-medium text-gray-800 mb-4">
                 Additional details

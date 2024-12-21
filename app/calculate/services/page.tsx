@@ -11,14 +11,20 @@ import { ChevronDown } from "lucide-react";
 import { useLocation } from "@/context/LocationContext";
 import { ALL_CATEGORIES } from "@/constants/categories";
 
-// Session storage helpers
-// Save data to sessionStorage as JSON string
+/**
+ * Saves a value to sessionStorage as JSON (only works in the browser).
+ */
 const saveToSession = (key: string, value: any) => {
-  sessionStorage.setItem(key, JSON.stringify(value));
+  if (typeof window !== "undefined") {
+    sessionStorage.setItem(key, JSON.stringify(value));
+  }
 };
 
-// Load and parse data from sessionStorage
+/**
+ * Loads a JSON-parsed value from sessionStorage or returns defaultValue if none/SSR/parse error.
+ */
 const loadFromSession = (key: string, defaultValue: any) => {
+  if (typeof window === "undefined") return defaultValue;
   const savedValue = sessionStorage.getItem(key);
   try {
     return savedValue ? JSON.parse(savedValue) : defaultValue;
@@ -32,10 +38,10 @@ export default function Services() {
   const router = useRouter();
   const { location } = useLocation();
 
-  // Load previously chosen sections
+  // Load previously chosen "sections" (like Electrical, Plumbing, etc.)
   const selectedSections: string[] = loadFromSession("services_selectedSections", []);
 
-  // If no sections chosen, go back
+  // If no sections are chosen, redirect back
   useEffect(() => {
     if (selectedSections.length === 0) {
       router.push("/calculate");
@@ -43,15 +49,18 @@ export default function Services() {
   }, [selectedSections, router]);
 
   // Load states from session
-  const [searchQuery, setSearchQuery] = useState<string>(loadFromSession("services_searchQuery", ""));
+  const [searchQuery, setSearchQuery] = useState<string>(
+    loadFromSession("services_searchQuery", "")
+  );
   const [address, setAddress] = useState<string>(loadFromSession("address", ""));
-  const [description, setDescription] = useState<string>(loadFromSession("description", ""));
+  const [description, setDescription] = useState<string>(
+    loadFromSession("description", "")
+  );
   const [photos, setPhotos] = useState<string[]>(loadFromSession("photos", []));
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
 
-  // Build a map: section -> categories
-  // ALL_CATEGORIES is a constant list of categories with their sections
-  const categoriesBySection: Record<string, {id: string; title: string;}[]> = {};
+  // Build map: section -> categories, from ALL_CATEGORIES
+  const categoriesBySection: Record<string, { id: string; title: string }[]> = {};
   ALL_CATEGORIES.forEach((cat) => {
     if (!categoriesBySection[cat.section]) {
       categoriesBySection[cat.section] = [];
@@ -61,28 +70,32 @@ export default function Services() {
 
   // Initialize selectedCategories from session or from selectedSections
   const storedSelectedCategories = loadFromSession("selectedCategoriesMap", null);
-  const initialSelectedCategories: Record<string, string[]> = storedSelectedCategories || (() => {
-    const init: Record<string, string[]> = {};
-    selectedSections.forEach((section) => {
-      init[section] = [];
-    });
-    return init;
-  })();
+  const initialSelectedCategories: Record<string, string[]> =
+    storedSelectedCategories ||
+    (() => {
+      // If none stored, create empty arrays for each section
+      const init: Record<string, string[]> = {};
+      selectedSections.forEach((section) => {
+        init[section] = [];
+      });
+      return init;
+    })();
 
-  const [selectedCategories, setSelectedCategories] = useState<Record<string, string[]>>(
-    initialSelectedCategories
-  );
+  const [selectedCategories, setSelectedCategories] = useState<
+    Record<string, string[]>
+  >(initialSelectedCategories);
 
-  // Save states to session whenever they change
+  // Save changes to session
   useEffect(() => saveToSession("services_searchQuery", searchQuery), [searchQuery]);
   useEffect(() => saveToSession("address", address), [address]);
   useEffect(() => saveToSession("description", description), [description]);
   useEffect(() => saveToSession("photos", photos), [photos]);
-  useEffect(() => saveToSession("selectedCategoriesMap", selectedCategories), [selectedCategories]);
+  useEffect(
+    () => saveToSession("selectedCategoriesMap", selectedCategories),
+    [selectedCategories]
+  );
 
-  // Filter categories by search query
-  // IMPORTANT FIX: Use selectedSections instead of selectedCategories keys here.
-  // This ensures that even if no categories are selected yet, we still display categories.
+  // Filter categories by search query, but only within the sections user selected
   const filteredCategoriesBySection = Object.fromEntries(
     selectedSections.map((section) => {
       const allCats = categoriesBySection[section] || [];
@@ -93,42 +106,72 @@ export default function Services() {
         : allCats;
       return [section, filtered];
     })
-  ) as Record<string, {id:string; title:string}[]>;
+  ) as Record<string, { id: string; title: string }[]>;
 
-  // expandedCategories local state to track which sections are expanded
+  // Track which sections are expanded/collapsed
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
+  /**
+   * Toggle expand/collapse for a given section
+   */
   const toggleCategory = (section: string) => {
     setExpandedCategories((prev) => {
       const next = new Set(prev);
-      next.has(section) ? next.delete(section) : next.add(section);
+      if (next.has(section)) {
+        next.delete(section);
+      } else {
+        next.add(section);
+      }
       return next;
     });
   };
 
-  // Handle category selection inside each section
+  /**
+   * Toggle a specific category in a given section
+   */
   const handleCategorySelect = (section: string, catId: string) => {
     setSelectedCategories((prev) => {
-      const current = prev[section] || [];
-      const isSelected = current.includes(catId);
+      const currentCatIds = prev[section] || [];
+      const isSelected = currentCatIds.includes(catId);
+
+      // Clear any warning
       if (!isSelected) setWarningMessage(null);
+
       return {
         ...prev,
-        [section]: isSelected ? current.filter((s) => s !== catId) : [...current, catId],
+        [section]: isSelected
+          ? currentCatIds.filter((id) => id !== catId)
+          : [...currentCatIds, catId],
       };
     });
   };
 
-  // Clear all selected categories
+  /**
+   * Confirm and clear all selected categories; also reset expandedCategories
+   */
   const handleClearSelection = () => {
+    // Show a confirmation prompt:
+    const userConfirmed = window.confirm(
+      "Are you sure you want to clear all selections? This will also collapse all categories."
+    );
+    if (!userConfirmed) {
+      return;
+    }
+
+    // If confirmed, reset everything
     const cleared: Record<string, string[]> = {};
     selectedSections.forEach((section) => {
       cleared[section] = [];
     });
     setSelectedCategories(cleared);
+
+    // Reset expanded categories
+    setExpandedCategories(new Set());
   };
 
-  // Proceed to the next page after checks
+  /**
+   * Proceed to next step: validate user input, then store final arrays
+   */
   const handleNext = () => {
     const totalChosen = Object.values(selectedCategories).flat().length;
     if (totalChosen === 0) {
@@ -140,17 +183,25 @@ export default function Services() {
       return;
     }
 
+    // Flatten all chosen category IDs
     const chosenCategoryIDs = Object.values(selectedCategories).flat();
     saveToSession("services_selectedCategories", chosenCategoryIDs);
 
+    // Move to details page
     router.push("/calculate/details");
   };
 
   // Handle address changes
-  const handleAddressChange = (e: ChangeEvent<HTMLInputElement>) => setAddress(e.target.value);
-  const handleDescriptionChange = (e: ChangeEvent<HTMLTextAreaElement>) => setDescription(e.target.value);
+  const handleAddressChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setAddress(e.target.value);
+  };
 
-  // Attempt to use user location
+  // Handle additional description changes
+  const handleDescriptionChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+    setDescription(e.target.value);
+  };
+
+  // Attempt to auto-fill address from geolocation
   const handleUseMyLocation = () => {
     if (location?.city && location?.zip) {
       setAddress(`${location.city}, ${location.zip}, ${location.country || ""}`);
@@ -159,6 +210,7 @@ export default function Services() {
     }
   };
 
+  // Remove one photo from state
   const handleRemovePhoto = (index: number) => {
     setPhotos((prev) => prev.filter((_, i) => i !== index));
   };
@@ -166,12 +218,16 @@ export default function Services() {
   return (
     <main className="min-h-screen pt-24 pb-16">
       <div className="container mx-auto">
+        {/* Breadcrumb navigation */}
         <BreadCrumb items={CALCULATE_STEPS} />
 
+        {/* Page title & Next button */}
         <div className="flex justify-between items-start mt-8">
-          <SectionBoxTitle>Select Your Categories</SectionBoxTitle>         
+          <SectionBoxTitle>Select Your Categories</SectionBoxTitle>
           <Button onClick={handleNext}>Next →</Button>
-        </div>       
+        </div>
+
+        {/* Search bar */}
         <div className="flex flex-col gap-4 mt-8 w-full max-w-[600px]">
           <SearchServices
             value={searchQuery}
@@ -194,11 +250,14 @@ export default function Services() {
           </div>
         </div>
 
+        {/* Warning messages */}
         <div className="h-6 mt-4 text-left">
           {warningMessage && <p className="text-red-500">{warningMessage}</p>}
         </div>
-        
+
+        {/* Main content */}
         <div className="flex container mx-auto relative">
+          {/* Left side: sections & categories */}
           <div className="flex-1">
             <div className="flex flex-col gap-3 mt-5 w-full max-w-[600px]">
               {selectedSections.map((section) => {
@@ -238,15 +297,21 @@ export default function Services() {
                     {expandedCategories.has(section) && (
                       <div className="mt-4 flex flex-col gap-3">
                         {allCats.length === 0 ? (
-                          <p className="text-sm text-gray-500">No categories match your search.</p>
+                          <p className="text-sm text-gray-500">
+                            No categories match your search.
+                          </p>
                         ) : (
                           allCats.map((cat) => {
-                            const isSelected = selectedCategories[section]?.includes(cat.id) || false;
+                            const isSelected =
+                              selectedCategories[section]?.includes(cat.id) ||
+                              false;
                             return (
                               <div key={cat.id} className="flex justify-between items-center">
                                 <span
                                   className={`text-lg transition-colors duration-300 ${
-                                    isSelected ? "text-blue-600" : "text-gray-800"
+                                    isSelected
+                                      ? "text-blue-600"
+                                      : "text-gray-800"
                                   }`}
                                 >
                                   {cat.title}
@@ -255,7 +320,9 @@ export default function Services() {
                                   <input
                                     type="checkbox"
                                     checked={isSelected}
-                                    onChange={() => handleCategorySelect(section, cat.id)}
+                                    onChange={() =>
+                                      handleCategorySelect(section, cat.id)
+                                    }
                                     className="sr-only peer"
                                   />
                                   <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
@@ -273,9 +340,12 @@ export default function Services() {
             </div>
           </div>
 
+          {/* Right side: Address & Photos */}
           <div className="w-1/2 ml-auto mt-4 pt-0">
             <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mb-6">
-              <h2 className="text-2xl font-medium text-gray-800 mb-4">We Need Your Address</h2>
+              <h2 className="text-2xl font-medium text-gray-800 mb-4">
+                We Need Your Address
+              </h2>
               <div className="flex flex-col gap-4">
                 <input
                   type="text"
@@ -316,7 +386,9 @@ export default function Services() {
                         e.target.value = "";
                         return;
                       }
-                      const fileUrls = files.map((file) => URL.createObjectURL(file));
+                      const fileUrls = files.map((file) =>
+                        URL.createObjectURL(file)
+                      );
                       setPhotos((prev) => [...prev, ...fileUrls]);
                     }}
                     className="hidden"
