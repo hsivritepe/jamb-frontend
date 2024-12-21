@@ -28,16 +28,22 @@ const loadFromSession = (key: string, defaultValue: any = null) => {
   }
 };
 
-// Utility function to format numeric values with commas and two decimal places
+/**
+ * Utility function to format numeric values (e.g., prices) with commas
+ * and **exactly two** decimal places (e.g., 100 -> 100.00).
+ */
 const formatWithSeparator = (value: number): string =>
-  new Intl.NumberFormat("en-US", { minimumFractionDigits: 2 }).format(value);
+  new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(value);
 
 export default function RoomsEstimatePage() {
   const router = useRouter();
 
-  // Load the key data from session
-  // - selectedServicesState: { [roomId]: { [serviceId]: quantity } }
-  // - selectedTime and timeCoefficient for surcharges/discounts
+  // 1) Load all the key data from session
+  //    - selectedServicesState: { [roomId]: { [serviceId]: quantity } }
+  //    - selectedTime & timeCoefficient
   const selectedServicesState: Record<string, Record<string, number>> = loadFromSession(
     "rooms_selectedServicesWithQuantity",
     {}
@@ -48,7 +54,7 @@ export default function RoomsEstimatePage() {
   const selectedTime: string | null = loadFromSession("selectedTime", null);
   const timeCoefficient: number = loadFromSession("timeCoefficient", 1);
 
-  // If the user didn't actually select anything or no address, redirect back
+  // 2) Check if there's any selected service or no address
   useEffect(() => {
     let hasAnyService = false;
     for (const roomId in selectedServicesState) {
@@ -62,11 +68,9 @@ export default function RoomsEstimatePage() {
     }
   }, [selectedServicesState, address, router]);
 
-  // Calculate the total cost
-  // 1) Sum up all services across all rooms
-  // 2) Apply timeCoefficient
-  // 3) Apply sales tax
-  const calculateSubtotal = (): number => {
+  // 3) Calculate the total cost
+  //    (subtotal + surcharge/discount) + sales tax
+  function calculateSubtotal(): number {
     let total = 0;
     for (const roomId in selectedServicesState) {
       for (const [serviceId, quantity] of Object.entries(selectedServicesState[roomId])) {
@@ -77,42 +81,41 @@ export default function RoomsEstimatePage() {
       }
     }
     return total;
-  };
+  }
 
   const subtotal = calculateSubtotal();
   const adjustedSubtotal = subtotal * timeCoefficient;
-  const salesTax = adjustedSubtotal * 0.0825; // 8.25% tax
+  const salesTax = adjustedSubtotal * 0.0825;
   const total = adjustedSubtotal + salesTax;
 
-  // If timeCoefficient !== 1, then there's a surcharge (>1) or discount (<1)
   const hasSurchargeOrDiscount = timeCoefficient !== 1;
   const surchargeOrDiscountAmount = hasSurchargeOrDiscount
     ? Math.abs(subtotal * (timeCoefficient - 1))
     : 0;
 
-  // Retrieve all possible rooms so we can show the correct name for each selected room
+  // 4) Retrieve all rooms so we can match up the IDs with their titles
   const allRooms = [...ROOMS.indoor, ...ROOMS.outdoor];
 
-  // Helper: get the room object by ID to show its title, or fallback to ID
-  const getRoomById = (roomId: string) => {
+  // Helper: get the room object by ID
+  function getRoomById(roomId: string) {
     return allRooms.find((r) => r.id === roomId);
-  };
+  }
 
-  // Helper: get category name from ID
-  const getCategoryNameById = (catId: string): string => {
+  // Helper: get category name by ID
+  function getCategoryNameById(catId: string): string {
     const catObj = ALL_CATEGORIES.find((c) => c.id === catId);
     return catObj ? catObj.title : catId;
-  };
+  }
 
-  // Group the services for each room by category ID
-  // category ID is the first two segments, e.g. "1-4" from "1-4-2"
+  // Helper: derive category ID from serviceId (e.g. "3-5-2" -> "3-5")
   function getCategoryId(serviceId: string): string {
     return serviceId.split("-").slice(0, 2).join("-");
   }
 
-  // "Place your order" logic
+  // The user can place the order (or rename to "Proceed to checkout" logic)
   const handlePlaceOrder = () => {
     alert("Rooms: Your order has been placed!");
+    // router.push("/rooms/checkout"); // Or whichever next step
   };
 
   return (
@@ -142,13 +145,12 @@ export default function RoomsEstimatePage() {
           Checkout
         </SectionBoxTitle>
 
-        {/* Main container for final estimate */}
         <div className="bg-white border border-gray-300 mt-8 p-6 rounded-lg space-y-6">
-          {/* 1) Final Estimate */}
+          {/* 1) Final Estimate Section */}
           <div>
             <SectionBoxSubtitle>Final Estimate</SectionBoxSubtitle>
 
-            {/* We'll display each selected room, its chosen services, grouped by category */}
+            {/* For each room ID, list the room name, grouped categories, etc. */}
             <div className="mt-4 space-y-8">
               {Object.entries(selectedServicesState).map(([roomId, servicesMap]) => {
                 // If this room has no selected services, skip
@@ -159,7 +161,7 @@ export default function RoomsEstimatePage() {
                 const roomObj = getRoomById(roomId);
                 const roomTitle = roomObj ? roomObj.title : roomId;
 
-                // Build a map categoryId -> array of service IDs for that category
+                // Build a map: categoryId -> array of service IDs
                 const categoryMap: Record<string, string[]> = {};
                 for (const serviceId of roomServiceIds) {
                   const catId = getCategoryId(serviceId);
@@ -169,29 +171,27 @@ export default function RoomsEstimatePage() {
                   categoryMap[catId].push(serviceId);
                 }
 
-                // We'll also compute the total for this room
+                // Compute this room's subtotal
                 const roomSubtotal = roomServiceIds.reduce((acc, svcId) => {
-                  const q = servicesMap[svcId] || 0;
-                  const s = ALL_SERVICES.find((ss) => ss.id === svcId);
-                  return s ? acc + s.price * q : acc;
+                  const qty = servicesMap[svcId];
+                  const found = ALL_SERVICES.find((s) => s.id === svcId);
+                  return found ? acc + found.price * qty : acc;
                 }, 0);
 
                 return (
                   <div key={roomId} className="space-y-4">
-                    {/* Show the room name, even if only one room */}
+                    {/* Show the room name */}
                     <h3 className="text-xl font-semibold text-gray-800">
                       {roomTitle}
                     </h3>
 
-                    {/* Now display each category in that room */}
-                    {Object.entries(categoryMap).map(([catId, svcIds]) => {
-                      // For each category, find the category title
+                    {Object.entries(categoryMap).map(([catId, serviceIds]) => {
                       const catTitle = getCategoryNameById(catId);
 
                       // Build the list of services in that category
-                      const chosenServices = svcIds.map((svId) =>
-                        ALL_SERVICES.find((s) => s.id === svId)
-                      ).filter(Boolean) as (typeof ALL_SERVICES)[number][];
+                      const chosenServices = serviceIds
+                        .map((svId) => ALL_SERVICES.find((s) => s.id === svId))
+                        .filter(Boolean) as (typeof ALL_SERVICES)[number][];
 
                       return (
                         <div key={catId} className="ml-4 space-y-4">
@@ -231,9 +231,11 @@ export default function RoomsEstimatePage() {
                       );
                     })}
 
-                    {/* Show this room's subtotal */}
+                    {/* Show this room's total */}
                     <div className="flex justify-between items-center ml-4 mt-2">
-                      <span className="font-semibold text-gray-800">Room Total:</span>
+                      <span className="font-semibold text-gray-800">
+                        {roomTitle} Total:
+                      </span>
                       <span className="font-semibold text-blue-600">
                         ${formatWithSeparator(roomSubtotal)}
                       </span>
@@ -294,7 +296,7 @@ export default function RoomsEstimatePage() {
 
           <hr className="my-6 border-gray-200" />
 
-          {/* 4) Problem Description */}
+          {/* 4) Additional Details (Problem Description) */}
           <div>
             <SectionBoxSubtitle>Additional Details</SectionBoxSubtitle>
             <p className="text-gray-700">

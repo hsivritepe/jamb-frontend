@@ -10,9 +10,14 @@ import { ALL_CATEGORIES } from "@/constants/categories";
 import { ALL_SERVICES } from "@/constants/services";
 import ServiceTimePicker from "@/components/ui/ServiceTimePicker";
 
-// Utility function to format numbers with commas and two decimal places
+// Utility function to format numbers with commas and exactly two decimal places
 const formatWithSeparator = (value: number): string =>
-  new Intl.NumberFormat("en-US", { minimumFractionDigits: 2 }).format(value);
+  new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
+
+// Utility function to format quantity as an integer with commas if needed
 const formatQuantity = (value: number): string =>
   new Intl.NumberFormat("en-US").format(value);
 
@@ -64,7 +69,7 @@ export default function Estimate() {
     }
   }, [selectedServicesState, address, selectedCategories, router]);
 
-  // Compute categoriesBySection and categoryServicesMap to group services
+  // Group categories by sections for better organization
   const categoriesWithSection = selectedCategories
     .map((catId) => ALL_CATEGORIES.find((c) => c.id === catId) || null)
     .filter(Boolean) as (typeof ALL_CATEGORIES)[number][];
@@ -77,6 +82,7 @@ export default function Estimate() {
     categoriesBySection[cat.section].push(cat.id);
   });
 
+  // For each selected category, find matching services
   const categoryServicesMap: Record<string, (typeof ALL_SERVICES)[number][]> =
     {};
   selectedCategories.forEach((catId) => {

@@ -26,15 +26,21 @@ const loadFromSession = (key: string, defaultValue: any = null) => {
   }
 };
 
-// Utility function to format numeric values with commas and two decimal places
+// Utility function to format numeric values with commas and exactly two decimal places
 const formatWithSeparator = (value: number): string =>
-  new Intl.NumberFormat("en-US", { minimumFractionDigits: 2 }).format(value);
+  new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
 
 export default function CheckoutPage() {
   const router = useRouter();
 
   // Load required data from session
-  const selectedServicesState: Record<string, number> = loadFromSession("selectedServicesWithQuantity", {});
+  const selectedServicesState: Record<string, number> = loadFromSession(
+    "selectedServicesWithQuantity",
+    {}
+  );
   const address: string = loadFromSession("address", "");
   const photos: string[] = loadFromSession("photos", []);
   const description: string = loadFromSession("description", "");
@@ -70,7 +76,10 @@ export default function CheckoutPage() {
     ? Math.abs(subtotal * (timeCoefficient - 1))
     : 0;
 
-  const selectedCategories: string[] = loadFromSession("services_selectedCategories", []);
+  const selectedCategories: string[] = loadFromSession(
+    "services_selectedCategories",
+    []
+  );
   const searchQuery: string = loadFromSession("services_searchQuery", "");
 
   // Reconstruct category->section mapping
@@ -88,7 +97,9 @@ export default function CheckoutPage() {
 
   const categoryServicesMap: Record<string, typeof ALL_SERVICES[number][]> = {};
   selectedCategories.forEach((catId) => {
-    let matchedServices = ALL_SERVICES.filter((svc) => svc.id.startsWith(`${catId}-`));
+    let matchedServices = ALL_SERVICES.filter((svc) =>
+      svc.id.startsWith(`${catId}-`)
+    );
     if (searchQuery) {
       matchedServices = matchedServices.filter((svc) =>
         svc.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -124,7 +135,7 @@ export default function CheckoutPage() {
           </span>
           <button
             className="bg-yellow-400 hover:bg-yellow-500 text-black py-3 px-6 rounded-md font-semibold text-lg shadow-sm transition-colors duration-200"
-            onClick={() => {}}
+            onClick={handlePlaceOrder}
           >
             Place your order
           </button>
@@ -141,7 +152,9 @@ export default function CheckoutPage() {
               {Object.entries(categoriesBySection).map(([sectionName, catIds]) => {
                 const categoriesWithSelected = catIds.filter((catId) => {
                   const servicesForCategory = categoryServicesMap[catId] || [];
-                  return servicesForCategory.some((svc) => selectedServicesState[svc.id] !== undefined);
+                  return servicesForCategory.some(
+                    (svc) => selectedServicesState[svc.id] !== undefined
+                  );
                 });
                 if (categoriesWithSelected.length === 0) return null;
 
@@ -181,13 +194,18 @@ export default function CheckoutPage() {
                                     </div>
                                   )}
                                   <div className="text-medium font-medium text-gray-800 mt-2">
-                                    <span>{quantity.toLocaleString("en-US")} </span>
+                                    <span>
+                                      {quantity.toLocaleString("en-US")}{" "}
+                                    </span>
                                     <span>{activity.unit_of_measurement}</span>
                                   </div>
                                 </div>
                                 <div className="text-right mt-auto">
                                   <span className="block text-gray-800 font-medium">
-                                    ${formatWithSeparator(activity.price * quantity)}
+                                    $
+                                    {formatWithSeparator(
+                                      activity.price * quantity
+                                    )}
                                   </span>
                                 </div>
                               </div>
@@ -203,7 +221,7 @@ export default function CheckoutPage() {
 
             {/* Summary of costs */}
             <div className="pt-4 mt-4">
-              {hasSurchargeOrDiscount && (
+              {timeCoefficient !== 1 && (
                 <div className="flex justify-between mb-2">
                   <span className="text-gray-600">
                     {timeCoefficient > 1 ? "Surcharge" : "Discount"}
@@ -214,7 +232,9 @@ export default function CheckoutPage() {
                     }`}
                   >
                     {timeCoefficient > 1 ? "+" : "-"}$
-                    {formatWithSeparator(surchargeOrDiscountAmount)}
+                    {formatWithSeparator(
+                      Math.abs(subtotal * (timeCoefficient - 1))
+                    )}
                   </span>
                 </div>
               )}

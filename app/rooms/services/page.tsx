@@ -629,7 +629,7 @@ export default function RoomDetails() {
 
                     return (
                       <div key={room.id} className="mb-6">
-                        {/* Always display room title, even if there's just one */}
+                        {/* Always display room title */}
                         <h3 className="text-xl font-semibold text-gray-800 mb-2">
                           {room.title}
                         </h3>
@@ -651,7 +651,6 @@ export default function RoomDetails() {
                                 );
                                 if (chosenServices.length === 0) return null;
 
-                                // Show category name
                                 const catObj = ALL_CATEGORIES.find(c => c.id === catId);
                                 const catName = catObj ? catObj.title : catId;
 
@@ -693,8 +692,9 @@ export default function RoomDetails() {
                           );
                         })}
 
+                        {/* Here is where we do {room.title} Total: */}
                         <div className="flex justify-between items-center mb-2 ml-2">
-                          <span className="font-medium text-gray-800">Room Total:</span>
+                          <span className="font-medium text-gray-800">{room.title} Total:</span>
                           <span className="font-medium text-blue-600">
                             ${formatWithSeparator(roomTotal)}
                           </span>
@@ -776,7 +776,9 @@ export default function RoomDetails() {
                           className="w-full h-24 object-cover rounded-md border border-gray-300"
                         />
                         <button
-                          onClick={() => handleRemovePhoto(index)}
+                          onClick={() => {
+                            setPhotos((prev) => prev.filter((_, i) => i !== index));
+                          }}
                           className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                           aria-label="Remove photo"
                         >

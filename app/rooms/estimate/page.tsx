@@ -12,13 +12,17 @@ import { ROOMS } from "@/constants/rooms";
 import ServiceTimePicker from "@/components/ui/ServiceTimePicker";
 
 /**
- * Utility function to format numeric values (e.g., prices) with commas and two decimals.
+ * Utility function to format numeric values (e.g., prices) with commas
+ * and **exactly two** decimals (e.g., 100 -> 100.00).
  */
 const formatWithSeparator = (value: number): string =>
-  new Intl.NumberFormat("en-US", { minimumFractionDigits: 2 }).format(value);
+  new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
 
 /**
- * Save arbitrary data to sessionStorage as JSON (only in browser).
+ * Save data to sessionStorage as JSON (only in browser).
  */
 const saveToSession = (key: string, value: any) => {
   if (typeof window !== "undefined") {
@@ -27,7 +31,7 @@ const saveToSession = (key: string, value: any) => {
 };
 
 /**
- * Load JSON-parsed data from sessionStorage or return a default if server-side or parse error.
+ * Load JSON-parsed data from sessionStorage or return a default if SSR or parse error.
  */
 const loadFromSession = (key: string, defaultValue: any) => {
   if (typeof window === "undefined") return defaultValue;
@@ -177,6 +181,15 @@ export default function RoomsEstimate() {
   const handleProceedToCheckout = () => {
     saveToSession("selectedTime", selectedTime);
     saveToSession("timeCoefficient", timeCoefficient);
+
+    // Optionally, store the chosenRooms with their titles to session
+    // so the next page can also show them if needed
+    const chosenRoomTitles = chosenRooms.map((rm) => ({
+      id: rm.id,
+      title: rm.title,
+    }));
+    saveToSession("chosenRoomTitles", chosenRoomTitles);
+
     router.push("/rooms/checkout");
   };
 
@@ -257,7 +270,7 @@ export default function RoomsEstimate() {
                                               key={svc.id}
                                               className="grid grid-cols-3 gap-2 text-sm text-gray-600"
                                               style={{
-                                                gridTemplateColumns: "45% 20% 25%",
+                                                gridTemplateColumns: "55% 18% 25%",
                                                 width: "100%",
                                               }}
                                             >
@@ -297,7 +310,7 @@ export default function RoomsEstimate() {
                         {/* Show room total */}
                         <div className="flex justify-between items-center mb-2 ml-2">
                           <span className="font-medium text-gray-800">
-                            Room Total:
+                            {room.title} Total:
                           </span>
                           <span className="font-medium text-blue-600">
                             ${formatWithSeparator(roomSubtotal)}
@@ -454,7 +467,7 @@ export default function RoomsEstimate() {
             </div>
           </div>
 
-          {/* (Optional) RIGHT COLUMN: We'll add something else */}
+          {/* (Optional) RIGHT COLUMN: Additional panel or empty */}
         </div>
       </div>
     </main>
