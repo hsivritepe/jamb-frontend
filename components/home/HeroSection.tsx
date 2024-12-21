@@ -20,11 +20,7 @@ export default function HeroSection() {
                                 Stress-Free Renovations
                             </SectionBoxTitle>
                             <p className="text-gray-600 mb-8">
-                                A smarter, faster, guided route to
-                                renovate successful projects,
-                                <br />
-                                with the right fit for your unique
-                                project.
+                            Answer a few quick questions to receive accurate quotes, and let us handle your entire project
                             </p>
                         </div>
 
