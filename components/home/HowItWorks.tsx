@@ -50,7 +50,7 @@ export default function HowItWorks() {
                 <div className="flex items-center justify-between mb-8">
                     <SectionBoxTitle>How It Works?</SectionBoxTitle>
                     <a
-                        href="/how-it-works"
+                        href="/about"
                         className="text-blue-600 hover:text-blue-700 text-sm hidden md:block"
                     >
                         Learn more about our process
