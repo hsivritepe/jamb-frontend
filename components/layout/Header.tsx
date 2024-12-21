@@ -8,7 +8,6 @@ import { NavigationItem } from "@/types/common";
 import { useLocation } from "@/context/LocationContext";
 
 // Navigation items
-// We will highlight the active page by checking if the current pathname starts with the item's href
 const navigation: NavigationItem[] = [
   { name: "Services", href: "/calculate" },
   { name: "Rooms", href: "/rooms" },
@@ -40,11 +39,7 @@ export default function Header() {
   // Get the current pathname to determine the active page
   const pathname = usePathname();
 
-  /**
-   * Handles saving the manually entered location:
-   * - Updates the global location context with the entered city and ZIP.
-   * - Closes the modal afterwards.
-   */
+  // Handler: Save the manually entered location to context
   const handleManualLocationSave = () => {
     setLocation({
       city: manualLocation.city || "Enter City",
@@ -53,11 +48,7 @@ export default function Header() {
     setShowModal(false);
   };
 
-  /**
-   * Handles fetching the location automatically when the "Auto" button is clicked:
-   * - Fetches user's location from the API.
-   * - Updates local manualLocation and global location context with fetched data.
-   */
+  // Handler: Auto-fill location
   const handleAutoFill = async () => {
     try {
       const response = await fetch("https://ipapi.co/json/");
@@ -81,36 +72,32 @@ export default function Header() {
     }
   };
 
-  /**
-   * Clears the manual location inputs in the modal.
-   */
+  // Handler: Clear manual location inputs
   const handleClear = () => {
     setManualLocation({ city: "", zip: "" });
   };
 
-  /**
-   * Closes the modal if the user clicks outside of it.
-   */
+  // Outside-click handler to close modal
   const handleOutsideClick = (e: MouseEvent) => {
     if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
       setShowModal(false);
     }
   };
 
-  /**
-   * Adds or removes the outside click listener depending on whether the modal is shown.
-   */
+  // Attach/detach outside-click listener
   useEffect(() => {
     if (showModal) {
       document.addEventListener("mousedown", handleOutsideClick);
     } else {
       document.removeEventListener("mousedown", handleOutsideClick);
     }
-
     return () => {
       document.removeEventListener("mousedown", handleOutsideClick);
     };
   }, [showModal]);
+
+  // Determine if user is in the /emergency section
+  const isEmergencyActive = pathname.startsWith("/emergency");
 
   return (
     <>
@@ -142,7 +129,6 @@ export default function Header() {
               {/* Desktop Navigation */}
               <div className="hidden md:flex items-center gap-8">
                 {navigation.map((item) => {
-                  // Check if current item's href is a prefix of the current pathname
                   const isActive = pathname.startsWith(item.href);
                   return (
                     <Link
@@ -163,10 +149,15 @@ export default function Header() {
 
               {/* Right Section */}
               <div className="hidden md:flex items-center gap-4">
+                {/* Emergency Link with a constant border-2 and toggling color */}
                 <Link
                   href="/emergency"
                   prefetch={false}
-                  className="flex items-center gap-2 text-red-600 font-medium bg-red-100/50 px-4 py-2 rounded-lg transition-colors duration-200 hover:bg-red-200"
+                  className={`flex items-center gap-2 text-red-600 font-medium px-4 py-2 rounded-lg transition-colors duration-200 bg-red-100/50 hover:bg-red-200
+                    border-2 ${
+                      isEmergencyActive ? "border-red-600" : "border-transparent"
+                    }
+                  `}
                 >
                   <span>🚨</span> Emergency
                 </Link>
@@ -217,10 +208,15 @@ export default function Header() {
                     );
                   })}
 
+                  {/* Mobile version of the Emergency link with border-2 */}
                   <Link
                     href="/emergency"
                     prefetch={false}
-                    className="flex items-center gap-2 text-red-600 font-medium"
+                    className={`flex items-center gap-2 text-red-600 font-medium
+                      border-2 ${
+                        isEmergencyActive ? "border-red-600" : "border-transparent"
+                      }
+                    `}
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     <span>🚨</span> Emergency
@@ -248,9 +244,14 @@ export default function Header() {
             className="bg-white p-8 rounded-xl shadow-lg max-w-[400px] w-[90%] text-center"
           >
             <h2 className="text-xl font-semibold mb-4">Set Your Location</h2>
-            {/* City Input */}
+
+            {/* Label for city */}
+            <label htmlFor="city-input" className="sr-only">
+              City
+            </label>
             <input
-              id="city-autocomplete"
+              id="city-input"
+              name="city"
               type="text"
               placeholder="Enter your city"
               value={manualLocation.city}
@@ -259,8 +260,14 @@ export default function Header() {
               }
               className="w-full max-w-[360px] p-3 mb-4 border border-gray-300 rounded-lg text-base"
             />
-            {/* ZIP Code Input */}
+
+            {/* Label for ZIP */}
+            <label htmlFor="zip-input" className="sr-only">
+              ZIP Code
+            </label>
             <input
+              id="zip-input"
+              name="zip"
               type="text"
               placeholder="Enter your ZIP code"
               value={manualLocation.zip}
