@@ -24,7 +24,7 @@ function saveToSession(key: string, value: any) {
   }
 }
 
-/** Loads data from sessionStorage or returns defaultValue if SSR/not found */
+/** Loads data from sessionStorage or returns defaultValue if SSR/not found. */
 function loadFromSession<T>(key: string, defaultValue: T): T {
   if (typeof window === "undefined") return defaultValue;
   const stored = sessionStorage.getItem(key);
@@ -35,7 +35,7 @@ function loadFromSession<T>(key: string, defaultValue: T): T {
   }
 }
 
-/** Formats a numeric value with 2 decimals and comma separators */
+/** Formats a numeric value with 2 decimals and comma separators. */
 function formatWithSeparator(num: number): string {
   return new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 2,
@@ -43,19 +43,19 @@ function formatWithSeparator(num: number): string {
   }).format(num);
 }
 
-/** Safely parse user-typed input to a positive number. Return 1 if invalid or <= 0. */
+/** Safely parse user-typed input to a positive number. */
 function parsePositiveNumber(value: string): number {
   const parsed = parseFloat(value);
   if (isNaN(parsed) || parsed <= 0) return 1;
   return parsed;
 }
 
-/** Checks if `sectionValue` is one of the indoor sections */
+/** Checks if `sectionValue` is one of the indoor sections. */
 function isIndoorSection(sectionValue: string): boolean {
   return (Object.values(INDOOR_SERVICE_SECTIONS) as string[]).includes(sectionValue);
 }
 
-/** Checks if `sectionValue` is one of the outdoor sections */
+/** Checks if `sectionValue` is one of the outdoor sections. */
 function isOutdoorSection(sectionValue: string): boolean {
   return (Object.values(OUTDOOR_SERVICE_SECTIONS) as string[]).includes(sectionValue);
 }
@@ -114,8 +114,9 @@ export default function PackageServicesPage() {
   }, [selectedServices]);
 
   const [manualInputValue, setManualInputValue] = useState<Record<string, string>>({});
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
-  // We'll gather the final set of services from indoor/outdoor, applying search filter only
+  // Combine services from indoor & outdoor
   const combinedServices: (typeof ALL_SERVICES)[number][] = [];
 
   function processSide(isIndoor: boolean) {
@@ -123,8 +124,6 @@ export default function PackageServicesPage() {
     safePackage.services[sideKey].forEach((pkgItem) => {
       const svcObj = ALL_SERVICES.find((s) => s.id === pkgItem.id);
       if (!svcObj) return;
-
-      // Apply search filter
       if (searchQuery) {
         const lower = searchQuery.toLowerCase();
         const matchTitle = svcObj.title.toLowerCase().includes(lower);
@@ -132,25 +131,20 @@ export default function PackageServicesPage() {
           svcObj.description && svcObj.description.toLowerCase().includes(lower);
         if (!matchTitle && !matchDesc) return;
       }
-
-      // We skip the previously used cleaning filter.
-      // Now we do NOT exclude any cleaning services.
-
       combinedServices.push(svcObj);
     });
   }
   processSide(true);
   processSide(false);
 
+  // Build homeSectionsMap / gardenSectionsMap
   const homeSectionsMap: Record<string, Set<string>> = {};
   const gardenSectionsMap: Record<string, Set<string>> = {};
 
-  // Group them by section => set of category IDs
   for (const svc of combinedServices) {
     const catId = svc.id.split("-").slice(0, 2).join("-");
     const catObj = ALL_CATEGORIES.find((c) => c.id === catId);
     if (!catObj) continue;
-
     const sectionName = catObj.section;
     if (isIndoorSection(sectionName)) {
       if (!homeSectionsMap[sectionName]) {
@@ -165,7 +159,7 @@ export default function PackageServicesPage() {
     }
   }
 
-  // Build catServicesMap => catId => list of svc
+  // Build catServicesMap => catId => array of services
   const catServicesMap: Record<string, (typeof ALL_SERVICES)[number][]> = {};
   for (const svc of combinedServices) {
     const catId = svc.id.split("-").slice(0, 2).join("-");
@@ -175,8 +169,7 @@ export default function PackageServicesPage() {
     catServicesMap[catId].push(svc);
   }
 
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
-
+  /** Toggle a category expansion */
   function toggleCategory(catId: string) {
     setExpandedCategories((prev) => {
       const next = new Set(prev);
@@ -186,6 +179,7 @@ export default function PackageServicesPage() {
     });
   }
 
+  /** Toggle a service on/off */
   function toggleService(serviceId: string) {
     const isIndoor = !!safePackage.services.indoor.find((it) => it.id === serviceId);
     const sideKey = isIndoor ? "indoor" : "outdoor";
@@ -198,32 +192,33 @@ export default function PackageServicesPage() {
     setSelectedServices((prev) => ({ ...prev, [sideKey]: copy }));
   }
 
+  /** Increment/decrement quantity */
   function handleQuantityChange(serviceId: string, increment: boolean, unit: string) {
     const isIndoor = !!safePackage.services.indoor.find((it) => it.id === serviceId);
     const sideKey = isIndoor ? "indoor" : "outdoor";
-
     const copy = { ...selectedServices[sideKey] };
+
     const oldVal = copy[serviceId] || 1;
     let newVal = increment ? oldVal + 1 : Math.max(1, oldVal - 1);
-
     if (unit === "each") {
       newVal = Math.round(newVal);
     }
-
     copy[serviceId] = newVal;
     setSelectedServices((prev) => ({ ...prev, [sideKey]: copy }));
     setManualInputValue((prev) => ({ ...prev, [serviceId]: String(newVal) }));
   }
 
+  /** Manual input change */
   function handleManualQuantityChange(serviceId: string, value: string, unit: string) {
     setManualInputValue((prev) => ({ ...prev, [serviceId]: value }));
   }
 
+  /** Commit manual input on blur */
   function handleBlurInput(serviceId: string, unit: string) {
     const isIndoor = !!safePackage.services.indoor.find((it) => it.id === serviceId);
     const sideKey = isIndoor ? "indoor" : "outdoor";
-
     const copy = { ...selectedServices[sideKey] };
+
     const currentVal = manualInputValue[serviceId] ?? "";
     const parsed = parsePositiveNumber(currentVal);
     copy[serviceId] = unit === "each" ? Math.round(parsed) : parsed;
@@ -235,6 +230,7 @@ export default function PackageServicesPage() {
     }));
   }
 
+  /** Calculate total price */
   function calculateAnnualPrice(): number {
     let total = 0;
     for (const [svcId, qty] of Object.entries(selectedServices.indoor)) {
@@ -247,13 +243,15 @@ export default function PackageServicesPage() {
     }
     return total;
   }
-  const annualPrice = calculateAnnualPrice();
-  const monthlyPayment = annualPrice / 12;
 
+  const annualPrice = calculateAnnualPrice();
+
+  /** Go to the next step */
   function handleNext() {
     router.push("/packages/estimate");
   }
 
+  /** "Merged" selection for summary */
   const mergedSelected: Record<string, number> = {
     ...selectedServices.indoor,
     ...selectedServices.outdoor,
@@ -262,6 +260,37 @@ export default function PackageServicesPage() {
   const homeSectionNames = Object.keys(homeSectionsMap);
   const gardenSectionNames = Object.keys(gardenSectionsMap);
 
+  // Clear all services + close all categories
+  function handleClearAll() {
+    const confirmed = window.confirm("Are you sure you want to clear all selections?");
+    if (!confirmed) return;
+
+    // Unselect everything
+    setSelectedServices({ indoor: {}, outdoor: {} });
+    // Close all categories
+    setExpandedCategories(new Set());
+  }
+
+  // "Select all" button
+  function handleSelectAll() {
+    const confirmed = window.confirm("Are you sure you want to select all services?");
+    if (!confirmed) return;
+
+    // Build new "indoor" and "outdoor" with quantity=1
+    const nextIndoor: Record<string, number> = {};
+    const nextOutdoor: Record<string, number> = {};
+
+    for (const it of safePackage.services.indoor) {
+      nextIndoor[it.id] = 1;
+    }
+    for (const it of safePackage.services.outdoor) {
+      nextOutdoor[it.id] = 1;
+    }
+    setSelectedServices({ indoor: nextIndoor, outdoor: nextOutdoor });
+    // Optionally expand all categories (if you want)
+    // or leave them as is
+  }
+
   return (
     <main className="min-h-screen pt-24 pb-16">
       <div className="container mx-auto">
@@ -269,6 +298,7 @@ export default function PackageServicesPage() {
       </div>
 
       <div className="container mx-auto">
+        {/* Title row + Next button */}
         <div className="flex justify-between items-center mt-8">
           <SectionBoxTitle>{safePackage.title}: Services</SectionBoxTitle>
           <Button onClick={handleNext}>Next →</Button>
@@ -278,6 +308,7 @@ export default function PackageServicesPage() {
           Select which services you want from the {safePackage.title}, grouped by section &amp; category.
         </p>
 
+        {/* Search bar */}
         <div className="w-full max-w-[624px] mt-8 mb-4">
           <SearchServices
             value={searchQuery}
@@ -288,7 +319,35 @@ export default function PackageServicesPage() {
           />
         </div>
 
+        {/* Buttons row (Select all / Clear) */}
+        <div className="flex justify-between items-center text-sm text-gray-500 mt-8 w-full max-w-[624px]">
+          <span>
+            No service?{" "}
+            <a
+              href="#"
+              className="text-blue-600 hover:underline focus:outline-none"
+            >
+              Contact support
+            </a>
+          </span>
+          <div className="flex gap-4">
+            <button
+              onClick={handleSelectAll}
+              className="text-green-600 hover:underline focus:outline-none"
+            >
+              Select all
+            </button>
+            <button
+              onClick={handleClearAll}
+              className="text-blue-600 hover:underline focus:outline-none"
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+
         <div className="container mx-auto relative flex mt-8">
+          {/* LEFT COLUMN */}
           <div className="flex-1 space-y-12">
             {homeSectionNames.length > 0 && (
               <div>
@@ -319,9 +378,9 @@ export default function PackageServicesPage() {
                           const servicesForCat = catServicesMap[catId] || [];
                           let selectedInCat = 0;
                           for (const svc of servicesForCat) {
-                            const isInIndoor = !!selectedServices.indoor[svc.id];
-                            const isInOutdoor = !!selectedServices.outdoor[svc.id];
-                            if (isInIndoor || isInOutdoor) selectedInCat++;
+                            const isIndoor = !!selectedServices.indoor[svc.id];
+                            const isOutdoor = !!selectedServices.outdoor[svc.id];
+                            if (isIndoor || isOutdoor) selectedInCat++;
                           }
 
                           const catObj = ALL_CATEGORIES.find((c) => c.id === catId);
@@ -684,6 +743,7 @@ export default function PackageServicesPage() {
             )}
           </div>
 
+          {/* RIGHT COLUMN */}
           <div className="w-1/2 ml-auto pt-0 space-y-6">
             <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden">
               <SectionBoxSubtitle>Your {safePackage.title}</SectionBoxSubtitle>
@@ -721,7 +781,7 @@ export default function PackageServicesPage() {
                         Annual price:
                       </span>
                       <span className="text-2xl font-semibold text-blue-600">
-                        ${formatWithSeparator( calculateAnnualPrice() )}
+                        ${formatWithSeparator(annualPrice)}
                       </span>
                     </div>
                     <div className="flex justify-between w-full">
@@ -729,7 +789,7 @@ export default function PackageServicesPage() {
                         Monthly payment:
                       </span>
                       <span className="text-lg font-medium text-blue-600">
-                        ${formatWithSeparator( calculateAnnualPrice() / 12 )}
+                        ${formatWithSeparator(annualPrice / 12)}
                       </span>
                     </div>
                   </div>
