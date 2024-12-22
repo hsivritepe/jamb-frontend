@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, ChangeEvent } from "react";
-import { useRouter } from "next/navigation";
 import BreadCrumb from "@/components/ui/BreadCrumb";
 import SearchServices from "@/components/SearchServices";
 import ServicePackages from "@/components/ServicePackages";
@@ -26,9 +25,7 @@ const loadFromSession = (key: string, defaultValue: any) => {
 };
 
 export default function PackagesPage() {
-  const router = useRouter();
-
-  // Load any previous search query (optional, if you want searching packages)
+  // Load any previous search query (optional, if you want to filter packages)
   const [searchQuery, setSearchQuery] = useState<string>(
     loadFromSession("packages_searchQuery", "")
   );
@@ -36,7 +33,7 @@ export default function PackagesPage() {
   // Clear out stale session data on initial page load
   useEffect(() => {
     if (typeof window !== "undefined") {
-      // Example of removing old data that isn't relevant to Packages
+      // Example of removing old data not relevant to Packages
       sessionStorage.removeItem("selectedTime");
       sessionStorage.removeItem("timeCoefficient");
       sessionStorage.removeItem("selectedServicesWithQuantity");
@@ -45,11 +42,11 @@ export default function PackagesPage() {
       sessionStorage.removeItem("rooms_selectedServices");
       sessionStorage.removeItem("rooms_selectedServicesWithQuantity");
       sessionStorage.removeItem("emergency_selectedActivities");
-      // etc...
+      // etc.
     }
   }, []);
 
-  // Keep the search query in session (if you actually intend to filter packages by search)
+  // Keep the search query in session if you actually intend to filter packages
   useEffect(() => {
     saveToSession("packages_searchQuery", searchQuery);
   }, [searchQuery]);

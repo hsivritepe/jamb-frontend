@@ -1,22 +1,30 @@
 "use client";
 
-import { useEffect, useState, ChangeEvent, FocusEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import React, { useState, useEffect, ChangeEvent } from "react";
 import BreadCrumb from "@/components/ui/BreadCrumb";
+import SearchServices from "@/components/SearchServices";
 import Button from "@/components/ui/Button";
 import { SectionBoxTitle } from "@/components/ui/SectionBoxTitle";
 import { SectionBoxSubtitle } from "@/components/ui/SectionBoxSubtitle";
 import { PACKAGES_STEPS } from "@/constants/navigation";
-import { useLocation } from "@/context/LocationContext";  // <-- Auto-detect location
+import { PACKAGES } from "@/constants/packages";
+import { ALL_SERVICES } from "@/constants/services";
+import { ALL_CATEGORIES } from "@/constants/categories";
+import {
+  INDOOR_SERVICE_SECTIONS,
+  OUTDOOR_SERVICE_SECTIONS,
+} from "@/constants/categories";
+import { ChevronDown } from "lucide-react";
 
-/** Save data to sessionStorage as JSON (client side only). */
+/** Saves data to sessionStorage as JSON */
 function saveToSession(key: string, value: any) {
   if (typeof window !== "undefined") {
     sessionStorage.setItem(key, JSON.stringify(value));
   }
 }
 
-/** Load data from sessionStorage or return a default if not found or SSR. */
+/** Loads data from sessionStorage or returns defaultValue if SSR/not found */
 function loadFromSession<T>(key: string, defaultValue: T): T {
   if (typeof window === "undefined") return defaultValue;
   const stored = sessionStorage.getItem(key);
@@ -27,501 +35,764 @@ function loadFromSession<T>(key: string, defaultValue: T): T {
   }
 }
 
-/** A small helper to parse numeric inputs (strings -> number) */
-function parseNumberOrZero(val: string): number {
-  const n = parseFloat(val);
-  return isNaN(n) ? 0 : n;
+/** Formats a numeric value with 2 decimals and comma separators */
+function formatWithSeparator(num: number): string {
+  return new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(num);
 }
 
-export default function PackagesDetailsHomePage() {
+/** Safely parse user-typed input to a positive number. Return 1 if invalid or <= 0. */
+function parsePositiveNumber(value: string): number {
+  const parsed = parseFloat(value);
+  if (isNaN(parsed) || parsed <= 0) return 1;
+  return parsed;
+}
+
+/** Checks if `sectionValue` is one of the indoor sections */
+function isIndoorSection(sectionValue: string): boolean {
+  return (Object.values(INDOOR_SERVICE_SECTIONS) as string[]).includes(sectionValue);
+}
+
+/** Checks if `sectionValue` is one of the outdoor sections */
+function isOutdoorSection(sectionValue: string): boolean {
+  return (Object.values(OUTDOOR_SERVICE_SECTIONS) as string[]).includes(sectionValue);
+}
+
+export default function PackageServicesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { location } = useLocation(); // from your LocationContext
 
-  // If you pass packageId in query, we capture it (optional).
-  const packageId = searchParams.get("packageId") || "";
+  const packageId = searchParams.get("packageId");
+  const chosenPackage = PACKAGES.find((pkg) => pkg.id === packageId) || null;
+  if (!packageId || !chosenPackage) {
+    return <p>Loading package...</p>;
+  }
 
-  // Combined house info state
-  const [houseInfo, setHouseInfo] = useState<{
-    country: string;       // "US" | "CA"
-    city: string;
-    zip: string;
-    addressLine: string;   // e.g., street, etc.
-    houseType: string;     // single_family / townhouse / apartment
-    floors: number;        // 1-3
-    squareFootage: number; // manual entry
-    hasGarage: boolean;
-    garageCount: number;   // 1-5
-    hasYard: boolean;
-    yardArea: number;      // manual entry
-    hasPool: boolean;
-    poolArea: number;      // manual entry
-    hasBoiler: boolean;
-    boilerType: string;    // gas / electric / ...
-    washers: number;       // 1..5
-    dryers: number;        // 1..5
-    dishwashers: number;   // 1..5
-    refrigerators: number; // 1..5
-    ACunits: number;       // 1..5
-  }>(() =>
+  const safePackage = chosenPackage as NonNullable<typeof chosenPackage>;
+
+  const [selectedServices, setSelectedServices] = useState<{
+    indoor: Record<string, number>;
+    outdoor: Record<string, number>;
+  }>(() => loadFromSession("packages_selectedServices", { indoor: {}, outdoor: {} }));
+
+  const [houseInfo] = useState(() =>
     loadFromSession("packages_houseInfo", {
-      country: "US",
+      country: "",
       city: "",
       zip: "",
       addressLine: "",
       houseType: "",
       floors: 1,
       squareFootage: 0,
+      bedrooms: 1,
+      bathrooms: 1,
       hasGarage: false,
-      garageCount: 1,
+      garageCount: 0,
       hasYard: false,
       yardArea: 0,
       hasPool: false,
       poolArea: 0,
       hasBoiler: false,
       boilerType: "",
-      washers: 1,
-      dryers: 1,
-      dishwashers: 1,
-      refrigerators: 1,
-      ACunits: 1,
+      applianceCount: 1,
+      airConditioners: 0,
     })
   );
 
-  // Persist changes to session whenever houseInfo changes
+  const [searchQuery, setSearchQuery] = useState<string>(() =>
+    loadFromSession("packages_searchQuery", "")
+  );
+
   useEffect(() => {
-    saveToSession("packages_houseInfo", houseInfo);
-  }, [houseInfo]);
+    saveToSession("packages_searchQuery", searchQuery);
+  }, [searchQuery]);
 
-  // Handlers for string fields (e.g., addressLine, city, boilerType, houseType)
-  function handleStringField(e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
-    const { name, value } = e.target;
-    setHouseInfo((prev) => ({ ...prev, [name]: value }));
+  useEffect(() => {
+    saveToSession("packages_selectedServices", selectedServices);
+  }, [selectedServices]);
+
+  const [manualInputValue, setManualInputValue] = useState<Record<string, string>>({});
+
+  // We'll gather the final set of services from indoor/outdoor, applying search filter only
+  const combinedServices: (typeof ALL_SERVICES)[number][] = [];
+
+  function processSide(isIndoor: boolean) {
+    const sideKey = isIndoor ? "indoor" : "outdoor";
+    safePackage.services[sideKey].forEach((pkgItem) => {
+      const svcObj = ALL_SERVICES.find((s) => s.id === pkgItem.id);
+      if (!svcObj) return;
+
+      // Apply search filter
+      if (searchQuery) {
+        const lower = searchQuery.toLowerCase();
+        const matchTitle = svcObj.title.toLowerCase().includes(lower);
+        const matchDesc =
+          svcObj.description && svcObj.description.toLowerCase().includes(lower);
+        if (!matchTitle && !matchDesc) return;
+      }
+
+      // We skip the previously used cleaning filter.
+      // Now we do NOT exclude any cleaning services.
+
+      combinedServices.push(svcObj);
+    });
+  }
+  processSide(true);
+  processSide(false);
+
+  const homeSectionsMap: Record<string, Set<string>> = {};
+  const gardenSectionsMap: Record<string, Set<string>> = {};
+
+  // Group them by section => set of category IDs
+  for (const svc of combinedServices) {
+    const catId = svc.id.split("-").slice(0, 2).join("-");
+    const catObj = ALL_CATEGORIES.find((c) => c.id === catId);
+    if (!catObj) continue;
+
+    const sectionName = catObj.section;
+    if (isIndoorSection(sectionName)) {
+      if (!homeSectionsMap[sectionName]) {
+        homeSectionsMap[sectionName] = new Set();
+      }
+      homeSectionsMap[sectionName].add(catId);
+    } else if (isOutdoorSection(sectionName)) {
+      if (!gardenSectionsMap[sectionName]) {
+        gardenSectionsMap[sectionName] = new Set();
+      }
+      gardenSectionsMap[sectionName].add(catId);
+    }
   }
 
-  // Handler for numeric fields (floors, squareFootage, yardArea, etc.)
-  function handleNumberField(e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
-    const { name, value } = e.target;
-    setHouseInfo((prev) => ({ ...prev, [name]: parseNumberOrZero(value) }));
+  // Build catServicesMap => catId => list of svc
+  const catServicesMap: Record<string, (typeof ALL_SERVICES)[number][]> = {};
+  for (const svc of combinedServices) {
+    const catId = svc.id.split("-").slice(0, 2).join("-");
+    if (!catServicesMap[catId]) {
+      catServicesMap[catId] = [];
+    }
+    catServicesMap[catId].push(svc);
   }
 
-  // Toggles
-  function toggleGarage() {
-    setHouseInfo((prev) => ({
-      ...prev,
-      hasGarage: !prev.hasGarage,
-      garageCount: !prev.hasGarage ? 1 : 1, // default to 1 if enabling
-    }));
-  }
-  function toggleYard() {
-    setHouseInfo((prev) => ({
-      ...prev,
-      hasYard: !prev.hasYard,
-      yardArea: !prev.hasYard ? 100 : 0,
-    }));
-  }
-  function togglePool() {
-    setHouseInfo((prev) => ({
-      ...prev,
-      hasPool: !prev.hasPool,
-      poolArea: !prev.hasPool ? 100 : 0,
-    }));
-  }
-  function toggleBoiler() {
-    setHouseInfo((prev) => ({
-      ...prev,
-      hasBoiler: !prev.hasBoiler,
-      boilerType: !prev.hasBoiler ? "gas" : "",
-    }));
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+
+  function toggleCategory(catId: string) {
+    setExpandedCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(catId)) next.delete(catId);
+      else next.add(catId);
+      return next;
+    });
   }
 
-  // On focus: clear placeholder
-  function clearPlaceholder(e: FocusEvent<HTMLInputElement>) {
-    e.target.placeholder = "";
-  }
-
-  // If user wants to auto-fill from the location context
-  function handleUseMyLocation() {
-    if (location?.city && location?.zip) {
-      // Example: fill city, zip, country from context
-      setHouseInfo((prev) => ({
-        ...prev,
-        city: location.city,
-        zip: location.zip,
-        country: location.country ?? "US",
-      }));
+  function toggleService(serviceId: string) {
+    const isIndoor = !!safePackage.services.indoor.find((it) => it.id === serviceId);
+    const sideKey = isIndoor ? "indoor" : "outdoor";
+    const copy = { ...selectedServices[sideKey] };
+    if (copy[serviceId]) {
+      delete copy[serviceId];
     } else {
-      alert("Location data is unavailable. Please enter manually.");
+      copy[serviceId] = 1;
     }
+    setSelectedServices((prev) => ({ ...prev, [sideKey]: copy }));
   }
 
-  // Next step
-  function handleNext() {
-    // Minimal validation
-    if (!houseInfo.city.trim() || !houseInfo.zip.trim()) {
-      alert("Please specify City and ZIP code first.");
-      return;
+  function handleQuantityChange(serviceId: string, increment: boolean, unit: string) {
+    const isIndoor = !!safePackage.services.indoor.find((it) => it.id === serviceId);
+    const sideKey = isIndoor ? "indoor" : "outdoor";
+
+    const copy = { ...selectedServices[sideKey] };
+    const oldVal = copy[serviceId] || 1;
+    let newVal = increment ? oldVal + 1 : Math.max(1, oldVal - 1);
+
+    if (unit === "each") {
+      newVal = Math.round(newVal);
     }
-    if (!houseInfo.houseType) {
-      alert("Please choose your house type.");
-      return;
-    }
-    // Then proceed
-    router.push(`/packages/services?packageId=${packageId}`);
+
+    copy[serviceId] = newVal;
+    setSelectedServices((prev) => ({ ...prev, [sideKey]: copy }));
+    setManualInputValue((prev) => ({ ...prev, [serviceId]: String(newVal) }));
   }
+
+  function handleManualQuantityChange(serviceId: string, value: string, unit: string) {
+    setManualInputValue((prev) => ({ ...prev, [serviceId]: value }));
+  }
+
+  function handleBlurInput(serviceId: string, unit: string) {
+    const isIndoor = !!safePackage.services.indoor.find((it) => it.id === serviceId);
+    const sideKey = isIndoor ? "indoor" : "outdoor";
+
+    const copy = { ...selectedServices[sideKey] };
+    const currentVal = manualInputValue[serviceId] ?? "";
+    const parsed = parsePositiveNumber(currentVal);
+    copy[serviceId] = unit === "each" ? Math.round(parsed) : parsed;
+
+    setSelectedServices((prev) => ({ ...prev, [sideKey]: copy }));
+    setManualInputValue((prev) => ({
+      ...prev,
+      [serviceId]: String(copy[serviceId]),
+    }));
+  }
+
+  function calculateAnnualPrice(): number {
+    let total = 0;
+    for (const [svcId, qty] of Object.entries(selectedServices.indoor)) {
+      const svcObj = ALL_SERVICES.find((s) => s.id === svcId);
+      if (svcObj) total += svcObj.price * qty;
+    }
+    for (const [svcId, qty] of Object.entries(selectedServices.outdoor)) {
+      const svcObj = ALL_SERVICES.find((s) => s.id === svcId);
+      if (svcObj) total += svcObj.price * qty;
+    }
+    return total;
+  }
+  const annualPrice = calculateAnnualPrice();
+  const monthlyPayment = annualPrice / 12;
+
+  function handleNext() {
+    router.push("/packages/estimate");
+  }
+
+  const mergedSelected: Record<string, number> = {
+    ...selectedServices.indoor,
+    ...selectedServices.outdoor,
+  };
+
+  const homeSectionNames = Object.keys(homeSectionsMap);
+  const gardenSectionNames = Object.keys(gardenSectionsMap);
 
   return (
     <main className="min-h-screen pt-24 pb-16">
-      {/* Breadcrumbs */}
       <div className="container mx-auto">
         <BreadCrumb items={PACKAGES_STEPS} />
       </div>
 
-      <div className="container mx-auto mt-8">
-        {/* Title row with Next button on the right */}
-        <div className="flex justify-between items-center">
-          <SectionBoxTitle>Home / Apartment Information</SectionBoxTitle>
+      <div className="container mx-auto">
+        <div className="flex justify-between items-center mt-8">
+          <SectionBoxTitle>{safePackage.title}: Services</SectionBoxTitle>
           <Button onClick={handleNext}>Next →</Button>
         </div>
 
         <p className="text-gray-600 mt-2">
-          Provide key details about your home so we can tailor your package.
+          Select which services you want from the {safePackage.title}, grouped by section &amp; category.
         </p>
 
-        <div className="bg-white border border-gray-300 mt-6 p-6 rounded-lg space-y-6 max-w-3xl">
-          {/* Address / Location block */}
-          <SectionBoxSubtitle>Address / Location</SectionBoxSubtitle>
-          <div className="grid grid-cols-2 gap-4">
-            {/* COUNTRY */}
-            <div>
-              <label className="block text-sm text-gray-700 mb-1">Country</label>
-              <select
-                name="country"
-                value={houseInfo.country}
-                onChange={handleStringField}
-                className="w-full px-4 py-2 border rounded"
-              >
-                <option value="US">USA</option>
-                <option value="CA">Canada</option>
-              </select>
-            </div>
-            {/* ZIP */}
-            <div>
-              <label className="block text-sm text-gray-700 mb-1">Zip / Postal</label>
-              <input
-                type="text"
-                name="zip"
-                value={houseInfo.zip}
-                onChange={handleStringField}
-                placeholder="e.g. 10001"
-                className="w-full px-4 py-2 border rounded"
-              />
-            </div>
-            {/* City */}
-            <div>
-              <label className="block text-sm text-gray-700 mb-1">City</label>
-              <input
-                type="text"
-                name="city"
-                value={houseInfo.city}
-                onChange={handleStringField}
-                placeholder="e.g. New York"
-                className="w-full px-4 py-2 border rounded"
-              />
-            </div>
-            {/* "Auto" button */}
-            <div className="flex items-end">
-              <button
-                onClick={handleUseMyLocation}
-                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-              >
-                Auto
-              </button>
-            </div>
-          </div>
-          {/* Detailed address (line) */}
-          <div>
-            <label className="block text-sm text-gray-700 mb-1">Address Line</label>
-            <input
-              type="text"
-              name="addressLine"
-              value={houseInfo.addressLine}
-              onChange={handleStringField}
-              placeholder="Street & number (optional)"
-              className="w-full px-4 py-2 border rounded"
-            />
+        <div className="w-full max-w-[624px] mt-8 mb-4">
+          <SearchServices
+            value={searchQuery}
+            onChange={(e: ChangeEvent<HTMLInputElement>) =>
+              setSearchQuery(e.target.value)
+            }
+            placeholder="Search for services..."
+          />
+        </div>
+
+        <div className="container mx-auto relative flex mt-8">
+          <div className="flex-1 space-y-12">
+            {homeSectionNames.length > 0 && (
+              <div>
+                <div className="max-w-[624px] mx-auto">
+                  <div
+                    className="relative overflow-hidden rounded-xl border border-gray-300 h-32 bg-center bg-cover"
+                    style={{ backgroundImage: `url(/images/rooms/attic.jpg)` }}
+                  >
+                    <div className="absolute inset-0 bg-black bg-opacity-30"></div>
+                    <div className="relative z-10 flex items-center justify-center h-full">
+                      <SectionBoxTitle className="text-white">For Home</SectionBoxTitle>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-6 space-y-6">
+                  {homeSectionNames.map((sectionName) => {
+                    const catIdsSet = homeSectionsMap[sectionName];
+                    if (!catIdsSet || catIdsSet.size === 0) return null;
+
+                    const catIdsArray = Array.from(catIdsSet);
+
+                    return (
+                      <div key={sectionName} className="mt-4">
+                        <SectionBoxSubtitle>{sectionName}</SectionBoxSubtitle>
+
+                        {catIdsArray.map((catId) => {
+                          const servicesForCat = catServicesMap[catId] || [];
+                          let selectedInCat = 0;
+                          for (const svc of servicesForCat) {
+                            const isInIndoor = !!selectedServices.indoor[svc.id];
+                            const isInOutdoor = !!selectedServices.outdoor[svc.id];
+                            if (isInIndoor || isInOutdoor) selectedInCat++;
+                          }
+
+                          const catObj = ALL_CATEGORIES.find((c) => c.id === catId);
+                          const catName = catObj ? catObj.title : catId;
+
+                          return (
+                            <div
+                              key={catId}
+                              className={`p-4 border rounded-xl bg-white mt-4 ${
+                                selectedInCat > 0 ? "border-blue-500" : "border-gray-300"
+                              }`}
+                            >
+                              <button
+                                onClick={() => toggleCategory(catId)}
+                                className="flex justify-between items-center w-full"
+                              >
+                                <h3
+                                  className={`font-medium text-2xl ${
+                                    selectedInCat > 0 ? "text-blue-600" : "text-black"
+                                  }`}
+                                >
+                                  {catName}
+                                  {selectedInCat > 0 && (
+                                    <span className="text-sm text-gray-500 ml-2">
+                                      ({selectedInCat} selected)
+                                    </span>
+                                  )}
+                                </h3>
+                                <ChevronDown
+                                  className={`h-5 w-5 transform transition-transform ${
+                                    expandedCategories.has(catId) ? "rotate-180" : ""
+                                  }`}
+                                />
+                              </button>
+
+                              {expandedCategories.has(catId) && (
+                                <div className="mt-4 flex flex-col gap-3">
+                                  {servicesForCat.map((svc) => {
+                                    const isIndoorSelected = !!selectedServices.indoor[svc.id];
+                                    const isOutdoorSelected = !!selectedServices.outdoor[svc.id];
+                                    const isSelected = isIndoorSelected || isOutdoorSelected;
+
+                                    const quantity = isIndoorSelected
+                                      ? selectedServices.indoor[svc.id]
+                                      : isOutdoorSelected
+                                      ? selectedServices.outdoor[svc.id]
+                                      : 1;
+
+                                    const inputValue =
+                                      manualInputValue[svc.id] !== undefined
+                                        ? manualInputValue[svc.id]
+                                        : String(quantity);
+
+                                    return (
+                                      <div key={svc.id} className="space-y-2">
+                                        <div className="flex justify-between items-center">
+                                          <span
+                                            className={`text-lg transition-colors duration-300 ${
+                                              isSelected
+                                                ? "text-blue-600"
+                                                : "text-gray-800"
+                                            }`}
+                                          >
+                                            {svc.title}
+                                          </span>
+                                          <label className="relative inline-flex items-center cursor-pointer">
+                                            <input
+                                              type="checkbox"
+                                              checked={isSelected}
+                                              onChange={() => toggleService(svc.id)}
+                                              className="sr-only peer"
+                                            />
+                                            <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
+                                            <div className="absolute top-[2px] left-[2px] w-[22px] h-[22px] bg-white rounded-full shadow-md peer-checked:translate-x-[24px] transform transition-transform duration-300"></div>
+                                          </label>
+                                        </div>
+
+                                        {isSelected && (
+                                          <>
+                                            {svc.description && (
+                                              <p className="text-sm text-gray-500 pr-16">
+                                                {svc.description}
+                                              </p>
+                                            )}
+                                            <div className="flex justify-between items-center">
+                                              <div className="flex items-center gap-1">
+                                                <button
+                                                  onClick={() =>
+                                                    handleQuantityChange(
+                                                      svc.id,
+                                                      false,
+                                                      svc.unit_of_measurement
+                                                    )
+                                                  }
+                                                  className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
+                                                >
+                                                  −
+                                                </button>
+
+                                                <input
+                                                  type="text"
+                                                  value={inputValue}
+                                                  onClick={() =>
+                                                    setManualInputValue((prev) => ({
+                                                      ...prev,
+                                                      [svc.id]: "",
+                                                    }))
+                                                  }
+                                                  onBlur={() =>
+                                                    handleBlurInput(svc.id, svc.unit_of_measurement)
+                                                  }
+                                                  onChange={(e) =>
+                                                    handleManualQuantityChange(
+                                                      svc.id,
+                                                      e.target.value,
+                                                      svc.unit_of_measurement
+                                                    )
+                                                  }
+                                                  className="w-20 text-center px-2 py-1 border rounded"
+                                                  placeholder="1"
+                                                />
+
+                                                <button
+                                                  onClick={() =>
+                                                    handleQuantityChange(
+                                                      svc.id,
+                                                      true,
+                                                      svc.unit_of_measurement
+                                                    )
+                                                  }
+                                                  className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
+                                                >
+                                                  +
+                                                </button>
+                                                <span className="text-sm text-gray-600">
+                                                  {svc.unit_of_measurement}
+                                                </span>
+                                              </div>
+
+                                              <span className="text-lg text-blue-600 font-medium text-right">
+                                                $
+                                                {formatWithSeparator(
+                                                  svc.price * (quantity || 1)
+                                                )}
+                                              </span>
+                                            </div>
+                                          </>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {gardenSectionNames.length > 0 && (
+              <div>
+                <div className="max-w-[624px] mx-auto">
+                  <div
+                    className="relative overflow-hidden rounded-xl border border-gray-300 h-32 bg-center bg-cover"
+                    style={{ backgroundImage: `url(/images/rooms/landscape.jpg)` }}
+                  >
+                    <div className="absolute inset-0 bg-black bg-opacity-30"></div>
+                    <div className="relative z-10 flex items-center justify-center h-full">
+                      <SectionBoxTitle className="text-white">For Garden</SectionBoxTitle>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-6 space-y-6">
+                  {Object.keys(gardenSectionsMap).map((sectionName) => {
+                    const catIdsSet = gardenSectionsMap[sectionName];
+                    if (!catIdsSet || catIdsSet.size === 0) return null;
+
+                    const catIdsArray = Array.from(catIdsSet);
+
+                    return (
+                      <div key={sectionName} className="mt-4">
+                        <SectionBoxSubtitle>{sectionName}</SectionBoxSubtitle>
+
+                        {catIdsArray.map((catId) => {
+                          const servicesForCat = catServicesMap[catId] || [];
+                          let selectedInCat = 0;
+                          for (const svc of servicesForCat) {
+                            const inIndoor = !!selectedServices.indoor[svc.id];
+                            const inOutdoor = !!selectedServices.outdoor[svc.id];
+                            if (inIndoor || inOutdoor) selectedInCat++;
+                          }
+
+                          const catObj = ALL_CATEGORIES.find((c) => c.id === catId);
+                          const catName = catObj ? catObj.title : catId;
+
+                          return (
+                            <div
+                              key={catId}
+                              className={`p-4 border rounded-xl bg-white mt-4 ${
+                                selectedInCat > 0 ? "border-blue-500" : "border-gray-300"
+                              }`}
+                            >
+                              <button
+                                onClick={() => toggleCategory(catId)}
+                                className="flex justify-between items-center w-full"
+                              >
+                                <h3
+                                  className={`font-medium text-2xl ${
+                                    selectedInCat > 0 ? "text-blue-600" : "text-black"
+                                  }`}
+                                >
+                                  {catName}
+                                  {selectedInCat > 0 && (
+                                    <span className="text-sm text-gray-500 ml-2">
+                                      ({selectedInCat} selected)
+                                    </span>
+                                  )}
+                                </h3>
+                                <ChevronDown
+                                  className={`h-5 w-5 transform transition-transform ${
+                                    expandedCategories.has(catId) ? "rotate-180" : ""
+                                  }`}
+                                />
+                              </button>
+
+                              {expandedCategories.has(catId) && (
+                                <div className="mt-4 flex flex-col gap-3">
+                                  {servicesForCat.map((svc) => {
+                                    const inIndoor = !!selectedServices.indoor[svc.id];
+                                    const inOutdoor = !!selectedServices.outdoor[svc.id];
+                                    const isSelected = inIndoor || inOutdoor;
+
+                                    const quantity = inIndoor
+                                      ? selectedServices.indoor[svc.id]
+                                      : inOutdoor
+                                      ? selectedServices.outdoor[svc.id]
+                                      : 1;
+
+                                    const inputValue =
+                                      manualInputValue[svc.id] !== undefined
+                                        ? manualInputValue[svc.id]
+                                        : String(quantity);
+
+                                    return (
+                                      <div key={svc.id} className="space-y-2">
+                                        <div className="flex justify-between items-center">
+                                          <span
+                                            className={`text-lg transition-colors duration-300 ${
+                                              isSelected
+                                                ? "text-blue-600"
+                                                : "text-gray-800"
+                                            }`}
+                                          >
+                                            {svc.title}
+                                          </span>
+                                          <label className="relative inline-flex items-center cursor-pointer">
+                                            <input
+                                              type="checkbox"
+                                              checked={isSelected}
+                                              onChange={() => toggleService(svc.id)}
+                                              className="sr-only peer"
+                                            />
+                                            <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
+                                            <div className="absolute top-[2px] left-[2px] w-[22px] h-[22px] bg-white rounded-full shadow-md peer-checked:translate-x-[24px] transform transition-transform duration-300"></div>
+                                          </label>
+                                        </div>
+
+                                        {isSelected && (
+                                          <>
+                                            {svc.description && (
+                                              <p className="text-sm text-gray-500 pr-16">
+                                                {svc.description}
+                                              </p>
+                                            )}
+                                            <div className="flex justify-between items-center">
+                                              <div className="flex items-center gap-1">
+                                                <button
+                                                  onClick={() =>
+                                                    handleQuantityChange(
+                                                      svc.id,
+                                                      false,
+                                                      svc.unit_of_measurement
+                                                    )
+                                                  }
+                                                  className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
+                                                >
+                                                  −
+                                                </button>
+
+                                                <input
+                                                  type="text"
+                                                  value={inputValue}
+                                                  onClick={() =>
+                                                    setManualInputValue((prev) => ({
+                                                      ...prev,
+                                                      [svc.id]: "",
+                                                    }))
+                                                  }
+                                                  onBlur={() =>
+                                                    handleBlurInput(
+                                                      svc.id,
+                                                      svc.unit_of_measurement
+                                                    )
+                                                  }
+                                                  onChange={(e) =>
+                                                    handleManualQuantityChange(
+                                                      svc.id,
+                                                      e.target.value,
+                                                      svc.unit_of_measurement
+                                                    )
+                                                  }
+                                                  className="w-20 text-center px-2 py-1 border rounded"
+                                                  placeholder="1"
+                                                />
+
+                                                <button
+                                                  onClick={() =>
+                                                    handleQuantityChange(
+                                                      svc.id,
+                                                      true,
+                                                      svc.unit_of_measurement
+                                                    )
+                                                  }
+                                                  className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
+                                                >
+                                                  +
+                                                </button>
+                                                <span className="text-sm text-gray-600">
+                                                  {svc.unit_of_measurement}
+                                                </span>
+                                              </div>
+
+                                              <span className="text-lg text-blue-600 font-medium text-right">
+                                                $
+                                                {formatWithSeparator(
+                                                  svc.price * (quantity || 1)
+                                                )}
+                                              </span>
+                                            </div>
+                                          </>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* HOME SECTION */}
-          <SectionBoxSubtitle>Home Details</SectionBoxSubtitle>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* House Type */}
-            <div>
-              <label className="block text-sm text-gray-700 mb-1">House Type</label>
-              <select
-                name="houseType"
-                value={houseInfo.houseType}
-                onChange={handleStringField}
-                className="w-full px-4 py-2 border rounded"
-              >
-                <option value="">-- Select --</option>
-                <option value="single_family">Single Family</option>
-                <option value="townhouse">Townhouse</option>
-                <option value="apartment">Apartment / Condo</option>
-              </select>
+          <div className="w-1/2 ml-auto pt-0 space-y-6">
+            <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden">
+              <SectionBoxSubtitle>Your {safePackage.title}</SectionBoxSubtitle>
+              {Object.keys(mergedSelected).length === 0 ? (
+                <div className="text-left text-gray-500 text-medium mt-4">
+                  No services selected
+                </div>
+              ) : (
+                <>
+                  <p className="text-gray-700 mb-4">These are the services you selected:</p>
+                  <ul className="space-y-2">
+                    {Object.entries(mergedSelected).map(([svcId, qty]) => {
+                      const svcObj = ALL_SERVICES.find((s) => s.id === svcId);
+                      if (!svcObj) return null;
+                      return (
+                        <li
+                          key={svcId}
+                          className="flex justify-between items-center text-sm text-gray-600"
+                        >
+                          <span className="truncate w-1/2">{svcObj.title}</span>
+                          <span>
+                            {qty} x ${formatWithSeparator(svcObj.price)}
+                          </span>
+                          <span className="text-right w-1/4">
+                            ${formatWithSeparator(svcObj.price * qty)}
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+
+                  <div className="flex flex-col gap-2 items-end mt-6">
+                    <div className="flex justify-between w-full">
+                      <span className="text-2xl font-semibold text-gray-800">
+                        Annual price:
+                      </span>
+                      <span className="text-2xl font-semibold text-blue-600">
+                        ${formatWithSeparator( calculateAnnualPrice() )}
+                      </span>
+                    </div>
+                    <div className="flex justify-between w-full">
+                      <span className="text-lg font-medium text-gray-700">
+                        Monthly payment:
+                      </span>
+                      <span className="text-lg font-medium text-blue-600">
+                        ${formatWithSeparator( calculateAnnualPrice() / 12 )}
+                      </span>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
-            {/* Floors */}
-            <div>
-              <label className="block text-sm text-gray-700 mb-1">Floors</label>
-              <select
-                name="floors"
-                value={houseInfo.floors}
-                onChange={handleNumberField}
-                className="w-full px-4 py-2 border rounded"
-              >
-                <option value="1">1 floor</option>
-                <option value="2">2 floors</option>
-                <option value="3">3 floors</option>
-              </select>
+
+            <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden">
+              <SectionBoxSubtitle>Home Details</SectionBoxSubtitle>
+              <div className="mt-2 space-y-1 text-sm text-gray-700">
+                <p>
+                  <strong>Address:</strong> {houseInfo.addressLine || "N/A"}
+                </p>
+                <p>
+                  <strong>City / Zip:</strong> {houseInfo.city || "?"},{" "}
+                  {houseInfo.zip || "?"}
+                </p>
+                <p>
+                  <strong>Country:</strong> {houseInfo.country || "?"}
+                </p>
+                <hr className="my-2" />
+                <p>
+                  <strong>House Type:</strong> {houseInfo.houseType || "?"}
+                </p>
+                <p>
+                  <strong>Floors:</strong> {houseInfo.floors}
+                </p>
+                <p>
+                  <strong>Square ft:</strong>{" "}
+                  {houseInfo.squareFootage > 0 ? houseInfo.squareFootage : "?"}
+                </p>
+                <p>
+                  <strong>Bedrooms:</strong> {houseInfo.bedrooms}
+                </p>
+                <p>
+                  <strong>Bathrooms:</strong> {houseInfo.bathrooms}
+                </p>
+                <p>
+                  <strong>Appliances:</strong> {houseInfo.applianceCount}
+                </p>
+                <p>
+                  <strong>AC Units:</strong> {houseInfo.airConditioners}
+                </p>
+                <p>
+                  <strong>Boiler/Heater:</strong>{" "}
+                  {houseInfo.hasBoiler ? houseInfo.boilerType || "Yes" : "No / None"}
+                </p>
+                <hr className="my-2" />
+                <p>
+                  <strong>Garage:</strong>{" "}
+                  {houseInfo.hasGarage ? houseInfo.garageCount : "No"}
+                </p>
+                <p>
+                  <strong>Yard:</strong>{" "}
+                  {houseInfo.hasYard ? `${houseInfo.yardArea} sq ft` : "No yard/garden"}
+                </p>
+                <p>
+                  <strong>Pool:</strong>{" "}
+                  {houseInfo.hasPool ? `${houseInfo.poolArea} sq ft` : "No pool"}
+                </p>
+              </div>
             </div>
           </div>
-
-          {/* Square Footage */}
-          <div>
-            <label className="block text-sm text-gray-700 mb-1">
-              Total Square Footage
-            </label>
-            <input
-              type="text"
-              name="squareFootage"
-              value={houseInfo.squareFootage || ""}
-              onChange={handleNumberField}
-              onFocus={clearPlaceholder}
-              onBlur={(e) => (e.target.placeholder = "Enter sq ft")}
-              placeholder="Enter sq ft"
-              className="w-full px-4 py-2 border rounded"
-            />
-          </div>
-
-          {/* Garage */}
-          <SectionBoxSubtitle>Garage</SectionBoxSubtitle>
-          <div className="flex items-center gap-2 mt-2">
-            <input
-              type="checkbox"
-              id="hasGarage"
-              checked={houseInfo.hasGarage}
-              onChange={toggleGarage}
-              className="w-5 h-5 text-blue-600 cursor-pointer"
-            />
-            <label htmlFor="hasGarage" className="cursor-pointer">
-              I have a garage
-            </label>
-          </div>
-          {houseInfo.hasGarage && (
-            <div className="mt-2">
-              <label className="block text-sm text-gray-700 mb-1">
-                Number of Garage Spaces (1-5)
-              </label>
-              <select
-                name="garageCount"
-                value={houseInfo.garageCount}
-                onChange={handleNumberField}
-                className="w-full px-4 py-2 border rounded"
-              >
-                {[1,2,3,4,5].map((n) => (
-                  <option key={n} value={n}>
-                    {n}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {/* Outdoor section */}
-          <SectionBoxSubtitle>Outdoor Details</SectionBoxSubtitle>
-          {/* Yard */}
-          <div className="flex items-center gap-2 mt-2">
-            <input
-              type="checkbox"
-              id="hasYard"
-              checked={houseInfo.hasYard}
-              onChange={toggleYard}
-              className="w-5 h-5 text-blue-600 cursor-pointer"
-            />
-            <label htmlFor="hasYard" className="cursor-pointer">
-              I have a yard / outdoor space
-            </label>
-          </div>
-          {houseInfo.hasYard && (
-            <div className="mt-2">
-              <label className="block text-sm text-gray-700 mb-1">
-                Yard Area (sq ft)
-              </label>
-              <input
-                type="text"
-                name="yardArea"
-                value={houseInfo.yardArea || ""}
-                onChange={handleNumberField}
-                onFocus={clearPlaceholder}
-                onBlur={(e) => (e.target.placeholder = "Enter yard area")}
-                placeholder="Enter yard area"
-                className="w-full px-4 py-2 border rounded"
-              />
-            </div>
-          )}
-
-          {/* Pool */}
-          <div className="flex items-center gap-2 mt-4">
-            <input
-              type="checkbox"
-              id="hasPool"
-              checked={houseInfo.hasPool}
-              onChange={togglePool}
-              className="w-5 h-5 text-blue-600 cursor-pointer"
-            />
-            <label htmlFor="hasPool" className="cursor-pointer">
-              I have a pool
-            </label>
-          </div>
-          {houseInfo.hasPool && (
-            <div className="mt-2">
-              <label className="block text-sm text-gray-700 mb-1">
-                Pool Area (sq ft)
-              </label>
-              <input
-                type="text"
-                name="poolArea"
-                value={houseInfo.poolArea || ""}
-                onChange={handleNumberField}
-                onFocus={clearPlaceholder}
-                onBlur={(e) => (e.target.placeholder = "Enter pool area")}
-                placeholder="Enter pool area"
-                className="w-full px-4 py-2 border rounded"
-              />
-            </div>
-          )}
-
-          {/* Boiler */}
-          <SectionBoxSubtitle>Boiler / Furnace</SectionBoxSubtitle>
-          <div className="flex items-center gap-2 mt-2">
-            <input
-              type="checkbox"
-              id="hasBoiler"
-              checked={houseInfo.hasBoiler}
-              onChange={toggleBoiler}
-              className="w-5 h-5 text-blue-600 cursor-pointer"
-            />
-            <label htmlFor="hasBoiler" className="cursor-pointer">
-              I have a separate boiler or furnace
-            </label>
-          </div>
-          {houseInfo.hasBoiler && (
-            <div className="mt-2">
-              <label className="block text-sm text-gray-700 mb-1">
-                Boiler Type
-              </label>
-              <select
-                name="boilerType"
-                value={houseInfo.boilerType}
-                onChange={handleStringField}
-                className="w-full px-4 py-2 border rounded"
-              >
-                <option value="">-- Select --</option>
-                <option value="gas">Gas</option>
-                <option value="electric">Electric</option>
-              </select>
-            </div>
-          )}
-
-          {/* Appliances & AC units */}
-          <SectionBoxSubtitle>Appliances & Air Conditioners</SectionBoxSubtitle>
-          <p className="text-sm text-gray-600">
-            Please select how many of each (1 to 5).
-          </p>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
-            {/* Washers */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Washers
-              </label>
-              <select
-                name="washers"
-                value={houseInfo.washers}
-                onChange={handleNumberField}
-                className="w-full px-3 py-2 border rounded"
-              >
-                {[1,2,3,4,5].map((n) => (
-                  <option key={n} value={n}>{n}</option>
-                ))}
-              </select>
-            </div>
-            {/* Dryers */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Dryers
-              </label>
-              <select
-                name="dryers"
-                value={houseInfo.dryers}
-                onChange={handleNumberField}
-                className="w-full px-3 py-2 border rounded"
-              >
-                {[1,2,3,4,5].map((n) => (
-                  <option key={n} value={n}>{n}</option>
-                ))}
-              </select>
-            </div>
-            {/* Dishwashers */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Dishwashers
-              </label>
-              <select
-                name="dishwashers"
-                value={houseInfo.dishwashers}
-                onChange={handleNumberField}
-                className="w-full px-3 py-2 border rounded"
-              >
-                {[1,2,3,4,5].map((n) => (
-                  <option key={n} value={n}>{n}</option>
-                ))}
-              </select>
-            </div>
-            {/* Refrigerators */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Refrigerators
-              </label>
-              <select
-                name="refrigerators"
-                value={houseInfo.refrigerators}
-                onChange={handleNumberField}
-                className="w-full px-3 py-2 border rounded"
-              >
-                {[1,2,3,4,5].map((n) => (
-                  <option key={n} value={n}>{n}</option>
-                ))}
-              </select>
-            </div>
-            {/* AC units */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                AC Units
-              </label>
-              <select
-                name="ACunits"
-                value={houseInfo.ACunits}
-                onChange={handleNumberField}
-                className="w-full px-3 py-2 border rounded"
-              >
-                {[1,2,3,4,5].map((n) => (
-                  <option key={n} value={n}>{n}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* (We already have the Next button up in the header row.) */}
         </div>
       </div>
     </main>

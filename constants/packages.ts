@@ -142,7 +142,7 @@ export const PACKAGES = [
   },
   {
     id: "configure_your_own_package",
-    title: "Configure Your Own Package",
+    title: "Custom Package",
     services: {
       indoor: [
         { id: "1-1-3", title: "Smoke Detector Detach and Reset", quantityPerYear: 1 },
