@@ -23,8 +23,8 @@ export const ROOMS_STEPS = [
 
 export const PACKAGES_STEPS = [
     { label: 'Packages', href: '/packages' },
-    { label: 'Services', href: '/packages/services' },
     { label: 'Details', href: '/packages/details' },
+    { label: 'Services', href: '/packages/services' },
     { label: 'Estimate', href: '/packages/estimate' },
     { label: 'Checkout', href: '/packages/checkout' },
 ] as const;

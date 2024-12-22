@@ -92,7 +92,7 @@ export default function ServicePackages() {
 
                 {/* Link to read more with package price */}
                 <Link
-                  href={`/packages/services?packageId=${pkg.id}`}
+                  href={`/packages/details?packageId=${pkg.id}`}
                   className={`${
                     pkg.id === "all_inclusive_package"
                       ? "text-white"
@@ -130,7 +130,10 @@ export default function ServicePackages() {
             </div>
             <div className="text-right w-1/3">
               <BoxPrice amount={139} period="month" />
-              <Link href={`/packages/services?packageId=configure_your_own_package`} className="text-blue-500 text-xl font-medium">
+              <Link
+                href={`/packages/details?packageId=configure_your_own_package`}
+                className="text-blue-500 text-xl font-medium"
+              >
                 Read more
               </Link>
             </div>
