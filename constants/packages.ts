@@ -18,6 +18,13 @@ export const PACKAGES = [
         { id: "11-6-1", title: "Gutter Debris Removal and Pressure Washing", quantityPerYear: 2 },
       ],
     },
+    featuredServices: [
+      "Smoke Detector Detach and Reset",
+      "Boiler Regular Maintenance",
+      "Outdoor Carpentry Pest Prevention",
+      "Driveway Pressure Washing",
+      "Mini Split Air Conditioner Routine Maintenance"
+    ]
   },
   {
     id: "enhanced_package",
@@ -59,6 +66,13 @@ export const PACKAGES = [
         { id: "20-1-6", title: "Lawn Winterization", quantityPerYear: 1 },
       ],
     },
+    featuredServices: [
+      "Ventilation System Duct Cleaning and Maintenance",
+      "1BED/1BATH General Cleaning",
+      "Whole House Generator Maintenance",
+      "Deck and Patio Pressure Washing",
+      "Appliance Water System Diagnostic"
+    ]
   },
   {
     id: "all_inclusive_package",
@@ -139,6 +153,13 @@ export const PACKAGES = [
         { id: "22-5-1", title: "Outdoor Kitchen Cleaning", quantityPerYear: 1 },
       ],
     },
+    featuredServices: [
+      "Humidifier/Dehumidifier Maintenance",
+      "Regular Outdoor Pool Cleaning",
+      "Outdoor Electrical Wiring Maintenance",
+      "4BED/4BATH Regular Cleaning",
+      "Fence Pressure Washing"
+    ]
   },
   {
     id: "configure_your_own_package",
@@ -240,5 +261,12 @@ export const PACKAGES = [
         { id: "22-8-3", title: "Outdoor Refrigeration System Maintenance", quantityPerYear: 1 },
       ],
     },
+    featuredServices: [
+      "Fireplace Chimney Sweep Cleaning and Service",
+      "Outdoor Grill Cleaning",
+      "Pool Filter and Equipment Maintenance",
+      "Tree Stump Grinding",
+      "Stainless Steel Furniture Cleaning"
+    ]
   }
 ];

@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import BreadCrumb from "@/components/ui/BreadCrumb";
 import { SectionBoxTitle } from "@/components/ui/SectionBoxTitle";
 import { SectionBoxSubtitle } from "@/components/ui/SectionBoxSubtitle";
-import ActionIconsBar from "@/components/ui/ActionIconsBar"; // if you want icons like Print/Share/Save
+import ActionIconsBar from "@/components/ui/ActionIconsBar";
 import { CALCULATE_STEPS } from "@/constants/navigation";
 import { ALL_SERVICES } from "@/constants/services";
 import { ALL_CATEGORIES } from "@/constants/categories";

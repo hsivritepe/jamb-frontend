@@ -8,9 +8,11 @@ import { SectionBoxSubtitle } from "@/components/ui/SectionBoxSubtitle";
 import { PACKAGES_STEPS } from "@/constants/navigation";
 import { ALL_CATEGORIES } from "@/constants/categories";
 import { ALL_SERVICES } from "@/constants/services";
-import ServiceTimePicker from "@/components/ui/ServiceTimePicker";
+import { PACKAGES } from "@/constants/packages"; // We import PACKAGES to find the chosen package
 
-/** Format a number with commas and 2 decimals */
+/**
+ * Format a number with commas and exactly two decimals (e.g., 1234 => "1,234.00").
+ */
 function formatWithSeparator(value: number): string {
   return new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 2,
@@ -18,21 +20,25 @@ function formatWithSeparator(value: number): string {
   }).format(value);
 }
 
-/** Format an integer with commas (no decimals) */
+/**
+ * Format an integer with commas (no decimals). e.g.: 1234 => "1,234".
+ */
 function formatQuantity(value: number): string {
   return new Intl.NumberFormat("en-US").format(value);
 }
 
-/** Save JSON to sessionStorage */
+/** Save JSON to sessionStorage (client side only). */
 function saveToSession(key: string, value: any) {
   if (typeof window !== "undefined") {
     sessionStorage.setItem(key, JSON.stringify(value));
   }
 }
 
-/** Load JSON from sessionStorage or fallback to default */
+/** Load JSON from sessionStorage or return a default if not found or SSR. */
 function loadFromSession<T>(key: string, defaultValue: T): T {
-  if (typeof window === "undefined") return defaultValue;
+  if (typeof window === "undefined") {
+    return defaultValue;
+  }
   const stored = sessionStorage.getItem(key);
   try {
     return stored ? JSON.parse(stored) : defaultValue;
@@ -41,25 +47,120 @@ function loadFromSession<T>(key: string, defaultValue: T): T {
   }
 }
 
+/** A custom modal (replacing time selection) to choose a payment plan. */
+function PaymentOptionModal({
+  subtotal,
+  onClose,
+  onConfirm,
+}: {
+  subtotal: number;
+  onClose: () => void;
+  onConfirm: (option: string, coefficient: number) => void;
+}) {
+  /**
+   * Three payment options:
+   * 1) 100% Prepayment => discount 15% => coefficient=0.85
+   * 2) Quarterly => discount 8% => coefficient=0.92
+   * 3) Monthly => no discount => coefficient=1.00
+   */
+  const options = [
+    {
+      label: "100% Prepayment",
+      description: "Pay everything upfront and get a 15% discount.",
+      coefficient: 0.85,
+    },
+    {
+      label: "Quarterly",
+      description: "Pay every 3 months and get an 8% discount.",
+      coefficient: 0.92,
+    },
+    {
+      label: "Monthly",
+      description: "Pay monthly with no discount.",
+      coefficient: 1.0,
+    },
+  ];
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+      {/* The modal content */}
+      <div className="bg-white rounded-lg p-6 w-full max-w-lg relative">
+        <button
+          onClick={onClose}
+          className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 text-xl"
+          aria-label="Close"
+        >
+          ✕
+        </button>
+
+        <h2 className="text-2xl font-bold mb-4 text-gray-800">
+          Select Payment Option
+        </h2>
+        <p className="text-gray-600 mb-6">
+          Please choose one of the payment methods below.
+        </p>
+
+        <div className="space-y-4">
+          {options.map((opt) => {
+            const discountedPrice = subtotal * opt.coefficient;
+            return (
+              <div
+                key={opt.label}
+                className="border border-gray-300 p-4 rounded-lg flex items-center justify-between"
+              >
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800">
+                    {opt.label}
+                  </h3>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {opt.description}
+                  </p>
+                  <p className="text-gray-700 text-sm mt-2">
+                    New Subtotal:{" "}
+                    <span className="font-medium text-blue-600">
+                      ${formatWithSeparator(discountedPrice)}
+                    </span>
+                  </p>
+                </div>
+                <button
+                  onClick={() => onConfirm(opt.label, opt.coefficient)}
+                  className="bg-blue-600 text-white rounded-md py-2 px-4 hover:bg-blue-700 transition-colors"
+                >
+                  Select
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Our main Estimate page, now with a PaymentOptionModal
+ * and additional logic to display the final payment schedule after the total.
+ */
 export default function EstimatePage() {
   const router = useRouter();
 
-  // 1) Retrieve the current packageId from session (so we can link back to the correct "Services" page).
+  // 1) Retrieve packageId from session
   const storedPackageId = loadFromSession("packages_currentPackageId", null);
 
-  // 2) Retrieve the user's selected services from session
+  // 2) Find package in PACKAGES
+  const chosenPackage = PACKAGES.find((pkg) => pkg.id === storedPackageId) || null;
+
+  // 3) Load selected services
   const selectedServicesFromSession = loadFromSession("packages_selectedServices", {
     indoor: {},
     outdoor: {},
   });
-
-  // Merge indoor + outdoor
   const mergedSelected: Record<string, number> = {
     ...selectedServicesFromSession.indoor,
     ...selectedServicesFromSession.outdoor,
   };
 
-  // If no services selected, redirect them back to the services page for that package
+  // If no services, redirect
   useEffect(() => {
     if (Object.keys(mergedSelected).length === 0) {
       router.push(
@@ -70,7 +171,7 @@ export default function EstimatePage() {
     }
   }, [mergedSelected, router, storedPackageId]);
 
-  // 3) Retrieve the house info
+  // 4) House info, photos, description
   const houseInfo = loadFromSession("packages_houseInfo", {
     country: "",
     city: "",
@@ -92,58 +193,149 @@ export default function EstimatePage() {
     applianceCount: 1,
     airConditioners: 0,
   });
-
-  // 4) Retrieve uploaded photos and additional description
   const photos: string[] = loadFromSession("packages_photos", []);
   const description: string = loadFromSession("packages_description", "");
 
-  // 5) State for time scheduling pop-up (and selected time, coefficient)
+  // 5) Payment modal states
   const [showModal, setShowModal] = useState(false);
-  const [selectedTime, setSelectedTime] = useState<string | null>(() =>
+
+  // We rename "selectedTime" to "selectedPaymentOption" logically
+  const [selectedPaymentOption, setSelectedPaymentOption] = useState<string | null>(() =>
     loadFromSession("packages_selectedTime", null)
   );
-  const [timeCoefficient, setTimeCoefficient] = useState<number>(() =>
+
+  // We rename "timeCoefficient" to "paymentCoefficient"
+  const [paymentCoefficient, setPaymentCoefficient] = useState<number>(() =>
     loadFromSession("packages_timeCoefficient", 1)
   );
 
   // Persist changes
   useEffect(() => {
-    saveToSession("packages_selectedTime", selectedTime);
-  }, [selectedTime]);
-  useEffect(() => {
-    saveToSession("packages_timeCoefficient", timeCoefficient);
-  }, [timeCoefficient]);
+    saveToSession("packages_selectedTime", selectedPaymentOption);
+  }, [selectedPaymentOption]);
 
-  // 6) Calculate the pricing
+  useEffect(() => {
+    saveToSession("packages_timeCoefficient", paymentCoefficient);
+  }, [paymentCoefficient]);
+
+  // 6) Pricing calculations
   function calculateSubtotal(): number {
-    let sum = 0;
+    let total = 0;
     for (const [svcId, qty] of Object.entries(mergedSelected)) {
       const svcObj = ALL_SERVICES.find((s) => s.id === svcId);
       if (svcObj) {
-        sum += svcObj.price * qty;
+        total += svcObj.price * qty;
       }
     }
-    return sum;
+    return total;
   }
   const subtotal = calculateSubtotal();
-  // Apply any timeCoefficient to the subtotal
-  const adjustedSubtotal = subtotal * timeCoefficient;
-  // A sample sales tax rate (8.25% as an example)
+  const adjustedSubtotal = subtotal * paymentCoefficient;
   const salesTax = adjustedSubtotal * 0.0825;
-  const total = adjustedSubtotal + salesTax;
+  const finalTotal = adjustedSubtotal + salesTax;
 
-  // 7) Handle "Proceed to checkout"
+  // 7) Payment schedule or final payment info
+  // Based on `selectedPaymentOption`, we'll display different info
+  function renderPaymentSchedule() {
+    if (!selectedPaymentOption) {
+      return null;
+    }
+
+    // Helper to format date in mm/dd/yyyy
+    function formatDate(date: Date): string {
+      const mm = String(date.getMonth() + 1).padStart(2, "0");
+      const dd = String(date.getDate()).padStart(2, "0");
+      const yyyy = date.getFullYear();
+      return `${mm}/${dd}/${yyyy}`;
+    }
+
+    if (selectedPaymentOption === "100% Prepayment") {
+      // One payment of finalTotal
+      return (
+        <div className="mt-4">
+          <h4 className="text-lg font-semibold text-gray-800">
+            Payment Schedule
+          </h4>
+          <p className="text-sm text-gray-600 mt-2">
+            You pay the entire total of{" "}
+            <span className="font-medium text-blue-600">
+              ${formatWithSeparator(finalTotal)}
+            </span>{" "}
+            upfront (once). Thank you!
+          </p>
+        </div>
+      );
+    } else if (selectedPaymentOption === "Monthly") {
+      // 12 monthly payments
+      const monthlyPayment = finalTotal / 12;
+      return (
+        <div className="mt-4">
+          <h4 className="text-lg font-semibold text-gray-800">
+            Payment Schedule
+          </h4>
+          <p className="text-sm text-gray-600 mt-2">
+            You will pay{" "}
+            <span className="font-medium text-blue-600">
+              ${formatWithSeparator(monthlyPayment)}
+            </span>{" "}
+            each month for 12 months. Starting now, the next 11 payments
+            will be monthly.
+          </p>
+        </div>
+      );
+    } else if (selectedPaymentOption === "Quarterly") {
+      // 4 payments, every 3 months. Let's show approximate dates
+      const quarterlyPayment = finalTotal / 4;
+
+      // Build approximate next 4 dates
+      const now = new Date();
+      const payments: string[] = [];
+      for (let i = 0; i < 4; i++) {
+        // For i=0 => today, i=1 => +3 months, etc.
+        const paymentDate = new Date(
+          now.getFullYear(),
+          now.getMonth() + i * 3,
+          now.getDate()
+        );
+        payments.push(formatDate(paymentDate));
+      }
+
+      return (
+        <div className="mt-4">
+          <h4 className="text-lg font-semibold text-gray-800">
+            Payment Schedule (Quarterly)
+          </h4>
+          <p className="text-sm text-gray-600 mt-2 mb-2">
+            You will pay{" "}
+            <span className="font-medium text-blue-600">
+              ${formatWithSeparator(quarterlyPayment)}
+            </span>{" "}
+            every 3 months, for a total of 4 payments.
+          </p>
+          <ul className="list-disc list-inside text-sm text-gray-600">
+            {payments.map((date, idx) => (
+              <li key={idx} className="ml-4">
+                Payment #{idx + 1}: {date}
+              </li>
+            ))}
+          </ul>
+        </div>
+      );
+    } else {
+      return null;
+    }
+  }
+
+  // 8) "Proceed to checkout" => store user choice, go next
   function handleProceedToCheckout() {
-    // Make sure time is chosen and coefficient is stored
-    saveToSession("packages_selectedTime", selectedTime);
-    saveToSession("packages_timeCoefficient", timeCoefficient);
-    // Go to checkout page
+    saveToSession("packages_selectedTime", selectedPaymentOption);
+    saveToSession("packages_timeCoefficient", paymentCoefficient);
     router.push("/packages/checkout");
   }
 
-  // We'll group the selected services by section -> category
+  // 9) Summaries
   type ServiceItem = { svcObj: (typeof ALL_SERVICES)[number]; qty: number };
-  const itemsArr: ServiceItem[] = Object.entries(mergedSelected)
+  const itemsArray: ServiceItem[] = Object.entries(mergedSelected)
     .map(([svcId, qty]) => {
       const svcObj = ALL_SERVICES.find((s) => s.id === svcId);
       return svcObj ? { svcObj, qty } : null;
@@ -151,7 +343,7 @@ export default function EstimatePage() {
     .filter(Boolean) as ServiceItem[];
 
   const summaryBySection: Record<string, Record<string, ServiceItem[]>> = {};
-  itemsArr.forEach(({ svcObj, qty }) => {
+  itemsArray.forEach(({ svcObj, qty }) => {
     const catId = svcObj.id.split("-").slice(0, 2).join("-");
     const catObj = ALL_CATEGORIES.find((c) => c.id === catId);
     if (!catObj) return;
@@ -166,8 +358,8 @@ export default function EstimatePage() {
     summaryBySection[sectionName][catId].push({ svcObj, qty });
   });
 
+  // 10) Modify BreadCrumb to keep ?packageId
   const modifiedCrumbs = PACKAGES_STEPS.map((step) => {
-    // If we have no storedPackageId, do nothing
     if (!storedPackageId) return step;
     if (step.href.startsWith("/packages") && !step.href.includes("?")) {
       return {
@@ -175,10 +367,10 @@ export default function EstimatePage() {
         href: `${step.href}?packageId=${storedPackageId}`,
       };
     }
-
     return step;
   });
 
+  // "Go back to Services" button
   function handleGoBack() {
     if (storedPackageId) {
       router.push(`/packages/services?packageId=${storedPackageId}`);
@@ -190,17 +382,18 @@ export default function EstimatePage() {
   return (
     <main className="min-h-screen pt-24">
       <div className="container mx-auto">
-        {/* Use the modified breadcrumb with the correct link for all steps */}
         <BreadCrumb items={modifiedCrumbs} />
       </div>
 
       <div className="container mx-auto py-12">
-        <div className="max-w-[900px] mx-auto bg-brand-light p-6 rounded-xl border border-gray-300 overflow-hidden">
-          <SectionBoxSubtitle>Estimate</SectionBoxSubtitle>
+        <div className="max-w-[700px] bg-brand-light p-6 rounded-xl border border-gray-300 overflow-hidden mr-auto">
+          <SectionBoxSubtitle>
+            {chosenPackage ? chosenPackage.title : "No package found"}
+          </SectionBoxSubtitle>
 
-          {/* Render the breakdown of selected services, grouped by section -> category */}
+          {/* Selected services section */}
           <div className="mt-4 space-y-4">
-            {Object.entries(summaryBySection).length === 0 ? (
+            {Object.keys(summaryBySection).length === 0 ? (
               <p className="text-gray-500">No services selected</p>
             ) : (
               Object.entries(summaryBySection).map(([sectionName, cats]) => (
@@ -211,6 +404,7 @@ export default function EstimatePage() {
                   {Object.entries(cats).map(([catId, arr]) => {
                     const catObj = ALL_CATEGORIES.find((c) => c.id === catId);
                     const catName = catObj ? catObj.title : catId;
+
                     return (
                       <div key={catId} className="ml-4 space-y-4">
                         <h4 className="text-lg font-semibold text-gray-700">
@@ -219,7 +413,7 @@ export default function EstimatePage() {
                         {arr.map(({ svcObj, qty }) => (
                           <div
                             key={svcObj.id}
-                            className="flex justify-between items-start gap-4 border-b pb-2"
+                            className="flex justify-between items-start gap-4"
                           >
                             <div>
                               <h3 className="font-medium text-lg text-gray-800">
@@ -250,26 +444,32 @@ export default function EstimatePage() {
             )}
           </div>
 
-          {/* Pricing summary */}
+          {/* Payment summary */}
           <div className="pt-4 mt-4 border-t border-gray-200">
-            {timeCoefficient !== 1 && (
+            {/* Show discount or surcharge if paymentCoefficient != 1 */}
+            {paymentCoefficient < 1 && (
               <div className="flex justify-between mb-2">
-                <span className="text-gray-600">
-                  {timeCoefficient > 1 ? "Surcharge" : "Discount"}
+                <span className="text-gray-600">Discount</span>
+                <span className="font-semibold text-lg text-green-600">
+                  -$
+                  {formatWithSeparator(subtotal * (1 - paymentCoefficient))}
                 </span>
-                <span
-                  className={`font-semibold text-lg ${
-                    timeCoefficient > 1 ? "text-red-600" : "text-green-600"
-                  }`}
-                >
-                  {timeCoefficient > 1 ? "+" : "-"}$
-                  {formatWithSeparator(Math.abs(subtotal * (timeCoefficient - 1)))}
+              </div>
+            )}
+            {paymentCoefficient > 1 && (
+              <div className="flex justify-between mb-2">
+                <span className="text-gray-600">Surcharge</span>
+                <span className="font-semibold text-lg text-red-600">
+                  +$
+                  {formatWithSeparator(subtotal * (paymentCoefficient - 1))}
                 </span>
               </div>
             )}
 
             <div className="flex justify-between mb-2">
-              <span className="font-semibold text-lg text-gray-800">Subtotal</span>
+              <span className="font-semibold text-lg text-gray-800">
+                Subtotal
+              </span>
               <span className="font-semibold text-lg text-gray-800">
                 ${formatWithSeparator(adjustedSubtotal)}
               </span>
@@ -280,31 +480,34 @@ export default function EstimatePage() {
               <span>${formatWithSeparator(salesTax)}</span>
             </div>
 
-            {/* Button to select or change time (shows a modal) */}
+            {/* Button to show PaymentOptionModal */}
             <button
               onClick={() => setShowModal(true)}
               className={`w-full py-3 rounded-lg font-medium mt-4 border ${
-                selectedTime
+                selectedPaymentOption
                   ? "text-red-500 border-red-500"
                   : "text-brand border-brand"
               }`}
             >
-              {selectedTime ? "Change Date" : "Select Available Time"}
+              {selectedPaymentOption
+                ? "Change Payment Option"
+                : "Select Payment Option"}
             </button>
-            {selectedTime && (
+            {selectedPaymentOption && (
               <p className="mt-2 text-gray-700 text-center font-medium">
-                Selected Date: <span className="text-blue-600">{selectedTime}</span>
+                Selected Payment:{" "}
+                <span className="text-blue-600">{selectedPaymentOption}</span>
               </p>
             )}
 
-            {/* Show the modal if user clicks the "Select Available Time" */}
+            {/* If user clicks, open PaymentOptionModal */}
             {showModal && (
-              <ServiceTimePicker
+              <PaymentOptionModal
                 subtotal={subtotal}
                 onClose={() => setShowModal(false)}
-                onConfirm={(date, coefficient) => {
-                  setSelectedTime(date);
-                  setTimeCoefficient(coefficient);
+                onConfirm={(optionLabel, coefficient) => {
+                  setSelectedPaymentOption(optionLabel);
+                  setPaymentCoefficient(coefficient);
                   setShowModal(false);
                 }}
               />
@@ -313,13 +516,18 @@ export default function EstimatePage() {
             {/* Final total */}
             <div className="flex justify-between text-2xl font-semibold mt-4">
               <span>Total</span>
-              <span>${formatWithSeparator(total)}</span>
+              <span>${formatWithSeparator(finalTotal)}</span>
             </div>
           </div>
 
-          {/* House Info */}
+          {/* Payment schedule / final payment info */}
+          {selectedPaymentOption && renderPaymentSchedule()}
+
+          {/* House Info, etc. */}
           <div className="mt-6">
-            <h3 className="font-semibold text-xl text-gray-800">Home Details</h3>
+            <h3 className="font-semibold text-xl text-gray-800">
+              Home Details
+            </h3>
             <div className="mt-2 space-y-1 text-sm text-gray-700">
               <p>
                 <strong>Address:</strong> {houseInfo.addressLine || "N/A"}
@@ -375,52 +583,39 @@ export default function EstimatePage() {
               </p>
             </div>
           </div>
-
-          {/* Uploaded Photos */}
-          <div className="mt-6">
-            <h3 className="font-semibold text-xl text-gray-800">Uploaded Photos</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
-              {photos.map((photo, index) => (
-                <div key={index} className="relative group">
-                  <img
-                    src={photo}
-                    alt={`Uploaded photo ${index + 1}`}
-                    className="w-full h-32 object-cover rounded-lg border border-gray-300 transition-transform duration-300 group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-black bg-opacity-20 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
-                    <span className="text-white font-medium">
-                      Photo {index + 1}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-            {photos.length === 0 && (
-              <p className="text-medium text-gray-500 mt-2">No photos uploaded</p>
-            )}
-          </div>
-
-          {/* Additional details / Comments */}
-          <div className="mt-6">
-            <h3 className="font-semibold text-xl text-gray-800">Additional details</h3>
-            <p className="text-gray-500 mt-2 whitespace-pre-wrap">
-              {description || "No details provided"}
-            </p>
-          </div>
-
-          {/* Actions: proceed to checkout or go back */}
+          
           <div className="mt-6 space-y-4">
-            <Button
-              className="w-full justify-center"
-              variant="primary"
+            <button
               onClick={handleProceedToCheckout}
+              className="
+                w-full
+                bg-blue-600
+                text-white
+                py-3
+                rounded-lg
+                font-medium
+                hover:bg-blue-700
+                transition-colors
+              "
             >
               Proceed to Checkout →
-            </Button>
+            </button>
             <Button
-              className="w-full justify-center"
-              variant="secondary"
               onClick={handleGoBack}
+              variant="secondary"
+              className="
+                w-full
+                justify-center
+                border border-blue-600
+                bg-transparent
+                !text-blue-600
+                hover:bg-blue-50
+                hover:!text-blue-700
+                transition-colors
+                py-3
+                rounded-lg
+                font-medium
+              "
             >
               Go back to Services →
             </Button>

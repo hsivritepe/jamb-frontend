@@ -13,137 +13,175 @@ import {
 import { SectionBoxTitle } from "@/components/ui/SectionBoxTitle";
 import { PACKAGES } from "@/constants/packages";
 
-/**
- * Helper function to randomly pick a set of categories/tags from a larger array.
- * This function avoids repetition by shuffling the array and slicing the first `count` items.
- */
-function getRandomCategories(categories: string[], count: number): string[] {
-  const shuffled = [...categories].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, count);
-}
-
 export default function ServicePackages() {
+  // Grab the 4 packages from our PACKAGES array
+  const basicPkg = PACKAGES.find((p) => p.id === "basic_package");
+  const enhancedPkg = PACKAGES.find((p) => p.id === "enhanced_package");
+  const allInclusivePkg = PACKAGES.find((p) => p.id === "all_inclusive_package");
+  const customPkg = PACKAGES.find((p) => p.id === "configure_your_own_package");
+
+  // A helper to compute leftover services
+  // leftover = totalInPackage - featuredServices.length
+  function getLeftoverServicesCount(pkgObj: typeof PACKAGES[number] | undefined): number {
+    if (!pkgObj) return 0;
+    const indoorCount = pkgObj.services.indoor.length;
+    const outdoorCount = pkgObj.services.outdoor.length;
+    const total = indoorCount + outdoorCount;
+    const featuredCount = pkgObj.featuredServices.length;
+    return total - featuredCount;
+  }
+
   return (
     <section className="py-16">
-      {/* Section title for the service packages */}
       <SectionBoxTitle>
         Tailored Service Packages for Every Home Solution
       </SectionBoxTitle>
 
       <BoxGrid>
-        {/* First row: showing three main packages (basic, enhanced, all-inclusive) */}
         <BoxGridRow>
-          {PACKAGES.filter(
-            (pkg) =>
-              pkg.id === "basic_package" ||
-              pkg.id === "enhanced_package" ||
-              pkg.id === "all_inclusive_package"
-          ).map((pkg) => {
-            // Collect all indoor + outdoor services titles
-            const allServices = [
-              ...pkg.services.indoor.map((service) => service.title),
-              ...pkg.services.outdoor.map((service) => service.title),
-            ];
-            // Pick 5 random categories/tags to show on the card
-            const visibleCategories = getRandomCategories(allServices, 5);
-            // The remainder that won't be shown unless you click "read more" inside the details page
-            const remainingServicesCount = allServices.length - visibleCategories.length;
+          {/* ====================== Basic Package ====================== */}
+          {basicPkg && (
+            <Box variant="default" isPopular={false}>
+              <div>
+                <BoxTitle>{basicPkg.title}</BoxTitle>
+                <BoxDescription>
+                  Perfect for homeowners looking for a cost-effective solution
+                  covering essential home and garden maintenance.
+                </BoxDescription>
 
-            return (
-              <Box
-                key={pkg.id}
-                variant={
-                  pkg.id === "all_inclusive_package"
-                    ? "primary"
-                    : pkg.id === "enhanced_package"
-                    ? "light"
-                    : "default"
-                }
-                isPopular={pkg.id === "all_inclusive_package"}
-              >
-                <div>
-                  {/* Title of the package */}
-                  <BoxTitle>{pkg.title}</BoxTitle>
+                {/* Display the featured services as tags */}
+                <BoxTags tags={basicPkg.featuredServices} variant="default" />
 
-                  {/* Description text snippet */}
-                  <BoxDescription>
-                    {pkg.id === "basic_package" &&
-                      "Perfect for homeowners looking for a comprehensive yet cost-effective solution to maintain their home and garden."}
-                    {pkg.id === "enhanced_package" &&
-                      "Designed for homeowners seeking a more extensive range of home and garden maintenance services."}
-                    {pkg.id === "all_inclusive_package" &&
-                      "The most comprehensive offering, tailored for homeowners who demand the highest level of care and attention for their property."}
-                  </BoxDescription>
+                {/* Display leftover if positive */}
+                {(() => {
+                  const leftover = getLeftoverServicesCount(basicPkg);
+                  if (leftover > 0) {
+                    return (
+                      <p className="mt-2 text-sm text-gray-600">
+                        and <span className="font-medium">{leftover}</span> more recommended services
+                      </p>
+                    );
+                  }
+                  return null;
+                })()}
+              </div>
 
-                  {/* Display some example service tags */}
-                  <BoxTags
-                    tags={visibleCategories}
-                    variant={
-                      pkg.id === "all_inclusive_package"
-                        ? "primary"
-                        : pkg.id === "enhanced_package"
-                        ? "light"
-                        : "default"
-                    }
-                  />
-
-                  {/* If not all services are displayed, show how many remain */}
-                  {remainingServicesCount > 0 && (
-                    <p className="mt-2 text-sm text-black">
-                      more {remainingServicesCount} services
-                    </p>
-                  )}
-                </div>
-
-                {/* A link that shows the monthly price and leads to package details */}
-                <Link
-                  href={`/packages/details?packageId=${pkg.id}`}
-                  className={`${
-                    pkg.id === "all_inclusive_package"
-                      ? "text-white"
-                      : "text-blue-600"
-                  } text-xl font-medium`}
-                >
-                  <BoxPrice
-                    amount={
-                      pkg.id === "basic_package"
-                        ? 199
-                        : pkg.id === "enhanced_package"
-                        ? 399
-                        : 899
-                    }
-                    period="month"
-                    variant={
-                      pkg.id === "all_inclusive_package" ? "primary" : "default"
-                    }
-                  />
-                  Read more
-                </Link>
-              </Box>
-            );
-          })}
-        </BoxGridRow>
-
-        {/* A "full-width" box that offers a "Configure your own package" option */}
-        <Box variant="full-width">
-          <div className="flex justify-between items-start">
-            <div>
-              <BoxTitle>Configure your own package</BoxTitle>
-              <BoxDescription>
-                Put together a package of the services you need.
-              </BoxDescription>
-            </div>
-            <div className="text-right w-1/3">
-              <BoxPrice amount={139} period="month" />
+              {/* Price + Link */}
               <Link
-                href={`/packages/details?packageId=configure_your_own_package`}
-                className="text-blue-500 text-xl font-medium"
+                href={`/packages/details?packageId=${basicPkg.id}`}
+                className="text-blue-600 text-xl font-medium"
               >
+                <BoxPrice amount={199} period="month" variant="default" />
                 Read more
               </Link>
+            </Box>
+          )}
+
+          {/* ====================== Enhanced Package ====================== */}
+          {enhancedPkg && (
+            <Box variant="light" isPopular={false}>
+              <div>
+                <BoxTitle>{enhancedPkg.title}</BoxTitle>
+                <BoxDescription>
+                  Designed for homeowners seeking a broader range
+                  of indoor and outdoor services.
+                </BoxDescription>
+
+                <BoxTags tags={enhancedPkg.featuredServices} variant="light" />
+
+                {(() => {
+                  const leftover = getLeftoverServicesCount(enhancedPkg);
+                  if (leftover > 0) {
+                    return (
+                      <p className="mt-2 text-sm text-gray-600">
+                        and <span className="font-medium">{leftover}</span> more recommended services
+                      </p>
+                    );
+                  }
+                  return null;
+                })()}
+              </div>
+
+              <Link
+                href={`/packages/details?packageId=${enhancedPkg.id}`}
+                className="text-blue-600 text-xl font-medium"
+              >
+                <BoxPrice amount={399} period="month" />
+                Read more
+              </Link>
+            </Box>
+          )}
+
+          {/* ====================== All-Inclusive Package ====================== */}
+          {allInclusivePkg && (
+            <Box variant="primary" isPopular>
+              <div>
+                <BoxTitle>{allInclusivePkg.title}</BoxTitle>
+                <BoxDescription>
+                  The most comprehensive option, ideal for those
+                  who demand maximum care for their property.
+                </BoxDescription>
+
+                <BoxTags tags={allInclusivePkg.featuredServices} variant="primary" />
+
+                {(() => {
+                  const leftover = getLeftoverServicesCount(allInclusivePkg);
+                  if (leftover > 0) {
+                    return (
+                      <p className="mt-2 text-sm text-white">
+                        and <span className="font-medium">{leftover}</span> more recommended services
+                      </p>
+                    );
+                  }
+                  return null;
+                })()}
+              </div>
+
+              <Link
+                href={`/packages/details?packageId=${allInclusivePkg.id}`}
+                className="text-white text-xl font-medium"
+              >
+                <BoxPrice amount={899} period="month" variant="primary" />
+                Read more
+              </Link>
+            </Box>
+          )}
+        </BoxGridRow>
+
+        {/* ====================== Configure your own package (full-width) ====================== */}
+        {customPkg && (
+          <Box variant="full-width">
+            <div className="flex justify-between items-start">
+              <div>
+                <BoxTitle>{customPkg.title}</BoxTitle>
+                <BoxDescription>
+                  Assemble a custom set of services tailored to your needs.
+                </BoxDescription>
+
+                {(() => {
+                  const leftover = getLeftoverServicesCount(customPkg);
+                  if (leftover > 0) {
+                    return (
+                      <p className="mt-2 text-sm text-gray-200">
+                        and <span className="font-medium">{leftover}</span> more recommended services
+                      </p>
+                    );
+                  }
+                  return null;
+                })()}
+              </div>
+              <div className="text-right w-1/3">
+                <BoxPrice amount={139} period="month" />
+                <Link
+                  href={`/packages/details?packageId=${customPkg.id}`}
+                  className="text-blue-500 text-xl font-medium"
+                >
+                  Read more
+                </Link>
+              </div>
             </div>
-          </div>
-        </Box>
+          </Box>
+        )}
       </BoxGrid>
     </section>
   );

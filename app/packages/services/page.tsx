@@ -313,6 +313,11 @@ export default function PackageServicesPage() {
 
   // Move on to the next page (estimate)
   function handleNext() {
+    const hasAnySelected = Object.keys(mergedSelected).length > 0;
+    if (!hasAnySelected) {
+      alert("You haven't selected any services. Please choose at least one before continuing.");
+      return; 
+    }
     router.push("/packages/estimate");
   }
 
