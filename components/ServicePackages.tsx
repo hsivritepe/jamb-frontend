@@ -13,7 +13,10 @@ import {
 import { SectionBoxTitle } from "@/components/ui/SectionBoxTitle";
 import { PACKAGES } from "@/constants/packages";
 
-// Helper function to get random categories without repetition
+/**
+ * Helper function to randomly pick a set of categories/tags from a larger array.
+ * This function avoids repetition by shuffling the array and slicing the first `count` items.
+ */
 function getRandomCategories(categories: string[], count: number): string[] {
   const shuffled = [...categories].sort(() => Math.random() - 0.5);
   return shuffled.slice(0, count);
@@ -28,7 +31,7 @@ export default function ServicePackages() {
       </SectionBoxTitle>
 
       <BoxGrid>
-        {/* Row with three packages */}
+        {/* First row: showing three main packages (basic, enhanced, all-inclusive) */}
         <BoxGridRow>
           {PACKAGES.filter(
             (pkg) =>
@@ -36,13 +39,15 @@ export default function ServicePackages() {
               pkg.id === "enhanced_package" ||
               pkg.id === "all_inclusive_package"
           ).map((pkg) => {
+            // Collect all indoor + outdoor services titles
             const allServices = [
               ...pkg.services.indoor.map((service) => service.title),
               ...pkg.services.outdoor.map((service) => service.title),
             ];
+            // Pick 5 random categories/tags to show on the card
             const visibleCategories = getRandomCategories(allServices, 5);
-            const remainingServicesCount =
-              allServices.length - visibleCategories.length;
+            // The remainder that won't be shown unless you click "read more" inside the details page
+            const remainingServicesCount = allServices.length - visibleCategories.length;
 
             return (
               <Box
@@ -60,7 +65,7 @@ export default function ServicePackages() {
                   {/* Title of the package */}
                   <BoxTitle>{pkg.title}</BoxTitle>
 
-                  {/* Description of the package */}
+                  {/* Description text snippet */}
                   <BoxDescription>
                     {pkg.id === "basic_package" &&
                       "Perfect for homeowners looking for a comprehensive yet cost-effective solution to maintain their home and garden."}
@@ -70,7 +75,7 @@ export default function ServicePackages() {
                       "The most comprehensive offering, tailored for homeowners who demand the highest level of care and attention for their property."}
                   </BoxDescription>
 
-                  {/* Tags representing visible service categories */}
+                  {/* Display some example service tags */}
                   <BoxTags
                     tags={visibleCategories}
                     variant={
@@ -82,7 +87,7 @@ export default function ServicePackages() {
                     }
                   />
 
-                  {/* Display remaining services count */}
+                  {/* If not all services are displayed, show how many remain */}
                   {remainingServicesCount > 0 && (
                     <p className="mt-2 text-sm text-black">
                       more {remainingServicesCount} services
@@ -90,7 +95,7 @@ export default function ServicePackages() {
                   )}
                 </div>
 
-                {/* Link to read more with package price */}
+                {/* A link that shows the monthly price and leads to package details */}
                 <Link
                   href={`/packages/details?packageId=${pkg.id}`}
                   className={`${
@@ -119,7 +124,7 @@ export default function ServicePackages() {
           })}
         </BoxGridRow>
 
-        {/* Full-width row for "Configure Your Own Package" */}
+        {/* A "full-width" box that offers a "Configure your own package" option */}
         <Box variant="full-width">
           <div className="flex justify-between items-start">
             <div>

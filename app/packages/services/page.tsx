@@ -45,14 +45,14 @@ function formatWithSeparator(num: number): string {
   }).format(num);
 }
 
-/** Safely parse user-typed input to a positive number. */
+/** Safely parse user input to a positive number. Returns 1 if invalid. */
 function parsePositiveNumber(value: string): number {
   const parsed = parseFloat(value);
   if (isNaN(parsed) || parsed <= 0) return 1;
   return parsed;
 }
 
-/** Преобразование houseType в человекочитаемый */
+/** Convert a houseType code into a more human-readable label. */
 function formatHouseType(ht: string): string {
   switch (ht) {
     case "single_family":
@@ -66,17 +66,17 @@ function formatHouseType(ht: string): string {
   }
 }
 
-/** Checks if `sectionValue` is one of the indoor sections */
+/** Check if the section is an indoor one. */
 function isIndoorSection(sectionValue: string): boolean {
   return (Object.values(INDOOR_SERVICE_SECTIONS) as string[]).includes(sectionValue);
 }
 
-/** Checks if `sectionValue` is one of the outdoor sections */
+/** Check if the section is an outdoor one. */
 function isOutdoorSection(sectionValue: string): boolean {
   return (Object.values(OUTDOOR_SERVICE_SECTIONS) as string[]).includes(sectionValue);
 }
 
-/** Return a short version of the package title */
+/** Return a shorter label for each package ID (for the toggler). */
 function getShortTitle(pkgId: string): string {
   switch (pkgId) {
     case "basic_package":
@@ -96,21 +96,20 @@ export default function PackageServicesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // 1) Get packageId
+  // 1) Determine the packageId from the query. If invalid, show a loading or handle error
   const packageId = searchParams.get("packageId");
   const chosenPackage = PACKAGES.find((pkg) => pkg.id === packageId) || null;
   if (!packageId || !chosenPackage) {
     return <p>Loading package...</p>;
   }
-  const safePackage = chosenPackage as NonNullable<typeof chosenPackage>;
+  const safePackage = chosenPackage;
 
-  // (Важно!) — Сохраняем текущий packageId в sessionStorage,
-  // чтобы страница Estimate тоже знала, какой пакет был выбран.
+  // Store the current packageId in session so that the next page (Estimate) knows about it
   useEffect(() => {
     saveToSession("packages_currentPackageId", packageId);
   }, [packageId]);
 
-  // 2) Считываем или создаём state для выбранных сервисов
+  // 2) Load existing selected services from session, or create default
   const [selectedServices, setSelectedServices] = useState<{
     indoor: Record<string, number>;
     outdoor: Record<string, number>;
@@ -121,7 +120,7 @@ export default function PackageServicesPage() {
     })
   );
 
-  // House info
+  // 3) Also load houseInfo to display on the summary side, if needed
   const [houseInfo] = useState(() =>
     loadFromSession("packages_houseInfo", {
       country: "",
@@ -146,32 +145,37 @@ export default function PackageServicesPage() {
     })
   );
 
-  // Search
+  // 4) Manage a search filter to quickly find services by name or description
   const [searchQuery, setSearchQuery] = useState<string>(() =>
     loadFromSession("packages_searchQuery", "")
   );
+  // Keep search query in session so user doesn't lose it on refresh
   useEffect(() => {
     saveToSession("packages_searchQuery", searchQuery);
   }, [searchQuery]);
 
-  // Sync selectedServices to session
+  // 5) Whenever selectedServices changes, save it to session
   useEffect(() => {
     saveToSession("packages_selectedServices", selectedServices);
   }, [selectedServices]);
 
-  // Manual input
+  // 6) For quantity inputs that user might type into manually
   const [manualInputValue, setManualInputValue] = useState<Record<string, string>>({});
+
+  // 7) Track which categories are expanded
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
-  // Combine
+  // Combine all services from the chosen package (indoor + outdoor) into a single array for filtering
   const combinedServices: (typeof ALL_SERVICES)[number][] = [];
+
+  // Helper function to process indoor or outdoor from the chosen package
   function processSide(isIndoor: boolean) {
     const sideKey = isIndoor ? "indoor" : "outdoor";
     safePackage.services[sideKey].forEach((pkgItem) => {
       const svcObj = ALL_SERVICES.find((s) => s.id === pkgItem.id);
       if (!svcObj) return;
 
-      // search filter
+      // If there's a search query, match against title or description
       if (searchQuery) {
         const lower = searchQuery.toLowerCase();
         const matchTitle = svcObj.title.toLowerCase().includes(lower);
@@ -182,14 +186,17 @@ export default function PackageServicesPage() {
       combinedServices.push(svcObj);
     });
   }
+  // Process indoor
   processSide(true);
+  // Process outdoor
   processSide(false);
 
-  // "For Home" / "For Garden"
+  // Build up sets of category IDs for "For Home" (indoor) or "For Garden" (outdoor)
   const homeSectionsMap: Record<string, Set<string>> = {};
   const gardenSectionsMap: Record<string, Set<string>> = {};
 
   for (const svc of combinedServices) {
+    // The category ID might be something like "indoor-kitchen"
     const catId = svc.id.split("-").slice(0, 2).join("-");
     const catObj = ALL_CATEGORIES.find((c) => c.id === catId);
     if (!catObj) continue;
@@ -208,7 +215,7 @@ export default function PackageServicesPage() {
     }
   }
 
-  // catId => array of services
+  // Create a map of catId => array of services
   const catServicesMap: Record<string, (typeof ALL_SERVICES)[number][]> = {};
   for (const svc of combinedServices) {
     const catId = svc.id.split("-").slice(0, 2).join("-");
@@ -218,7 +225,7 @@ export default function PackageServicesPage() {
     catServicesMap[catId].push(svc);
   }
 
-  // Toggle
+  // Expand/collapse a category
   function toggleCategory(catId: string) {
     setExpandedCategories((prev) => {
       const next = new Set(prev);
@@ -227,38 +234,51 @@ export default function PackageServicesPage() {
       return next;
     });
   }
+
+  // Toggle whether a service is selected or not
   function toggleService(serviceId: string) {
+    // Determine whether it's an indoor or outdoor service by searching the chosen package
     const isIndoor = !!safePackage.services.indoor.find((it) => it.id === serviceId);
     const sideKey = isIndoor ? "indoor" : "outdoor";
 
     const copy = { ...selectedServices[sideKey] };
     if (copy[serviceId]) {
+      // If it was selected, unselect it
       delete copy[serviceId];
     } else {
+      // If it wasn't, set a default quantity
       copy[serviceId] = 1;
     }
     setSelectedServices((prev) => ({ ...prev, [sideKey]: copy }));
   }
 
+  // Handle increment/decrement of the quantity for a service
   function handleQuantityChange(serviceId: string, increment: boolean, unit: string) {
     const isIndoor = !!safePackage.services.indoor.find((it) => it.id === serviceId);
     const sideKey = isIndoor ? "indoor" : "outdoor";
     const copy = { ...selectedServices[sideKey] };
 
     const oldVal = copy[serviceId] || 1;
+    // If incrementing, add 1. If decrementing, sub 1 but not below 1
     let newVal = increment ? oldVal + 1 : Math.max(1, oldVal - 1);
+
+    // If the unit is "each", keep it an integer
     if (unit === "each") {
       newVal = Math.round(newVal);
     }
 
+    // Update state
     copy[serviceId] = newVal;
     setSelectedServices((prev) => ({ ...prev, [sideKey]: copy }));
     setManualInputValue((prev) => ({ ...prev, [serviceId]: String(newVal) }));
   }
 
+  // Handle the user manually typing a quantity in an input
   function handleManualQuantityChange(serviceId: string, value: string, unit: string) {
     setManualInputValue((prev) => ({ ...prev, [serviceId]: value }));
   }
+
+  // On blur, parse the typed quantity and update the state
   function handleBlurInput(serviceId: string, unit: string) {
     const isIndoor = !!safePackage.services.indoor.find((it) => it.id === serviceId);
     const sideKey = isIndoor ? "indoor" : "outdoor";
@@ -266,6 +286,7 @@ export default function PackageServicesPage() {
 
     const currentVal = manualInputValue[serviceId] ?? "";
     const parsed = parsePositiveNumber(currentVal);
+
     copy[serviceId] = unit === "each" ? Math.round(parsed) : parsed;
 
     setSelectedServices((prev) => ({ ...prev, [sideKey]: copy }));
@@ -275,7 +296,7 @@ export default function PackageServicesPage() {
     }));
   }
 
-  // Calculate total
+  // Calculate the annual price from all selected services
   function calculateAnnualPrice(): number {
     let total = 0;
     for (const [svcId, qty] of Object.entries(selectedServices.indoor)) {
@@ -290,18 +311,20 @@ export default function PackageServicesPage() {
   }
   const annualPrice = calculateAnnualPrice();
 
-  // Next step -> estimate
+  // Move on to the next page (estimate)
   function handleNext() {
     router.push("/packages/estimate");
   }
 
-  // Clear / selectAll
+  // Clear all selections
   function handleClearAll() {
     const confirmed = window.confirm("Are you sure you want to clear all selections?");
     if (!confirmed) return;
     setSelectedServices({ indoor: {}, outdoor: {} });
     setExpandedCategories(new Set());
   }
+
+  // Select all available services in this package
   function handleSelectAll() {
     const confirmed = window.confirm("Are you sure you want to select all services?");
     if (!confirmed) return;
@@ -317,8 +340,9 @@ export default function PackageServicesPage() {
     setSelectedServices({ indoor: nextIndoor, outdoor: nextOutdoor });
   }
 
-  // Package toggler (если хотите переключаться между пакетами)
+  // Toggle package from the top toggler
   function handlePackageToggle(pkgId: string) {
+    // If user selects a different package, navigate there
     router.push(`/packages/services?packageId=${pkgId}`);
   }
   const packageIdsInOrder = [
@@ -328,13 +352,13 @@ export default function PackageServicesPage() {
     "configure_your_own_package",
   ];
 
-  // Summary
+  // Combine both indoor & outdoor into one object for summary
   const mergedSelected: Record<string, number> = {
     ...selectedServices.indoor,
     ...selectedServices.outdoor,
   };
 
-  // Group by section -> cat
+  // We'll build a structure grouped by: section -> category -> [services]
   type ServiceItem = {
     svcObj: (typeof ALL_SERVICES)[number];
     qty: number;
@@ -366,8 +390,9 @@ export default function PackageServicesPage() {
       </div>
 
       <div className="container mx-auto">
-        {/* Row with toggler + Next button */}
-        <div className="flex justify-between items-center mt-8">
+        {/* Top row: package toggler + Next button */}
+        <div className="flex justify-between items-center mt-11">
+          {/* Package toggler: Basic | Enhanced | All-inclusive | Custom */}
           <div className="inline-flex rounded-lg p-1 w-full max-w-[624px] h-14 border border-gray-200">
             {packageIdsInOrder.map((pkgId) => {
               const pkgObj = PACKAGES.find((p) => p.id === pkgId);
@@ -378,7 +403,7 @@ export default function PackageServicesPage() {
                 <button
                   key={pkgId}
                   onClick={() => handlePackageToggle(pkgId)}
-                  className={`flex-1 px-4 py-2 rounded-md font-semibold transition-colors h-full text-lg ${
+                  className={`flex-1 px-4 py-2 rounded-md font-semibold transition-colors text-lg ${
                     isActive
                       ? "bg-blue-600 text-white"
                       : "text-gray-600 hover:bg-gray-100"
@@ -390,7 +415,7 @@ export default function PackageServicesPage() {
             })}
           </div>
 
-          <Button onClick={handleNext} variant="primary" className="h-14 text-base">
+          <Button onClick={handleNext} variant="primary">
             Next →
           </Button>
         </div>
@@ -406,7 +431,7 @@ export default function PackageServicesPage() {
           />
         </div>
 
-        {/* Buttons row (Select all / Clear) */}
+        {/* "Select all" and "Clear" buttons, plus a link for missing services */}
         <div className="flex justify-between items-center text-sm text-gray-500 mt-6 w-full max-w-[624px]">
           <span>
             No service?{" "}
@@ -430,10 +455,11 @@ export default function PackageServicesPage() {
           </div>
         </div>
 
+        {/* Layout: left column (services) + right column (summary) */}
         <div className="container mx-auto relative flex mt-8">
-          {/* LEFT COLUMN (sections) */}
+          {/* LEFT COLUMN */}
           <div className="flex-1 space-y-12">
-            {/* "For Home" */}
+            {/* For Home (if any indoor sections exist) */}
             {Object.keys(homeSectionsMap).length > 0 && (
               <div>
                 <div className="w-full max-w-[624px] mx-auto">
@@ -480,6 +506,7 @@ export default function PackageServicesPage() {
                                 selectedInCat > 0 ? "border-blue-500" : "border-gray-300"
                               }`}
                             >
+                              {/* Category header (clickable to expand/collapse) */}
                               <button
                                 onClick={() => toggleCategory(catId)}
                                 className="flex justify-between items-center w-full"
@@ -503,6 +530,7 @@ export default function PackageServicesPage() {
                                 />
                               </button>
 
+                              {/* Render the services if expanded */}
                               {expandedCategories.has(catId) && (
                                 <div className="mt-4 flex flex-col gap-3">
                                   {servicesForCat.map((svc) => {
@@ -523,6 +551,7 @@ export default function PackageServicesPage() {
 
                                     return (
                                       <div key={svc.id} className="space-y-2">
+                                        {/* Service title + toggle */}
                                         <div className="flex justify-between items-center">
                                           <span
                                             className={`text-lg transition-colors duration-300 ${
@@ -543,6 +572,7 @@ export default function PackageServicesPage() {
                                           </label>
                                         </div>
 
+                                        {/* If selected, show details: description, quantity, price */}
                                         {isSelected && (
                                           <>
                                             {svc.description && (
@@ -552,6 +582,7 @@ export default function PackageServicesPage() {
                                             )}
                                             <div className="flex justify-between items-center">
                                               <div className="flex items-center gap-1">
+                                                {/* Decrement button */}
                                                 <button
                                                   onClick={() =>
                                                     handleQuantityChange(
@@ -564,6 +595,7 @@ export default function PackageServicesPage() {
                                                 >
                                                   −
                                                 </button>
+                                                {/* Text input for manual quantity */}
                                                 <input
                                                   type="text"
                                                   value={inputValue}
@@ -586,6 +618,7 @@ export default function PackageServicesPage() {
                                                   className="w-20 text-center px-2 py-1 border rounded"
                                                   placeholder="1"
                                                 />
+                                                {/* Increment button */}
                                                 <button
                                                   onClick={() =>
                                                     handleQuantityChange(
@@ -623,7 +656,7 @@ export default function PackageServicesPage() {
               </div>
             )}
 
-            {/* "For Garden" */}
+            {/* For Garden (if any outdoor sections exist) */}
             {Object.keys(gardenSectionsMap).length > 0 && (
               <div>
                 <div className="w-full max-w-[624px] mx-auto">
@@ -671,6 +704,7 @@ export default function PackageServicesPage() {
                                 selectedInCat > 0 ? "border-blue-500" : "border-gray-300"
                               }`}
                             >
+                              {/* Category header (clickable to expand/collapse) */}
                               <button
                                 onClick={() => toggleCategory(catId)}
                                 className="flex justify-between items-center w-full"
@@ -694,6 +728,7 @@ export default function PackageServicesPage() {
                                 />
                               </button>
 
+                              {/* Render services if expanded */}
                               {expandedCategories.has(catId) && (
                                 <div className="mt-4 flex flex-col gap-3">
                                   {servicesForCat.map((svc) => {
@@ -745,14 +780,20 @@ export default function PackageServicesPage() {
                                             )}
                                             <div className="flex justify-between items-center">
                                               <div className="flex items-center gap-1">
+                                                {/* Decrement */}
                                                 <button
                                                   onClick={() =>
-                                                    handleQuantityChange(svc.id, false, svc.unit_of_measurement)
+                                                    handleQuantityChange(
+                                                      svc.id,
+                                                      false,
+                                                      svc.unit_of_measurement
+                                                    )
                                                   }
                                                   className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
                                                 >
                                                   −
                                                 </button>
+                                                {/* Text input */}
                                                 <input
                                                   type="text"
                                                   value={inputValue}
@@ -775,9 +816,14 @@ export default function PackageServicesPage() {
                                                   className="w-20 text-center px-2 py-1 border rounded"
                                                   placeholder="1"
                                                 />
+                                                {/* Increment */}
                                                 <button
                                                   onClick={() =>
-                                                    handleQuantityChange(svc.id, true, svc.unit_of_measurement)
+                                                    handleQuantityChange(
+                                                      svc.id,
+                                                      true,
+                                                      svc.unit_of_measurement
+                                                    )
                                                   }
                                                   className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
                                                 >
@@ -788,10 +834,7 @@ export default function PackageServicesPage() {
                                                 </span>
                                               </div>
                                               <span className="text-lg text-blue-600 font-medium text-right">
-                                                $
-                                                {formatWithSeparator(
-                                                  svc.price * quantity
-                                                )}
+                                                ${formatWithSeparator(svc.price * quantity)}
                                               </span>
                                             </div>
                                           </>
@@ -812,7 +855,7 @@ export default function PackageServicesPage() {
             )}
           </div>
 
-          {/* RIGHT COLUMN: summary + house info */}
+          {/* RIGHT COLUMN: summary of selected services + house info */}
           <div className="w-1/2 ml-auto pt-0 space-y-6">
             <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden">
               <SectionBoxSubtitle>Your {safePackage.title}</SectionBoxSubtitle>
@@ -895,7 +938,7 @@ export default function PackageServicesPage() {
               )}
             </div>
 
-            {/* House info */}
+            {/* House info summary */}
             <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden">
               <SectionBoxSubtitle>Home Details</SectionBoxSubtitle>
 

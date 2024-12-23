@@ -9,7 +9,7 @@ import { SectionBoxTitle } from "@/components/ui/SectionBoxTitle";
 import { SectionBoxSubtitle } from "@/components/ui/SectionBoxSubtitle";
 
 /**
- * Utility to save data to sessionStorage (client side).
+ * Utility function: Save a key/value pair to sessionStorage as JSON (client side).
  */
 function saveToSession(key: string, value: any) {
   if (typeof window !== "undefined") {
@@ -18,8 +18,7 @@ function saveToSession(key: string, value: any) {
 }
 
 /**
- * Utility to load data from sessionStorage, or return a default if it's missing
- * or if we're on the server side.
+ * Utility function: Load data from sessionStorage, or return a default if not found or SSR.
  */
 function loadFromSession<T>(key: string, defaultValue: T): T {
   if (typeof window === "undefined") return defaultValue;
@@ -31,7 +30,7 @@ function loadFromSession<T>(key: string, defaultValue: T): T {
   }
 }
 
-/**
+/** 
  * Safely parse a string to a number. If invalid, return 0.
  */
 function parseNumberOrZero(val: string): number {
@@ -39,8 +38,8 @@ function parseNumberOrZero(val: string): number {
   return Number.isNaN(num) ? 0 : num;
 }
 
-/** 
- * This object represents the initial defaults for all house/apartment fields.
+/**
+ * Default shape of the house/apartment info we want to collect.
  */
 const defaultHouseInfo = {
   country: "",
@@ -68,39 +67,36 @@ export default function PackagesDetailsHomePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // If carrying the `packageId` from a previous page (e.g., from the "Read more" link):
+  // Grab the packageId if it was passed in the query (e.g. from "Read more" link).
   const packageId = searchParams.get("packageId") || ""; 
 
-  // Optionally handle if no packageId was provided:
+  // If there's no packageId, you could optionally redirect the user back to /packages
   useEffect(() => {
     if (!packageId) {
       // e.g. router.push("/packages");
     }
   }, [packageId]);
 
-  // Load any previously stored house info from sessionStorage, or use default.
+  // State to keep track of house info. It loads from session if available.
   const [houseInfo, setHouseInfo] = useState(() =>
     loadFromSession("packages_houseInfo", defaultHouseInfo)
   );
 
-  // Whenever houseInfo changes, persist to session.
+  // Whenever houseInfo changes, we persist it to sessionStorage
   useEffect(() => {
     saveToSession("packages_houseInfo", houseInfo);
   }, [houseInfo]);
 
   /**
-   * handleChange: For text or select inputs that store string values.
+   * For text or select inputs that store string values in `houseInfo`.
    */
   function handleChange(e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     const { name, value } = e.target;
-    setHouseInfo((prev: typeof defaultHouseInfo) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setHouseInfo((prev) => ({ ...prev, [name]: value }));
   }
 
   /**
-   * handleNumber: For numeric inputs or select controls that store numeric values.
+   * For numeric-based inputs or selects. We parse to number.
    */
   function handleNumber(e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     const { name, value } = e.target;
@@ -111,7 +107,8 @@ export default function PackagesDetailsHomePage() {
   }
 
   /**
-   * handleAutoFillLocation: Use ipapi.co to fetch city/zip/country data, similar to the header approach.
+   * Attempt to auto-detect city/zip/country from ipapi.co 
+   * and fill them into the form.
    */
   async function handleAutoFillLocation() {
     try {
@@ -137,7 +134,7 @@ export default function PackagesDetailsHomePage() {
   }
 
   /**
-   * handleNext: Validate required fields, then move to the next page (services selection).
+   * Validate required fields, then proceed to the next step (services selection).
    */
   function handleNext() {
     if (!houseInfo.addressLine.trim()) {
@@ -152,12 +149,13 @@ export default function PackagesDetailsHomePage() {
       alert("Please select your house type.");
       return;
     }
-    // If all validations pass, navigate to next page
+
+    // Navigate to /packages/services, preserving the packageId in the URL query
     router.push(`/packages/services?packageId=${packageId}`);
   }
 
   /**
-   * handleClearAll: Confirm with the user, then reset everything to defaults.
+   * Reset the entire form to the defaultHouseInfo state.
    */
   function handleClearAll() {
     const confirmed = window.confirm("Are you sure you want to clear all data?");
@@ -166,17 +164,19 @@ export default function PackagesDetailsHomePage() {
   }
 
   /**
-   * Toggling booleans for garage, yard, pool, and boiler, 
-   * plus controlling dependent fields like garageCount, yardArea, poolArea, etc.
+   * Toggle the "hasGarage" boolean. If turning it off, reset garageCount to 0.
    */
   function toggleGarage() {
     setHouseInfo((prev) => ({
       ...prev,
       hasGarage: !prev.hasGarage,
-      // If turning it off, reset garageCount to 0
       garageCount: !prev.hasGarage ? 1 : 0,
     }));
   }
+
+  /**
+   * Toggle the "hasYard" boolean. If turning it off, reset yardArea to 0.
+   */
   function toggleYard() {
     setHouseInfo((prev) => ({
       ...prev,
@@ -184,6 +184,10 @@ export default function PackagesDetailsHomePage() {
       yardArea: 0,
     }));
   }
+
+  /**
+   * Toggle the "hasPool" boolean. If turning it off, reset poolArea to 0.
+   */
   function togglePool() {
     setHouseInfo((prev) => ({
       ...prev,
@@ -191,6 +195,10 @@ export default function PackagesDetailsHomePage() {
       poolArea: 0,
     }));
   }
+
+  /**
+   * Toggle the "hasBoiler" boolean. If turning it off, reset boilerType to "".
+   */
   function toggleBoiler() {
     setHouseInfo((prev) => ({
       ...prev,
@@ -202,15 +210,16 @@ export default function PackagesDetailsHomePage() {
   return (
     <main className="min-h-screen pt-24 pb-16">
       <div className="container mx-auto">
+        {/* Breadcrumb nav */}
         <BreadCrumb items={PACKAGES_STEPS} />
 
-        {/* Title row with Next button on the right */}
+        {/* Top row: page title + Next button */}
         <div className="flex justify-between items-center mt-8">
           <SectionBoxTitle>Home / Apartment Information</SectionBoxTitle>
           <Button onClick={handleNext}>Next →</Button>
         </div>
 
-        {/* Intro paragraph + Clear button */}
+        {/* Small description and a "Clear" button */}
         <div className="flex justify-between items-center mt-2 max-w-3xl">
           <p className="text-gray-600">
             Please provide details about your home so we can tailor the package properly.
@@ -223,8 +232,9 @@ export default function PackagesDetailsHomePage() {
           </button>
         </div>
 
+        {/* Main form container */}
         <div className="bg-white border border-gray-300 mt-6 p-6 rounded-lg space-y-6 max-w-3xl">
-          {/* Address & Location */}
+          {/* Address & Location Section */}
           <div>
             <SectionBoxSubtitle>Address & Location</SectionBoxSubtitle>
 
@@ -279,7 +289,7 @@ export default function PackagesDetailsHomePage() {
               </div>
             </div>
 
-            {/* Country + auto button */}
+            {/* Country + auto-detect button */}
             <div className="flex gap-4 mt-4">
               <div className="w-1/2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -294,6 +304,7 @@ export default function PackagesDetailsHomePage() {
                   <option value="">-- Select --</option>
                   <option value="USA">USA</option>
                   <option value="Canada">Canada</option>
+                  {/* Add more countries as needed */}
                 </select>
               </div>
 
@@ -309,7 +320,7 @@ export default function PackagesDetailsHomePage() {
             </div>
           </div>
 
-          {/* Indoor Details */}
+          {/* Indoor Details Section */}
           <div>
             <SectionBoxSubtitle>Indoor Details</SectionBoxSubtitle>
 
@@ -346,12 +357,13 @@ export default function PackagesDetailsHomePage() {
                   <option value="1">1</option>
                   <option value="2">2</option>
                   <option value="3">3+</option>
+                  {/* Adjust as needed */}
                 </select>
               </div>
             </div>
 
             <div className="flex gap-4 mt-4">
-              {/* Square Footage */}
+              {/* Total Square Footage */}
               <div className="w-1/2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Total Square Footage

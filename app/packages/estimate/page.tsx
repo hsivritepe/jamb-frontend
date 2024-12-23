@@ -5,12 +5,12 @@ import { useRouter } from "next/navigation";
 import BreadCrumb from "@/components/ui/BreadCrumb";
 import Button from "@/components/ui/Button";
 import { SectionBoxSubtitle } from "@/components/ui/SectionBoxSubtitle";
-import { PACKAGES_STEPS } from "@/constants/navigation"; // <-- Предположим, тут: [{label:"Packages", href:"/packages"}, {label:"Services", href:"/packages/services"}, ... ]
+import { PACKAGES_STEPS } from "@/constants/navigation";
 import { ALL_CATEGORIES } from "@/constants/categories";
 import { ALL_SERVICES } from "@/constants/services";
 import ServiceTimePicker from "@/components/ui/ServiceTimePicker";
 
-/** Format with commas and 2 decimals */
+/** Format a number with commas and 2 decimals */
 function formatWithSeparator(value: number): string {
   return new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 2,
@@ -18,17 +18,19 @@ function formatWithSeparator(value: number): string {
   }).format(value);
 }
 
-/** Format quantity with commas (no decimals) */
+/** Format an integer with commas (no decimals) */
 function formatQuantity(value: number): string {
   return new Intl.NumberFormat("en-US").format(value);
 }
 
-/** Session helpers */
+/** Save JSON to sessionStorage */
 function saveToSession(key: string, value: any) {
   if (typeof window !== "undefined") {
     sessionStorage.setItem(key, JSON.stringify(value));
   }
 }
+
+/** Load JSON from sessionStorage or fallback to default */
 function loadFromSession<T>(key: string, defaultValue: T): T {
   if (typeof window === "undefined") return defaultValue;
   const stored = sessionStorage.getItem(key);
@@ -42,22 +44,22 @@ function loadFromSession<T>(key: string, defaultValue: T): T {
 export default function EstimatePage() {
   const router = useRouter();
 
-  // 1) Загружаем packageId, чтобы "Go back to Services" и клики по хлебным крошкам вели на тот же пакет
+  // 1) Retrieve the current packageId from session (so we can link back to the correct "Services" page).
   const storedPackageId = loadFromSession("packages_currentPackageId", null);
 
-  // 2) Загружаем { indoor, outdoor }
+  // 2) Retrieve the user's selected services from session
   const selectedServicesFromSession = loadFromSession("packages_selectedServices", {
     indoor: {},
     outdoor: {},
   });
 
-  // Сливаем
+  // Merge indoor + outdoor
   const mergedSelected: Record<string, number> = {
     ...selectedServicesFromSession.indoor,
     ...selectedServicesFromSession.outdoor,
   };
 
-  // Если пусто, можно редиректить:
+  // If no services selected, redirect them back to the services page for that package
   useEffect(() => {
     if (Object.keys(mergedSelected).length === 0) {
       router.push(
@@ -68,7 +70,7 @@ export default function EstimatePage() {
     }
   }, [mergedSelected, router, storedPackageId]);
 
-  // House info
+  // 3) Retrieve the house info
   const houseInfo = loadFromSession("packages_houseInfo", {
     country: "",
     city: "",
@@ -91,11 +93,11 @@ export default function EstimatePage() {
     airConditioners: 0,
   });
 
-  // Photos, description
+  // 4) Retrieve uploaded photos and additional description
   const photos: string[] = loadFromSession("packages_photos", []);
   const description: string = loadFromSession("packages_description", "");
 
-  // Modal + timeCoefficient
+  // 5) State for time scheduling pop-up (and selected time, coefficient)
   const [showModal, setShowModal] = useState(false);
   const [selectedTime, setSelectedTime] = useState<string | null>(() =>
     loadFromSession("packages_selectedTime", null)
@@ -104,6 +106,7 @@ export default function EstimatePage() {
     loadFromSession("packages_timeCoefficient", 1)
   );
 
+  // Persist changes
   useEffect(() => {
     saveToSession("packages_selectedTime", selectedTime);
   }, [selectedTime]);
@@ -111,7 +114,7 @@ export default function EstimatePage() {
     saveToSession("packages_timeCoefficient", timeCoefficient);
   }, [timeCoefficient]);
 
-  // Подсчет subtotal
+  // 6) Calculate the pricing
   function calculateSubtotal(): number {
     let sum = 0;
     for (const [svcId, qty] of Object.entries(mergedSelected)) {
@@ -123,18 +126,22 @@ export default function EstimatePage() {
     return sum;
   }
   const subtotal = calculateSubtotal();
+  // Apply any timeCoefficient to the subtotal
   const adjustedSubtotal = subtotal * timeCoefficient;
+  // A sample sales tax rate (8.25% as an example)
   const salesTax = adjustedSubtotal * 0.0825;
   const total = adjustedSubtotal + salesTax;
 
-  // Кнопка Proceed to checkout
+  // 7) Handle "Proceed to checkout"
   function handleProceedToCheckout() {
+    // Make sure time is chosen and coefficient is stored
     saveToSession("packages_selectedTime", selectedTime);
     saveToSession("packages_timeCoefficient", timeCoefficient);
+    // Go to checkout page
     router.push("/packages/checkout");
   }
 
-  // Сгруппируем для вывода
+  // We'll group the selected services by section -> category
   type ServiceItem = { svcObj: (typeof ALL_SERVICES)[number]; qty: number };
   const itemsArr: ServiceItem[] = Object.entries(mergedSelected)
     .map(([svcId, qty]) => {
@@ -159,25 +166,19 @@ export default function EstimatePage() {
     summaryBySection[sectionName][catId].push({ svcObj, qty });
   });
 
-  // --- ВАЖНО: Модифицируем хлебные крошки, чтобы пункт "Services" указывал на /packages/services?packageId=...
-  // Предположим, в PACKAGES_STEPS один из элементов — { label: "Services", href: "/packages/services" }
-  // Мы перезапишем href для Services:
   const modifiedCrumbs = PACKAGES_STEPS.map((step) => {
-    if (step.label === "Services") {
+    // If we have no storedPackageId, do nothing
+    if (!storedPackageId) return step;
+    if (step.href.startsWith("/packages") && !step.href.includes("?")) {
       return {
         ...step,
-        href: storedPackageId
-          ? `/packages/services?packageId=${storedPackageId}`
-          : "/packages/services",
+        href: `${step.href}?packageId=${storedPackageId}`,
       };
     }
+
     return step;
   });
 
-  // А если у вас другой label (например "Select Services"), то поменяйте условие
-  // if (step.label === "Select Services") { ... } и т.д.
-
-  // Функция "Go back to Services"
   function handleGoBack() {
     if (storedPackageId) {
       router.push(`/packages/services?packageId=${storedPackageId}`);
@@ -189,7 +190,7 @@ export default function EstimatePage() {
   return (
     <main className="min-h-screen pt-24">
       <div className="container mx-auto">
-        {/* Вместо <BreadCrumb items={PACKAGES_STEPS} /> => */}
+        {/* Use the modified breadcrumb with the correct link for all steps */}
         <BreadCrumb items={modifiedCrumbs} />
       </div>
 
@@ -197,6 +198,7 @@ export default function EstimatePage() {
         <div className="max-w-[900px] mx-auto bg-brand-light p-6 rounded-xl border border-gray-300 overflow-hidden">
           <SectionBoxSubtitle>Estimate</SectionBoxSubtitle>
 
+          {/* Render the breakdown of selected services, grouped by section -> category */}
           <div className="mt-4 space-y-4">
             {Object.entries(summaryBySection).length === 0 ? (
               <p className="text-gray-500">No services selected</p>
@@ -248,7 +250,7 @@ export default function EstimatePage() {
             )}
           </div>
 
-          {/* Итоговая часть */}
+          {/* Pricing summary */}
           <div className="pt-4 mt-4 border-t border-gray-200">
             {timeCoefficient !== 1 && (
               <div className="flex justify-between mb-2">
@@ -278,7 +280,7 @@ export default function EstimatePage() {
               <span>${formatWithSeparator(salesTax)}</span>
             </div>
 
-            {/* Кнопка выбрать время (открыть модал) */}
+            {/* Button to select or change time (shows a modal) */}
             <button
               onClick={() => setShowModal(true)}
               className={`w-full py-3 rounded-lg font-medium mt-4 border ${
@@ -295,6 +297,7 @@ export default function EstimatePage() {
               </p>
             )}
 
+            {/* Show the modal if user clicks the "Select Available Time" */}
             {showModal && (
               <ServiceTimePicker
                 subtotal={subtotal}
@@ -307,14 +310,14 @@ export default function EstimatePage() {
               />
             )}
 
-            {/* Total */}
+            {/* Final total */}
             <div className="flex justify-between text-2xl font-semibold mt-4">
               <span>Total</span>
               <span>${formatWithSeparator(total)}</span>
             </div>
           </div>
 
-          {/* Address, House Info */}
+          {/* House Info */}
           <div className="mt-6">
             <h3 className="font-semibold text-xl text-gray-800">Home Details</h3>
             <div className="mt-2 space-y-1 text-sm text-gray-700">
@@ -373,7 +376,7 @@ export default function EstimatePage() {
             </div>
           </div>
 
-          {/* Photos */}
+          {/* Uploaded Photos */}
           <div className="mt-6">
             <h3 className="font-semibold text-xl text-gray-800">Uploaded Photos</h3>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
@@ -397,7 +400,7 @@ export default function EstimatePage() {
             )}
           </div>
 
-          {/* Additional details */}
+          {/* Additional details / Comments */}
           <div className="mt-6">
             <h3 className="font-semibold text-xl text-gray-800">Additional details</h3>
             <p className="text-gray-500 mt-2 whitespace-pre-wrap">
@@ -405,7 +408,7 @@ export default function EstimatePage() {
             </p>
           </div>
 
-          {/* Actions */}
+          {/* Actions: proceed to checkout or go back */}
           <div className="mt-6 space-y-4">
             <Button
               className="w-full justify-center"
@@ -414,7 +417,6 @@ export default function EstimatePage() {
             >
               Proceed to Checkout →
             </Button>
-            {/* Кнопка возврата к тем же services */}
             <Button
               className="w-full justify-center"
               variant="secondary"
