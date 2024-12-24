@@ -609,12 +609,13 @@ export default function EstimatePage() {
                 border border-blue-600
                 bg-transparent
                 !text-blue-600
-                hover:bg-blue-50
+                hover:!bg-blue-50
                 hover:!text-blue-700
                 transition-colors
                 py-3
                 rounded-lg
-                font-medium
+                font-xs
+                font-normal
               "
             >
               Go back to Services →
