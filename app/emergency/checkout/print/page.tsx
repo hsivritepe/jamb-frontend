@@ -5,22 +5,20 @@ import { useRouter } from "next/navigation";
 import { ALL_SERVICES } from "@/constants/services";
 
 /**
- * A helper to load data from sessionStorage. 
- * Returns `defaultValue` if running on the server or if parsing fails.
+ * Safely load data from sessionStorage; returns defaultValue if SSR or parse error.
  */
-function loadFromSession(key: string, defaultValue: any = null) {
+function loadFromSession<T>(key: string, defaultValue: T): T {
   if (typeof window === "undefined") return defaultValue;
-  const val = sessionStorage.getItem(key);
+  const raw = sessionStorage.getItem(key);
   try {
-    return val ? JSON.parse(val) : defaultValue;
+    return raw ? JSON.parse(raw) : defaultValue;
   } catch {
     return defaultValue;
   }
 }
 
 /**
- * Formats a numeric value with commas and exactly two decimals, 
- * for example: 1234 -> "1,234.00"
+ * Formats a numeric value with commas and exactly two decimals, e.g. 1234 => "1,234.00"
  */
 function formatWithSeparator(value: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -31,26 +29,24 @@ function formatWithSeparator(value: number): string {
 
 /**
  * Builds a "temporary estimate number" from the address and current datetime.
- * Example result: "NYC-10001-20231003-1312"
+ * e.g. "NYC-10001-20231003-1312"
  */
 function buildEstimateNumber(address: string): string {
   let city = "NOC"; // default if no city found
   let zip = "00000";
 
   if (address) {
-    // Split the address string by commas, trim spaces
     const parts = address.split(",").map((p) => p.trim());
     if (parts.length > 0) {
-      // Take the first 3 letters of the first part as "city" code
+      // first 3 letters of part[0]
       city = parts[0].slice(0, 3).toUpperCase();
     }
     if (parts.length > 1) {
-      // Take any digits from the second part as the zip code
+      // digits from part[1] as zip
       zip = parts[1].replace(/\D/g, "") || "00000";
     }
   }
 
-  // Grab current date/time
   const now = new Date();
   const yyyy = String(now.getFullYear());
   const mm = String(now.getMonth() + 1).padStart(2, "0");
@@ -58,7 +54,6 @@ function buildEstimateNumber(address: string): string {
   const hh = String(now.getHours()).padStart(2, "0");
   const mins = String(now.getMinutes()).padStart(2, "0");
 
-  // e.g., "20231003" and "1312"
   const dateString = `${yyyy}${mm}${dd}`;
   const timeString = hh + mins;
 
@@ -68,7 +63,7 @@ function buildEstimateNumber(address: string): string {
 export default function PrintEmergencyEstimate() {
   const router = useRouter();
 
-  // 1) Load the data from sessionStorage
+  // 1) Load essential data from session:
   const selectedActivities: Record<string, Record<string, number>> =
     loadFromSession("selectedActivities", {});
   const address: string = loadFromSession("address", "");
@@ -77,7 +72,18 @@ export default function PrintEmergencyEstimate() {
   const selectedTime: string | null = loadFromSession("selectedTime", null);
   const timeCoefficient: number = loadFromSession("timeCoefficient", 1);
 
-  // 2) Validate that we have some activities and an address
+  // 2) Also load "filteredSteps" for the emergency steps
+  const filteredSteps =
+    loadFromSession("filteredSteps", []) as {
+      serviceName: string;
+      steps: {
+        step_number: number;
+        title: string;
+        description: string;
+      }[];
+    }[];
+
+  // 3) Validate minimal data
   useEffect(() => {
     let hasAnyService = false;
     for (const serviceName in selectedActivities) {
@@ -86,12 +92,13 @@ export default function PrintEmergencyEstimate() {
         break;
       }
     }
+    // If no services or no address, go back to estimate
     if (!hasAnyService || !address.trim()) {
       router.push("/emergency/estimate");
     }
   }, [selectedActivities, address, router]);
 
-  // 3) Calculate subtotal, tax, total, etc.
+  // 4) Calculate totals
   function calculateSubtotal() {
     let sum = 0;
     for (const serviceName in selectedActivities) {
@@ -111,32 +118,25 @@ export default function PrintEmergencyEstimate() {
   const salesTax = adjustedSubtotal * 0.0825;
   const total = adjustedSubtotal + salesTax;
 
-  // Track any surcharge or discount due to timeCoefficient != 1
+  // Surcharge/discount handling
   const hasSurchargeOrDiscount = timeCoefficient !== 1;
   const surchargeOrDiscountAmount = hasSurchargeOrDiscount
     ? Math.abs(subtotal * (timeCoefficient - 1))
     : 0;
 
-  // 4) Build the estimate number from address + current date/time
+  // 5) Build estimate # and rename document title for PDF filename
   const estimateNumber = buildEstimateNumber(address);
 
-  /**
-   * 4.1) Change the document title to "JAMB-Emergency-<estimateNumber>"
-   *      so that most browsers will use it as the PDF filename 
-   *      when the user prints or saves to PDF.
-   */
   useEffect(() => {
     const oldTitle = document.title;
     document.title = `JAMB-Emergency-${estimateNumber}`;
-    // On cleanup, revert the title to its previous value
+    // On cleanup, revert the title
     return () => {
       document.title = oldTitle;
     };
   }, [estimateNumber]);
 
-  /**
-   * 4.2) After a short delay (e.g., 500 ms), automatically trigger window.print().
-   */
+  // 6) Auto-print after half a second
   useEffect(() => {
     const timer = setTimeout(() => {
       window.print();
@@ -144,8 +144,10 @@ export default function PrintEmergencyEstimate() {
     return () => clearTimeout(timer);
   }, []);
 
+  // ---------- RENDER ----------
   return (
     <div className="print-page p-4">
+      {/* Title + Estimate Number */}
       <div className="flex justify-between items-center mb-4 mt-24">
         <div className="text-left">
           <h1 className="text-2xl font-bold">Emergency Estimate</h1>
@@ -155,11 +157,13 @@ export default function PrintEmergencyEstimate() {
         </div>
       </div>
 
+      {/* Date of Service */}
       {selectedTime && (
         <p className="mb-2 text-gray-700">
           <strong>Date of Service:</strong> {selectedTime}
         </p>
       )}
+      {/* Address + description */}
       <p className="mb-2">
         <strong>Address:</strong> {address}
       </p>
@@ -167,12 +171,12 @@ export default function PrintEmergencyEstimate() {
         <strong>Details:</strong> {description || "No details provided"}
       </p>
 
-      {/* List each chosen activity with quantity and cost */}
+      {/* Activities list */}
       <div className="mt-6">
         <h2 className="text-lg font-semibold mb-3">Selected Activities</h2>
         <ul className="pl-3 space-y-2">
-          {Object.entries(selectedActivities).map(([service, activityMap]) => {
-            return Object.entries(activityMap).map(([activityKey, qty]) => {
+          {Object.entries(selectedActivities).map(([service, activityMap]) =>
+            Object.entries(activityMap).map(([activityKey, qty]) => {
               const found = ALL_SERVICES.find((s) => s.id === activityKey);
               if (!found) return null;
 
@@ -195,12 +199,12 @@ export default function PrintEmergencyEstimate() {
                   </p>
                 </li>
               );
-            });
-          })}
+            })
+          )}
         </ul>
       </div>
 
-      {/* Summaries */}
+      {/* Totals */}
       <div className="mt-6 border-t pt-2 space-y-1">
         {hasSurchargeOrDiscount && (
           <div className="flex justify-between">
@@ -241,6 +245,38 @@ export default function PrintEmergencyEstimate() {
           </div>
         </div>
       )}
+
+      {/* Emergency Steps from "filteredSteps" */}
+      <div className="mt-6">
+        <h2 className="font-semibold text-xl mb-4">Emergency Steps</h2>
+        {filteredSteps.length > 0 ? (
+          <div className="space-y-6">
+            {filteredSteps.map((service) => (
+              <div
+                key={service.serviceName}
+                className="bg-white p-4 rounded-lg border border-gray-200"
+              >
+                <h3 className="text-lg font-semibold text-gray-800">
+                  {service.serviceName}
+                </h3>
+                <div className="mt-3 space-y-3">
+                  {service.steps.map((step) => (
+                    <div key={step.step_number}>
+                      <strong className="mr-2">{step.step_number}.</strong>
+                      <span className="font-medium">{step.title}</span>
+                      <p className="text-sm text-gray-500 mt-1 ml-5">
+                        {step.description}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-gray-600">No steps available.</p>
+        )}
+      </div>
     </div>
   );
 }
