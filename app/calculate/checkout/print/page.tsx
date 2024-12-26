@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ALL_SERVICES } from "@/constants/services";
 import { ALL_CATEGORIES } from "@/constants/categories";
@@ -49,7 +49,7 @@ function buildEstimateNumber(address: string): string {
 
   const now = new Date();
   const yyyy = String(now.getFullYear());
-  const mm = String(now.getMonth() + 1).padStart(2, "0"); 
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
   const dd = String(now.getDate()).padStart(2, "0");
   const hh = String(now.getHours()).padStart(2, "0");
   const mins = String(now.getMinutes()).padStart(2, "0");
@@ -65,7 +65,6 @@ export default function PrintServicesEstimate() {
   const router = useRouter();
 
   // 1) Load the relevant data from sessionStorage
-  //    Here, we assume it's the same structure used in your "services" estimate flow
   const selectedServicesState: Record<string, number> = loadFromSession(
     "selectedServicesWithQuantity",
     {}
@@ -106,16 +105,26 @@ export default function PrintServicesEstimate() {
     ? Math.abs(subtotal * (timeCoefficient - 1))
     : 0;
 
-  // 4) Trigger print automatically once the page has loaded for a bit
+  // 4) Create the "temporary estimate number" (e.g. "NEW-12345-20231002-0930")
+  const estimateNumber = buildEstimateNumber(address);
+
+  // 4.1) Change the document.title so the printed PDF is named "JAMB-Estimate-<estimateNumber>.pdf"
+  useEffect(() => {
+    const oldTitle = document.title;
+    document.title = `JAMB-Estimate-${estimateNumber}`;
+    return () => {
+      // Optional: restore old title if leaving the page
+      document.title = oldTitle;
+    };
+  }, [estimateNumber]);
+
+  // 5) Trigger print automatically
   useEffect(() => {
     const printTimer = setTimeout(() => {
       window.print();
     }, 500);
     return () => clearTimeout(printTimer);
   }, []);
-
-  // 5) Create the "temporary estimate number"
-  const estimateNumber = buildEstimateNumber(address);
 
   return (
     <div className="print-page p-4">

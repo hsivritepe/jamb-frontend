@@ -6,6 +6,9 @@ import { ALL_SERVICES } from "@/constants/services";
 import { ALL_CATEGORIES } from "@/constants/categories";
 import { ROOMS } from "@/constants/rooms";
 
+/**
+ * Safely loads JSON data from sessionStorage or returns the default value.
+ */
 const loadFromSession = (key: string, defaultValue: any = null) => {
   if (typeof window === "undefined") return defaultValue;
   const savedValue = sessionStorage.getItem(key);
@@ -16,12 +19,24 @@ const loadFromSession = (key: string, defaultValue: any = null) => {
   }
 };
 
+/**
+ * Formats a number with two decimals and commas (e.g., 1234 -> "1,234.00").
+ */
 const formatWithSeparator = (value: number): string =>
   new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value);
 
+/**
+ * Builds a "temporary estimate number" string based on the address.
+ * Example format: CITY-ZIP-YYYYMMDD-HHMM
+ *
+ * - city: first 3 letters in uppercase (or "NOC" if absent)
+ * - zip: digits from the second part of the address (or "00000" if absent)
+ * - YYYYMMDD: current date
+ * - HHMM: current time (24-hour)
+ */
 function buildEstimateNumber(address: string): string {
   let city = "NOC";
   let zip = "00000";
@@ -29,11 +44,11 @@ function buildEstimateNumber(address: string): string {
   if (address) {
     const parts = address.split(",").map((p) => p.trim());
     if (parts.length > 0) {
-      city = parts[0].slice(0, 3).toUpperCase(); // e.g. "New" from "New York"
+      city = parts[0].slice(0, 3).toUpperCase(); // e.g. "NEW" from "New York"
     }
     if (parts.length > 1) {
-      // second part is often zip code
-      zip = parts[1].replace(/\D/g, "") || "00000"; 
+      // second part is often the ZIP code
+      zip = parts[1].replace(/\D/g, "") || "00000";
     }
   }
 
@@ -42,6 +57,7 @@ function buildEstimateNumber(address: string): string {
   const dd = String(now.getDate()).padStart(2, "0");
   const mm = String(now.getMonth() + 1).padStart(2, "0");
   const dateString = `${yyyy}${mm}${dd}`;
+
   const hh = String(now.getHours()).padStart(2, "0");
   const mins = String(now.getMinutes()).padStart(2, "0");
   const timeString = hh + mins;
@@ -52,18 +68,16 @@ function buildEstimateNumber(address: string): string {
 export default function PrintRoomsEstimate() {
   const router = useRouter();
 
-  // 1) Load data
-  const selectedServicesState: Record<string, Record<string, number>> = loadFromSession(
-    "rooms_selectedServicesWithQuantity",
-    {}
-  );
+  // 1) Load the selected room services and other user inputs from sessionStorage
+  const selectedServicesState: Record<string, Record<string, number>> =
+    loadFromSession("rooms_selectedServicesWithQuantity", {});
   const address: string = loadFromSession("address", "");
   const photos: string[] = loadFromSession("photos", []);
   const description: string = loadFromSession("description", "");
   const selectedTime: string | null = loadFromSession("selectedTime", null);
   const timeCoefficient: number = loadFromSession("timeCoefficient", 1);
 
-  // 2) Basic check
+  // 2) Validate if there is at least one service selected and a valid address
   useEffect(() => {
     let hasAnyService = false;
     for (const roomId in selectedServicesState) {
@@ -77,13 +91,11 @@ export default function PrintRoomsEstimate() {
     }
   }, [selectedServicesState, address, router]);
 
-  // 3) Calculate totals
+  // 3) Calculate the subtotal, tax, and total
   function calculateSubtotal(): number {
     let sum = 0;
     for (const roomId in selectedServicesState) {
-      for (const [serviceId, qty] of Object.entries(
-        selectedServicesState[roomId]
-      )) {
+      for (const [serviceId, qty] of Object.entries(selectedServicesState[roomId])) {
         const svc = ALL_SERVICES.find((s) => s.id === serviceId);
         if (svc) sum += svc.price * (qty || 1);
       }
@@ -100,50 +112,58 @@ export default function PrintRoomsEstimate() {
     ? Math.abs(subtotal * (timeCoefficient - 1))
     : 0;
 
-  // 4) Autoprint once page loads
+  // 4) Trigger auto-print after a short delay
   useEffect(() => {
+    // Save the original document title
+    const oldTitle = document.title;
+
+    // Build a unique estimate number (used as part of custom doc title)
+    const newTitle = `JAMB-Estimate-${buildEstimateNumber(address)}`;
+    document.title = newTitle;
+
+    // After a short delay, trigger print
     const timer = setTimeout(() => {
       window.print();
     }, 500);
-    return () => clearTimeout(timer);
-  }, []);
 
-  // 5) gather rooms
+    // Restore the original title upon unmount
+    return () => {
+      clearTimeout(timer);
+      document.title = oldTitle;
+    };
+  }, [address]);
+
+  // 5) Helper references
   const allRooms = [...ROOMS.indoor, ...ROOMS.outdoor];
+
   function getRoomById(roomId: string) {
     return allRooms.find((r) => r.id === roomId);
   }
+
   function getCategoryNameById(catId: string) {
     const catObj = ALL_CATEGORIES.find((c) => c.id === catId);
     return catObj ? catObj.title : catId;
   }
+
   function getCategoryId(serviceId: string) {
     return serviceId.split("-").slice(0, 2).join("-");
   }
 
-  // Generate the temporary estimate number
-  const estimateNumber = buildEstimateNumber(address);
-
+  // 6) Render
   return (
     <div className="print-page p-4">
-      {/*
-        Add a custom style or global CSS to hide header/footer during printing:
-        @media print {
-          header, footer { display: none !important; }
-        }
-      */}
-
-      {/* Minimal brand logo + Title + Estimate # */}
+      {/* Minimal header with estimate number */}
       <div className="flex justify-between items-center mb-4 mt-24">
         <div className="text-left">
           <h1 className="text-2xl font-bold">Estimate</h1>
           <h1 className="text-sm text-gray-500 mt-1">
-            {estimateNumber} (temporary)
+            {/* The function 'buildEstimateNumber' is also used for the doc title. */}
+            {buildEstimateNumber(address)} (temporary)
           </h1>
         </div>
       </div>
 
-      {/* If user chose a date/time */}
+      {/* If user selected a date/time */}
       {selectedTime && (
         <p className="mb-2 text-gray-700">
           <strong>Date of Service:</strong> {selectedTime}
@@ -155,29 +175,34 @@ export default function PrintRoomsEstimate() {
         <strong>Address:</strong> {address}
       </p>
       <p className="mb-2">
-        <strong>Details:</strong>{" "}
-        {description || "No details provided"}
+        <strong>Details:</strong> {description || "No details provided"}
       </p>
 
-      {/* Rooms + services grouped by category */}
+      {/* Rooms and their selected services */}
       <div className="mt-6">
         {Object.entries(selectedServicesState).map(([roomId, services]) => {
-          const svcIds = Object.keys(services);
-          if (svcIds.length === 0) return null;
+          const serviceIds = Object.keys(services);
+          if (serviceIds.length === 0) return null;
+
+          // Find the room metadata
           const roomObj = getRoomById(roomId);
           const roomTitle = roomObj ? roomObj.title : roomId;
 
+          // Compute room subtotal
           let roomSubtotal = 0;
-          svcIds.forEach((id) => {
+          serviceIds.forEach((id) => {
             const qty = services[id] || 1;
-            const found = ALL_SERVICES.find((s) => s.id === id);
-            if (found) roomSubtotal += found.price * qty;
+            const svc = ALL_SERVICES.find((s) => s.id === id);
+            if (svc) roomSubtotal += svc.price * qty;
           });
 
+          // Group selected services by category
           const categoryGroups: Record<string, string[]> = {};
-          svcIds.forEach((id) => {
+          serviceIds.forEach((id) => {
             const catId = getCategoryId(id);
-            if (!categoryGroups[catId]) categoryGroups[catId] = [];
+            if (!categoryGroups[catId]) {
+              categoryGroups[catId] = [];
+            }
             categoryGroups[catId].push(id);
           });
 
@@ -186,6 +211,7 @@ export default function PrintRoomsEstimate() {
               <h2 className="text-xl font-semibold mb-2">{roomTitle}</h2>
               {Object.entries(categoryGroups).map(([catId, ids]) => {
                 const catTitle = getCategoryNameById(catId);
+                // Find actual service objects
                 const chosenSvcs = ids
                   .map((sId) => ALL_SERVICES.find((s) => s.id === sId))
                   .filter(Boolean) as (typeof ALL_SERVICES)[number][];
@@ -223,7 +249,7 @@ export default function PrintRoomsEstimate() {
                 );
               })}
 
-              {/* Room total */}
+              {/* Display room subtotal */}
               <div className="ml-4 flex justify-between font-semibold mt-1">
                 <span>{roomTitle} Total:</span>
                 <span>${formatWithSeparator(roomSubtotal)}</span>
@@ -233,13 +259,11 @@ export default function PrintRoomsEstimate() {
         })}
       </div>
 
-      {/* Summaries */}
+      {/* Overall summaries for the entire order */}
       <div className="mt-6 border-t pt-2">
         {hasSurchargeOrDiscount && (
           <div className="flex justify-between">
-            <span>
-              {timeCoefficient > 1 ? "Surcharge" : "Discount"}:
-            </span>
+            <span>{timeCoefficient > 1 ? "Surcharge" : "Discount"}:</span>
             <span>
               {timeCoefficient > 1 ? "+" : "-"}$
               {formatWithSeparator(surchargeOrDiscountAmount)}
@@ -260,7 +284,7 @@ export default function PrintRoomsEstimate() {
         </div>
       </div>
 
-      {/* Photos (optional) */}
+      {/* If the user uploaded any photos */}
       {photos.length > 0 && (
         <div className="mt-6">
           <h3 className="font-semibold text-xl">Uploaded Photos</h3>

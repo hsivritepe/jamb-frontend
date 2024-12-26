@@ -32,12 +32,12 @@ function formatWithSeparator(value: number): string {
 
 /**
  * Build a "temporary estimate number" based on houseInfo.city / houseInfo.zip and the current date/time.
- * Format: CCC-ZZZZZ-YYYYMMDD-HHMM
+ * Example format: CCC-ZZZZZ-YYYYMMDD-HHMM
  *
- *  - CCC = first 3 letters of the city (or "NOC" if missing)
- *  - ZZZZZ = zip (or "00000" if missing)
- *  - YYYYMMDD
- *  - HHMM
+ * - CCC = first 3 letters of the city (or "NOC" if missing)
+ * - ZZZZZ = zip code (or "00000" if missing)
+ * - YYYYMMDD = year-month-day
+ * - HHMM = hour-minute (24-hour)
  */
 function buildEstimateNumber(city: string, zip: string): string {
   const cityPart = city ? city.slice(0, 3).toUpperCase() : "NOC";
@@ -57,7 +57,7 @@ function buildEstimateNumber(city: string, zip: string): string {
 }
 
 /**
- * If the selectedPaymentOption is "Quarterly", display approximate schedule for 4 payments over 3-month intervals.
+ * If the selectedPaymentOption is "Quarterly", show an approximate schedule for 4 payments over 3-month intervals.
  */
 function getQuarterlySchedule(total: number): JSX.Element {
   // Helper to format date as mm/dd/yyyy
@@ -68,10 +68,11 @@ function getQuarterlySchedule(total: number): JSX.Element {
     return `${mm}/${dd}/${yyyy}`;
   }
 
-  // 4 payments total
+  // Calculate 4 payments total
   const quarterlyAmount = total / 4;
   const now = new Date();
   const payDates: string[] = [];
+
   for (let i = 0; i < 4; i++) {
     const d = new Date(now.getFullYear(), now.getMonth() + i * 3, now.getDate());
     payDates.push(formatDate(d));
@@ -103,8 +104,7 @@ function getQuarterlySchedule(total: number): JSX.Element {
 export default function PackagesPrintPage() {
   const router = useRouter();
 
-  // 1) Load necessary data from session for the Packages flow
-  //    We assume the user previously selected services and payment info
+  // 1) Load data from session for the "Packages" flow
   const selectedServices = loadFromSession("packages_selectedServices", {
     indoor: {},
     outdoor: {},
@@ -138,10 +138,18 @@ export default function PackagesPrintPage() {
 
   const photos: string[] = loadFromSession("packages_photos", []);
   const description: string = loadFromSession("packages_description", "");
-  const selectedPaymentOption: string | null = loadFromSession("packages_selectedTime", null);
-  const paymentCoefficient: number = loadFromSession("packages_timeCoefficient", 1);
 
-  // 2) Ensure there's something to print (at least one selected service and a valid address)
+  // Could be "Monthly", "Quarterly", "One-time", "Annually", etc.
+  const selectedPaymentOption: string | null = loadFromSession(
+    "packages_selectedTime",
+    null
+  );
+  const paymentCoefficient: number = loadFromSession(
+    "packages_timeCoefficient",
+    1
+  );
+
+  // 2) Ensure we have at least one selected service and a valid address
   useEffect(() => {
     const hasAnyService = Object.keys(mergedSelected).length > 0;
     const hasAddress = houseInfo.addressLine.trim().length > 0;
@@ -164,7 +172,7 @@ export default function PackagesPrintPage() {
 
   const subtotal = calculateSubtotal();
   const adjustedSubtotal = subtotal * paymentCoefficient;
-  const salesTax = adjustedSubtotal * 0.0825; // for example, 8.25% tax
+  const salesTax = adjustedSubtotal * 0.0825; // e.g. 8.25% tax
   const total = adjustedSubtotal + salesTax;
 
   const hasSurchargeOrDiscount = paymentCoefficient !== 1;
@@ -172,16 +180,33 @@ export default function PackagesPrintPage() {
     ? Math.abs(subtotal * (paymentCoefficient - 1))
     : 0;
 
-  // 4) Auto-trigger printing
+  // 4) Build a "temporary order number" from city + zip
+  const estimateNumber = buildEstimateNumber(houseInfo.city, houseInfo.zip);
+
+  /**
+   * 4.1) In order to customize the PDF's default filename, we update the document title 
+   *      to something like "JAMB-Estimate-(estimateNumber)" before printing.
+   */
+  useEffect(() => {
+    // Store original document title
+    const oldTitle = document.title;
+    // Set a new one
+    document.title = `JAMB-Estimate-${estimateNumber}`;
+    // Restore old title after unmount
+    return () => {
+      document.title = oldTitle;
+    };
+  }, [estimateNumber]);
+
+  /**
+   * 4.2) Trigger window.print() after a slight delay.
+   */
   useEffect(() => {
     const timer = setTimeout(() => {
       window.print();
     }, 500);
     return () => clearTimeout(timer);
   }, []);
-
-  // 5) Build a "temporary order number" from city + zip
-  const estimateNumber = buildEstimateNumber(houseInfo.city, houseInfo.zip);
 
   return (
     <div className="print-page p-4">
@@ -194,17 +219,19 @@ export default function PackagesPrintPage() {
         </div>
       </div>
 
+      {/* If there's a payment option selected */}
       {selectedPaymentOption && (
         <p className="mb-2 text-gray-700">
           <strong>Payment Option:</strong> {selectedPaymentOption}
         </p>
       )}
 
-      {/* If Quarterly is chosen, show approximate schedule. */}
+      {/* If "Quarterly", show a 4-payment schedule */}
       {selectedPaymentOption === "Quarterly" && getQuarterlySchedule(total)}
 
       <p className="my-2 text-gray-700">
-        <strong>Address:</strong> {houseInfo.addressLine}, {houseInfo.city} {houseInfo.zip}
+        <strong>Address:</strong> {houseInfo.addressLine}, {houseInfo.city}{" "}
+        {houseInfo.zip}
       </p>
 
       {/* Render each chosen service */}
@@ -238,11 +265,13 @@ export default function PackagesPrintPage() {
         </ul>
       </div>
 
-      {/* Summary */}
+      {/* Price summary */}
       <div className="mt-6 pt-2 space-y-1">
         {hasSurchargeOrDiscount && (
           <div className="flex justify-between">
-            <span>{paymentCoefficient > 1 ? "Surcharge" : "Discount"}:</span>
+            <span>
+              {paymentCoefficient > 1 ? "Surcharge" : "Discount"}:
+            </span>
             <span>
               {paymentCoefficient > 1 ? "+" : "-"}$
               {formatWithSeparator(surchargeOrDiscountAmount)}
@@ -263,7 +292,7 @@ export default function PackagesPrintPage() {
         </div>
       </div>
 
-      {/* House Info - "Home Details" */}
+      {/* House Info / "Home Details" */}
       <div className="mt-8">
         <h3 className="text-xl font-semibold text-gray-800 mb-2">
           Home Details
@@ -307,12 +336,41 @@ export default function PackagesPrintPage() {
           </p>
           <p>
             <strong>Pool:</strong>{" "}
-            {houseInfo.hasPool
-              ? `${houseInfo.poolArea} sq ft`
-              : "No pool"}
+            {houseInfo.hasPool ? `${houseInfo.poolArea} sq ft` : "No pool"}
           </p>
         </div>
       </div>
+
+      {/* Photos, if any */}
+      {photos && photos.length > 0 && (
+        <div className="mt-8">
+          <h3 className="text-xl font-semibold text-gray-800 mb-2">
+            Uploaded Photos
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-2">
+            {photos.map((photo, index) => (
+              <img
+                key={index}
+                src={photo}
+                alt={`Photo ${index + 1}`}
+                className="w-full h-32 object-cover rounded-md border border-gray-300"
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Additional details, if any */}
+      {description && description.trim().length > 0 && (
+        <div className="mt-8">
+          <h3 className="text-xl font-semibold text-gray-800 mb-2">
+            Additional Details
+          </h3>
+          <p className="text-sm text-gray-700 whitespace-pre-wrap">
+            {description}
+          </p>
+        </div>
+      )}
     </div>
   );
 }

@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { ALL_SERVICES } from "@/constants/services";
 
 /**
- * Load from sessionStorage or return default.
+ * A helper to load data from sessionStorage. 
+ * Returns `defaultValue` if running on the server or if parsing fails.
  */
 function loadFromSession(key: string, defaultValue: any = null) {
   if (typeof window === "undefined") return defaultValue;
@@ -18,7 +19,8 @@ function loadFromSession(key: string, defaultValue: any = null) {
 }
 
 /**
- * Format numbers with commas and exactly two decimals.
+ * Formats a numeric value with commas and exactly two decimals, 
+ * for example: 1234 -> "1,234.00"
  */
 function formatWithSeparator(value: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -28,21 +30,27 @@ function formatWithSeparator(value: number): string {
 }
 
 /**
- * Build a "temporary estimate number."
+ * Builds a "temporary estimate number" from the address and current datetime.
+ * Example result: "NYC-10001-20231003-1312"
  */
 function buildEstimateNumber(address: string): string {
-  let city = "NOC";
+  let city = "NOC"; // default if no city found
   let zip = "00000";
 
   if (address) {
+    // Split the address string by commas, trim spaces
     const parts = address.split(",").map((p) => p.trim());
     if (parts.length > 0) {
+      // Take the first 3 letters of the first part as "city" code
       city = parts[0].slice(0, 3).toUpperCase();
     }
     if (parts.length > 1) {
+      // Take any digits from the second part as the zip code
       zip = parts[1].replace(/\D/g, "") || "00000";
     }
   }
+
+  // Grab current date/time
   const now = new Date();
   const yyyy = String(now.getFullYear());
   const mm = String(now.getMonth() + 1).padStart(2, "0");
@@ -50,6 +58,7 @@ function buildEstimateNumber(address: string): string {
   const hh = String(now.getHours()).padStart(2, "0");
   const mins = String(now.getMinutes()).padStart(2, "0");
 
+  // e.g., "20231003" and "1312"
   const dateString = `${yyyy}${mm}${dd}`;
   const timeString = hh + mins;
 
@@ -59,7 +68,7 @@ function buildEstimateNumber(address: string): string {
 export default function PrintEmergencyEstimate() {
   const router = useRouter();
 
-  // 1) Load data from session
+  // 1) Load the data from sessionStorage
   const selectedActivities: Record<string, Record<string, number>> =
     loadFromSession("selectedActivities", {});
   const address: string = loadFromSession("address", "");
@@ -68,7 +77,7 @@ export default function PrintEmergencyEstimate() {
   const selectedTime: string | null = loadFromSession("selectedTime", null);
   const timeCoefficient: number = loadFromSession("timeCoefficient", 1);
 
-  // 2) Check essential data
+  // 2) Validate that we have some activities and an address
   useEffect(() => {
     let hasAnyService = false;
     for (const serviceName in selectedActivities) {
@@ -82,7 +91,7 @@ export default function PrintEmergencyEstimate() {
     }
   }, [selectedActivities, address, router]);
 
-  // 3) Calculate totals
+  // 3) Calculate subtotal, tax, total, etc.
   function calculateSubtotal() {
     let sum = 0;
     for (const serviceName in selectedActivities) {
@@ -102,21 +111,38 @@ export default function PrintEmergencyEstimate() {
   const salesTax = adjustedSubtotal * 0.0825;
   const total = adjustedSubtotal + salesTax;
 
+  // Track any surcharge or discount due to timeCoefficient != 1
   const hasSurchargeOrDiscount = timeCoefficient !== 1;
   const surchargeOrDiscountAmount = hasSurchargeOrDiscount
     ? Math.abs(subtotal * (timeCoefficient - 1))
     : 0;
 
-  // 4) Auto-print
+  // 4) Build the estimate number from address + current date/time
+  const estimateNumber = buildEstimateNumber(address);
+
+  /**
+   * 4.1) Change the document title to "JAMB-Emergency-<estimateNumber>"
+   *      so that most browsers will use it as the PDF filename 
+   *      when the user prints or saves to PDF.
+   */
+  useEffect(() => {
+    const oldTitle = document.title;
+    document.title = `JAMB-Emergency-${estimateNumber}`;
+    // On cleanup, revert the title to its previous value
+    return () => {
+      document.title = oldTitle;
+    };
+  }, [estimateNumber]);
+
+  /**
+   * 4.2) After a short delay (e.g., 500 ms), automatically trigger window.print().
+   */
   useEffect(() => {
     const timer = setTimeout(() => {
       window.print();
     }, 500);
     return () => clearTimeout(timer);
   }, []);
-
-  // Build an estimate number
-  const estimateNumber = buildEstimateNumber(address);
 
   return (
     <div className="print-page p-4">
@@ -141,7 +167,7 @@ export default function PrintEmergencyEstimate() {
         <strong>Details:</strong> {description || "No details provided"}
       </p>
 
-      {/* List each chosen activity */}
+      {/* List each chosen activity with quantity and cost */}
       <div className="mt-6">
         <h2 className="text-lg font-semibold mb-3">Selected Activities</h2>
         <ul className="pl-3 space-y-2">
