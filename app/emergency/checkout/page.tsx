@@ -372,7 +372,7 @@ export default function CheckoutPage() {
                 {filteredSteps.map((service) => (
                   <div
                     key={service.serviceName}
-                    className="bg-white p-6 rounded-lg border border-gray-200"
+                    className="bg-white"
                   >
                     <h3 className="text-xl font-semibold text-gray-800">
                       {service.serviceName}
