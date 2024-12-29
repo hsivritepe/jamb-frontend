@@ -14,19 +14,23 @@ import { ROOMS } from "@/constants/rooms";
 import { useLocation } from "@/context/LocationContext";
 import { ChevronDown } from "lucide-react";
 
+// Reuse your existing AddressSection if you have it.
+import AddressSection from "@/components/ui/AddressSection";
+
+// Import the existing PhotosAndDescription component that uses `onSetPhotos` and `onSetDescription` props.
+import PhotosAndDescription from "@/components/ui/PhotosAndDescription";
+
 // Utility function to format numbers nicely for prices
 const formatWithSeparator = (value: number): string =>
   new Intl.NumberFormat("en-US", { minimumFractionDigits: 2 }).format(value);
 
 // Session storage helpers
-// Save data to sessionStorage as a JSON string (client-side check for safety)
 const saveToSession = (key: string, value: any) => {
   if (typeof window !== "undefined") {
     sessionStorage.setItem(key, JSON.stringify(value));
   }
 };
 
-// Load data from sessionStorage and parse from JSON, safely fallback if any error or server-side
 const loadFromSession = (key: string, defaultValue: any) => {
   if (typeof window === "undefined") return defaultValue;
   const savedValue = sessionStorage.getItem(key);
@@ -66,10 +70,7 @@ export default function RoomDetails() {
   }, [selectedRooms, router]);
 
   // Save changes to sessionStorage on state updates
-  useEffect(
-    () => saveToSession("rooms_searchQuery", searchQuery),
-    [searchQuery]
-  );
+  useEffect(() => saveToSession("rooms_searchQuery", searchQuery), [searchQuery]);
   useEffect(() => saveToSession("address", address), [address]);
   useEffect(() => saveToSession("description", description), [description]);
   useEffect(() => saveToSession("photos", photos), [photos]);
@@ -366,10 +367,8 @@ export default function RoomDetails() {
   }
 
   // For address changes
-  const handleAddressChange = (e: ChangeEvent<HTMLInputElement>) =>
+  const handleAddressChangeLocal = (e: ChangeEvent<HTMLInputElement>) =>
     setAddress(e.target.value);
-  const handleDescriptionChange = (e: ChangeEvent<HTMLTextAreaElement>) =>
-    setDescription(e.target.value);
 
   // Attempt using location data if available
   const handleUseMyLocation = () => {
@@ -380,11 +379,6 @@ export default function RoomDetails() {
     } else {
       setWarningMessage("Location data is unavailable. Please enter manually.");
     }
-  };
-
-  // Remove a photo from the list
-  const handleRemovePhoto = (index: number) => {
-    setPhotos((prev) => prev.filter((_, i) => i !== index));
   };
 
   return (
@@ -443,8 +437,7 @@ export default function RoomDetails() {
           {/* Left column: one section for each chosen room */}
           <div className="flex-1 space-y-8">
             {chosenRooms.map((room) => {
-              const { categoriesBySection, categoryServicesMap } =
-                roomsData[room.id];
+              const { categoriesBySection, categoryServicesMap } = roomsData[room.id];
               const roomServices = selectedServicesState[room.id] || {};
 
               return (
@@ -527,153 +520,129 @@ export default function RoomDetails() {
 
                                   {isExpanded && (
                                     <div className="mt-4 flex flex-col gap-3">
-                                      {servicesForCategory.map(
-                                        (svc, svcIndex) => {
-                                          const isSelected =
-                                            roomServices[svc.id] !== undefined;
-                                          const quantity =
-                                            roomServices[svc.id] || 1;
-                                          const manualValue =
-                                            manualInputValue[svc.id] !== null
-                                              ? manualInputValue[svc.id] || ""
-                                              : quantity.toString();
+                                      {servicesForCategory.map((svc) => {
+                                        const isSelected =
+                                          roomServices[svc.id] !== undefined;
+                                        const quantity =
+                                          roomServices[svc.id] || 1;
+                                        const manualValue =
+                                          manualInputValue[svc.id] !== null
+                                            ? manualInputValue[svc.id] || ""
+                                            : quantity.toString();
 
-                                          return (
-                                            <div
-                                              key={svc.id}
-                                              className="space-y-2"
-                                            >
-                                              {/* Row for a single service */}
-                                              <div className="flex justify-between items-center">
-                                                <span
-                                                  className={`text-lg transition-colors duration-300 ${
-                                                    isSelected
-                                                      ? "text-blue-600"
-                                                      : "text-gray-800"
-                                                  }`}
-                                                >
-                                                  {svc.title}
-                                                </span>
-                                                <label className="relative inline-flex items-center cursor-pointer">
-                                                  <input
-                                                    type="checkbox"
-                                                    checked={isSelected}
-                                                    onChange={() =>
-                                                      handleServiceToggle(
-                                                        room.id,
-                                                        svc.id
-                                                      )
-                                                    }
-                                                    className="sr-only peer"
-                                                  />
-                                                  <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
-                                                  <div className="absolute top-[2px] left-[2px] w-[22px] h-[22px] bg-white rounded-full shadow-md peer-checked:translate-x-[24px] transform transition-transform duration-300"></div>
-                                                </label>
-                                              </div>
+                                        return (
+                                          <div
+                                            key={svc.id}
+                                            className="space-y-2"
+                                          >
+                                            {/* Row for a single service */}
+                                            <div className="flex justify-between items-center">
+                                              <span
+                                                className={`text-lg transition-colors duration-300 ${
+                                                  isSelected
+                                                    ? "text-blue-600"
+                                                    : "text-gray-800"
+                                                }`}
+                                              >
+                                                {svc.title}
+                                              </span>
+                                              <label className="relative inline-flex items-center cursor-pointer">
+                                                <input
+                                                  type="checkbox"
+                                                  checked={isSelected}
+                                                  onChange={() =>
+                                                    handleServiceToggle(
+                                                      room.id,
+                                                      svc.id
+                                                    )
+                                                  }
+                                                  className="sr-only peer"
+                                                />
+                                                <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
+                                                <div className="absolute top-[2px] left-[2px] w-[22px] h-[22px] bg-white rounded-full shadow-md peer-checked:translate-x-[24px] transform transition-transform duration-300"></div>
+                                              </label>
+                                            </div>
 
-                                              {isSelected && (
-                                                <>
-                                                  {/* Service description */}
-                                                  {svc.description && (
-                                                    <p className="text-sm text-gray-500 pr-16">
-                                                      {svc.description}
-                                                    </p>
-                                                  )}
-                                                  {/* Quantity controls */}
-                                                  <div className="flex justify-between items-center">
-                                                    <div className="flex items-center gap-1">
-                                                      <button
-                                                        onClick={() =>
-                                                          handleQuantityChange(
-                                                            room.id,
-                                                            svc.id,
-                                                            false,
-                                                            svc.unit_of_measurement
-                                                          )
-                                                        }
-                                                        className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
-                                                      >
-                                                        −
-                                                      </button>
-                                                      <input
-                                                        type="text"
-                                                        value={manualValue}
-                                                        onClick={() =>
-                                                          setManualInputValue(
-                                                            (prev) => ({
-                                                              ...prev,
-                                                              [svc.id]: "",
-                                                            })
-                                                          )
-                                                        }
-                                                        onBlur={() =>
-                                                          handleBlurInput(
-                                                            svc.id
-                                                          )
-                                                        }
-                                                        onChange={(e) =>
-                                                          handleManualQuantityChange(
-                                                            room.id,
-                                                            svc.id,
-                                                            e.target.value,
-                                                            svc.unit_of_measurement
-                                                          )
-                                                        }
-                                                        className="w-20 text-center px-2 py-1 border rounded"
-                                                        placeholder="1"
-                                                      />
-                                                      <button
-                                                        onClick={() =>
-                                                          handleQuantityChange(
-                                                            room.id,
-                                                            svc.id,
-                                                            true,
-                                                            svc.unit_of_measurement
-                                                          )
-                                                        }
-                                                        className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
-                                                      >
-                                                        +
-                                                      </button>
-                                                      <span className="text-sm text-gray-600">
-                                                        {
+                                            {isSelected && (
+                                              <>
+                                                {/* Service description */}
+                                                {svc.description && (
+                                                  <p className="text-sm text-gray-500 pr-16">
+                                                    {svc.description}
+                                                  </p>
+                                                )}
+                                                {/* Quantity controls */}
+                                                <div className="flex justify-between items-center">
+                                                  <div className="flex items-center gap-1">
+                                                    <button
+                                                      onClick={() =>
+                                                        handleQuantityChange(
+                                                          room.id,
+                                                          svc.id,
+                                                          false,
                                                           svc.unit_of_measurement
-                                                        }
-                                                      </span>
-                                                    </div>
-                                                    <span className="text-lg text-blue-600 font-medium text-right">
-                                                      $
-                                                      {formatWithSeparator(
-                                                        svc.price * quantity
-                                                      )}
+                                                        )
+                                                      }
+                                                      className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
+                                                    >
+                                                      −
+                                                    </button>
+                                                    <input
+                                                      type="text"
+                                                      value={manualValue}
+                                                      onClick={() =>
+                                                        setManualInputValue(
+                                                          (prev) => ({
+                                                            ...prev,
+                                                            [svc.id]: "",
+                                                          })
+                                                        )
+                                                      }
+                                                      onBlur={() =>
+                                                        handleBlurInput(
+                                                          svc.id
+                                                        )
+                                                      }
+                                                      onChange={(e) =>
+                                                        handleManualQuantityChange(
+                                                          room.id,
+                                                          svc.id,
+                                                          e.target.value,
+                                                          svc.unit_of_measurement
+                                                        )
+                                                      }
+                                                      className="w-20 text-center px-2 py-1 border rounded"
+                                                      placeholder="1"
+                                                    />
+                                                    <button
+                                                      onClick={() =>
+                                                        handleQuantityChange(
+                                                          room.id,
+                                                          svc.id,
+                                                          true,
+                                                          svc.unit_of_measurement
+                                                        )
+                                                      }
+                                                      className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
+                                                    >
+                                                      +
+                                                    </button>
+                                                    <span className="text-sm text-gray-600">
+                                                      {svc.unit_of_measurement}
                                                     </span>
                                                   </div>
-                                                  {/* Divider if not the last chosen service in this category */}
-                                                  {isSelected &&
-                                                    (() => {
-                                                      const chosenInThisCat =
-                                                        servicesForCategory.filter(
-                                                          (s) =>
-                                                            roomServices[
-                                                              s.id
-                                                            ] !== undefined
-                                                        );
-                                                      const currentIndex =
-                                                        chosenInThisCat.findIndex(
-                                                          (s) => s.id === svc.id
-                                                        );
-                                                      return currentIndex !==
-                                                        chosenInThisCat.length -
-                                                          1 ? (
-                                                        <hr className="mt-4 border-gray-200" />
-                                                      ) : null;
-                                                    })()}
-                                                </>
-                                              )}
-                                            </div>
-                                          );
-                                        }
-                                      )}
+                                                  <span className="text-lg text-blue-600 font-medium text-right">
+                                                    $
+                                                    {formatWithSeparator(
+                                                      svc.price * quantity
+                                                    )}
+                                                  </span>
+                                                </div>
+                                              </>
+                                            )}
+                                          </div>
+                                        );
+                                      })}
                                     </div>
                                   )}
                                 </div>
@@ -689,7 +658,7 @@ export default function RoomDetails() {
             })}
           </div>
 
-          {/* Right column: summary, address, photos/description */}
+          {/* Right column: summary, address section, photos+description */}
           <div className="w-1/2 ml-auto pt-0 space-y-6">
             {/* Summary */}
             <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden">
@@ -711,7 +680,6 @@ export default function RoomDetails() {
                       Object.keys(roomServices).length > 0;
                     if (!hasSelectedInRoom) return null;
 
-                    // Calculate this room's total
                     const roomTotal = Object.entries(roomServices).reduce(
                       (sum, [serviceId, qty]) => {
                         const svc = ALL_SERVICES.find(
@@ -724,7 +692,6 @@ export default function RoomDetails() {
 
                     return (
                       <div key={room.id} className="mb-6">
-                        {/* Always display room title */}
                         <h3 className="text-xl font-semibold text-gray-800 mb-2">
                           {room.title}
                         </h3>
@@ -747,11 +714,10 @@ export default function RoomDetails() {
                                 {categoriesWithSelected.map((catId) => {
                                   const servicesForCategory =
                                     categoryServicesMap[catId] || [];
-                                  const chosenServices =
-                                    servicesForCategory.filter(
-                                      (svc) =>
-                                        roomServices[svc.id] !== undefined
-                                    );
+                                  const chosenServices = servicesForCategory.filter(
+                                    (svc) =>
+                                      roomServices[svc.id] !== undefined
+                                  );
                                   if (chosenServices.length === 0) return null;
 
                                   const catObj = ALL_CATEGORIES.find(
@@ -804,7 +770,6 @@ export default function RoomDetails() {
                           }
                         )}
 
-                        {/* Here is where we do {room.title} Total: */}
                         <div className="flex justify-between items-center mb-2 ml-2">
                           <span className="font-medium text-gray-800">
                             {room.title} Total:
@@ -828,105 +793,20 @@ export default function RoomDetails() {
               )}
             </div>
 
-            {/* Address section */}
-            <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden">
-              <h2 className="text-2xl font-medium text-gray-800 mb-4">
-                We Need Your Address
-              </h2>
-              <div className="flex flex-col gap-4">
-                <input
-                  type="text"
-                  value={address}
-                  onChange={handleAddressChange}
-                  onFocus={(e) => (e.target.placeholder = "")}
-                  onBlur={(e) => (e.target.placeholder = "Enter your address")}
-                  placeholder="Enter your address"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <button
-                  onClick={handleUseMyLocation}
-                  className="text-blue-600 text-left"
-                >
-                  Use my location
-                </button>
-              </div>
-            </div>
+            {/* Reusable address section */}
+            <AddressSection
+              address={address}
+              onAddressChange={handleAddressChangeLocal}
+              onUseMyLocation={handleUseMyLocation}
+            />
 
-            {/* Upload Photos & Description section */}
-            <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden">
-              <h2 className="text-2xl font-medium text-gray-800 mb-4">
-                Upload Photos & Description
-              </h2>
-              <div className="flex flex-col gap-4">
-                <div>
-                  <label
-                    htmlFor="photo-upload"
-                    className="block w-full px-4 py-2 text-center bg-blue-500 text-white rounded-md cursor-pointer hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                  >
-                    Choose Files
-                  </label>
-                  <input
-                    type="file"
-                    id="photo-upload"
-                    accept="image/*"
-                    multiple
-                    onChange={(e) => {
-                      const files = Array.from(e.target.files || []);
-                      if (
-                        files.length > 12 ||
-                        photos.length + files.length > 12
-                      ) {
-                        alert("You can upload up to 12 photos total.");
-                        e.target.value = "";
-                        return;
-                      }
-                      const fileUrls = files.map((file) =>
-                        URL.createObjectURL(file)
-                      );
-                      setPhotos((prev) => [...prev, ...fileUrls]);
-                    }}
-                    className="hidden"
-                  />
-                  <p className="text-sm text-gray-500 mt-1">
-                    Maximum 12 images. Supported formats: JPG, PNG.
-                  </p>
-
-                  <div className="mt-4 grid grid-cols-3 gap-4">
-                    {photos.map((photo, index) => (
-                      <div key={index} className="relative group">
-                        <img
-                          src={photo}
-                          alt={`Uploaded preview ${index + 1}`}
-                          className="w-full h-24 object-cover rounded-md border border-gray-300"
-                        />
-                        <button
-                          onClick={() => {
-                            setPhotos((prev) =>
-                              prev.filter((_, i) => i !== index)
-                            );
-                          }}
-                          className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                          aria-label="Remove photo"
-                        >
-                          <span className="text-sm">✕</span>
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <textarea
-                    id="details"
-                    rows={5}
-                    value={description}
-                    onChange={handleDescriptionChange}
-                    placeholder="Please provide more details about your issue (optional)..."
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  ></textarea>
-                </div>
-              </div>
-            </div>
+            {/* Reusable Photos and Description section */}
+            <PhotosAndDescription
+              photos={photos}
+              description={description}
+              onSetPhotos={setPhotos}
+              onSetDescription={setDescription}
+            />
           </div>
         </div>
       </div>
