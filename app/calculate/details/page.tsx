@@ -220,23 +220,41 @@ export default function Details() {
     saveToSession("selectedServicesWithQuantity", selectedServicesState);
   }, [selectedServicesState]);
 
-  // Expand/collapse a category
-  async function toggleCategory(catId: string) {
-    setExpandedCategories((prev) => {
-      const next = new Set(prev);
-      if (next.has(catId)) {
-        next.delete(catId);
-      } else {
-        next.add(catId);
-        // Fetch finishing materials for any services in this category (if not loaded yet)
-        const servicesInCat = categoryServicesMap[catId] || [];
-        fetchFinishingMaterialsForCategory(servicesInCat);
+  /**
+   * Fetch finishing materials for a single service if not loaded,
+   * then set default finishingMaterialSelections (pick the first item in each section).
+   */
+  async function ensureFinishingMaterialsLoaded(serviceId: string) {
+    try {
+      // If we already have finishingMaterialsMapAll[serviceId], skip fetch
+      if (!finishingMaterialsMapAll[serviceId]) {
+        const dot = convertServiceIdToApiFormat(serviceId);
+        const data = await fetchFinishingMaterials(dot);
+
+        // Save data to finishingMaterialsMapAll
+        finishingMaterialsMapAll[serviceId] = data;
+        setFinishingMaterialsMapAll({ ...finishingMaterialsMapAll });
       }
-      return next;
-    });
+
+      // Now set default finishingMaterialSelections for this service if none is present
+      if (!finishingMaterialSelections[serviceId]) {
+        const data = finishingMaterialsMapAll[serviceId];
+        const singleSelections: string[] = [];
+
+        for (const arr of Object.values(data.sections || {})) {
+          if (Array.isArray(arr) && arr.length > 0) {
+            singleSelections.push(arr[0].external_id);
+          }
+        }
+        finishingMaterialSelections[serviceId] = singleSelections;
+        setFinishingMaterialSelections({ ...finishingMaterialSelections });
+      }
+    } catch (err) {
+      console.error("Error in ensureFinishingMaterialsLoaded:", err);
+    }
   }
 
-  // Fetch finishing materials for all services in the category if not already loaded
+  // Fetch finishing materials for all services in a category if not already loaded
   async function fetchFinishingMaterialsForCategory(services: (typeof ALL_SERVICES)[number][]) {
     const promises = services.map(async (svc) => {
       if (!finishingMaterialsMapAll[svc.id]) {
@@ -245,8 +263,7 @@ export default function Details() {
           const data = await fetchFinishingMaterials(dot);
 
           finishingMaterialsMapAll[svc.id] = data;
-
-          // Select the first item from each "section" returned by the API
+          // Pick first from each section
           const singleSelections: string[] = [];
           for (const arr of Object.values(data.sections || {})) {
             if (Array.isArray(arr) && arr.length > 0) {
@@ -269,42 +286,54 @@ export default function Details() {
     }
   }
 
+  // Expand/collapse a category
+  async function toggleCategory(catId: string) {
+    setExpandedCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(catId)) {
+        next.delete(catId);
+      } else {
+        next.add(catId);
+        // When user expands, fetch finishing materials for all services in this category
+        const servicesInCat = categoryServicesMap[catId] || [];
+        fetchFinishingMaterialsForCategory(servicesInCat);
+      }
+      return next;
+    });
+  }
+
   /**
    * handleServiceToggle:
    * When user toggles a service:
-   *  - If it was selected, we remove it from all states, so next time it appears fresh.
-   *  - If it was not selected, we add it to selectedServicesState with default quantity 1.
+   *  - If it was selected, we remove it from all states (finishingMaterialSelections, etc.)
+   *  - If it was not selected, we set it to quantity=1, and also ensure finishing materials loaded.
    */
-  function handleServiceToggle(serviceId: string) {
+  async function handleServiceToggle(serviceId: string) {
     setSelectedServicesState((prev) => {
       const isCurrentlySelected = !!prev[serviceId];
       if (isCurrentlySelected) {
-        // User is turning it OFF => remove from all relevant states
+        // OFF => remove from states
         const updated = { ...prev };
         delete updated[serviceId];
 
-        // Reset finishingMaterialSelections for this service
         setFinishingMaterialSelections((prevSel) => {
           const newSel = { ...prevSel };
           delete newSel[serviceId];
           return newSel;
         });
 
-        // Reset manual input for this service
         setManualInputValue((prevManual) => {
           const newManual = { ...prevManual };
           delete newManual[serviceId];
           return newManual;
         });
 
-        // Reset calculation results for this service
         setCalculationResultsMap((prevCalc) => {
           const newCalc = { ...prevCalc };
           delete newCalc[serviceId];
           return newCalc;
         });
 
-        // Reset cost for this service
         setServiceCosts((prevCosts) => {
           const newCosts = { ...prevCosts };
           delete newCosts[serviceId];
@@ -313,8 +342,11 @@ export default function Details() {
 
         return updated;
       } else {
-        // User is turning it ON => add quantity=1
-        return { ...prev, [serviceId]: 1 };
+        // ON => add quantity=1
+        const updated = { ...prev, [serviceId]: 1 };
+        // Ensure finishing materials and set at least one finishing material
+        ensureFinishingMaterialsLoaded(serviceId);
+        return updated;
       }
     });
 
@@ -361,7 +393,7 @@ export default function Details() {
     if (!confirmed) return;
     setSelectedServicesState({});
     setExpandedCategories(new Set());
-    // Also reset all these states
+    // Also reset all relevant states
     setFinishingMaterialSelections({});
     setManualInputValue({});
     setCalculationResultsMap({});
@@ -392,6 +424,9 @@ export default function Details() {
         const unit = foundService?.unit_of_measurement || "each";
         const dotFormat = convertServiceIdToApiFormat(serviceId);
 
+        // If no finishing materials are selected for this service, we risk the server error
+        // "There is not enough finishing material for section: 1".
+        // But we have ensureFinishingMaterialsLoaded(...) called above to prevent that.
         const response = await calculatePrice({
           work_code: dotFormat,
           zipcode: zip,
@@ -666,7 +701,7 @@ export default function Details() {
                                           <div className="flex flex-col gap-2 mb-4">
                                             <div className="flex justify-between">
                                               <span className="text-sm font-medium text-gray-700">
-                                                Work cost:
+                                                Labor cost:
                                               </span>
                                               <span className="text-sm text-gray-700">
                                                 ${calcResult.work_cost || "—"}
