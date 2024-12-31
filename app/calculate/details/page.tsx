@@ -13,7 +13,7 @@ import { ALL_SERVICES } from "@/constants/services";
 import { ChevronDown } from "lucide-react";
 
 /**
- * FinishingMaterial: describes items returned by /work/finishing_materials
+ * Interface describing finishing materials from /work/finishing_materials
  */
 interface FinishingMaterial {
   id: number;
@@ -24,9 +24,7 @@ interface FinishingMaterial {
   cost: string;
 }
 
-/**
- * Formats a number with commas, e.g. 1000 -> "1,000.00"
- */
+/** Helper: format a number with commas */
 function formatWithSeparator(value: number): string {
   return new Intl.NumberFormat("en-US", { minimumFractionDigits: 2 }).format(value);
 }
@@ -45,26 +43,18 @@ function loadFromSession<T>(key: string, defaultValue: T): T {
   try {
     return savedValue ? JSON.parse(savedValue) : defaultValue;
   } catch (error) {
-    console.error(`Error parsing sessionStorage key "${key}"`, error);
+    console.error(`Error parsing sessionStorage key "${key}":`, error);
     return defaultValue;
   }
 }
 
-/** Convert "1-1-1" -> "1.1.1" for the server */
+/** Convert "1-1-1" -> "1.1.1" */
 function convertServiceIdToApiFormat(serviceId: string) {
   return serviceId.replaceAll("-", ".");
 }
 
 /**
- * POST /work/finishing_materials (server does NOT support GET)
- * Returns something like:
- * {
- *   "sections": {
- *       "1": [...array of materials...],
- *       "2": [...],
- *       ...
- *   }
- * }
+ * POST /work/finishing_materials
  */
 async function fetchFinishingMaterials(workCode: string) {
   const url = "http://dev.thejamb.com/work/finishing_materials";
@@ -81,12 +71,11 @@ async function fetchFinishingMaterials(workCode: string) {
   if (!res.ok) {
     throw new Error(`Failed to fetch finishing materials (work_code=${workCode}).`);
   }
-  return res.json(); // { sections: { "1": FinishingMaterial[], ... } }
+  return res.json(); 
 }
 
 /**
  * POST /calculate
- * The server does NOT support GET /calculate
  */
 async function calculatePrice(params: {
   work_code: string;
@@ -107,7 +96,6 @@ async function calculatePrice(params: {
   });
 
   if (!res.ok) {
-    // 400 with {error: "..."} is possible if there's a business logic issue
     throw new Error(`Failed to calculate price (work_code=${params.work_code}).`);
   }
   return res.json();
@@ -117,28 +105,25 @@ export default function Details() {
   const router = useRouter();
   const { location } = useLocation();
 
-  /**
-   * 1) Load user-chosen categories from session
-   */
+  // 1) Load categories + address from session
   const selectedCategories = loadFromSession<string[]>("services_selectedCategories", []);
   const [address, setAddress] = useState<string>(() => loadFromSession("address", ""));
   const description = loadFromSession<string>("description", "");
   const photos = loadFromSession<string[]>("photos", []);
   const searchQuery = loadFromSession<string>("services_searchQuery", "");
 
-  // If none selected or no address, go back
+  // If none selected or no address => go back
   useEffect(() => {
     if (selectedCategories.length === 0 || !address) {
       router.push("/calculate");
     }
   }, [selectedCategories, address, router]);
 
-  // If location changes in header, update address
+  // If location changes => rewrite address
   useEffect(() => {
     const newAddress = `${location.city || ""}, ${location.zip || ""}${
       location.country ? `, ${location.country}` : ""
     }`.trim();
-
     if (newAddress !== ", ,") {
       setAddress(newAddress);
       saveToSession("address", newAddress);
@@ -147,11 +132,11 @@ export default function Details() {
 
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
 
-  // Track expansions
+  // Expand/collapse categories
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
   /**
-   * Build categoriesBySection from selectedCategories only
+   * Build categoriesBySection from the chosen cat IDs
    */
   const categoriesWithSection = selectedCategories
     .map((catId) => ALL_CATEGORIES.find((c) => c.id === catId) || null)
@@ -166,8 +151,8 @@ export default function Details() {
   });
 
   /**
-   * Build map from catId -> array of services in ALL_SERVICES
-   * Also filter by searchQuery if needed
+   * For each catId, find matching services in ALL_SERVICES.
+   * Possibly filter by searchQuery
    */
   const categoryServicesMap: Record<string, (typeof ALL_SERVICES)[number][]> = {};
   selectedCategories.forEach((catId) => {
@@ -180,27 +165,24 @@ export default function Details() {
     categoryServicesMap[catId] = arr;
   });
 
-  /**
-   * selectedServicesState: serviceId -> quantity
-   */
+  // selectedServicesState: serviceId->quantity
   const [selectedServicesState, setSelectedServicesState] = useState<Record<string, number>>(
     () => loadFromSession("selectedServicesWithQuantity", {})
   );
 
-  // serviceCosts: final cost for each service
+  // serviceCosts: store final cost for each service
   const [serviceCosts, setServiceCosts] = useState<Record<string, number>>({});
 
   /**
-   * finishingMaterialsMapAll: we store the full data from server:
-   * finishingMaterialsMapAll[serviceId] = { "sections": { "1": [FinishingMaterial,...], "2": [...], ... } }
+   * finishingMaterialsMapAll: (serviceId -> { sections: { "1": FinishingMaterial[] } })
    */
   const [finishingMaterialsMapAll, setFinishingMaterialsMapAll] = useState<
     Record<string, { sections: Record<string, FinishingMaterial[]> }>
   >({});
 
   /**
-   * finishingMaterialSelections: which external_ids we currently pick for each service
-   * By default, we pick the first item from each section => one finishing material per section.
+   * finishingMaterialSelections: (serviceId-> string[] of external_ids).
+   * By default, pick first item from each "sections" if available.
    */
   const [finishingMaterialSelections, setFinishingMaterialSelections] = useState<
     Record<string, string[]>
@@ -215,21 +197,68 @@ export default function Details() {
   }, [selectedServicesState]);
 
   /**
-   * expand/collapse category
+   * Toggle a category: expand/collapse
+   * Additionally, *on expand*, load finishing materials for that category's services
+   * if not already loaded. That way we only load materials for the visible category.
    */
-  function toggleCategory(catId: string) {
+  async function toggleCategory(catId: string) {
     setExpandedCategories((prev) => {
       const next = new Set(prev);
-      if (next.has(catId)) next.delete(catId);
-      else next.add(catId);
+      if (next.has(catId)) {
+        // collapse
+        next.delete(catId);
+      } else {
+        // expand
+        next.add(catId);
+        // Load finishing materials for all services in this cat, if not loaded
+        const servicesForThisCat = categoryServicesMap[catId] || [];
+        fetchFinishingMaterialsForCategory(servicesForThisCat);
+      }
       return next;
     });
   }
 
   /**
-   * Toggle a service: if on -> quantity=1; if off -> remove
+   * Fetch finishing materials for each service in a given category
+   * if not loaded yet.
+   * Then pick first finishing material from each section by default.
    */
-  async function handleServiceToggle(serviceId: string) {
+  async function fetchFinishingMaterialsForCategory(services: (typeof ALL_SERVICES)[number][]) {
+    const promises = services.map(async (svc) => {
+      const svcId = svc.id;
+      if (!finishingMaterialsMapAll[svcId]) {
+        try {
+          const dotFormat = convertServiceIdToApiFormat(svcId);
+          const data = await fetchFinishingMaterials(dotFormat);
+          // store full data
+          finishingMaterialsMapAll[svcId] = data;
+          // pick first from each section
+          const singleSelections: string[] = [];
+          for (const arr of Object.values(data.sections || {})) {
+            if (Array.isArray(arr) && arr.length > 0) {
+              singleSelections.push(arr[0].external_id);
+            }
+          }
+          finishingMaterialSelections[svcId] = singleSelections;
+        } catch (err) {
+          console.error("Error loading finishing materials for serviceId=", svcId, err);
+        }
+      }
+    });
+    try {
+      await Promise.all(promises);
+      // Update state once all are done
+      setFinishingMaterialsMapAll({ ...finishingMaterialsMapAll });
+      setFinishingMaterialSelections({ ...finishingMaterialSelections });
+    } catch (err) {
+      console.error("Error fetchFinishingMaterialsForCategory:", err);
+    }
+  }
+
+  /**
+   * Toggle a service
+   */
+  function handleServiceToggle(serviceId: string) {
     setSelectedServicesState((prev) => {
       if (prev[serviceId]) {
         const updated = { ...prev };
@@ -239,61 +268,6 @@ export default function Details() {
       return { ...prev, [serviceId]: 1 };
     });
     setWarningMessage(null);
-
-    // If not loaded finishing materials
-    if (!finishingMaterialsMapAll[serviceId]) {
-      try {
-        const dotFormat = convertServiceIdToApiFormat(serviceId);
-        const data = await fetchFinishingMaterials(dotFormat); 
-        // data might look like { sections: { "1": [ {...}, {...} ], "2": [ ... ] } }
-
-        // Сохраним весь ответ
-        setFinishingMaterialsMapAll((prev) => ({
-          ...prev,
-          [serviceId]: data,
-        }));
-
-        // По умолчанию берём "первый" материал из каждой "sections" => external_id
-        const singleSelections: string[] = [];
-        const sectionsObj = data.sections || {};
-        for (const [sectKey, arr] of Object.entries(sectionsObj)) {
-          if (Array.isArray(arr) && arr.length > 0) {
-            singleSelections.push(arr[0].external_id);
-          }
-        }
-
-        // Запишем выбор в finishingMaterialSelections
-        setFinishingMaterialSelections((prev) => ({
-          ...prev,
-          [serviceId]: singleSelections,
-        }));
-      } catch (error) {
-        console.error("Error fetching finishing materials:", error);
-      }
-    }
-  }
-
-  /**
-   * Placeholder: user might pick a different finishing material from the same section
-   * For example:
-   * handleChangeMaterial(serviceId, sectionKey, newExternalId)
-   */
-  function handleChangeMaterial(
-    serviceId: string,
-    sectionKey: string,
-    newExternalId: string
-  ) {
-    // We won't code UI logic here, just an example
-    setFinishingMaterialSelections((prev) => {
-      const oldArray = prev[serviceId] || [];
-      // Suppose oldArray currently has one external_id per section => we need to replace the entry for this section
-      // but we need a mapping from (section -> external_id). To keep it simple, let's pretend oldArray is small
-      // In real code, you'd store a map: Record<sectionKey, string>. We'll keep it simple.
-      return {
-        ...prev,
-        [serviceId]: [...oldArray.filter((id) => id !== newExternalId), newExternalId],
-      };
-    });
   }
 
   /**
@@ -326,7 +300,7 @@ export default function Details() {
   }
 
   /**
-   * On blur, if empty => revert
+   * If user leaves input empty => revert
    */
   function handleBlurInput(serviceId: string) {
     if (!manualInputValue[serviceId]) {
@@ -347,7 +321,7 @@ export default function Details() {
   }
 
   /**
-   * Recalc cost whenever user changes selectedServices or finishingMaterialSelections
+   * Recalc cost whenever user changes selectedServicesState or finishingMaterialSelections
    */
   useEffect(() => {
     const serviceIds = Object.keys(selectedServicesState);
@@ -366,16 +340,16 @@ export default function Details() {
 
     serviceIds.forEach(async (serviceId) => {
       try {
+        // quantity of the service
         const quantity = selectedServicesState[serviceId] || 1;
-
-        // finishingMaterialsMapAll[serviceId] = { sections: { "1": [...], ... } }
-        // finishingMaterialSelections[serviceId] = ["203728679", ...] (one per section by default)
+        // finishing materials for this service
         const externalIds = finishingMaterialSelections[serviceId] || [];
-
+        // service itself
         const foundService = ALL_SERVICES.find((svc) => svc.id === serviceId);
         const unit = foundService?.unit_of_measurement || "each";
         const dotFormat = convertServiceIdToApiFormat(serviceId);
 
+        // call /calculate
         const response = await calculatePrice({
           work_code: dotFormat,
           zipcode: zip,
@@ -398,19 +372,19 @@ export default function Details() {
     });
   }, [
     selectedServicesState,
-    finishingMaterialSelections, // добавим, чтобы при смене материала был пересчёт
+    finishingMaterialSelections, // при смене выбранных материалов — пересчёт
     location,
   ]);
 
   /**
-   * Calculate total
+   * compute total
    */
   function calculateTotal() {
     return Object.values(serviceCosts).reduce((acc, cost) => acc + (cost || 0), 0);
   }
 
   /**
-   * handleNext => validate, go to estimate
+   * handleNext => validate => /calculate/estimate
    */
   function handleNext() {
     if (Object.keys(selectedServicesState).length === 0) {
@@ -425,7 +399,7 @@ export default function Details() {
   }
 
   /**
-   * Helper: getCategoryNameById
+   * getCategoryNameById
    */
   function getCategoryNameById(catId: string): string {
     const categoryObj = ALL_CATEGORIES.find((c) => c.id === catId);
@@ -437,13 +411,11 @@ export default function Details() {
       <div className="container mx-auto">
         <BreadCrumb items={CALCULATE_STEPS} />
 
-        {/* Top: title + Next button */}
         <div className="flex justify-between items-start mt-8">
           <SectionBoxTitle>Choose a Service and Quantity</SectionBoxTitle>
           <Button onClick={handleNext}>Next →</Button>
         </div>
 
-        {/* "No service?" + Clear */}
         <div className="flex justify-between items-center text-sm text-gray-500 mt-8 w-full max-w-[600px]">
           <span>
             No service?{" "}
@@ -459,22 +431,20 @@ export default function Details() {
           </button>
         </div>
 
-        {/* Warning messages */}
         <div className="h-6 mt-4 text-left">
           {warningMessage && <p className="text-red-500">{warningMessage}</p>}
         </div>
 
         <div className="container mx-auto relative flex mt-8">
-          {/* LEFT COLUMN: categories & services */}
+          {/* LEFT: categories & services */}
           <div className="flex-1">
             {Object.entries(categoriesBySection).map(([sectionName, catIds]) => (
               <div key={sectionName} className="mb-8">
                 <SectionBoxSubtitle>{sectionName}</SectionBoxSubtitle>
+
                 <div className="flex flex-col gap-4 mt-4 w-full max-w-[600px]">
                   {catIds.map((catId) => {
-                    // array of services in this category
                     const servicesForCategory = categoryServicesMap[catId] || [];
-                    // how many are selected
                     const selectedInThisCategory = servicesForCategory.filter((svc) =>
                       Object.keys(selectedServicesState).includes(svc.id)
                     ).length;
@@ -488,6 +458,7 @@ export default function Details() {
                           selectedInThisCategory > 0 ? "border-blue-500" : "border-gray-300"
                         }`}
                       >
+                        {/* Category header toggler */}
                         <button
                           onClick={() => toggleCategory(catId)}
                           className="flex justify-between items-center w-full"
@@ -525,6 +496,7 @@ export default function Details() {
 
                               return (
                                 <div key={svc.id} className="space-y-2">
+                                  {/* Service row */}
                                   <div className="flex justify-between items-center">
                                     <span
                                       className={`text-lg transition-colors duration-300 ${
@@ -545,6 +517,7 @@ export default function Details() {
                                     </label>
                                   </div>
 
+                                  {/* If selected, show quantity + cost */}
                                   {isSelected && (
                                     <>
                                       {svc.description && (
@@ -554,7 +527,6 @@ export default function Details() {
                                       )}
                                       <div className="flex justify-between items-center">
                                         <div className="flex items-center gap-1">
-                                          {/* decrement */}
                                           <button
                                             onClick={() =>
                                               handleQuantityChange(
@@ -607,13 +579,14 @@ export default function Details() {
                                           ${formatWithSeparator(finalCost)}
                                         </span>
                                       </div>
-
-                                      {/* If not the last chosen one, draw divider */}
                                       {(() => {
+                                        // divider if not the last selected
                                         const chosen = servicesForCategory.filter(
                                           (s) => selectedServicesState[s.id] !== undefined
                                         );
-                                        const currentIndex = chosen.findIndex((s) => s.id === svc.id);
+                                        const currentIndex = chosen.findIndex(
+                                          (s) => s.id === svc.id
+                                        );
                                         if (currentIndex !== chosen.length - 1) {
                                           return <hr className="mt-4 border-gray-200" />;
                                         }
@@ -680,9 +653,7 @@ export default function Details() {
                                     <li
                                       key={svc.id}
                                       className="grid grid-cols-3 gap-2 text-sm text-gray-600"
-                                      style={{
-                                        gridTemplateColumns: "40% 30% 25%",
-                                      }}
+                                      style={{ gridTemplateColumns: "40% 30% 25%" }}
                                     >
                                       <span className="truncate overflow-hidden">
                                         {svc.title}
@@ -703,7 +674,6 @@ export default function Details() {
                       </div>
                     );
                   })}
-                  {/* Subtotal */}
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-2xl font-semibold text-gray-800">Subtotal:</span>
                     <span className="text-2xl font-semibold text-blue-600">
@@ -714,7 +684,7 @@ export default function Details() {
               )}
             </div>
 
-            {/* Address block */}
+            {/* Address */}
             <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
               <h2 className="text-2xl font-medium text-gray-800 mb-4">Address</h2>
               <p className="text-gray-500 text-medium">{address || "No address provided"}</p>
