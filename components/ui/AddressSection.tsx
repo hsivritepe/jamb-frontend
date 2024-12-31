@@ -6,11 +6,12 @@ interface AddressSectionProps {
   address: string;
   onAddressChange: (e: ChangeEvent<HTMLInputElement>) => void;
   onUseMyLocation: () => void;
-  className?: string; 
+  className?: string;
 }
 
 /**
- * A reusable AddressSection block. 
+ * A reusable AddressSection block.
+ * On "Use my location", we call onUseMyLocation (which in the page sets address from location context).
  */
 export default function AddressSection({
   address,
@@ -24,9 +25,7 @@ export default function AddressSection({
         className ? className : ""
       }`}
     >
-      <h2 className="text-2xl font-medium text-gray-800 mb-4">
-        We Need Your Address
-      </h2>
+      <h2 className="text-2xl font-medium text-gray-800 mb-4">We Need Your Address</h2>
 
       <div className="flex flex-col gap-4">
         <input
@@ -39,10 +38,7 @@ export default function AddressSection({
           className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
 
-        <button
-          onClick={onUseMyLocation}
-          className="text-blue-600 text-left"
-        >
+        <button onClick={onUseMyLocation} className="text-blue-600 text-left">
           Use my location
         </button>
       </div>

@@ -11,11 +11,10 @@ import { ChevronDown } from "lucide-react";
 import { useLocation } from "@/context/LocationContext";
 import { ALL_CATEGORIES } from "@/constants/categories";
 
-// Reusable components
 import AddressSection from "@/components/ui/AddressSection";
 import PhotosAndDescription from "@/components/ui/PhotosAndDescription";
 
-// Session storage helpers
+// Helpers for sessionStorage
 const saveToSession = (key: string, value: any) => {
   if (typeof window !== "undefined") {
     sessionStorage.setItem(key, JSON.stringify(value));
@@ -49,11 +48,15 @@ export default function Services() {
   const [searchQuery, setSearchQuery] = useState<string>(
     loadFromSession("services_searchQuery", "")
   );
-  const [address, setAddress] = useState<string>(loadFromSession("address", ""));
+  const [address, setAddress] = useState<string>(
+    loadFromSession("address", "")
+  );
   const [description, setDescription] = useState<string>(
     loadFromSession("description", "")
   );
-  const [photos, setPhotos] = useState<string[]>(loadFromSession("photos", []));
+  const [photos, setPhotos] = useState<string[]>(
+    loadFromSession("photos", [])
+  );
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
 
   // 3) Build map: section -> categories
@@ -65,11 +68,12 @@ export default function Services() {
     categoriesBySection[cat.section].push({ id: cat.id, title: cat.title });
   });
 
-  // 4) Setup selected categories
-  const storedSelectedCategories = loadFromSession("selectedCategoriesMap", null);
+  // 4) Setup selected categories from a “map” in session
+  const storedSelectedCategoriesMap = loadFromSession("selectedCategoriesMap", null);
   const initialSelectedCategories: Record<string, string[]> =
-    storedSelectedCategories ||
+    storedSelectedCategoriesMap ||
     (() => {
+      // If no map is stored, create an empty map for each chosen section
       const init: Record<string, string[]> = {};
       selectedSections.forEach((section) => {
         init[section] = [];
@@ -77,7 +81,7 @@ export default function Services() {
       return init;
     })();
 
-  const [selectedCategories, setSelectedCategories] = useState<
+  const [selectedCategoriesMap, setSelectedCategoriesMap] = useState<
     Record<string, string[]>
   >(initialSelectedCategories);
 
@@ -86,10 +90,7 @@ export default function Services() {
   useEffect(() => saveToSession("address", address), [address]);
   useEffect(() => saveToSession("description", description), [description]);
   useEffect(() => saveToSession("photos", photos), [photos]);
-  useEffect(
-    () => saveToSession("selectedCategoriesMap", selectedCategories),
-    [selectedCategories]
-  );
+  useEffect(() => saveToSession("selectedCategoriesMap", selectedCategoriesMap), [selectedCategoriesMap]);
 
   // 6) Filter categories
   const filteredCategoriesBySection = Object.fromEntries(
@@ -104,40 +105,37 @@ export default function Services() {
     })
   ) as Record<string, { id: string; title: string }[]>;
 
-  // 7) Track expansions
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
-  const toggleCategory = (section: string) => {
-    setExpandedCategories((prev) => {
+  // 7) Expand/collapse sections
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
+  const toggleSection = (section: string) => {
+    setExpandedSections((prev) => {
       const next = new Set(prev);
-      if (next.has(section)) {
-        next.delete(section);
-      } else {
-        next.add(section);
-      }
+      if (next.has(section)) next.delete(section);
+      else next.add(section);
       return next;
     });
   };
 
-  // 8) Toggle a category
+  // 8) Toggle a category in a specific section
   const handleCategorySelect = (section: string, catId: string) => {
-    setSelectedCategories((prev) => {
-      const currentCatIds = prev[section] || [];
-      const isSelected = currentCatIds.includes(catId);
+    setSelectedCategoriesMap((prev) => {
+      const current = prev[section] || [];
+      const isSelected = current.includes(catId);
       if (!isSelected) setWarningMessage(null);
 
       return {
         ...prev,
         [section]: isSelected
-          ? currentCatIds.filter((id) => id !== catId)
-          : [...currentCatIds, catId],
+          ? current.filter((id) => id !== catId)
+          : [...current, catId],
       };
     });
   };
 
-  // 9) Clear all
+  // 9) Clear
   const handleClearSelection = () => {
     const userConfirmed = window.confirm(
-      "Are you sure you want to clear all selections? This will also collapse all categories."
+      "Are you sure you want to clear all selections? This will also collapse all sections."
     );
     if (!userConfirmed) return;
 
@@ -145,13 +143,13 @@ export default function Services() {
     selectedSections.forEach((section) => {
       cleared[section] = [];
     });
-    setSelectedCategories(cleared);
-    setExpandedCategories(new Set());
+    setSelectedCategoriesMap(cleared);
+    setExpandedSections(new Set());
   };
 
   // 10) Next
   const handleNext = () => {
-    const totalChosen = Object.values(selectedCategories).flat().length;
+    const totalChosen = Object.values(selectedCategoriesMap).flat().length;
     if (totalChosen === 0) {
       setWarningMessage("Please select at least one category before proceeding.");
       return;
@@ -161,8 +159,14 @@ export default function Services() {
       return;
     }
 
-    const chosenCategoryIDs = Object.values(selectedCategories).flat();
+    // Flatten the user's final chosen categories:
+    const chosenCategoryIDs = Object.values(selectedCategoriesMap).flat();
+
+    // Save to session so the "Details" page can load ONLY these final categories
     saveToSession("services_selectedCategories", chosenCategoryIDs);
+
+    // Also store other needed data as is:
+    // (address, photos, description are already being stored in useEffect)
 
     router.push("/calculate/details");
   };
@@ -173,7 +177,8 @@ export default function Services() {
   };
   const handleUseMyLocation = () => {
     if (location?.city && location?.zip) {
-      setAddress(`${location.city}, ${location.zip}, ${location.country || ""}`);
+      const combined = `${location.city}, ${location.zip}, ${location.country || ""}`.trim();
+      setAddress(combined);
     } else {
       setWarningMessage("Location data is unavailable. Please enter manually.");
     }
@@ -217,7 +222,7 @@ export default function Services() {
           </div>
         </div>
 
-        {/* Warning */}
+        {/* Warnings */}
         <div className="h-6 mt-4 text-left">
           {warningMessage && <p className="text-red-500">{warningMessage}</p>}
         </div>
@@ -228,7 +233,7 @@ export default function Services() {
             <div className="flex flex-col gap-3 mt-5 w-full max-w-[600px]">
               {selectedSections.map((section) => {
                 const allCats = filteredCategoriesBySection[section] || [];
-                const selectedCount = (selectedCategories[section] || []).length;
+                const selectedCount = (selectedCategoriesMap[section] || []).length;
 
                 return (
                   <div
@@ -238,7 +243,7 @@ export default function Services() {
                     }`}
                   >
                     <button
-                      onClick={() => toggleCategory(section)}
+                      onClick={() => toggleSection(section)}
                       className="flex justify-between items-center w-full"
                     >
                       <h3
@@ -255,12 +260,12 @@ export default function Services() {
                       </h3>
                       <ChevronDown
                         className={`h-5 w-5 transform transition-transform ${
-                          expandedCategories.has(section) ? "rotate-180" : ""
+                          expandedSections.has(section) ? "rotate-180" : ""
                         }`}
                       />
                     </button>
 
-                    {expandedCategories.has(section) && (
+                    {expandedSections.has(section) && (
                       <div className="mt-4 flex flex-col gap-3">
                         {allCats.length === 0 ? (
                           <p className="text-sm text-gray-500">
@@ -269,8 +274,7 @@ export default function Services() {
                         ) : (
                           allCats.map((cat) => {
                             const isSelected =
-                              selectedCategories[section]?.includes(cat.id) ||
-                              false;
+                              selectedCategoriesMap[section]?.includes(cat.id) || false;
                             return (
                               <div key={cat.id} className="flex justify-between items-center">
                                 <span
@@ -302,16 +306,14 @@ export default function Services() {
             </div>
           </div>
 
-          {/* Right side */}
+          {/* Right side: address, photos, description */}
           <div className="w-1/2 ml-auto mt-4 pt-0">
-            {/* Address */}
             <AddressSection
               address={address}
               onAddressChange={handleAddressChange}
               onUseMyLocation={handleUseMyLocation}
             />
 
-            {/* Reusable PhotosAndDescription component */}
             <PhotosAndDescription
               photos={photos}
               description={description}

@@ -15,23 +15,14 @@ const navigation: NavigationItem[] = [
   { name: "About", href: "/about" },
 ];
 
-// Mapping language codes to localized display text
 const languageMap: Record<string, string> = {
   ENG: "English",
   FRA: "Français",
   ESP: "Español",
-  CHN: "中文",
-  RUS: "Русский",
-  KOR: "한국어",
-  TUR: "Türkçe",
-  POR: "Português",
-  JPN: "日本語",
-  GER: "Deutsch",
-  HEB: "עברית",
-  ARB: "العربية",
+  // ...
 };
 
-// Helper: truncates text to a max length
+// Helper: truncates text
 function truncateText(text: string, maxLength: number) {
   return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
 }
@@ -39,46 +30,55 @@ function truncateText(text: string, maxLength: number) {
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // ---------- LOCATION ----------
+  // LOCATION from context
   const { location, setLocation } = useLocation();
+
+  // State for location modal
   const [showLocationModal, setShowLocationModal] = useState(false);
   const locationModalRef = useRef<HTMLDivElement>(null);
 
-  // For the location input fields
+  // Local state for user input
   const [manualLocation, setManualLocation] = useState({ city: "", zip: "" });
 
-  // ---------- PREFERENCES MODAL (LANGUAGE, UNITS, CURRENCY) ----------
+  // Preferences modal
   const [showPreferencesModal, setShowPreferencesModal] = useState(false);
   const preferencesModalRef = useRef<HTMLDivElement>(null);
 
   const pathname = usePathname();
   const isEmergencyActive = pathname.startsWith("/emergency");
 
-  // ---------- LOCATION HANDLERS ----------
+  // Save button in the location modal
   const handleManualLocationSave = () => {
-    setLocation({
-      city: manualLocation.city || "Enter City",
-      zip: manualLocation.zip.trim() || "and ZIP",
-    });
+    const newLoc = {
+      city: manualLocation.city || "City",
+      zip: manualLocation.zip.trim() || "00000",
+      country: "United States", // or you can let user input it
+    };
+    setLocation(newLoc);
+
+    // Also store in localStorage so that next time we reload, we pick it up
+    localStorage.setItem("userLocation", JSON.stringify(newLoc));
+
     setShowLocationModal(false);
   };
 
+  // Example: auto fill from some IP API
   const handleAutoFill = async () => {
     try {
       const response = await fetch("https://ipapi.co/json/");
       if (!response.ok) throw new Error("Failed to fetch location data");
 
       const data = await response.json();
-      const fullZip = data.postal || "0000000";
+      const city = data.city || "City";
+      const zip = data.postal || "00000";
 
-      setManualLocation({
-        city: data.city || "City",
-        zip: fullZip,
-      });
-      setLocation({
-        city: data.city || "City",
-        zip: fullZip,
-      });
+      setManualLocation({ city, zip });
+      setLocation({ city, zip, country: data.country_name || "United States" });
+
+      localStorage.setItem(
+        "userLocation",
+        JSON.stringify({ city, zip, country: data.country_name || "United States" })
+      );
     } catch (error) {
       console.error("Error fetching location:", error);
       alert("Failed to fetch location automatically.");
@@ -89,29 +89,8 @@ export default function Header() {
     setManualLocation({ city: "", zip: "" });
   };
 
-  // ---------- PREFERENCES STATE & HANDLERS ----------
-  const [selectedLanguage, setSelectedLanguage] = useState("ENG");
-  const [selectedUnit, setSelectedUnit] = useState("Feet");
-  const [selectedCurrency, setSelectedCurrency] = useState("US");
-
-  // Example arrays
-  const languages = Object.keys(languageMap); // e.g. ["ENG","FRA","ESP" ...]
-  const units = ["Feet", "Meters"];
-  const currencies = ["US", "CAD", "GBP", "EUR", "JPY", "CNY"];
-
-  const handlePreferencesSave = () => {
-    // You could store these in sessionStorage, context, or user profile
-    console.log("Saved preferences:", {
-      language: selectedLanguage,
-      unit: selectedUnit,
-      currency: selectedCurrency,
-    });
-    setShowPreferencesModal(false);
-  };
-
-  // ---------- OUTSIDE CLICK HANDLER FOR MODALS ----------
+  // Outside click handler for modals
   const handleOutsideClick = (e: MouseEvent) => {
-    // Location modal
     if (
       showLocationModal &&
       locationModalRef.current &&
@@ -119,7 +98,6 @@ export default function Header() {
     ) {
       setShowLocationModal(false);
     }
-    // Preferences modal
     if (
       showPreferencesModal &&
       preferencesModalRef.current &&
@@ -140,7 +118,24 @@ export default function Header() {
     };
   }, [showLocationModal, showPreferencesModal]);
 
-  // ---------- RENDER ----------
+  // for language/units
+  const [selectedLanguage, setSelectedLanguage] = useState("ENG");
+  const [selectedUnit, setSelectedUnit] = useState("Feet");
+  const [selectedCurrency, setSelectedCurrency] = useState("US");
+  const languages = Object.keys(languageMap);
+  const units = ["Feet", "Meters"];
+  const currencies = ["US", "CAD", "GBP", "EUR", "JPY", "CNY"];
+
+  const handlePreferencesSave = () => {
+    console.log("Saved preferences:", {
+      language: selectedLanguage,
+      unit: selectedUnit,
+      currency: selectedCurrency,
+    });
+    setShowPreferencesModal(false);
+  };
+
+  // RENDER
   return (
     <>
       <header className="fixed w-full z-50 bg-gray-100/50 backdrop-blur-sm shadow-sm">
@@ -149,21 +144,15 @@ export default function Header() {
             <div className="flex justify-between items-center h-16 px-6">
               {/* Logo */}
               <Link href="/" prefetch={false} className="flex-shrink-0">
-                <img
-                  src="/images/logo.png"
-                  alt="Jamb"
-                  className="h-8 w-auto"
-                />
+                <img src="/images/logo.png" alt="Jamb" className="h-8 w-auto" />
               </Link>
 
-              {/* Location chunk */}
+              {/* Location chunk: city, zip */}
               <div
                 className="flex flex-col items-start w-[200px] overflow-hidden text-ellipsis whitespace-normal"
                 title="Click to change location"
               >
-                <span className="text-sm font-medium text-gray-500">
-                  Are you here?
-                </span>
+                <span className="text-sm font-medium text-gray-500">Are you here?</span>
                 <strong
                   onClick={() => setShowLocationModal(true)}
                   className="text-[1.15rem] font-medium text-black cursor-pointer transition-colors duration-200 hover:text-blue-600"
@@ -173,7 +162,7 @@ export default function Header() {
                 </strong>
               </div>
 
-              {/* Desktop navigation */}
+              {/* Desktop nav */}
               <div className="hidden md:flex items-center gap-8">
                 {navigation.map((item) => {
                   const isActive = pathname.startsWith(item.href);
@@ -182,9 +171,7 @@ export default function Header() {
                       key={item.name}
                       href={item.href}
                       className={`font-medium transition-colors duration-200 ${
-                        isActive
-                          ? "text-blue-600"
-                          : "text-gray-700 hover:text-blue-600"
+                        isActive ? "text-blue-600" : "text-gray-700 hover:text-blue-600"
                       }`}
                       prefetch={false}
                     >
@@ -194,14 +181,14 @@ export default function Header() {
                 })}
               </div>
 
-              {/* Right side (desktop) */}
+              {/* Right side */}
               <div className="hidden md:flex items-center gap-4">
-                {/* Emergency */}
+                {/* Emergency link */}
                 <Link
                   href="/emergency"
                   prefetch={false}
-                  className={`flex items-center gap-2 text-red-600 font-medium px-4 py-2 rounded-lg transition-colors duration-200 bg-red-50 hover:bg-red-100
-                    border-2 ${
+                  className={`flex items-center gap-2 text-red-600 font-medium px-4 py-2 rounded-lg 
+                    transition-colors duration-200 bg-red-50 hover:bg-red-100 border-2 ${
                       isEmergencyActive ? "border-red-600" : "border-transparent"
                     }`}
                 >
@@ -209,14 +196,12 @@ export default function Header() {
                   Emergency
                 </Link>
 
-                {/* Preferences button: fixed width so it doesn't resize */}
+                {/* Preferences button */}
                 <button
                   onClick={() => setShowPreferencesModal(true)}
                   className="w-[110px] inline-flex items-center justify-between gap-1 text-gray-700 bg-[rgba(0,0,0,0.03)] px-3 py-2 rounded-lg transition-colors duration-200 hover:bg-[rgba(0,0,0,0.08)]"
                 >
-                  <span className="truncate">
-                    {languageMap[selectedLanguage] ?? "English"}
-                  </span>
+                  <span className="truncate">{languageMap[selectedLanguage] ?? "English"}</span>
                   <ChevronDown className="w-4 h-4 shrink-0" />
                 </button>
               </div>
@@ -227,16 +212,12 @@ export default function Header() {
                   onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                   className="text-gray-700 p-2"
                 >
-                  {isMobileMenuOpen ? (
-                    <X className="h-6 w-6" />
-                  ) : (
-                    <Menu className="h-6 w-6" />
-                  )}
+                  {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
                 </button>
               </div>
             </div>
 
-            {/* Mobile navigation */}
+            {/* Mobile nav */}
             {isMobileMenuOpen && (
               <div className="md:hidden py-4 px-6 border-t">
                 <div className="flex flex-col gap-4">
@@ -247,9 +228,7 @@ export default function Header() {
                         key={item.name}
                         href={item.href}
                         className={`font-medium transition-colors duration-200 ${
-                          isActive
-                            ? "text-blue-600"
-                            : "text-gray-700 hover:text-blue-600"
+                          isActive ? "text-blue-600" : "text-gray-700 hover:text-blue-600"
                         }`}
                         prefetch={false}
                         onClick={() => setIsMobileMenuOpen(false)}
@@ -274,15 +253,14 @@ export default function Header() {
 
                   {/* Preferences link for mobile */}
                   <button
-                    className="w-[110px] inline-flex items-center justify-between gap-1 text-gray-700 bg-[rgba(0,0,0,0.03)] px-3 py-2 rounded-lg hover:bg-[rgba(0,0,0,0.08)]"
+                    className="w-[110px] inline-flex items-center justify-between gap-1 text-gray-700 
+                    bg-[rgba(0,0,0,0.03)] px-3 py-2 rounded-lg hover:bg-[rgba(0,0,0,0.08)]"
                     onClick={() => {
                       setIsMobileMenuOpen(false);
                       setShowPreferencesModal(true);
                     }}
                   >
-                    <span className="truncate">
-                      {languageMap[selectedLanguage] ?? "English"}
-                    </span>
+                    <span className="truncate">{languageMap[selectedLanguage] ?? "English"}</span>
                     <ChevronDown className="w-4 h-4 shrink-0" />
                   </button>
                 </div>
@@ -292,22 +270,17 @@ export default function Header() {
         </div>
       </header>
 
-      {/* ---------- LOCATION MODAL ---------- */}
+      {/* LOCATION MODAL */}
       {showLocationModal && (
         <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-[9999]">
           <div
             ref={locationModalRef}
             className="bg-white p-8 rounded-xl shadow-lg max-w-[400px] w-[90%] text-center"
           >
-            <h2 className="text-xl font-semibold mb-4 text-gray-800">
-              Set Your Location
-            </h2>
+            <h2 className="text-xl font-semibold mb-4 text-gray-800">Set Your Location</h2>
 
             {/* City */}
-            <label
-              htmlFor="city-input"
-              className="block text-left text-sm font-medium text-gray-600 mb-1"
-            >
+            <label htmlFor="city-input" className="block text-left text-sm font-medium text-gray-600 mb-1">
               City
             </label>
             <input
@@ -316,17 +289,12 @@ export default function Header() {
               type="text"
               placeholder="Enter your city"
               value={manualLocation.city}
-              onChange={(e) =>
-                setManualLocation({ ...manualLocation, city: e.target.value })
-              }
+              onChange={(e) => setManualLocation({ ...manualLocation, city: e.target.value })}
               className="w-full max-w-[360px] p-3 mb-4 border border-gray-300 rounded-lg text-base"
             />
 
             {/* ZIP */}
-            <label
-              htmlFor="zip-input"
-              className="block text-left text-sm font-medium text-gray-600 mb-1"
-            >
+            <label htmlFor="zip-input" className="block text-left text-sm font-medium text-gray-600 mb-1">
               ZIP Code
             </label>
             <input
@@ -335,9 +303,7 @@ export default function Header() {
               type="text"
               placeholder="Enter your ZIP code"
               value={manualLocation.zip}
-              onChange={(e) =>
-                setManualLocation({ ...manualLocation, zip: e.target.value })
-              }
+              onChange={(e) => setManualLocation({ ...manualLocation, zip: e.target.value })}
               className="w-full max-w-[360px] p-3 mb-4 border border-gray-300 rounded-lg text-base"
             />
 
@@ -365,16 +331,14 @@ export default function Header() {
         </div>
       )}
 
-      {/* ---------- PREFERENCES MODAL ---------- */}
+      {/* PREFERENCES MODAL */}
       {showPreferencesModal && (
         <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-[9999]">
           <div
             ref={preferencesModalRef}
             className="bg-white p-6 rounded-xl shadow-lg max-w-[500px] w-[90%]"
           >
-            <h2 className="text-2xl font-bold mb-4 text-gray-800">
-              Preferences
-            </h2>
+            <h2 className="text-2xl font-bold mb-4 text-gray-800">Preferences</h2>
 
             {/* Language */}
             <div className="mb-6">
@@ -387,11 +351,11 @@ export default function Header() {
                       key={langCode}
                       onClick={() => setSelectedLanguage(langCode)}
                       className={`px-3 py-1 rounded border transition-colors 
-                      ${
-                        selectedLanguage === langCode
-                          ? "bg-blue-600 text-white border-blue-600"
-                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-                      }`}
+                        ${
+                          selectedLanguage === langCode
+                            ? "bg-blue-600 text-white border-blue-600"
+                            : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                        }`}
                     >
                       {label}
                     </button>
@@ -402,9 +366,7 @@ export default function Header() {
 
             {/* Units */}
             <div className="mb-6">
-              <h3 className="font-medium text-gray-700 mb-2">
-                Measurement Units
-              </h3>
+              <h3 className="font-medium text-gray-700 mb-2">Measurement Units</h3>
               <div className="flex gap-4">
                 {units.map((u) => (
                   <button
@@ -444,7 +406,6 @@ export default function Header() {
               </div>
             </div>
 
-            {/* Action buttons */}
             <div className="mt-6 flex justify-end gap-3">
               <button
                 onClick={() => setShowPreferencesModal(false)}
