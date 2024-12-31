@@ -26,7 +26,7 @@ interface FinishingMaterial {
 
 /** 
  * formatWithSeparator:
- * Helper function to format a numeric value with commas, e.g. 1000 -> "1,000.00"
+ * Helper to format a numeric value with commas, e.g. 1000 -> "1,000.00"
  */
 function formatWithSeparator(value: number): string {
   return new Intl.NumberFormat("en-US", { minimumFractionDigits: 2 }).format(value);
@@ -44,7 +44,7 @@ function saveToSession(key: string, value: any) {
 
 /**
  * loadFromSession:
- * Loads a value from sessionStorage, or returns a default value if not found (or if SSR).
+ * Loads a value from sessionStorage, or returns a default value if not found (or SSR).
  */
 function loadFromSession<T>(key: string, defaultValue: T): T {
   if (typeof window === "undefined") return defaultValue;
@@ -66,7 +66,6 @@ function convertServiceIdToApiFormat(serviceId: string) {
 }
 
 /**
- * getApiBaseUrl:
  * Returns the base API URL from environment variables or a fallback.
  */
 function getApiBaseUrl(): string {
@@ -100,7 +99,7 @@ async function fetchFinishingMaterials(workCode: string) {
 /**
  * calculatePrice:
  * POST /calculate
- * Expects fields like { work_code, zipcode, ... } in the body.
+ * Expects fields like { work_code, zipcode, unit_of_measurement, square, finishing_materials } 
  */
 async function calculatePrice(params: {
   work_code: string;
@@ -130,38 +129,24 @@ async function calculatePrice(params: {
 export default function Details() {
   const router = useRouter();
 
-  /**
-   * useLocation from our LocationContext:
-   *   location has { city, zip, country, ... }
-   */
+  /** Location from our custom context: location has { city, zip, ... } */
   const { location } = useLocation();
 
-  /**
-   * 1) Load data from session storage:
-   *    - selectedCategories is a list of category IDs the user selected
-   *    - address is the user's entered address
-   *    - description, photos, searchQuery are additional data
-   */
+  // 1) Load user data from session
   const selectedCategories = loadFromSession<string[]>("services_selectedCategories", []);
   const [address, setAddress] = useState<string>(() => loadFromSession("address", ""));
   const description = loadFromSession<string>("description", "");
   const photos = loadFromSession<string[]>("photos", []);
   const searchQuery = loadFromSession<string>("services_searchQuery", "");
 
-  /**
-   * If user somehow arrived here without categories or address,
-   * redirect them back to /calculate
-   */
+  // If no categories or no address, redirect to /calculate
   useEffect(() => {
     if (selectedCategories.length === 0 || !address) {
       router.push("/calculate");
     }
   }, [selectedCategories, address, router]);
 
-  /**
-   * If the user changes location data (city, zip, country),
-   * update the address accordingly and save to session.
-   */
+  // Update address if location changes
   useEffect(() => {
     const newAddress = `${location.city || ""}, ${location.zip || ""}${
       location.country ? `, ${location.country}` : ""
@@ -172,16 +157,13 @@ export default function Details() {
     }
   }, [location]);
 
-  /** Possibly show a warning, e.g. "please select at least one service" */
+  // Potential warning message shown above categories
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
 
-  /** expandedCategories: tracks which category IDs are expanded in the UI */
+  // Expand/collapse categories
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
-  /**
-   * Build a structure: categoriesBySection from the user-chosen categories:
-   *    e.g. { "Kitchen": ["1-1"], "Bathroom": ["1-2","1-3"] }
-   */
+  // Build categories by their "section" property
   const categoriesWithSection = selectedCategories
     .map((catId) => ALL_CATEGORIES.find((c) => c.id === catId) || null)
     .filter(Boolean) as (typeof ALL_CATEGORIES)[number][];
@@ -194,10 +176,7 @@ export default function Details() {
     categoriesBySection[cat.section].push(cat.id);
   });
 
-  /**
-   * For each chosen category, gather services from ALL_SERVICES.
-   * If there's a searchQuery, filter the services by matching titles.
-   */
+  // Build a map of catId -> array of services
   const categoryServicesMap: Record<string, (typeof ALL_SERVICES)[number][]> = {};
   selectedCategories.forEach((catId) => {
     let arr = ALL_SERVICES.filter((svc) => svc.id.startsWith(`${catId}-`));
@@ -209,111 +188,80 @@ export default function Details() {
     categoryServicesMap[catId] = arr;
   });
 
-  /**
-   * selectedServicesState:
-   *   a dictionary: { [serviceId]: quantity }
-   *   e.g. { "1-1-1": 2, "2-1-1": 1 }
-   */
+  // (serviceId -> quantity)
   const [selectedServicesState, setSelectedServicesState] = useState<Record<string, number>>(
     () => loadFromSession("selectedServicesWithQuantity", {})
   );
 
-  /** serviceCosts: final cost for each selected service, derived from /calculate */
+  // (serviceId -> final numeric cost)
   const [serviceCosts, setServiceCosts] = useState<Record<string, number>>({});
 
-  /**
-   * finishingMaterialsMapAll:
-   *   for each serviceId -> an object { sections: { "1": [FinishingMaterial[]], "2": ... } }
-   *   fetched from /work/finishing_materials. 
-   *   We only load them when user expands a category that includes this service, if not already loaded.
-   */
+  // finishingMaterialsMapAll => (serviceId -> { sections: {...} })
   const [finishingMaterialsMapAll, setFinishingMaterialsMapAll] = useState<
     Record<string, { sections: Record<string, FinishingMaterial[]> }>
   >({});
 
-  /**
-   * finishingMaterialSelections:
-   *   for each serviceId -> array of finishing material external_ids
-   *   By default, we pick the first item in each "section" returned by the API,
-   *   so finishing_materials is not empty for /calculate.
-   */
+  // finishingMaterialSelections => (serviceId -> string[] of external_ids)
   const [finishingMaterialSelections, setFinishingMaterialSelections] = useState<
     Record<string, string[]>
   >({});
 
-  /**
-   * manualInputValue:
-   *   a dictionary storing raw text input for each service
-   */
+  // manualInputValue => store user typed quantity for each service
   const [manualInputValue, setManualInputValue] = useState<Record<string, string | null>>({});
 
-  /**
-   * Whenever selectedServicesState changes, save it to session
-   * so the user doesn't lose the state on a refresh.
-   */
+  // We'll also store the entire JSON from /calculate for each service to show the breakdown
+  const [calculationResultsMap, setCalculationResultsMap] = useState<Record<string, any>>({});
+
+  // We'll track which services have their details expanded
+  const [expandedServiceDetails, setExpandedServiceDetails] = useState<Set<string>>(new Set());
+
+  // Save changes if services changed
   useEffect(() => {
     saveToSession("selectedServicesWithQuantity", selectedServicesState);
   }, [selectedServicesState]);
 
-  /**
-   * toggleCategory:
-   * Expand or collapse a category.
-   * If we're expanding a category for the first time, fetch finishing materials
-   * for each service in that category (if we haven't loaded them yet).
-   */
+  // Expand/collapse a category
   async function toggleCategory(catId: string) {
     setExpandedCategories((prev) => {
       const next = new Set(prev);
       if (next.has(catId)) {
-        // The category was expanded, so now we collapse it
         next.delete(catId);
       } else {
-        // The category was collapsed, so let's expand it
         next.add(catId);
-
-        // For each service in this category, fetch finishing materials if not loaded
-        const servicesForThisCat = categoryServicesMap[catId] || [];
-        fetchFinishingMaterialsForCategory(servicesForThisCat);
+        // Fetch finishing materials for any services in this category (if not loaded yet)
+        const servicesInCat = categoryServicesMap[catId] || [];
+        fetchFinishingMaterialsForCategory(servicesInCat);
       }
       return next;
     });
   }
 
-  /**
-   * fetchFinishingMaterialsForCategory:
-   * For each service in the category, if we haven't loaded finishing materials,
-   * do a POST /work/finishing_materials, then store the result in finishingMaterialsMapAll.
-   * Also pick the first finishing material from each 'section' by default 
-   * to fill finishingMaterialSelections.
-   */
+  // Fetch finishing materials for all services in the category if not already loaded
   async function fetchFinishingMaterialsForCategory(services: (typeof ALL_SERVICES)[number][]) {
     const promises = services.map(async (svc) => {
-      const svcId = svc.id;
-      if (!finishingMaterialsMapAll[svcId]) {
+      if (!finishingMaterialsMapAll[svc.id]) {
         try {
-          const dotFormat = convertServiceIdToApiFormat(svcId);
-          const data = await fetchFinishingMaterials(dotFormat);
+          const dot = convertServiceIdToApiFormat(svc.id);
+          const data = await fetchFinishingMaterials(dot);
 
-          // Save the entire response
-          finishingMaterialsMapAll[svcId] = data;
+          finishingMaterialsMapAll[svc.id] = data;
 
-          // By default, pick the first finishing material in each "section"
+          // Select the first item from each "section" returned by the API
           const singleSelections: string[] = [];
           for (const arr of Object.values(data.sections || {})) {
             if (Array.isArray(arr) && arr.length > 0) {
               singleSelections.push(arr[0].external_id);
             }
           }
-          finishingMaterialSelections[svcId] = singleSelections;
+          finishingMaterialSelections[svc.id] = singleSelections;
         } catch (err) {
-          console.error("Error loading finishing materials for serviceId=", svcId, err);
+          console.error("Error fetching finishing materials:", err);
         }
       }
     });
 
     try {
       await Promise.all(promises);
-      // Once all fetches finish, update the states
       setFinishingMaterialsMapAll({ ...finishingMaterialsMapAll });
       setFinishingMaterialSelections({ ...finishingMaterialSelections });
     } catch (err) {
@@ -323,25 +271,57 @@ export default function Details() {
 
   /**
    * handleServiceToggle:
-   * If the service is already selected, remove it. Otherwise, set quantity=1.
+   * When user toggles a service:
+   *  - If it was selected, we remove it from all states, so next time it appears fresh.
+   *  - If it was not selected, we add it to selectedServicesState with default quantity 1.
    */
   function handleServiceToggle(serviceId: string) {
     setSelectedServicesState((prev) => {
-      if (prev[serviceId]) {
+      const isCurrentlySelected = !!prev[serviceId];
+      if (isCurrentlySelected) {
+        // User is turning it OFF => remove from all relevant states
         const updated = { ...prev };
         delete updated[serviceId];
+
+        // Reset finishingMaterialSelections for this service
+        setFinishingMaterialSelections((prevSel) => {
+          const newSel = { ...prevSel };
+          delete newSel[serviceId];
+          return newSel;
+        });
+
+        // Reset manual input for this service
+        setManualInputValue((prevManual) => {
+          const newManual = { ...prevManual };
+          delete newManual[serviceId];
+          return newManual;
+        });
+
+        // Reset calculation results for this service
+        setCalculationResultsMap((prevCalc) => {
+          const newCalc = { ...prevCalc };
+          delete newCalc[serviceId];
+          return newCalc;
+        });
+
+        // Reset cost for this service
+        setServiceCosts((prevCosts) => {
+          const newCosts = { ...prevCosts };
+          delete newCosts[serviceId];
+          return newCosts;
+        });
+
         return updated;
+      } else {
+        // User is turning it ON => add quantity=1
+        return { ...prev, [serviceId]: 1 };
       }
-      return { ...prev, [serviceId]: 1 };
     });
+
     setWarningMessage(null);
   }
 
-  /**
-   * handleQuantityChange:
-   * +/- increment the quantity for a given service.
-   * If it's "each," ensure it's an integer (use Math.round).
-   */
+  // + / - quantity
   function handleQuantityChange(serviceId: string, increment: boolean, unit: string) {
     setSelectedServicesState((prev) => {
       const currentVal = prev[serviceId] || 1;
@@ -351,15 +331,10 @@ export default function Details() {
         [serviceId]: unit === "each" ? Math.round(nextVal) : nextVal,
       };
     });
-    // Reset manual input if user used +/- buttons
     setManualInputValue((prev) => ({ ...prev, [serviceId]: null }));
   }
 
-  /**
-   * handleManualQuantityChange:
-   * If user types directly into the quantity input, store the raw text in manualInputValue
-   * and update selectedServicesState accordingly (parsed float).
-   */
+  // Manual input for quantity
   function handleManualQuantityChange(serviceId: string, value: string, unit: string) {
     setManualInputValue((prev) => ({ ...prev, [serviceId]: value }));
     const numericVal = parseFloat(value.replace(/,/g, "")) || 0;
@@ -371,21 +346,14 @@ export default function Details() {
     }
   }
 
-  /**
-   * handleBlurInput:
-   * If the input is empty on blur, revert manualInputValue to null
-   * so the UI can show the current selected quantity again.
-   */
+  // On blur, if user didn't enter anything, revert the manual input to null
   function handleBlurInput(serviceId: string) {
     if (!manualInputValue[serviceId]) {
       setManualInputValue((prev) => ({ ...prev, [serviceId]: null }));
     }
   }
 
-  /**
-   * clearAllSelections:
-   * Clears all selected services and collapses all categories.
-   */
+  // Clear all services and collapse categories
   function clearAllSelections() {
     const confirmed = window.confirm(
       "Are you sure you want to clear all selected services? This will also collapse all expanded categories."
@@ -393,35 +361,33 @@ export default function Details() {
     if (!confirmed) return;
     setSelectedServicesState({});
     setExpandedCategories(new Set());
+    // Also reset all these states
+    setFinishingMaterialSelections({});
+    setManualInputValue({});
+    setCalculationResultsMap({});
+    setServiceCosts({});
   }
 
-  /**
-   * Recalculate cost whenever:
-   * - selectedServicesState changes (user picks/unpicks or changes quantity)
-   * - finishingMaterialSelections changes (if user changes finishing materials)
-   * - location changes (zip or country), because /calculate depends on zip for pricing
-   */
+  // Whenever services or location changes => recalc price
   useEffect(() => {
     const serviceIds = Object.keys(selectedServicesState);
     if (serviceIds.length === 0) {
       setServiceCosts({});
+      setCalculationResultsMap({});
       return;
     }
 
     const { zip, country } = location;
-    // Only valid for US, 5-digit ZIP
+    // Show a warning if ZIP code is not a valid US ZIP
     if (country !== "United States" || !/^\d{5}$/.test(zip)) {
-      setWarningMessage(
-        "Currently, our service is only available for US ZIP codes (5 digits)."
-      );
+      setWarningMessage("Currently, our service is only available for US ZIP codes (5 digits).");
       return;
     }
 
-    // For each selected service, POST /calculate
     serviceIds.forEach(async (serviceId) => {
       try {
         const quantity = selectedServicesState[serviceId] || 1;
-        const externalIds = finishingMaterialSelections[serviceId] || [];
+        const finishingIds = finishingMaterialSelections[serviceId] || [];
         const foundService = ALL_SERVICES.find((svc) => svc.id === serviceId);
         const unit = foundService?.unit_of_measurement || "each";
         const dotFormat = convertServiceIdToApiFormat(serviceId);
@@ -431,9 +397,10 @@ export default function Details() {
           zipcode: zip,
           unit_of_measurement: unit,
           square: quantity,
-          finishing_materials: externalIds,
+          finishing_materials: finishingIds,
         });
 
+        // Summation
         const workCostNum = parseFloat(response.work_cost) || 0;
         const materialCostNum = parseFloat(response.material_cost) || 0;
         const finalCost = workCostNum + materialCostNum;
@@ -442,26 +409,24 @@ export default function Details() {
           ...prev,
           [serviceId]: finalCost,
         }));
+
+        // Store the entire JSON in calculationResultsMap
+        setCalculationResultsMap((prev) => ({
+          ...prev,
+          [serviceId]: response,
+        }));
       } catch (err) {
         console.error("Error calculating price:", err);
       }
     });
   }, [selectedServicesState, finishingMaterialSelections, location]);
 
-  /**
-   * calculateTotal:
-   * Summation of all serviceCosts for the selected services.
-   */
+  // Calculate total cost of all selected services
   function calculateTotal() {
-    return Object.values(serviceCosts).reduce((acc, cost) => acc + (cost || 0), 0);
+    return Object.values(serviceCosts).reduce((acc, cost) => acc + cost, 0);
   }
 
-  /**
-   * handleNext:
-   * 1) Ensure there's at least one selected service
-   * 2) Ensure address is not empty
-   * 3) Move to /calculate/estimate
-   */
+  // "Next" button handler
   function handleNext() {
     if (Object.keys(selectedServicesState).length === 0) {
       setWarningMessage("Please select at least one service before proceeding.");
@@ -474,13 +439,20 @@ export default function Details() {
     router.push("/calculate/estimate");
   }
 
-  /**
-   * getCategoryNameById:
-   * Returns the category's title or the catId if not found.
-   */
+  // Utility to get category name by its ID
   function getCategoryNameById(catId: string): string {
     const categoryObj = ALL_CATEGORIES.find((c) => c.id === catId);
     return categoryObj ? categoryObj.title : catId;
+  }
+
+  // Toggle the "details" section for a single service
+  function toggleServiceDetails(serviceId: string) {
+    setExpandedServiceDetails((prev) => {
+      const next = new Set(prev);
+      if (next.has(serviceId)) next.delete(serviceId);
+      else next.add(serviceId);
+      return next;
+    });
   }
 
   return (
@@ -494,7 +466,7 @@ export default function Details() {
           <Button onClick={handleNext}>Next →</Button>
         </div>
 
-        {/* A small row: "No service?" and a "Clear" button */}
+        {/* "No service?" + "Clear" */}
         <div className="flex justify-between items-center text-sm text-gray-500 mt-8 w-full max-w-[600px]">
           <span>
             No service?{" "}
@@ -502,15 +474,12 @@ export default function Details() {
               Contact support
             </a>
           </span>
-          <button
-            onClick={clearAllSelections}
-            className="text-blue-600 hover:underline focus:outline-none"
-          >
+          <button onClick={clearAllSelections} className="text-blue-600 hover:underline focus:outline-none">
             Clear
           </button>
         </div>
 
-        {/* Potential warning (address missing, no US ZIP, etc.) */}
+        {/* Warning */}
         <div className="h-6 mt-4 text-left">
           {warningMessage && <p className="text-red-500">{warningMessage}</p>}
         </div>
@@ -521,11 +490,9 @@ export default function Details() {
             {Object.entries(categoriesBySection).map(([sectionName, catIds]) => (
               <div key={sectionName} className="mb-8">
                 <SectionBoxSubtitle>{sectionName}</SectionBoxSubtitle>
-
                 <div className="flex flex-col gap-4 mt-4 w-full max-w-[600px]">
                   {catIds.map((catId) => {
                     const servicesForCategory = categoryServicesMap[catId] || [];
-                    // Count how many selected services are in this category
                     const selectedInThisCategory = servicesForCategory.filter((svc) =>
                       Object.keys(selectedServicesState).includes(svc.id)
                     ).length;
@@ -539,7 +506,7 @@ export default function Details() {
                           selectedInThisCategory > 0 ? "border-blue-500" : "border-gray-300"
                         }`}
                       >
-                        {/* Category header that toggles expand/collapse */}
+                        {/* Category header toggler */}
                         <button
                           onClick={() => toggleCategory(catId)}
                           className="flex justify-between items-center w-full"
@@ -563,7 +530,6 @@ export default function Details() {
                           />
                         </button>
 
-                        {/* If the category is expanded, show its services */}
                         {expandedCategories.has(catId) && (
                           <div className="mt-4 flex flex-col gap-3">
                             {servicesForCategory.map((svc) => {
@@ -576,6 +542,7 @@ export default function Details() {
 
                               // final cost from serviceCosts
                               const finalCost = serviceCosts[svc.id] || 0;
+                              const calcResult = calculationResultsMap[svc.id]; // entire JSON from /calculate
 
                               return (
                                 <div key={svc.id} className="space-y-2">
@@ -600,17 +567,16 @@ export default function Details() {
                                     </label>
                                   </div>
 
-                                  {/* If user selected this service, show quantity + cost */}
+                                  {/* If user selected => show quantity, cost, "Details" btn */}
                                   {isSelected && (
                                     <>
                                       {svc.description && (
-                                        <p className="text-sm text-gray-500 pr-16">
-                                          {svc.description}
-                                        </p>
+                                        <p className="text-sm text-gray-500 pr-16">{svc.description}</p>
                                       )}
+
                                       <div className="flex justify-between items-center">
                                         <div className="flex items-center gap-1">
-                                          {/* Decrement button */}
+                                          {/* Decrement */}
                                           <button
                                             onClick={() =>
                                               handleQuantityChange(
@@ -623,7 +589,7 @@ export default function Details() {
                                           >
                                             −
                                           </button>
-                                          {/* Manual quantity input */}
+                                          {/* Manual input */}
                                           <input
                                             type="text"
                                             value={manualValue}
@@ -644,7 +610,7 @@ export default function Details() {
                                             className="w-20 text-center px-2 py-1 border rounded"
                                             placeholder="1"
                                           />
-                                          {/* Increment button */}
+                                          {/* Increment */}
                                           <button
                                             onClick={() =>
                                               handleQuantityChange(
@@ -661,23 +627,105 @@ export default function Details() {
                                             {svc.unit_of_measurement}
                                           </span>
                                         </div>
-                                        <span className="text-lg text-blue-600 font-medium text-right">
-                                          ${formatWithSeparator(finalCost)}
-                                        </span>
+
+                                        {/* Show cost + "Details" */}
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-lg text-blue-600 font-medium text-right">
+                                            ${formatWithSeparator(finalCost)}
+                                          </span>
+                                          {/* "Details" button to show/hide the JSON breakdown */}
+                                          <button
+                                            onClick={() => toggleServiceDetails(svc.id)}
+                                            className="text-blue-500 underline text-sm ml-2"
+                                          >
+                                            Details
+                                          </button>
+                                        </div>
                                       </div>
-                                      {/* If this service is not the last one selected in this category, draw a divider */}
+
+                                      {/* If not the last chosen in this category => divider */}
                                       {(() => {
                                         const chosen = servicesForCategory.filter(
                                           (s) => selectedServicesState[s.id] !== undefined
                                         );
-                                        const currentIndex = chosen.findIndex(
-                                          (s) => s.id === svc.id
-                                        );
+                                        const currentIndex = chosen.findIndex((s) => s.id === svc.id);
                                         if (currentIndex !== chosen.length - 1) {
                                           return <hr className="mt-4 border-gray-200" />;
                                         }
                                         return null;
                                       })()}
+
+                                      {/* If user clicked "Details," show improved breakdown */}
+                                      {calcResult && expandedServiceDetails.has(svc.id) && (
+                                        <div className="mt-4 p-4 bg-gray-50 border rounded">
+                                          {/* Title / subtitle to visually separate content */}
+                                          <h4 className="text-lg font-semibold text-gray-800 mb-3">
+                                            Cost Breakdown
+                                          </h4>
+
+                                          <div className="flex flex-col gap-2 mb-4">
+                                            <div className="flex justify-between">
+                                              <span className="text-sm font-medium text-gray-700">
+                                                Work cost:
+                                              </span>
+                                              <span className="text-sm text-gray-700">
+                                                ${calcResult.work_cost || "—"}
+                                              </span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                              <span className="text-sm font-medium text-gray-700">
+                                                Material cost:
+                                              </span>
+                                              <span className="text-sm text-gray-700">
+                                                ${calcResult.material_cost || "—"}
+                                              </span>
+                                            </div>
+                                            <div className="flex justify-between border-t pt-2 mt-2">
+                                              <span className="text-sm font-medium text-gray-800">
+                                                Total:
+                                              </span>
+                                              <span className="text-sm font-medium text-gray-800">
+                                                $
+                                                {calcResult.total ||
+                                                  calcResult.work_cost + calcResult.material_cost ||
+                                                  "—"}
+                                              </span>
+                                            </div>
+                                          </div>
+
+                                          {/* If there is a materials array, display it as a table */}
+                                          {Array.isArray(calcResult.materials) &&
+                                            calcResult.materials.length > 0 && (
+                                              <div className="mt-2">
+                                                <h5 className="text-md font-medium text-gray-800 mb-2">
+                                                  Materials
+                                                </h5>
+                                                <table className="table-auto w-full text-sm text-left text-gray-700">
+                                                  <thead>
+                                                    <tr className="border-b">
+                                                      <th className="py-2 px-1">Name</th>
+                                                      <th className="py-2 px-1">Cost/Unit</th>
+                                                      <th className="py-2 px-1">Quantity</th>
+                                                      <th className="py-2 px-1">Subtotal</th>
+                                                    </tr>
+                                                  </thead>
+                                                  <tbody>
+                                                    {calcResult.materials.map((m: any, i: number) => (
+                                                      <tr key={i} className="border-b last:border-0">
+                                                        <td className="py-2 px-1">{m.name}</td>
+                                                        <td className="py-2 px-1">
+                                                          ${m.cost_per_unit}
+                                                        </td>
+                                                        <td className="py-2 px-1">{m.quantity}</td>
+                                                        <td className="py-2 px-1">${m.cost}</td>
+                                                      </tr>
+                                                    ))}
+                                                  </tbody>
+                                                </table>
+                                              </div>
+                                            )}
+                                        </div>
+                                      )}
                                     </>
                                   )}
                                 </div>
@@ -693,7 +741,7 @@ export default function Details() {
             ))}
           </div>
 
-          {/* RIGHT COLUMN: Summary, Address, Photos, Additional Details */}
+          {/* RIGHT COLUMN: summary, address, photos, additional details */}
           <div className="w-1/2 ml-auto mt-14 pt-1">
             <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden">
               <SectionBoxSubtitle>Summary</SectionBoxSubtitle>
@@ -703,9 +751,7 @@ export default function Details() {
                 </div>
               ) : (
                 <>
-                  {/* Loop through each section => categories => selected services */}
                   {Object.entries(categoriesBySection).map(([sectionName, catIds]) => {
-                    // Filter out categories that don't have any selected services
                     const relevantCatIds = catIds.filter((catId) => {
                       const arr = categoryServicesMap[catId] || [];
                       return arr.some((svc) => selectedServicesState[svc.id] !== undefined);
@@ -722,7 +768,7 @@ export default function Details() {
                           const catName = catObj ? catObj.title : catId;
                           const arr = categoryServicesMap[catId] || [];
 
-                          // Only the selected services in this category
+                          // chosen services for this cat
                           const chosenServices = arr.filter(
                             (svc) => selectedServicesState[svc.id] !== undefined
                           );
@@ -744,9 +790,7 @@ export default function Details() {
                                       className="grid grid-cols-3 gap-2 text-sm text-gray-600"
                                       style={{ gridTemplateColumns: "40% 30% 25%" }}
                                     >
-                                      <span className="truncate overflow-hidden">
-                                        {svc.title}
-                                      </span>
+                                      <span className="truncate overflow-hidden">{svc.title}</span>
                                       <span className="text-right">
                                         {q} {svc.unit_of_measurement}
                                       </span>
@@ -773,13 +817,13 @@ export default function Details() {
               )}
             </div>
 
-            {/* Address block */}
+            {/* Address */}
             <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
               <h2 className="text-2xl font-medium text-gray-800 mb-4">Address</h2>
               <p className="text-gray-500 text-medium">{address || "No address provided"}</p>
             </div>
 
-            {/* Photos block */}
+            {/* Photos */}
             <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
               <h2 className="text-2xl font-medium text-gray-800 mb-4">Uploaded Photos</h2>
               <div className="grid grid-cols-2 gap-4">
