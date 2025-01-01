@@ -740,7 +740,7 @@ export default function Details() {
                                                     <tr className="border-b">
                                                       <th className="py-2 px-1">Name</th>
                                                       <th className="py-2 px-1">Cost/Unit</th>
-                                                      <th className="py-2 px-1">Quantity</th>
+                                                      <th className="py-2 px-1">Qty</th>
                                                       <th className="py-2 px-1">Subtotal</th>
                                                     </tr>
                                                   </thead>
