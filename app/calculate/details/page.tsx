@@ -226,12 +226,10 @@ export default function Details() {
    */
   async function ensureFinishingMaterialsLoaded(serviceId: string) {
     try {
-      // If we already have finishingMaterialsMapAll[serviceId], skip fetch
       if (!finishingMaterialsMapAll[serviceId]) {
         const dot = convertServiceIdToApiFormat(serviceId);
         const data = await fetchFinishingMaterials(dot);
 
-        // Save data to finishingMaterialsMapAll
         finishingMaterialsMapAll[serviceId] = data;
         setFinishingMaterialsMapAll({ ...finishingMaterialsMapAll });
       }
@@ -294,7 +292,6 @@ export default function Details() {
         next.delete(catId);
       } else {
         next.add(catId);
-        // When user expands, fetch finishing materials for all services in this category
         const servicesInCat = categoryServicesMap[catId] || [];
         fetchFinishingMaterialsForCategory(servicesInCat);
       }
@@ -304,15 +301,15 @@ export default function Details() {
 
   /**
    * handleServiceToggle:
-   * When user toggles a service:
-   *  - If it was selected, we remove it from all states (finishingMaterialSelections, etc.)
-   *  - If it was not selected, we set it to quantity=1, and also ensure finishing materials loaded.
+   * When user toggles a service ON => set quantity=min_quantity
+   * and ALSO set manualInputValue to String(min_quantity)
+   * so that the input is controlled from the start.
    */
   async function handleServiceToggle(serviceId: string) {
     setSelectedServicesState((prev) => {
       const isCurrentlySelected = !!prev[serviceId];
       if (isCurrentlySelected) {
-        // OFF => remove from states
+        // OFF => remove from all states
         const updated = { ...prev };
         delete updated[serviceId];
 
@@ -342,9 +339,22 @@ export default function Details() {
 
         return updated;
       } else {
-        // ON => add quantity=1
-        const updated = { ...prev, [serviceId]: 1 };
-        // Ensure finishing materials and set at least one finishing material
+        // ON => quantity = min_quantity
+        const foundService = ALL_SERVICES.find((svc) => svc.id === serviceId);
+        if (!foundService) return prev;
+
+        const minQ = foundService.min_quantity ?? 1;
+
+        // Set quantity in the main state
+        const updated = { ...prev, [serviceId]: minQ };
+
+        // Also set manualInputValue so that the input is never undefined
+        setManualInputValue((oldManual) => ({
+          ...oldManual,
+          [serviceId]: String(minQ),
+        }));
+
+        // Ensure finishing materials
         ensureFinishingMaterialsLoaded(serviceId);
         return updated;
       }
@@ -353,29 +363,69 @@ export default function Details() {
     setWarningMessage(null);
   }
 
-  // + / - quantity
+  /**
+   * handleQuantityChange:
+   * + / - change. We clamp the new quantity to [min_quantity, max_quantity].
+   * If it exceeds max_quantity, we set a warning.
+   */
   function handleQuantityChange(serviceId: string, increment: boolean, unit: string) {
+    const foundService = ALL_SERVICES.find((svc) => svc.id === serviceId);
+    if (!foundService) return;
+
+    const minQ = foundService.min_quantity ?? 1;
+    const maxQ = foundService.max_quantity ?? 999999;
+
     setSelectedServicesState((prev) => {
-      const currentVal = prev[serviceId] || 1;
-      const nextVal = increment ? currentVal + 1 : Math.max(1, currentVal - 1);
+      const currentVal = prev[serviceId] || minQ;
+      let nextVal = increment ? currentVal + 1 : currentVal - 1;
+
+      if (nextVal < minQ) {
+        nextVal = minQ;
+      } else if (nextVal > maxQ) {
+        nextVal = maxQ;
+        setWarningMessage(
+          `Maximum quantity for "${foundService.title}" is ${foundService.max_quantity}.`
+        );
+      }
+
       return {
         ...prev,
         [serviceId]: unit === "each" ? Math.round(nextVal) : nextVal,
       };
     });
+
+    // Reset manual input, so it re-syncs to the numeric quantity
     setManualInputValue((prev) => ({ ...prev, [serviceId]: null }));
   }
 
-  // Manual input for quantity
+  /**
+   * handleManualQuantityChange:
+   * If user manually enters a number, clamp it to [min_quantity, max_quantity].
+   * If it exceeds max_quantity, set a warning.
+   */
   function handleManualQuantityChange(serviceId: string, value: string, unit: string) {
+    const foundService = ALL_SERVICES.find((svc) => svc.id === serviceId);
+    if (!foundService) return;
+
+    const minQ = foundService.min_quantity ?? 1;
+    const maxQ = foundService.max_quantity ?? 999999;
+
     setManualInputValue((prev) => ({ ...prev, [serviceId]: value }));
-    const numericVal = parseFloat(value.replace(/,/g, "")) || 0;
-    if (!isNaN(numericVal)) {
-      setSelectedServicesState((prev) => ({
-        ...prev,
-        [serviceId]: unit === "each" ? Math.round(numericVal) : numericVal,
-      }));
+    let numericVal = parseFloat(value.replace(/,/g, "")) || 0;
+
+    if (numericVal < minQ) {
+      numericVal = minQ;
+    } else if (numericVal > maxQ) {
+      numericVal = maxQ;
+      setWarningMessage(
+        `Maximum quantity for "${foundService.title}" is ${foundService.max_quantity}.`
+      );
     }
+
+    setSelectedServicesState((prev) => ({
+      ...prev,
+      [serviceId]: unit === "each" ? Math.round(numericVal) : numericVal,
+    }));
   }
 
   // On blur, if user didn't enter anything, revert the manual input to null
@@ -393,7 +443,6 @@ export default function Details() {
     if (!confirmed) return;
     setSelectedServicesState({});
     setExpandedCategories(new Set());
-    // Also reset all relevant states
     setFinishingMaterialSelections({});
     setManualInputValue({});
     setCalculationResultsMap({});
@@ -418,15 +467,15 @@ export default function Details() {
 
     serviceIds.forEach(async (serviceId) => {
       try {
-        const quantity = selectedServicesState[serviceId] || 1;
+        const quantity = selectedServicesState[serviceId];
         const finishingIds = finishingMaterialSelections[serviceId] || [];
         const foundService = ALL_SERVICES.find((svc) => svc.id === serviceId);
         const unit = foundService?.unit_of_measurement || "each";
         const dotFormat = convertServiceIdToApiFormat(serviceId);
 
-        // If no finishing materials are selected for this service, we risk the server error
-        // "There is not enough finishing material for section: 1".
-        // But we have ensureFinishingMaterialsLoaded(...) called above to prevent that.
+        // If no finishing materials are selected, server may respond with an error
+        await ensureFinishingMaterialsLoaded(serviceId);
+
         const response = await calculatePrice({
           work_code: dotFormat,
           zipcode: zip,
@@ -435,7 +484,6 @@ export default function Details() {
           finishing_materials: finishingIds,
         });
 
-        // Summation
         const workCostNum = parseFloat(response.work_cost) || 0;
         const materialCostNum = parseFloat(response.material_cost) || 0;
         const finalCost = workCostNum + materialCostNum;
@@ -445,7 +493,6 @@ export default function Details() {
           [serviceId]: finalCost,
         }));
 
-        // Store the entire JSON in calculationResultsMap
         setCalculationResultsMap((prev) => ({
           ...prev,
           [serviceId]: response,
@@ -569,15 +616,27 @@ export default function Details() {
                           <div className="mt-4 flex flex-col gap-3">
                             {servicesForCategory.map((svc) => {
                               const isSelected = selectedServicesState[svc.id] !== undefined;
-                              const quantity = selectedServicesState[svc.id] || 1;
-                              const manualValue =
-                                manualInputValue[svc.id] !== null
-                                  ? manualInputValue[svc.id] || ""
-                                  : quantity.toString();
 
-                              // final cost from serviceCosts
+                              // Find the service to get minQ, maxQ, etc.
+                              const foundService = ALL_SERVICES.find((x) => x.id === svc.id);
+                              const minQ = foundService?.min_quantity ?? 1;
+
+                              // Current quantity from state, fallback to minQ if undefined
+                              const quantity = selectedServicesState[svc.id] ?? minQ;
+
+                              // If user typed something (rawManual) we show that, else we show quantity
+                              const rawManual = manualInputValue[svc.id];
+                              // Make sure the input is always a string => no "uncontrolled" warnings
+                              const manualValue =
+                                rawManual != null
+                                  ? rawManual
+                                  : quantity != null
+                                  ? quantity.toString()
+                                  : "";
+
+                              // final cost
                               const finalCost = serviceCosts[svc.id] || 0;
-                              const calcResult = calculationResultsMap[svc.id]; // entire JSON from /calculate
+                              const calcResult = calculationResultsMap[svc.id];
 
                               return (
                                 <div key={svc.id} className="space-y-2">
@@ -606,7 +665,9 @@ export default function Details() {
                                   {isSelected && (
                                     <>
                                       {svc.description && (
-                                        <p className="text-sm text-gray-500 pr-16">{svc.description}</p>
+                                        <p className="text-sm text-gray-500 pr-16">
+                                          {svc.description}
+                                        </p>
                                       )}
 
                                       <div className="flex justify-between items-center">
@@ -629,8 +690,8 @@ export default function Details() {
                                             type="text"
                                             value={manualValue}
                                             onClick={() =>
-                                              setManualInputValue((prev) => ({
-                                                ...prev,
+                                              setManualInputValue((old) => ({
+                                                ...old,
                                                 [svc.id]: "",
                                               }))
                                             }
@@ -643,7 +704,6 @@ export default function Details() {
                                               )
                                             }
                                             className="w-20 text-center px-2 py-1 border rounded"
-                                            placeholder="1"
                                           />
                                           {/* Increment */}
                                           <button
@@ -668,7 +728,7 @@ export default function Details() {
                                           <span className="text-lg text-blue-600 font-medium text-right">
                                             ${formatWithSeparator(finalCost)}
                                           </span>
-                                          {/* "Details" button to show/hide the JSON breakdown */}
+                                          {/* "Details" button */}
                                           <button
                                             onClick={() => toggleServiceDetails(svc.id)}
                                             className="text-blue-500 underline text-sm ml-2"
@@ -693,7 +753,6 @@ export default function Details() {
                                       {/* If user clicked "Details," show improved breakdown */}
                                       {calcResult && expandedServiceDetails.has(svc.id) && (
                                         <div className="mt-4 p-4 bg-gray-50 border rounded">
-                                          {/* Title / subtitle to visually separate content */}
                                           <h4 className="text-lg font-semibold text-gray-800 mb-3">
                                             Cost Breakdown
                                           </h4>
@@ -728,7 +787,6 @@ export default function Details() {
                                             </div>
                                           </div>
 
-                                          {/* If there is a materials array, display it as a table */}
                                           {Array.isArray(calcResult.materials) &&
                                             calcResult.materials.length > 0 && (
                                               <div className="mt-2">

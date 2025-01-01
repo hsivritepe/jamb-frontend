@@ -6431,8 +6431,8 @@ export const ALL_SERVICES = [
     {
         id: "9-1-12",
         unit_of_measurement: "each",
-        min_quantity: 1,
-        max_quantity: 50,
+        min_quantity: 5,
+        max_quantity: 1000,
         title: "Non-Slip Aluminum Nosing Installation",
         description: "Installation of non-slip aluminum nosing on deck stairs for enhanced safety. This service includes site preparation, installation of non-slip nosing, and finishing touches. Includes comprehensive labor, rough materials, equipment usage, and non-slip aluminum nosing (client's choice of specifications). Ensures safe and slip-resistant deck stairs.",
         price: 100,
