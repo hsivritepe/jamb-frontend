@@ -1055,7 +1055,7 @@ export default function Details() {
                       onClick={() => userHasOwnMaterial(showModalServiceId as string, currentExtId)}
                       className="ml-4 text-xs text-red-500 border border-red-500 px-2 py-1 rounded"
                     >
-                      I have my own (Later)
+                      I have my own (Remove later)
                     </button>
                   </div>
                 );
