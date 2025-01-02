@@ -36,7 +36,7 @@ export default function Services() {
   const router = useRouter();
   const { location } = useLocation();
 
-  // 1) Load previously chosen "sections"
+  // 1) Load chosen "sections" from session
   const selectedSections: string[] = loadFromSession("services_selectedSections", []);
   useEffect(() => {
     if (selectedSections.length === 0) {
@@ -44,13 +44,20 @@ export default function Services() {
     }
   }, [selectedSections, router]);
 
-  // 2) States from session
+  // 2) Various states from session
   const [searchQuery, setSearchQuery] = useState<string>(
     loadFromSession("services_searchQuery", "")
   );
   const [address, setAddress] = useState<string>(
     loadFromSession("address", "")
   );
+  const [zip, setZip] = useState<string>(
+    loadFromSession("zip", "")
+  );
+  const [stateName, setStateName] = useState<string>(
+    loadFromSession("stateName", "")
+  );
+
   const [description, setDescription] = useState<string>(
     loadFromSession("description", "")
   );
@@ -68,12 +75,11 @@ export default function Services() {
     categoriesBySection[cat.section].push({ id: cat.id, title: cat.title });
   });
 
-  // 4) Setup selected categories from a “map” in session
+  // 4) Restore selected categories from session
   const storedSelectedCategoriesMap = loadFromSession("selectedCategoriesMap", null);
   const initialSelectedCategories: Record<string, string[]> =
     storedSelectedCategoriesMap ||
     (() => {
-      // If no map is stored, create an empty map for each chosen section
       const init: Record<string, string[]> = {};
       selectedSections.forEach((section) => {
         init[section] = [];
@@ -85,14 +91,25 @@ export default function Services() {
     Record<string, string[]>
   >(initialSelectedCategories);
 
-  // 5) Persist changes
+  // 5) Persist changes to session
   useEffect(() => saveToSession("services_searchQuery", searchQuery), [searchQuery]);
   useEffect(() => saveToSession("address", address), [address]);
+  useEffect(() => saveToSession("zip", zip), [zip]);
+  useEffect(() => saveToSession("stateName", stateName), [stateName]);
   useEffect(() => saveToSession("description", description), [description]);
   useEffect(() => saveToSession("photos", photos), [photos]);
   useEffect(() => saveToSession("selectedCategoriesMap", selectedCategoriesMap), [selectedCategoriesMap]);
 
-  // 6) Filter categories
+  // 6) Combine city (address), state, zip into one string
+  //    Example: "New York, NY, 10006"
+  useEffect(() => {
+    const combined = [address, stateName, zip]
+      .filter(Boolean)
+      .join(", ");
+    saveToSession("fullAddress", combined);
+  }, [address, stateName, zip]);
+
+  // 7) Filter categories by search query
   const filteredCategoriesBySection = Object.fromEntries(
     selectedSections.map((section) => {
       const allCats = categoriesBySection[section] || [];
@@ -105,7 +122,7 @@ export default function Services() {
     })
   ) as Record<string, { id: string; title: string }[]>;
 
-  // 7) Expand/collapse sections
+  // Expand/collapse sections
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
   const toggleSection = (section: string) => {
     setExpandedSections((prev) => {
@@ -116,7 +133,7 @@ export default function Services() {
     });
   };
 
-  // 8) Toggle a category in a specific section
+  // Handling category toggles
   const handleCategorySelect = (section: string, catId: string) => {
     setSelectedCategoriesMap((prev) => {
       const current = prev[section] || [];
@@ -132,7 +149,7 @@ export default function Services() {
     });
   };
 
-  // 9) Clear
+  // Clear selections
   const handleClearSelection = () => {
     const userConfirmed = window.confirm(
       "Are you sure you want to clear all selections? This will also collapse all sections."
@@ -147,7 +164,7 @@ export default function Services() {
     setExpandedSections(new Set());
   };
 
-  // 10) Next
+  // Next step
   const handleNext = () => {
     const totalChosen = Object.values(selectedCategoriesMap).flat().length;
     if (totalChosen === 0) {
@@ -155,36 +172,48 @@ export default function Services() {
       return;
     }
     if (!address.trim()) {
-      setWarningMessage("Please enter your address before proceeding.");
+      setWarningMessage("Please enter your city name before proceeding.");
+      return;
+    }
+    if (!stateName.trim()) {
+      setWarningMessage("Please enter your state before proceeding.");
+      return;
+    }
+    if (!zip.trim()) {
+      setWarningMessage("Please enter your ZIP code before proceeding.");
       return;
     }
 
-    // Flatten the user's final chosen categories:
+    // Flatten user's final chosen categories
     const chosenCategoryIDs = Object.values(selectedCategoriesMap).flat();
-
-    // Save to session so the "Details" page can load ONLY these final categories
     saveToSession("services_selectedCategories", chosenCategoryIDs);
-
-    // Also store other needed data as is:
-    // (address, photos, description are already being stored in useEffect)
 
     router.push("/calculate/details");
   };
 
-  // 11) Address
+  // Handlers for address / state / zip changes
   const handleAddressChange = (e: ChangeEvent<HTMLInputElement>) => {
     setAddress(e.target.value);
   };
+  const handleZipChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setZip(e.target.value);
+  };
+  const handleStateChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setStateName(e.target.value);
+  };
+
+  // "Use my location" to fill city, state, zip from context if available
   const handleUseMyLocation = () => {
-    if (location?.city && location?.zip) {
-      const combined = `${location.city}, ${location.zip}, ${location.country || ""}`.trim();
-      setAddress(combined);
+    if (location?.city && location?.zip && location?.state) {
+      setAddress(location.city);
+      setStateName(location.state);
+      setZip(location.zip);
     } else {
       setWarningMessage("Location data is unavailable. Please enter manually.");
     }
   };
 
-  // 12) Photo removal
+  // Photo removal
   const handleRemovePhoto = (index: number) => {
     setPhotos((prev) => prev.filter((_, i) => i !== index));
   };
@@ -222,7 +251,7 @@ export default function Services() {
           </div>
         </div>
 
-        {/* Warnings */}
+        {/* Warning messages */}
         <div className="h-6 mt-4 text-left">
           {warningMessage && <p className="text-red-500">{warningMessage}</p>}
         </div>
@@ -276,7 +305,10 @@ export default function Services() {
                             const isSelected =
                               selectedCategoriesMap[section]?.includes(cat.id) || false;
                             return (
-                              <div key={cat.id} className="flex justify-between items-center">
+                              <div
+                                key={cat.id}
+                                className="flex justify-between items-center"
+                              >
                                 <span
                                   className={`text-lg transition-colors duration-300 ${
                                     isSelected ? "text-blue-600" : "text-gray-800"
@@ -311,6 +343,10 @@ export default function Services() {
             <AddressSection
               address={address}
               onAddressChange={handleAddressChange}
+              zip={zip}
+              onZipChange={handleZipChange}
+              stateName={stateName}
+              onStateChange={handleStateChange}
               onUseMyLocation={handleUseMyLocation}
             />
 

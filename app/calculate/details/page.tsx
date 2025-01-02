@@ -130,7 +130,7 @@ export default function Details() {
 
   /** 
    * location from our custom context: 
-   * includes { city, zip, country, ... }
+   * includes { city, zip, state, country, ... }
    */
   const { location } = useLocation();
 
@@ -150,10 +150,18 @@ export default function Details() {
 
   // Update address if location changes
   useEffect(() => {
-    const newAddress = `${location.city || ""}, ${location.zip || ""}${
-      location.country ? `, ${location.country}` : ""
-    }`.trim();
-    if (newAddress !== ", ,") {
+    // Build an address with city, state, zip, country
+    const newAddress = [
+      location.city || "",
+      location.state || "",
+      location.zip || "",
+      location.country || "",
+    ]
+      .filter(Boolean)
+      .join(", ");
+
+    // If we get at least something, store it
+    if (newAddress.trim() !== "") {
       setAddress(newAddress);
       saveToSession("address", newAddress);
     }
@@ -561,9 +569,9 @@ export default function Details() {
   }
 
   /** save choice of services and materials to session storage*/
-useEffect(() => {
-  saveToSession("calculationResultsMap", calculationResultsMap);
-}, [calculationResultsMap]);
+  useEffect(() => {
+    saveToSession("calculationResultsMap", calculationResultsMap);
+  }, [calculationResultsMap]);
 
   return (
     <main className="min-h-screen pt-24 pb-16">
