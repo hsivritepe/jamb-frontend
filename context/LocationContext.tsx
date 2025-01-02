@@ -7,8 +7,8 @@ interface Location {
   city: string;       // e.g. "San Francisco"
   zip: string;        // e.g. "94103"
   country?: string;   // e.g. "United States"
-  province?: string;  // e.g. "California"
-  state?: string;     // alias for province
+  province?: string;  // e.g. "California" (long name)
+  state?: string;     // e.g. "CA" (short name)
 }
 
 interface LocationContextType {
@@ -21,29 +21,24 @@ const LocationContext = createContext<LocationContextType | undefined>(undefined
 
 /**
  * Attempts to parse "city" from the Google address_components array.
- * Sometimes city can be under 'locality', other times 'administrative_area_level_2' or 'sublocality'.
  */
 function getCityFromComponents(components: any[]): string {
-  // 1) Try "locality"
-  let cityObj = components.find((comp) => comp.types.includes("locality"));
+  let cityObj = components.find((comp: any) => comp.types.includes("locality"));
   if (cityObj?.long_name) return cityObj.long_name;
 
-  // 2) Try "administrative_area_level_2" or level_3 (some places store city there)
-  cityObj = components.find((comp) =>
+  cityObj = components.find((comp: any) =>
     comp.types.includes("administrative_area_level_2")
   );
   if (cityObj?.long_name) return cityObj.long_name;
 
-  cityObj = components.find((comp) =>
+  cityObj = components.find((comp: any) =>
     comp.types.includes("administrative_area_level_3")
   );
   if (cityObj?.long_name) return cityObj.long_name;
 
-  // 3) Try "sublocality"
-  cityObj = components.find((comp) => comp.types.includes("sublocality"));
+  cityObj = components.find((comp: any) => comp.types.includes("sublocality"));
   if (cityObj?.long_name) return cityObj.long_name;
 
-  // Otherwise fallback
   return "Unknown City";
 }
 
@@ -51,7 +46,7 @@ function getCityFromComponents(components: any[]): string {
  * Attempts to parse "zip" (postal_code) from the Google address_components array.
  */
 function getZipFromComponents(components: any[]): string {
-  const zipObj = components.find((comp) => comp.types.includes("postal_code"));
+  const zipObj = components.find((comp: any) => comp.types.includes("postal_code"));
   return zipObj?.long_name || "Unknown ZIP";
 }
 
@@ -59,23 +54,36 @@ function getZipFromComponents(components: any[]): string {
  * Attempts to parse "country" from the Google address_components array.
  */
 function getCountryFromComponents(components: any[]): string {
-  const countryObj = components.find((comp) => comp.types.includes("country"));
+  const countryObj = components.find((comp: any) => comp.types.includes("country"));
   return countryObj?.long_name || "Unknown Country";
 }
 
 /**
- * Attempts to parse "province" (administrative_area_level_1) from the Google address_components array.
+ * Attempts to parse the *long* name of the state (administrative_area_level_1).
+ * e.g. "California", "New York", etc.
  */
-function getProvinceFromComponents(components: any[]): string {
-  const provinceObj = components.find((comp) =>
+function getStateFullNameFromComponents(components: any[]): string {
+  const provinceObj = components.find((comp: any) =>
     comp.types.includes("administrative_area_level_1")
   );
-  return provinceObj?.long_name || "Unknown Province";
+  return provinceObj?.long_name || "Unknown State";
+}
+
+/**
+ * Attempts to parse the *short* name of the state (administrative_area_level_1).
+ * e.g. "CA", "NY", "TX", etc.
+ */
+function getStateShortNameFromComponents(components: any[]): string {
+  const provinceObj = components.find((comp: any) =>
+    comp.types.includes("administrative_area_level_1")
+  );
+  // short_name => "CA"
+  return provinceObj?.short_name || "Unknown";
 }
 
 /**
  * Provider that fetches geolocation on mount (if user grants permission),
- * calls Google’s Geocoding API, and extracts city/zip/country.
+ * calls Google’s Geocoding API, and extracts city/zip/country + state (long_name + short_name).
  */
 export const LocationProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -117,14 +125,15 @@ export const LocationProvider: React.FC<{ children: React.ReactNode }> = ({
             const city = getCityFromComponents(comps);
             const zip = getZipFromComponents(comps);
             const country = getCountryFromComponents(comps);
-            const province = getProvinceFromComponents(comps);
+            const provinceLongName = getStateFullNameFromComponents(comps); // e.g. "California"
+            const provinceShortName = getStateShortNameFromComponents(comps); // e.g. "CA"
 
             const newLocation: Location = {
               city,
               zip,
               country,
-              province,
-              state: province, // optional alias
+              province: provinceLongName,
+              state: provinceShortName, // short code or alias
             };
 
             // Update
@@ -151,7 +160,7 @@ export const LocationProvider: React.FC<{ children: React.ReactNode }> = ({
       try {
         const parsed = JSON.parse(storedLocation);
         setLocation(parsed);
-        // If you want a “fresh” location each time, you could still call fetchLocation() below:
+        // If you want a “fresh” location each time, you could still call fetchLocation() below
         // fetchLocation();
       } catch (error) {
         console.error("Error parsing userLocation from localStorage:", error);
