@@ -127,7 +127,6 @@ function numberToWordsUSD(amount: number): string {
     90: "ninety",
   };
 
-  // A tiny helper to convert an integer < 100 to words
   function twoDigitsToWords(n: number): string {
     if (n <= 20) return wordsMap[n] || "";
     if (n < 100) {
@@ -139,7 +138,6 @@ function numberToWordsUSD(amount: number): string {
     return `${n}`;
   }
 
-  // A helper for 3-digit chunk
   function threeDigitsToWords(n: number): string {
     const hundreds = Math.floor(n / 100);
     const remainder = n % 100;
@@ -151,8 +149,6 @@ function numberToWordsUSD(amount: number): string {
     return hundredPart || remainderPart || "";
   }
 
-  // For simplicity, handle up to 9999,999 etc. We'll chunk every 3 digits (thousands, millions...).
-  // This is still partial, but shows the idea.
   let resultWords: string[] = [];
   const thousands = ["", " thousand", " million", " billion"];
   let temp = integerPart;
@@ -171,7 +167,6 @@ function numberToWordsUSD(amount: number): string {
   }
   const integerWords = resultWords.join(" ").trim();
 
-  // Combine integer and decimal
   const decimalStr = decimalPart < 10 ? `0${decimalPart}` : `${decimalPart}`;
   return `${integerWords} and ${decimalStr}/100 dollars`;
 }
@@ -198,6 +193,15 @@ export default function CheckoutPage() {
   const { location } = useLocation();
   const userStateCode = location.state || ""; // e.g. "NY"
   const userZip = location.zip || "00000";
+
+  // **Here** we store the real state+zip from context
+  useEffect(() => {
+    // If location has state/zip, save them to session
+    if (userStateCode && userZip) {
+      sessionStorage.setItem("location_state", JSON.stringify(userStateCode));
+      sessionStorage.setItem("location_zip", JSON.stringify(userZip));
+    }
+  }, [userStateCode, userZip]);
 
   // If no essential data => redirect
   useEffect(() => {
@@ -567,7 +571,9 @@ export default function CheckoutPage() {
                 */}
                 <span>${formatWithSeparator(finalTotal)}</span>
               </div>
-              <span className="block text-right my-2 text-gray-600">({finalTotalWords})</span>
+              <span className="block text-right my-2 text-gray-600">
+                ({finalTotalWords})
+              </span>
             </div>
           </div>
 
@@ -576,9 +582,7 @@ export default function CheckoutPage() {
           {/* Selected date/time */}
           <div>
             <SectionBoxSubtitle>Date of Service</SectionBoxSubtitle>
-            <p className="text-gray-600">
-              {selectedTime || "No date selected"}
-            </p>
+            <p className="text-gray-600">{selectedTime || "No date selected"}</p>
           </div>
 
           <hr className="my-6 border-gray-200" />
@@ -586,9 +590,7 @@ export default function CheckoutPage() {
           {/* Problem description */}
           <div>
             <SectionBoxSubtitle>Problem Description</SectionBoxSubtitle>
-            <p className="text-gray-600">
-              {description || "No details provided"}
-            </p>
+            <p className="text-gray-600">{description || "No details provided"}</p>
           </div>
 
           <hr className="my-6 border-gray-200" />

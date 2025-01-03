@@ -1,25 +1,29 @@
+/* tailwind.css or global.css */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* Some base font-ligature settings */
 h1,
 h2,
 h3,
 h4,
 h5,
 h6 {
-    font-feature-settings: 'liga' 1, 'ss01' 1;
+  font-feature-settings: 'liga' 1, 'ss01' 1;
 }
 
 /* Brand colors etc. */
 :root {
-    --color-brand-light: #1948f00d;
-    --color-brand: #1948f0;
-    --color-brand-dark: #1537be;
+  --color-brand-light: #1948f00d;
+  --color-brand: #1948f0;
+  --color-brand-dark: #1537be;
 }
 
-/* --- Print rules --- */
+/* Hide header/footer on print, etc. */
 @media print {
+  header,
   footer {
     display: none !important;
   }
