@@ -8,8 +8,8 @@ import { CALCULATE_STEPS } from "@/constants/navigation";
 import { ALL_CATEGORIES } from "@/constants/categories";
 import { ALL_SERVICES } from "@/constants/services";
 import ServiceTimePicker from "@/components/ui/ServiceTimePicker";
-import { useLocation } from "@/context/LocationContext";   // ← получаем штат
-import { taxRatesUSA } from "@/constants/taxRatesUSA";      // ← таблица налогов
+import { useLocation } from "@/context/LocationContext";   // we get the state from context
+import { taxRatesUSA } from "@/constants/taxRatesUSA";      // tax table
 
 /**
  * Formats a numeric value with a comma/decimal separator, exactly two decimals.
@@ -45,7 +45,7 @@ function saveToSession(key: string, value: any) {
 }
 
 /**
- * Returns the combined state+local tax rate (в процентах) for a given state name from taxRatesUSA.
+ * Returns the combined state+local tax rate (in percentage) for a given state name from taxRatesUSA.
  * Example: if state = "Texas", returns 8.19 (which means 8.19%).
  * If not found, returns 0.
  */
@@ -140,7 +140,7 @@ export default function Estimate() {
 
   /**
    * Removes finishing materials for a given service by setting material_cost=0,
-   * materials=[] and total=work_cost. This simulates user selecting "I have my own materials."
+   * materials=[] and total=work_cost. This simulates the user selecting "I have my own materials."
    */
   function removeFinishingMaterials(serviceId: string) {
     const original = getCalcResultFor(serviceId);
@@ -284,7 +284,7 @@ export default function Estimate() {
                         return (
                           <div key={catId} className="ml-4 space-y-4">
                             {/* Example: "1.1. Smoke Detector" */}
-                            <h4 className="text-lg font-medium text-gray-700">
+                            <h4 className="text-xl font-medium text-gray-700">
                               {sectionIndex}.{catIndex}. {catName}
                             </h4>
 
