@@ -6011,8 +6011,8 @@ export const ALL_SERVICES = [
     {
         id: "8-2-4",
         unit_of_measurement: "each",
-        min_quantity: 50,
-        max_quantity: 10000,
+        min_quantity: 4,
+        max_quantity: 1000,
         title: "Wood Fence Post Painting and Finishing",
         description: "Painting and finishing of wood fence posts to protect and enhance their appearance. This service includes surface preparation, priming, painting, and sealing. Includes comprehensive labor, rough materials, equipment usage, and finishes (client's choice of color and type of paint). Provides a long-lasting and appealing finish.",
         price: 100,

@@ -7,6 +7,9 @@ import { Menu, X, ChevronDown } from "lucide-react";
 import { NavigationItem } from "@/types/common";
 import { useLocation } from "@/context/LocationContext";
 
+// ← Импортируем наш новый компонент!
+import PreferencesModal from "@/components/ui/PreferencesModal";
+
 // Example array for top navigation
 const navigation: NavigationItem[] = [
   { name: "Services", href: "/calculate" },
@@ -66,16 +69,35 @@ export default function Header() {
     state: "",
   });
 
-  // Preferences modal state
+  // Preferences modal state (не трогаем!)
   const [showPreferencesModal, setShowPreferencesModal] = useState(false);
   const preferencesModalRef = useRef<HTMLDivElement>(null);
+
+  // Language, units, currency
+  const [selectedLanguage, setSelectedLanguage] = useState("ENG");
+  const [selectedUnit, setSelectedUnit] = useState("Feet");
+  const [selectedCurrency, setSelectedCurrency] = useState("US");
+  const languages = Object.keys(languageMap);
+  const units = ["Feet", "Meters"];
+  const currencies = ["US", "CAD", "GBP", "EUR", "JPY", "CNY"];
+
+  /**
+   * Saves user preferences (language, units, currency).
+   */
+  const handlePreferencesSave = () => {
+    console.log("Saved preferences:", {
+      language: selectedLanguage,
+      unit: selectedUnit,
+      currency: selectedCurrency,
+    });
+    setShowPreferencesModal(false);
+  };
 
   const pathname = usePathname();
   const isEmergencyActive = pathname.startsWith("/emergency");
 
   /**
    * Called when the user clicks "Save" in the location modal.
-   * This updates the location context and closes the modal.
    */
   const handleManualLocationSave = () => {
     const newLoc = {
@@ -90,9 +112,6 @@ export default function Header() {
     setShowLocationModal(false);
   };
 
-  /**
-   * Called when the user clicks the "Auto" button to detect location by IP.
-   */
   const handleAutoFill = async () => {
     try {
       const response = await fetch("https://ipapi.co/json/");
@@ -116,10 +135,6 @@ export default function Header() {
     }
   };
 
-  /**
-   * Called when the user clicks the "ZIP" button.
-   * We perform a Google Geocoding request restricted to US to retrieve the city/state.
-   */
   const handleZipLookup = async () => {
     if (!manualLocation.zip.trim()) {
       alert("Please enter a ZIP code");
@@ -132,7 +147,6 @@ export default function Header() {
     }
     const zip = manualLocation.zip.trim();
     try {
-      // Restricting search to the US with components=country:US
       const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${zip}&components=country:US&key=${apiKey}`;
       const res = await fetch(url);
       const data = await res.json();
@@ -154,10 +168,6 @@ export default function Header() {
     }
   };
 
-  /**
-   * Called when user clicks "Clear" in the location modal.
-   * This resets city, zip, state fields in local state.
-   */
   const handleClearLocation = () => {
     setManualLocation({ city: "", zip: "", state: "" });
   };
@@ -193,26 +203,6 @@ export default function Header() {
     };
   }, [showLocationModal, showPreferencesModal]);
 
-  // Language, units, currency
-  const [selectedLanguage, setSelectedLanguage] = useState("ENG");
-  const [selectedUnit, setSelectedUnit] = useState("Feet");
-  const [selectedCurrency, setSelectedCurrency] = useState("US");
-  const languages = Object.keys(languageMap);
-  const units = ["Feet", "Meters"];
-  const currencies = ["US", "CAD", "GBP", "EUR", "JPY", "CNY"];
-
-  /**
-   * Saves user preferences (language, units, currency).
-   */
-  const handlePreferencesSave = () => {
-    console.log("Saved preferences:", {
-      language: selectedLanguage,
-      unit: selectedUnit,
-      currency: selectedCurrency,
-    });
-    setShowPreferencesModal(false);
-  };
-
   return (
     <>
       <header className="fixed w-full z-50 bg-gray-100/50 backdrop-blur-sm shadow-sm">
@@ -244,7 +234,7 @@ export default function Header() {
               {/* Desktop navigation */}
               <div className="hidden md:flex items-center gap-8">
                 {navigation.map((item) => {
-                  const isActive = pathname.startsWith(item.href);
+                  const isActive = usePathname().startsWith(item.href);
                   return (
                     <Link
                       key={item.name}
@@ -270,7 +260,9 @@ export default function Header() {
                   prefetch={false}
                   className={`flex items-center gap-2 text-red-600 font-medium px-4 py-2 rounded-lg 
                     transition-colors duration-200 bg-red-50 hover:bg-red-100 border-2 ${
-                      isEmergencyActive ? "border-red-600" : "border-transparent"
+                      usePathname().startsWith("/emergency")
+                        ? "border-red-600"
+                        : "border-transparent"
                     }`}
                 >
                   <span>🚨</span>
@@ -282,9 +274,7 @@ export default function Header() {
                   onClick={() => setShowPreferencesModal(true)}
                   className="w-[110px] inline-flex items-center justify-between gap-1 text-gray-700 bg-[rgba(0,0,0,0.03)] px-3 py-2 rounded-lg transition-colors duration-200 hover:bg-[rgba(0,0,0,0.08)]"
                 >
-                  <span className="truncate">
-                    {languageMap[selectedLanguage] ?? "English"}
-                  </span>
+                  <span className="truncate">{languageMap[selectedLanguage] ?? "English"}</span>
                   <ChevronDown className="w-4 h-4 shrink-0" />
                 </button>
               </div>
@@ -292,7 +282,7 @@ export default function Header() {
               {/* Mobile menu button */}
               <div className="md:hidden">
                 <button
-                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                  onClick={() => setIsMobileMenuOpen((prev) => !prev)}
                   className="text-gray-700 p-2"
                 >
                   {isMobileMenuOpen ? (
@@ -309,7 +299,7 @@ export default function Header() {
               <div className="md:hidden py-4 px-6 border-t">
                 <div className="flex flex-col gap-4">
                   {navigation.map((item) => {
-                    const isActive = pathname.startsWith(item.href);
+                    const isActive = usePathname().startsWith(item.href);
                     return (
                       <Link
                         key={item.name}
@@ -332,7 +322,9 @@ export default function Header() {
                     href="/emergency"
                     prefetch={false}
                     className={`flex items-center gap-2 text-red-600 font-medium border-2 ${
-                      isEmergencyActive ? "border-red-600" : "border-transparent"
+                      usePathname().startsWith("/emergency")
+                        ? "border-red-600"
+                        : "border-transparent"
                     }`}
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
@@ -349,9 +341,7 @@ export default function Header() {
                       setShowPreferencesModal(true);
                     }}
                   >
-                    <span className="truncate">
-                      {languageMap[selectedLanguage] ?? "English"}
-                    </span>
+                    <span className="truncate">{languageMap[selectedLanguage] ?? "English"}</span>
                     <ChevronDown className="w-4 h-4 shrink-0" />
                   </button>
                 </div>
@@ -361,7 +351,7 @@ export default function Header() {
         </div>
       </header>
 
-      {/* LOCATION MODAL */}
+      {/* LOCATION MODAL (не меняем!) */}
       {showLocationModal && (
         <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-[9999]">
           <div
@@ -462,35 +452,23 @@ export default function Header() {
         </div>
       )}
 
-      {/* PREFERENCES MODAL */}
-      {showPreferencesModal && (
-        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-[9999]">
-          <div
-            ref={preferencesModalRef}
-            className="bg-white p-6 rounded-xl shadow-lg max-w-[500px] w-[90%]"
-          >
-            <h2 className="text-2xl font-bold mb-4 text-gray-800">Preferences</h2>
-
-            {/* Language, units, currency settings */}
-            {/* (Not modified for brevity - same logic as before) */}
-
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                onClick={() => setShowPreferencesModal(false)}
-                className="px-4 py-2 rounded bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handlePreferencesSave}
-                className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors"
-              >
-                Save
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* PREFERENCES MODAL (теперь отдельный компонент) */}
+      <PreferencesModal
+        show={showPreferencesModal}
+        onClose={() => setShowPreferencesModal(false)}
+        onSave={handlePreferencesSave}
+        preferencesModalRef={preferencesModalRef}
+        selectedLanguage={selectedLanguage}
+        setSelectedLanguage={setSelectedLanguage}
+        selectedUnit={selectedUnit}
+        setSelectedUnit={setSelectedUnit}
+        selectedCurrency={selectedCurrency}
+        setSelectedCurrency={setSelectedCurrency}
+        languages={languages}
+        units={units}
+        currencies={currencies}
+        languageMap={languageMap}
+      />
     </>
   );
 }
