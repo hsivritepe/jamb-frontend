@@ -8,7 +8,7 @@ import { taxRatesUSA } from "@/constants/taxRatesUSA";
 import { DisclaimerBlock } from "@/components/ui/DisclaimerBlock";
 
 /**
- * Safely load a value from sessionStorage (client side only).
+ * Safely load a value from sessionStorage.
  */
 function loadFromSession<T>(key: string, defaultValue: T): T {
   if (typeof window === "undefined") return defaultValue;
@@ -21,8 +21,8 @@ function loadFromSession<T>(key: string, defaultValue: T): T {
 }
 
 /**
- * Formats a numeric value with two decimal places and comma separators.
- * Example: 1234 => "1,234.00"
+ * Formats a numeric value with commas + exactly two decimals.
+ * e.g., 1234 => "1,234.00"
  */
 function formatWithSeparator(value: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -32,8 +32,8 @@ function formatWithSeparator(value: number): string {
 }
 
 /**
- * Finds a matching tax rate in taxRatesUSA based on a two-letter state code
- * (e.g. "CA" => 8.85%). Returns 0 if not found.
+ * Returns the combined state+local tax rate (e.g. 8.85) for "CA" from taxRatesUSA
+ * or 0 if not found.
  */
 function getTaxRateForState(stateCode: string): number {
   if (!stateCode) return 0;
@@ -44,16 +44,13 @@ function getTaxRateForState(stateCode: string): number {
 }
 
 /**
- * Converts a numeric USD amount into spelled-out English text, in a simplified manner.
- * e.g. 1234.56 => "One thousand two hundred thirty-four and 56/100 dollars"
+ * Converts a numeric USD amount into spelled-out English text (simplified).
+ * Example: 1234.56 => "One thousand two hundred thirty-four and 56/100 dollars".
  */
 function numberToWordsUSD(amount: number): string {
-  // 1) Split integer & decimal
-  const integerPart = Math.floor(amount);
-  const decimalPart = Math.round((amount - integerPart) * 100);
-
-  // 2) Basic map for small numbers
-  const wordsMap: Record<number, string> = {
+  // We'll do a minimal "numbers to words" approach for demonstration.
+  // A real app might use a library for a more robust conversion.
+  const onesMap: Record<number, string> = {
     0: "zero",
     1: "one",
     2: "two",
@@ -84,58 +81,58 @@ function numberToWordsUSD(amount: number): string {
     90: "ninety",
   };
 
-  // Handle two digits (under 100)
-  function twoDigitsToWords(n: number): string {
-    if (n <= 20) return wordsMap[n] || "";
-    if (n < 100) {
-      const tens = Math.floor(n / 10) * 10;
-      const ones = n % 10;
-      if (ones === 0) return wordsMap[tens];
-      return wordsMap[tens] + "-" + (wordsMap[ones] || "");
-    }
-    return `${n}`;
+  function twoDigits(num: number): string {
+    if (num <= 20) return onesMap[num];
+    const tens = Math.floor(num / 10) * 10;
+    const ones = num % 10;
+    if (ones === 0) return onesMap[tens];
+    return `${onesMap[tens]}-${onesMap[ones]}`;
   }
 
-  // Handle three digits (e.g., up to 999)
-  function threeDigitsToWords(n: number): string {
-    const hundreds = Math.floor(n / 100);
-    const remainder = n % 100;
-
-    const hundredPart = hundreds > 0 ? wordsMap[hundreds] + " hundred" : "";
-    const remainderPart = remainder > 0 ? twoDigitsToWords(remainder) : "";
-
-    if (hundreds > 0 && remainder > 0) {
-      return hundredPart + " " + remainderPart;
+  function threeDigits(num: number): string {
+    const hundreds = Math.floor(num / 100);
+    const remainder = num % 100;
+    let result = "";
+    if (hundreds > 0) {
+      result += `${onesMap[hundreds]} hundred`;
+      if (remainder > 0) result += " ";
     }
-    return hundredPart || remainderPart || "";
+    if (remainder > 0) {
+      if (remainder < 100) {
+        result += twoDigits(remainder);
+      }
+    }
+    return result || "zero";
   }
 
-  // Combine all chunks (thousands, millions, etc.) - simplified
-  let resultWords: string[] = [];
-  const thousands = ["", " thousand", " million", " billion"];
-  let temp = integerPart;
+  // Let's chunk up to thousands, etc. (simplified)
+  let integerPart = Math.floor(amount);
+  const decimalPart = Math.round((amount - integerPart) * 100);
+  if (integerPart === 0) {
+    integerPart = 0;
+  }
+
+  let str = "";
+  const units = ["", "thousand", "million", "billion"];
   let i = 0;
-  if (temp === 0) {
-    resultWords.push("zero");
-  }
-  while (temp > 0 && i < thousands.length) {
-    const chunk = temp % 1000;
-    temp = Math.floor(temp / 1000);
+  while (integerPart > 0 && i < units.length) {
+    const chunk = integerPart % 1000;
+    integerPart = Math.floor(integerPart / 1000);
     if (chunk > 0) {
-      const str = threeDigitsToWords(chunk) + thousands[i];
-      resultWords.unshift(str);
+      const chunkStr = threeDigits(chunk);
+      const label = units[i] ? ` ${units[i]}` : "";
+      str = chunkStr + label + (str ? " " + str : "");
     }
     i++;
   }
-  const integerWords = resultWords.join(" ").trim();
+  if (!str) str = "zero";
 
-  // Combine integer & decimal
-  const decimalStr = decimalPart < 10 ? `0${decimalPart}` : `${decimalPart}`;
-  return `${integerWords} and ${decimalStr}/100 dollars`;
+  const dec = decimalPart < 10 ? `0${decimalPart}` : String(decimalPart);
+  return `${str} and ${dec}/100 dollars`;
 }
 
 /**
- * Creates an estimate number string: "CA-94103-YYYYMMDD-HHMM" or fallback
+ * Builds an estimate number in the format "CA-94103-YYYYMMDD-HHMM" or fallback.
  */
 function buildEstimateNumber(stateCode: string, zip: string): string {
   let stateZipPart = "??-00000";
@@ -168,34 +165,29 @@ export default function PrintServicesEstimate() {
     "calculationResultsMap",
     {}
   );
-  const address: string = loadFromSession("address", "");
+  const address = loadFromSession("address", "");
   const photos: string[] = loadFromSession("photos", []);
-  const description: string = loadFromSession("description", "");
-  const selectedTime: string | null = loadFromSession("selectedTime", null);
-  const timeCoefficient: number = loadFromSession("timeCoefficient", 1);
+  const description = loadFromSession("description", "");
+  const selectedTime = loadFromSession<string | null>("selectedTime", null);
+  const timeCoefficient = loadFromSession<number>("timeCoefficient", 1);
 
-  // These should be stored on Checkout:
-  const userStateCode: string = loadFromSession("location_state", "");
-  const userZip: string = loadFromSession("location_zip", "00000");
+  const userStateCode = loadFromSession("location_state", "");
+  const userZip = loadFromSession("location_zip", "00000");
 
-  // For grouping categories & services
   const selectedCategories: string[] = loadFromSession(
     "services_selectedCategories",
     []
   );
   const searchQuery: string = loadFromSession("services_searchQuery", "");
 
-  // If no data => back to /calculate/estimate
+  // If no essential data => redirect
   useEffect(() => {
-    if (
-      Object.keys(selectedServicesState).length === 0 ||
-      !address.trim()
-    ) {
+    if (Object.keys(selectedServicesState).length === 0 || !address.trim()) {
       router.push("/calculate/estimate");
     }
   }, [selectedServicesState, address, router]);
 
-  // Build the same category→services structure as on Checkout
+  // 2) Build grouping
   const categoriesWithSection = selectedCategories
     .map((catId) => ALL_CATEGORIES.find((c) => c.id === catId) || null)
     .filter(Boolean) as (typeof ALL_CATEGORIES)[number][];
@@ -208,28 +200,24 @@ export default function PrintServicesEstimate() {
     categoriesBySection[cat.section].push(cat.id);
   });
 
-  const categoryServicesMap: Record<string, (typeof ALL_SERVICES)[number][]> = {};
+  const categoryServicesMap: Record<string, (typeof ALL_SERVICES)[number][]> =
+    {};
   selectedCategories.forEach((catId) => {
-    let matchedServices = ALL_SERVICES.filter((svc) =>
-      svc.id.startsWith(`${catId}-`)
-    );
+    let matched = ALL_SERVICES.filter((svc) => svc.id.startsWith(`${catId}-`));
     if (searchQuery) {
-      matchedServices = matchedServices.filter((svc) =>
+      matched = matched.filter((svc) =>
         svc.title.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
-    categoryServicesMap[catId] = matchedServices;
+    categoryServicesMap[catId] = matched;
   });
 
-  /**
-   * Returns category title by id or the id itself if not found.
-   */
   function getCategoryNameById(catId: string): string {
     const cat = ALL_CATEGORIES.find((x) => x.id === catId);
     return cat ? cat.title : catId;
   }
 
-  // 2) Summation logic: labor, materials, taxes
+  // 3) Summation logic
   function calculateLaborSubtotal(): number {
     let total = 0;
     for (const svcId of Object.keys(selectedServicesState)) {
@@ -239,6 +227,7 @@ export default function PrintServicesEstimate() {
     }
     return total;
   }
+
   function calculateMaterialsSubtotal(): number {
     let total = 0;
     for (const svcId of Object.keys(selectedServicesState)) {
@@ -251,50 +240,102 @@ export default function PrintServicesEstimate() {
 
   const laborSubtotal = calculateLaborSubtotal();
   const materialsSubtotal = calculateMaterialsSubtotal();
-
-  // Apply timeCoefficient to labor
-  const finalLabor = laborSubtotal * timeCoefficient;
+  const finalLabor = laborSubtotal * timeCoefficient; // apply timeCoefficient
   const sumBeforeTax = finalLabor + materialsSubtotal;
-
-  // Tax
   const taxRatePercent = getTaxRateForState(userStateCode);
   const taxAmount = sumBeforeTax * (taxRatePercent / 100);
   const finalTotal = sumBeforeTax + taxAmount;
-
-  // spelled-out final total
   const finalTotalWords = numberToWordsUSD(finalTotal);
-
-  // Build estimate number "CA-94103-YYYYMMDD-HHMM"
   const estimateNumber = buildEstimateNumber(userStateCode, userZip);
 
-  // Auto-print after a short delay + set doc title
+  // auto-print
   useEffect(() => {
     const oldTitle = document.title;
     document.title = `JAMB-Estimate-${estimateNumber}`;
-
-    const printTimer = setTimeout(() => {
-      window.print();
-    }, 600);
-
+    const t = setTimeout(() => window.print(), 600);
     return () => {
       document.title = oldTitle;
-      clearTimeout(printTimer);
+      clearTimeout(t);
     };
   }, [estimateNumber]);
 
+  // 4) Build specs data (for section labor and merged materials)
+  interface MaterialSpec {
+    name: string;
+    totalQuantity: number;
+    totalCost: number;
+  }
+  const materialsSpecMap: Record<string, MaterialSpec> = {};
+
+  // track labor by section
+  const sectionLaborMap: Record<string, number> = {};
+
+  // Also track any timeCoefficient difference => if timeCoefficient != 1
+  const laborDiff = finalLabor - laborSubtotal;
+
+  for (const svcId of Object.keys(selectedServicesState)) {
+    const cr = calculationResultsMap[svcId];
+    if (!cr) continue;
+
+    // find which section
+    const catIdFound = selectedCategories.find((catId) =>
+      svcId.startsWith(catId + "-")
+    );
+    if (!catIdFound) continue;
+    const catObj = ALL_CATEGORIES.find((x) => x.id === catIdFound);
+    if (!catObj) continue;
+
+    const secName = catObj.section;
+    const laborVal = parseFloat(cr.work_cost) || 0;
+    if (!sectionLaborMap[secName]) {
+      sectionLaborMap[secName] = 0;
+    }
+    sectionLaborMap[secName] += laborVal;
+
+    // materials
+    if (Array.isArray(cr.materials)) {
+      cr.materials.forEach((m: any) => {
+        const name = m.name;
+        const costVal = parseFloat(m.cost) || 0;
+        const qtyVal = m.quantity || 0;
+
+        if (!materialsSpecMap[name]) {
+          materialsSpecMap[name] = {
+            name,
+            totalQuantity: 0,
+            totalCost: 0,
+          };
+        }
+        materialsSpecMap[name].totalQuantity += qtyVal;
+        materialsSpecMap[name].totalCost += costVal;
+      });
+    }
+  }
+
+  const materialsSpecArray = Object.values(materialsSpecMap);
+  const totalMaterialsCost = materialsSpecArray.reduce(
+    (a, b) => a + b.totalCost,
+    0
+  );
+
+  // sum all labor from the map
+  const totalLaborAllSections = Object.values(sectionLaborMap).reduce(
+    (a, b) => a + b,
+    0
+  );
+
+  /******************************
+   * Render
+   ******************************/
   return (
     <div className="print-page p-4 my-2">
-      {/* LOGO at top */}
+      {/* LOGO + divider */}
       <div className="flex items-center justify-between mb-4">
-        <img
-          src="/images/logo.png"
-          alt="JAMB Logo"
-          className="h-10 w-auto"
-        />
+        <img src="/images/logo.png" alt="JAMB Logo" className="h-10 w-auto" />
       </div>
-      {/* Divider under logo */}
       <hr className="border-gray-300 mb-4" />
 
+      {/* Basic Info */}
       <div className="flex justify-between items-center mb-4 mt-12">
         <div>
           <h1 className="text-2xl font-bold">Estimate</h1>
@@ -303,226 +344,469 @@ export default function PrintServicesEstimate() {
           </h2>
         </div>
       </div>
-
       {selectedTime && (
         <p className="mb-2 text-gray-700">
           <strong>Date of Service:</strong> {selectedTime}
         </p>
       )}
-
       <p className="mb-2">
         <strong>Address:</strong> {address}
       </p>
-      <p className="mb-2">
+      <p className="mb-4">
         <strong>Details:</strong> {description || "No details provided"}
       </p>
 
-      {/* Services breakdown */}
-      <div className="mt-6">
-        <h2 className="text-lg font-semibold mb-3">Selected Services</h2>
-
-        {/* 
-          Group by section -> categories -> services 
-          We remove the divider between services and keep a consistent spacing. 
-          Also, we add a custom class "avoid-break" so the sections won't be split across pages if possible.
-        */}
-        <div className="space-y-4">
-          {Object.entries(categoriesBySection).map(([sectionName, catIds], i) => {
-            const sectionIndex = i + 1;
-
-            // Only categories that actually have chosen services
-            const catsWithSelected = catIds.filter((catId) => {
-              const arr = categoryServicesMap[catId] || [];
-              return arr.some((s) => selectedServicesState[s.id] != null);
-            });
-            if (catsWithSelected.length === 0) return null;
-
-            return (
-              <div key={sectionName} className="space-y-4 avoid-break">
-                <h3 className="text-xl font-semibold text-gray-800">
-                  {sectionIndex}. {sectionName}
-                </h3>
-
-                {catsWithSelected.map((catId, j) => {
-                  const catIndex = j + 1;
-                  const servicesInCat = categoryServicesMap[catId] || [];
-                  const chosenServices = servicesInCat.filter(
-                    (s) => selectedServicesState[s.id] != null
-                  );
-                  if (chosenServices.length === 0) return null;
-
-                  const catName = getCategoryNameById(catId);
-
-                  return (
-                    <div key={catId} className="ml-4 space-y-4 avoid-break">
-                      <h4 className="text-xl font-medium text-gray-700">
-                        {sectionIndex}.{catIndex}. {catName}
-                      </h4>
-
-                      {chosenServices.map((svc, k2) => {
-                        const svcIndex = k2 + 1;
-                        const quantity = selectedServicesState[svc.id] || 1;
-                        const calcResult = calculationResultsMap[svc.id];
-                        const finalCost = calcResult
-                          ? parseFloat(calcResult.total) || 0
-                          : 0;
-
-                        return (
-                          <div
-                            key={svc.id}
-                            className="flex flex-col gap-2 mb-4 avoid-break"
-                          >
-                            <div>
-                              <h5 className="text-lg font-medium text-gray-800">
-                                {sectionIndex}.{catIndex}.{svcIndex}. {svc.title}
-                              </h5>
-                              {svc.description && (
-                                <p className="text-sm text-gray-600 mt-1">
-                                  {svc.description}
-                                </p>
-                              )}
-                            </div>
-
-                            <div className="flex justify-between items-center mt-2">
-                              <p className="text-sm text-gray-700 font-medium">
-                                {quantity} {svc.unit_of_measurement}
-                              </p>
-                              <p className="text-sm text-gray-800 font-medium">
-                                ${formatWithSeparator(finalCost)}
-                              </p>
-                            </div>
-
-                            {/* cost breakdown (labor + materials) */}
-                            {calcResult && (
-                              <div className="mt-2 p-3 bg-gray-50 border border-gray-300 rounded text-sm text-gray-700">
-                                {/* Labor row */}
-                                <div className="flex justify-between mb-2">
-                                  <span className="font-semibold">Labor:</span>
-                                  <span>
-                                    {calcResult.work_cost
-                                      ? `$${formatWithSeparator(parseFloat(calcResult.work_cost))}`
-                                      : "—"}
-                                  </span>
-                                </div>
-
-                                {/* Materials as a table, with header row "Name Price Qty Subtotal" */}
-                                {Array.isArray(calcResult.materials) &&
-                                  calcResult.materials.length > 0 && (
-                                    <div className="mt-2">
-                                      <p className="font-semibold mb-1">
-                                        Materials:
-                                      </p>
-                                      <table className="table-auto w-full text-left text-gray-700">
-                                        <thead>
-                                          <tr className="border-b">
-                                            <th className="py-1 px-1">Name</th>
-                                            <th className="py-1 px-1">Price</th>
-                                            <th className="py-1 px-1">Qty</th>
-                                            <th className="py-1 px-1">Subtotal</th>
-                                          </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-gray-200">
-                                          {calcResult.materials.map((m: any, idx2: number) => (
-                                            <tr key={`${m.external_id}-${idx2}`}>
-                                              <td className="py-2 px-1">{m.name}</td>
-                                              <td className="py-2 px-1">
-                                                ${formatWithSeparator(parseFloat(m.cost_per_unit))}
-                                              </td>
-                                              <td className="py-2 px-1">
-                                                {m.quantity}
-                                              </td>
-                                              <td className="py-2 px-1">
-                                                ${formatWithSeparator(parseFloat(m.cost))}
-                                              </td>
-                                            </tr>
-                                          ))}
-                                        </tbody>
-                                      </table>
-                                    </div>
-                                  )}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Summary (Labor, Materials, Tax, etc.) */}
-      <div className="mt-6 border-t pt-4 space-y-2 avoid-break">
-        <div className="flex justify-between">
-          <span>Labor:</span>
-          <span>${formatWithSeparator(laborSubtotal)}</span>
-        </div>
-        <div className="flex justify-between">
-          <span>Materials:</span>
-          <span>${formatWithSeparator(materialsSubtotal)}</span>
-        </div>
-
-        {timeCoefficient !== 1 && (
-          <div className="flex justify-between">
-            <span>
-              {timeCoefficient > 1
-                ? "Surcharge (date selection)"
-                : "Discount (day selection)"}
-            </span>
-            <span>
-              {timeCoefficient > 1 ? "+" : "-"}$
-              {formatWithSeparator(Math.abs(finalLabor - laborSubtotal))}
-            </span>
-          </div>
-        )}
-
-        <div className="flex justify-between font-semibold">
-          <span>Subtotal:</span>
-          <span>${formatWithSeparator(sumBeforeTax)}</span>
-        </div>
-
-        <div className="flex justify-between">
-          <span>
-            Sales tax
-            {userStateCode ? ` (${userStateCode})` : ""}
-            {taxRatePercent > 0 ? ` (${taxRatePercent.toFixed(2)}%)` : ""}:
-          </span>
-          <span>${formatWithSeparator(taxAmount)}</span>
-        </div>
-
-        <div className="flex justify-between text-lg font-semibold mt-2">
-          <span>Total:</span>
-          <span>${formatWithSeparator(finalTotal)}</span>
-        </div>
-
-        {/* spelled-out total in parentheses */}
-        <span className="block text-right text-sm text-gray-600">
-          ({finalTotalWords})
-        </span>
-      </div>
-
-      {/* Photos (if any) */}
+      {/* Photos & Disclaimer right after details */}
       {photos.length > 0 && (
-        <div className="mt-6 avoid-break">
-          <h3 className="font-semibold text-xl">Uploaded Photos</h3>
-          <div className="grid grid-cols-3 gap-2 mt-2">
+        <section className="mb-6">
+          <h3 className="font-semibold text-xl mb-2">Uploaded Photos</h3>
+          <div className="flex gap-2 w-full">
             {photos.map((photo, idx) => (
               <img
                 key={idx}
                 src={photo}
                 alt={`Photo ${idx + 1}`}
-                className="w-full h-32 object-cover rounded-md border border-gray-300"
+                className="flex-1 h-24 object-cover rounded-md border border-gray-300"
               />
             ))}
           </div>
-        </div>
+        </section>
       )}
 
-      {/* Disclaimer block at the bottom */}
-      <DisclaimerBlock />
+      <div className="mb-8">
+        <DisclaimerBlock />
+      </div>
+
+      {/* 1) SUMMARY */}
+      <section className="page-break mt-8">
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">1) Summary</h2>
+        <p className="text-sm text-gray-700 mb-4">
+          This table provides a simple overview of each selected service,
+          quantity, and total cost.
+        </p>
+
+        {/* Summary table */}
+        <table className="w-full table-auto border border-gray-300 text-sm text-gray-700">
+          <thead>
+            <tr className="border-b bg-white">
+              <th className="px-3 py-2 border-r border-gray-300">#</th>
+              <th className="px-3 py-2 border-r border-gray-300 text-left">
+                Service
+              </th>
+              <th className="px-3 py-2 border-r border-gray-300 text-center">
+                Qty
+              </th>
+              <th className="px-3 py-2 text-center">Total Cost</th>
+            </tr>
+          </thead>
+          <tbody>
+            {Object.entries(categoriesBySection).map(
+              ([sectionName, catIds], i) => {
+                const sectionIndex = i + 1;
+                const catsWithServices = catIds.filter((catId) => {
+                  const arr = categoryServicesMap[catId] || [];
+                  return arr.some((s) => selectedServicesState[s.id] != null);
+                });
+                if (catsWithServices.length === 0) return null;
+
+                // Section row
+                return (
+                  <React.Fragment key={sectionName}>
+                    <tr>
+                      <td
+                        colSpan={4}
+                        className="px-3 py-2 font-medium bg-gray-100 border-b border-gray-300"
+                      >
+                        {sectionIndex}. {sectionName}
+                      </td>
+                    </tr>
+                    {catsWithServices.map((catId, j) => {
+                      const catIndex = j + 1;
+                      const arr = categoryServicesMap[catId] || [];
+                      const chosenServices = arr.filter(
+                        (svc) => selectedServicesState[svc.id] != null
+                      );
+                      if (chosenServices.length === 0) return null;
+
+                      const catName = getCategoryNameById(catId);
+
+                      return (
+                        <React.Fragment key={catId}>
+                          {/* Category row */}
+                          <tr>
+                            <td
+                              colSpan={4}
+                              className="px-5 py-2 border-b border-gray-200 font-medium"
+                            >
+                              {sectionIndex}.{catIndex}. {catName}
+                            </td>
+                          </tr>
+                          {chosenServices.map((svc, k2) => {
+                            const svcIndex = k2 + 1;
+                            const qty = selectedServicesState[svc.id] || 1;
+                            const cr = calculationResultsMap[svc.id];
+                            const finalCost = cr
+                              ? parseFloat(cr.total) || 0
+                              : 0;
+
+                            return (
+                              <tr
+                                key={svc.id}
+                                className="border-b last:border-0"
+                              >
+                                <td className="px-3 py-2 border-r border-gray-300 text-center">
+                                  {sectionIndex}.{catIndex}.{svcIndex}
+                                </td>
+                                <td className="px-3 py-2 border-r border-gray-300">
+                                  {svc.title}
+                                </td>
+                                <td className="px-3 py-2 border-r border-gray-300 text-center">
+                                  {qty} {svc.unit_of_measurement}
+                                </td>
+                                <td className="px-3 py-2 text-center">
+                                  ${formatWithSeparator(finalCost)}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </React.Fragment>
+                      );
+                    })}
+                  </React.Fragment>
+                );
+              }
+            )}
+          </tbody>
+        </table>
+
+        {/* Summary totals */}
+        <div className="border-t pt-4 mt-6 space-y-1 text-sm">
+          <div className="flex justify-between">
+            <span>Labor:</span>
+            <span>${formatWithSeparator(laborSubtotal)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Materials:</span>
+            <span>${formatWithSeparator(materialsSubtotal)}</span>
+          </div>
+          {timeCoefficient !== 1 && (
+            <div className="flex justify-between">
+              <span>
+                {timeCoefficient > 1
+                  ? "Surcharge (date selection)"
+                  : "Discount (day selection)"}
+              </span>
+              <span>
+                {timeCoefficient > 1 ? "+" : "-"}$
+                {formatWithSeparator(Math.abs(finalLabor - laborSubtotal))}
+              </span>
+            </div>
+          )}
+          <div className="flex justify-between font-semibold">
+            <span>Subtotal:</span>
+            <span>${formatWithSeparator(sumBeforeTax)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>
+              Sales tax
+              {userStateCode ? ` (${userStateCode})` : ""}
+              {taxRatePercent > 0 ? ` (${taxRatePercent.toFixed(2)}%)` : ""}:
+            </span>
+            <span>${formatWithSeparator(taxAmount)}</span>
+          </div>
+          <div className="flex justify-between text-base font-semibold mt-2">
+            <span>Total:</span>
+            <span>${formatWithSeparator(finalTotal)}</span>
+          </div>
+          <p className="text-right text-sm text-gray-600">
+            ({finalTotalWords})
+          </p>
+        </div>
+      </section>
+
+      {/* 2) COST BREAKDOWN */}
+      <section className="page-break mt-10">
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">
+          2) Cost Breakdown
+        </h2>
+        <p className="text-sm text-gray-700 mb-4">
+          This section shows a detailed breakdown of each service's labor and
+          materials cost.
+        </p>
+
+        {Object.entries(categoriesBySection).map(([sectionName, catIds], i) => {
+          const sectionIndex = i + 1;
+          const catsWithServices = catIds.filter((catId) => {
+            const arr = categoryServicesMap[catId] || [];
+            return arr.some((s) => selectedServicesState[s.id] != null);
+          });
+          if (catsWithServices.length === 0) return null;
+
+          return (
+            <div key={sectionName} className="avoid-break mb-6">
+              <h3 className="text-lg font-bold text-gray-800 mb-2">
+                {sectionIndex}. {sectionName}
+              </h3>
+              {catsWithServices.map((catId, j) => {
+                const catIndex = j + 1;
+                const arr = categoryServicesMap[catId] || [];
+                const chosenServices = arr.filter(
+                  (svc) => selectedServicesState[svc.id] != null
+                );
+                if (chosenServices.length === 0) return null;
+
+                const catName = getCategoryNameById(catId);
+
+                return (
+                  <div key={catId} className="ml-4 mb-4 avoid-break">
+                    <h4 className="text-base font-medium text-gray-700 mb-2">
+                      {sectionIndex}.{catIndex}. {catName}
+                    </h4>
+                    {chosenServices.map((svc, k2) => {
+                      const svcIndex = k2 + 1;
+                      const quantity = selectedServicesState[svc.id] || 1;
+                      const cr = calculationResultsMap[svc.id];
+                      const finalCost = cr ? parseFloat(cr.total) || 0 : 0;
+
+                      return (
+                        <div key={svc.id} className="mb-4 avoid-break">
+                          <h5 className="text-sm font-medium text-gray-800 flex justify-between">
+                            <span>
+                              {sectionIndex}.{catIndex}.{svcIndex}. {svc.title}
+                            </span>
+                          </h5>
+                          {svc.description && (
+                            <p className="text-sm text-gray-500 mb-1">
+                              {svc.description}
+                            </p>
+                          )}
+                          <p className="text-sm text-gray-800 flex justify-between">
+                            <span>
+                              {quantity} {svc.unit_of_measurement}
+                            </span>
+                            <span>${formatWithSeparator(finalCost)}</span>
+                          </p>
+
+                          {/* cost breakdown */}
+                          {cr && (
+                            <div className="mt-2 p-3 bg-gray-50 border border-gray-300 rounded text-sm text-gray-700">
+                              {/* Labor row */}
+                              <div className="flex justify-between mb-1">
+                                <span className="font-semibold">Labor:</span>
+                                <span>
+                                  {cr.work_cost
+                                    ? `$${formatWithSeparator(
+                                        parseFloat(cr.work_cost)
+                                      )}`
+                                    : "—"}
+                                </span>
+                              </div>
+                              {/* Materials */}
+                              {Array.isArray(cr.materials) &&
+                                cr.materials.length > 0 && (
+                                  <div className="mt-2">
+                                    <p className="font-semibold mb-1">
+                                      Materials:
+                                    </p>
+                                    <table className="table-auto w-full text-left text-gray-700">
+                                      <thead>
+                                        <tr className="border-b">
+                                          <th className="py-1 px-1">Name</th>
+                                          <th className="py-1 px-1">Price</th>
+                                          <th className="py-1 px-1">Qty</th>
+                                          <th className="py-1 px-1">
+                                            Subtotal
+                                          </th>
+                                        </tr>
+                                      </thead>
+                                      <tbody className="divide-y divide-gray-200">
+                                        {cr.materials.map(
+                                          (m: any, idx2: number) => (
+                                            <tr
+                                              key={`${m.external_id}-${idx2}`}
+                                            >
+                                              <td className="py-2 px-1">
+                                                {m.name}
+                                              </td>
+                                              <td className="py-2 px-1">
+                                                $
+                                                {formatWithSeparator(
+                                                  parseFloat(m.cost_per_unit)
+                                                )}
+                                              </td>
+                                              <td className="py-2 px-1">
+                                                {m.quantity}
+                                              </td>
+                                              <td className="py-2 px-1">
+                                                $
+                                                {formatWithSeparator(
+                                                  parseFloat(m.cost)
+                                                )}
+                                              </td>
+                                            </tr>
+                                          )
+                                        )}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
+      </section>
+
+      {/* 3) SPECIFICATIONS */}
+      <section className="page-break mt-10">
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">
+          3) Specifications
+        </h2>
+        <p className="text-sm text-gray-700 mb-4">
+          This section shows labor by section (including any date
+          surcharges/discounts) and an overall list of materials.
+        </p>
+
+        {/* A) Labor by Section */}
+        <div className="mb-8">
+          <h3 className="text-lg font-bold text-gray-800 mb-2">
+            A) Labor by Section
+          </h3>
+          <table className="w-full table-auto border border-gray-300 text-sm text-gray-700 mb-3">
+            <thead className="bg-gray-100">
+              <tr>
+                <th className="px-3 py-2 border border-gray-300 text-left">
+                  Section
+                </th>
+                <th className="px-3 py-2 border  border-gray-300 text-right">
+                  Labor
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {categoriesWithSection
+                .map((cat) => cat.section)
+                .filter((v, i, arr) => arr.indexOf(v) === i) // unique
+                .map((sectionName) => {
+                  let laborSum = 0;
+                  for (const svcId of Object.keys(selectedServicesState)) {
+                    const cr = calculationResultsMap[svcId];
+                    if (!cr) continue;
+                    const foundCat = selectedCategories.find((catId) =>
+                      svcId.startsWith(catId + "-")
+                    );
+                    if (!foundCat) continue;
+                    const catObj = ALL_CATEGORIES.find(
+                      (x) => x.id === foundCat
+                    );
+                    if (!catObj) continue;
+                    if (catObj.section === sectionName) {
+                      laborSum += parseFloat(cr.work_cost) || 0;
+                    }
+                  }
+                  if (laborSum === 0) return null;
+
+                  return (
+                    <tr key={sectionName} className="border-b last:border-0">
+                      <td className="px-3 py-2 border border-gray-300">
+                        {sectionName}
+                      </td>
+                      <td className="px-3 py-2 border border-gray-300 text-right">
+                        ${formatWithSeparator(laborSum)}
+                      </td>
+                    </tr>
+                  );
+                })}
+            </tbody>
+          </table>
+          {/* Explanation: totalLaborAllSections (laborSubtotal) might differ from finalLabor if timeCoefficient!=1 */}
+          <div className="text-sm">
+            <div className="flex justify-end">
+              <span className="mr-6">Labor Sum:</span>
+              <span>${formatWithSeparator(laborSubtotal)}</span>
+            </div>
+            {timeCoefficient !== 1 && (
+              <div className="flex justify-end mt-1">
+                <span className="mr-6">
+                  {timeCoefficient > 1 ? "Surcharge" : "Discount"}:
+                </span>
+                <span>
+                  {timeCoefficient > 1 ? "+" : "-"}$
+                  {formatWithSeparator(Math.abs(laborDiff))}
+                </span>
+              </div>
+            )}
+            <div className="flex justify-end font-semibold mt-1">
+              <span className="mr-6">Total Labor:</span>
+              <span>${formatWithSeparator(finalLabor)}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* B) Materials specification */}
+        <div>
+          <h3 className="text-lg font-bold text-gray-800 mb-2">
+            B) Overall Materials
+          </h3>
+          {materialsSpecArray.length === 0 ? (
+            <p className="text-sm text-gray-700">
+              No materials used in this estimate.
+            </p>
+          ) : (
+            <div>
+              <table className="w-full table-auto border border-gray-300 text-sm text-gray-700">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="px-3 py-2 border border-gray-300 text-left">
+                      Material Name
+                    </th>
+                    <th className="px-3 py-2 border border-gray-300 text-center">
+                      Qty
+                    </th>
+                    <th className="px-3 py-2 border border-gray-300 text-center">
+                      Price
+                    </th>
+                    <th className="px-3 py-2 border text-center">Subtotal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {materialsSpecArray.map((mat) => {
+                    const unitPrice = mat.totalQuantity
+                      ? mat.totalCost / mat.totalQuantity
+                      : 0;
+                    return (
+                      <tr key={mat.name} className="border-b last:border-0">
+                        <td className="px-3 py-2 border-r border-gray-300">
+                          {mat.name}
+                        </td>
+                        <td className="px-3 py-2 border-r border-gray-300 text-center">
+                          {mat.totalQuantity}
+                        </td>
+                        <td className="px-3 py-2 border-r border-gray-300 text-center">
+                          ${formatWithSeparator(unitPrice)}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          ${formatWithSeparator(mat.totalCost)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              <div className="flex justify-end mt-2 text-sm font-semibold">
+                <span className="mr-6">Total Materials:</span>
+                <span>${formatWithSeparator(totalMaterialsCost)}</span>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
     </div>
   );
 }

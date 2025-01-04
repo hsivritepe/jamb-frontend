@@ -1,30 +1,26 @@
-/* tailwind.css or global.css */
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Some base font-ligature settings */
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
+h1,h2,h3,h4,h5,h6 {
   font-feature-settings: 'liga' 1, 'ss01' 1;
 }
 
-/* Brand colors etc. */
 :root {
-  --color-brand-light: #1948f00d;
   --color-brand: #1948f0;
+  --color-brand-light: #1948f00d;
   --color-brand-dark: #1537be;
 }
 
-/* Hide header/footer on print, etc. */
 @media print {
   header,
   footer {
     display: none !important;
   }
+
+  /* Ensure each big section starts on a new page */
+  .page-break {
+    page-break-before: always;
+  }
+  /* Or page-break-after: always, whichever suits the layout best */
 }
