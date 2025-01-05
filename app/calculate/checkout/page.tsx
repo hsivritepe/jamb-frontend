@@ -274,7 +274,12 @@ export default function CheckoutPage() {
   const materialsSubtotal = calculateMaterialsSubtotal();
 
   const finalLabor = laborSubtotal * timeCoefficient;
-  const sumBeforeTax = finalLabor + materialsSubtotal;
+  const serviceFeeOnLabor = loadFromSession("serviceFeeOnLabor", 0);
+  const serviceFeeOnMaterials = loadFromSession("serviceFeeOnMaterials", 0);
+
+  // sumBeforeTax = final labor + materials + fees
+  const sumBeforeTax =
+    finalLabor + materialsSubtotal + serviceFeeOnLabor + serviceFeeOnMaterials;
 
   // re-check location-based tax
   const taxRatePercent = getTaxRateForState(userStateCode);
@@ -544,6 +549,24 @@ export default function CheckoutPage() {
                 </div>
               )}
 
+              {/* add lines for fees */}
+              <div className="flex justify-between mb-2">
+                <span className="text-gray-600">
+                  Service Fee (15% on labor)
+                </span>
+                <span className="font-semibold text-lg text-gray-800">
+                  ${formatWithSeparator(serviceFeeOnLabor)}
+                </span>
+              </div>
+              <div className="flex justify-between mb-2">
+                <span className="text-gray-600">
+                  Delivery &amp; Processing (5% on materials)
+                </span>
+                <span className="font-semibold text-lg text-gray-800">
+                  ${formatWithSeparator(serviceFeeOnMaterials)}
+                </span>
+              </div>
+
               <div className="flex justify-between mb-2">
                 <span className="font-semibold text-xl text-gray-800">
                   Subtotal
@@ -582,7 +605,9 @@ export default function CheckoutPage() {
           {/* Selected date/time */}
           <div>
             <SectionBoxSubtitle>Date of Service</SectionBoxSubtitle>
-            <p className="text-gray-600">{selectedTime || "No date selected"}</p>
+            <p className="text-gray-600">
+              {selectedTime || "No date selected"}
+            </p>
           </div>
 
           <hr className="my-6 border-gray-200" />
@@ -590,7 +615,9 @@ export default function CheckoutPage() {
           {/* Problem description */}
           <div>
             <SectionBoxSubtitle>Problem Description</SectionBoxSubtitle>
-            <p className="text-gray-600">{description || "No details provided"}</p>
+            <p className="text-gray-600">
+              {description || "No details provided"}
+            </p>
           </div>
 
           <hr className="my-6 border-gray-200" />

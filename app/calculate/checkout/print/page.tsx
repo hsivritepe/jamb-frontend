@@ -48,8 +48,7 @@ function getTaxRateForState(stateCode: string): number {
  * Example: 1234.56 => "One thousand two hundred thirty-four and 56/100 dollars".
  */
 function numberToWordsUSD(amount: number): string {
-  // We'll do a minimal "numbers to words" approach for demonstration.
-  // A real app might use a library for a more robust conversion.
+  // Сокращённая логика преобразования для примера
   const onesMap: Record<number, string> = {
     0: "zero",
     1: "one",
@@ -105,7 +104,6 @@ function numberToWordsUSD(amount: number): string {
     return result || "zero";
   }
 
-  // Let's chunk up to thousands, etc. (simplified)
   let integerPart = Math.floor(amount);
   const decimalPart = Math.round((amount - integerPart) * 100);
   if (integerPart === 0) {
@@ -171,6 +169,10 @@ export default function PrintServicesEstimate() {
   const selectedTime = loadFromSession<string | null>("selectedTime", null);
   const timeCoefficient = loadFromSession<number>("timeCoefficient", 1);
 
+  // (A) Загрузка сборов так же, как на странице Checkout:
+  const serviceFeeOnLabor = loadFromSession("serviceFeeOnLabor", 0);
+  const serviceFeeOnMaterials = loadFromSession("serviceFeeOnMaterials", 0);
+
   const userStateCode = loadFromSession("location_state", "");
   const userZip = loadFromSession("location_zip", "00000");
 
@@ -180,14 +182,14 @@ export default function PrintServicesEstimate() {
   );
   const searchQuery: string = loadFromSession("services_searchQuery", "");
 
-  // If no essential data => redirect
+  // Если данных нет — редирект
   useEffect(() => {
     if (Object.keys(selectedServicesState).length === 0 || !address.trim()) {
       router.push("/calculate/estimate");
     }
   }, [selectedServicesState, address, router]);
 
-  // 2) Build grouping
+  // 2) Группировка
   const categoriesWithSection = selectedCategories
     .map((catId) => ALL_CATEGORIES.find((c) => c.id === catId) || null)
     .filter(Boolean) as (typeof ALL_CATEGORIES)[number][];
@@ -217,7 +219,7 @@ export default function PrintServicesEstimate() {
     return cat ? cat.title : catId;
   }
 
-  // 3) Summation logic
+  // 3) Расчёты
   function calculateLaborSubtotal(): number {
     let total = 0;
     for (const svcId of Object.keys(selectedServicesState)) {
@@ -240,15 +242,20 @@ export default function PrintServicesEstimate() {
 
   const laborSubtotal = calculateLaborSubtotal();
   const materialsSubtotal = calculateMaterialsSubtotal();
-  const finalLabor = laborSubtotal * timeCoefficient; // apply timeCoefficient
-  const sumBeforeTax = finalLabor + materialsSubtotal;
+
+  const finalLabor = laborSubtotal * timeCoefficient;
+  // Подключаем fees, как было на Checkout:
+  const sumBeforeTax =
+    finalLabor + materialsSubtotal + serviceFeeOnLabor + serviceFeeOnMaterials;
+
+  // Далее всё как раньше
   const taxRatePercent = getTaxRateForState(userStateCode);
   const taxAmount = sumBeforeTax * (taxRatePercent / 100);
   const finalTotal = sumBeforeTax + taxAmount;
   const finalTotalWords = numberToWordsUSD(finalTotal);
   const estimateNumber = buildEstimateNumber(userStateCode, userZip);
 
-  // auto-print
+  // Автопечать
   useEffect(() => {
     const oldTitle = document.title;
     document.title = `JAMB-Estimate-${estimateNumber}`;
@@ -259,25 +266,23 @@ export default function PrintServicesEstimate() {
     };
   }, [estimateNumber]);
 
-  // 4) Build specs data (for section labor and merged materials)
+  // 4) Дополнительные специфические переменные (section, materials) остаются такими же
   interface MaterialSpec {
     name: string;
     totalQuantity: number;
     totalCost: number;
   }
   const materialsSpecMap: Record<string, MaterialSpec> = {};
-
-  // track labor by section
   const sectionLaborMap: Record<string, number> = {};
 
-  // Also track any timeCoefficient difference => if timeCoefficient != 1
+  // TimeCoefficient difference (не трогаем)
   const laborDiff = finalLabor - laborSubtotal;
 
+  // Сбор данных о секциях/материалах
   for (const svcId of Object.keys(selectedServicesState)) {
     const cr = calculationResultsMap[svcId];
     if (!cr) continue;
 
-    // find which section
     const catIdFound = selectedCategories.find((catId) =>
       svcId.startsWith(catId + "-")
     );
@@ -292,7 +297,6 @@ export default function PrintServicesEstimate() {
     }
     sectionLaborMap[secName] += laborVal;
 
-    // materials
     if (Array.isArray(cr.materials)) {
       cr.materials.forEach((m: any) => {
         const name = m.name;
@@ -317,25 +321,20 @@ export default function PrintServicesEstimate() {
     (a, b) => a + b.totalCost,
     0
   );
-
-  // sum all labor from the map
   const totalLaborAllSections = Object.values(sectionLaborMap).reduce(
     (a, b) => a + b,
     0
   );
 
-  /******************************
-   * Render
-   ******************************/
   return (
     <div className="print-page p-4 my-2">
-      {/* LOGO + divider */}
+      {/* Логотип */}
       <div className="flex items-center justify-between mb-4">
         <img src="/images/logo.png" alt="JAMB Logo" className="h-10 w-auto" />
       </div>
       <hr className="border-gray-300 mb-4" />
 
-      {/* Basic Info */}
+      {/* Основные данные */}
       <div className="flex justify-between items-center mb-4 mt-12">
         <div>
           <h1 className="text-2xl font-bold">Estimate</h1>
@@ -356,7 +355,7 @@ export default function PrintServicesEstimate() {
         <strong>Details:</strong> {description || "No details provided"}
       </p>
 
-      {/* Photos & Disclaimer right after details */}
+      {/* Фото + дисклеймер */}
       {photos.length > 0 && (
         <section className="mb-6">
           <h3 className="font-semibold text-xl mb-2">Uploaded Photos</h3>
@@ -377,7 +376,7 @@ export default function PrintServicesEstimate() {
         <DisclaimerBlock />
       </div>
 
-      {/* 1) SUMMARY */}
+      {/* (1) SUMMARY */}
       <section className="page-break mt-8">
         <h2 className="text-xl font-semibold text-gray-800 mb-4">1) Summary</h2>
         <p className="text-sm text-gray-700 mb-4">
@@ -385,7 +384,6 @@ export default function PrintServicesEstimate() {
           quantity, and total cost.
         </p>
 
-        {/* Summary table */}
         <table className="w-full table-auto border border-gray-300 text-sm text-gray-700">
           <thead>
             <tr className="border-b bg-white">
@@ -409,7 +407,6 @@ export default function PrintServicesEstimate() {
                 });
                 if (catsWithServices.length === 0) return null;
 
-                // Section row
                 return (
                   <React.Fragment key={sectionName}>
                     <tr>
@@ -432,7 +429,6 @@ export default function PrintServicesEstimate() {
 
                       return (
                         <React.Fragment key={catId}>
-                          {/* Category row */}
                           <tr>
                             <td
                               colSpan={4}
@@ -489,6 +485,7 @@ export default function PrintServicesEstimate() {
             <span>Materials:</span>
             <span>${formatWithSeparator(materialsSubtotal)}</span>
           </div>
+
           {timeCoefficient !== 1 && (
             <div className="flex justify-between">
               <span>
@@ -502,6 +499,21 @@ export default function PrintServicesEstimate() {
               </span>
             </div>
           )}
+
+          {/* (B) Отображаем два новых fee */}
+          <div className="flex justify-between">
+            <span>Service Fee (15% on labor)</span>
+            <span>
+              ${formatWithSeparator(serviceFeeOnLabor)}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span>Delivery &amp; Processing (5% on materials)</span>
+            <span>
+              ${formatWithSeparator(serviceFeeOnMaterials)}
+            </span>
+          </div>
+
           <div className="flex justify-between font-semibold">
             <span>Subtotal:</span>
             <span>${formatWithSeparator(sumBeforeTax)}</span>
@@ -692,7 +704,7 @@ export default function PrintServicesEstimate() {
             <tbody>
               {categoriesWithSection
                 .map((cat) => cat.section)
-                .filter((v, i, arr) => arr.indexOf(v) === i) // unique
+                .filter((v, i, arr) => arr.indexOf(v) === i)
                 .map((sectionName) => {
                   let laborSum = 0;
                   for (const svcId of Object.keys(selectedServicesState)) {
@@ -725,7 +737,7 @@ export default function PrintServicesEstimate() {
                 })}
             </tbody>
           </table>
-          {/* Explanation: totalLaborAllSections (laborSubtotal) might differ from finalLabor if timeCoefficient!=1 */}
+          {/* Explanation */}
           <div className="text-sm">
             <div className="flex justify-end">
               <span className="mr-6">Labor Sum:</span>

@@ -211,13 +211,23 @@ export default function Estimate() {
   // final labor after timeCoefficient
   const finalLabor = laborSubtotal * timeCoefficient;
 
-  // sumBeforeTax = final labor + materials
-  const sumBeforeTax = finalLabor + materialsSubtotal;
+  // -------------- new fees: 15% on labor, 5% on materials --------------
+  const serviceFeeOnLabor = finalLabor * 0.15;
+  const serviceFeeOnMaterials = materialsSubtotal * 0.05;
 
-  // 6) Find tax rate from the state (e.g. "California" => 8.85%)
-  // If not found => 0
+  // Store them in session for the next page
+  useEffect(() => {
+    saveToSession("serviceFeeOnLabor", serviceFeeOnLabor);
+    saveToSession("serviceFeeOnMaterials", serviceFeeOnMaterials);
+  }, [serviceFeeOnLabor, serviceFeeOnMaterials]);
+
+  // sumBeforeTax = final labor + materials + fees
+  const sumBeforeTax =
+    finalLabor + materialsSubtotal + serviceFeeOnLabor + serviceFeeOnMaterials;
+
+  // 6) Find tax rate from the state (e.g. "California" => 8.85%). If not found => 0
   const taxRatePercent = getTaxRateForState(userState); // e.g. 8.85
-  const taxAmount = sumBeforeTax * (taxRatePercent / 100); // e.g. 0.0885
+  const taxAmount = sumBeforeTax * (taxRatePercent / 100);
 
   // final total = sumBeforeTax + tax
   const finalTotal = sumBeforeTax + taxAmount;
@@ -397,14 +407,7 @@ export default function Estimate() {
                 })}
               </div>
 
-              {/* Summary: 
-                  - laborSubtotal (before timeCoefficient)
-                  - materialsSubtotal
-                  - timeCoefficient => finalLabor
-                  - sumBeforeTax
-                  - taxRatePercent
-                  - finalTotal
-              */}
+              {/* Summary */}
               <div className="pt-4 mt-4 border-t">
                 {/* Labor (no coefficient) */}
                 <div className="flex justify-between mb-2">
@@ -426,23 +429,37 @@ export default function Estimate() {
                 {timeCoefficient !== 1 && (
                   <div className="flex justify-between mb-2">
                     <span className="text-gray-600">
-                      {timeCoefficient > 1 ? "Surcharge (date selection)" : "Discount (day selection)"}
+                      {timeCoefficient > 1
+                        ? "Surcharge (date selection)"
+                        : "Discount (day selection)"}
                     </span>
                     <span
                       className={`font-semibold text-lg ${
                         timeCoefficient > 1 ? "text-red-600" : "text-green-600"
                       }`}
                     >
-                      {/* difference: finalLabor - laborSubtotal */}
                       {timeCoefficient > 1 ? "+" : "-"}$
-                      {formatWithSeparator(
-                        Math.abs(finalLabor - laborSubtotal)
-                      )}
+                      {formatWithSeparator(Math.abs(finalLabor - laborSubtotal))}
                     </span>
                   </div>
                 )}
 
-                {/* finalLabor + materials = sumBeforeTax */}
+                {/* NEW fees (serviceFeeOnLabor, serviceFeeOnMaterials) */}
+                <div className="flex justify-between mb-2">
+                  <span className="text-gray-600">Service Fee (15% on labor)</span>
+                  <span className="font-semibold text-lg text-gray-800">
+                    ${formatWithSeparator(serviceFeeOnLabor)}
+                  </span>
+                </div>
+
+                <div className="flex justify-between mb-2">
+                  <span className="text-gray-600">Delivery &amp; Processing (5% on materials)</span>
+                  <span className="font-semibold text-lg text-gray-800">
+                    ${formatWithSeparator(serviceFeeOnMaterials)}
+                  </span>
+                </div>
+
+                {/* Subtotal = finalLabor + materials + fees */}
                 <div className="flex justify-between mb-2">
                   <span className="font-semibold text-xl text-gray-800">
                     Subtotal
@@ -455,7 +472,7 @@ export default function Estimate() {
                 {/* tax if any */}
                 <div className="flex justify-between mb-2">
                   <span className="text-gray-600">
-                    Sales tax{userState ? ` (${userState})` : ""} 
+                    Sales tax{userState ? ` (${userState})` : ""}
                     {taxRatePercent > 0 ? ` (${taxRatePercent.toFixed(2)}%)` : ""}
                   </span>
                   <span>${formatWithSeparator(taxAmount)}</span>
