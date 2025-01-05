@@ -765,18 +765,6 @@ export default function Details() {
                                         </div>
                                       </div>
 
-                                      {/* If not the last => divider */}
-                                      {(() => {
-                                        const chosen = servicesForCategory.filter(
-                                          (s) => selectedServicesState[s.id] != null
-                                        );
-                                        const currentIndex = chosen.findIndex((s) => s.id === svc.id);
-                                        if (currentIndex !== chosen.length - 1) {
-                                          return <hr className="mt-4 border-gray-200" />;
-                                        }
-                                        return null;
-                                      })()}
-
                                       {/* Cost Breakdown */}
                                       {calcResult && detailsExpanded && (
                                         <div className="mt-4 p-4 bg-gray-50 border rounded">
