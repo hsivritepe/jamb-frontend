@@ -216,6 +216,14 @@ export default function RoomDetails() {
     loadFromSession("stateName", "")
   );
 
+  // NEW city/country states
+  const [city, setCity] = useState<string>(() => loadFromSession("city", ""));
+  const [country, setCountry] = useState<string>(() => loadFromSession("country", ""));
+
+  // Save them to session
+  useEffect(() => saveToSession("city", city), [city]);
+  useEffect(() => saveToSession("country", country), [country]);
+
   // Selected rooms
   const selectedRooms: string[] = loadFromSession("rooms_selectedSections", []);
   useEffect(() => {
@@ -611,6 +619,10 @@ export default function RoomDetails() {
       allSelectedServices.push(...Object.keys(selectedServicesState[roomId]));
     }
     saveToSession("rooms_selectedServices", allSelectedServices);
+
+    // We also store city/country so the next page can read them
+    saveToSession("city", city);
+    saveToSession("country", country);
 
     // Go to /rooms/estimate
     router.push("/rooms/estimate");
@@ -1210,8 +1222,11 @@ export default function RoomDetails() {
               onStateChange={(e) => setStateName(e.target.value)}
               onUseMyLocation={() => {
                 if (location?.city && location?.state && location?.zip) {
+                  // also setCity/country
                   setAddress(location.city);
+                  setCity(location.city || "");      // new
                   setStateName(location.state);
+                  setCountry(location.country || ""); // new
                   setZip(location.zip);
                 } else {
                   setWarningMessage("Location data is unavailable. Please enter manually.");

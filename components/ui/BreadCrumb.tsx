@@ -22,12 +22,8 @@ export default function BreadCrumb({ items }: BreadCrumbProps) {
   // Build query string if needed
   const queryString = searchParams.toString(); 
 
-  // Optionally append queryString if relevant
-  const updatedItems = items.map((item) => {
-    // If you'd like to preserve query params for some steps, do it here
-    // For example, if item.href starts with "/packages", etc.
-    return item; // or add "?queryString"
-  });
+  // If you need to append query params, do it here (currently not appending):
+  const updatedItems = items.map((item) => item);
 
   // Find which step is current
   const currentIndex = updatedItems.findIndex((item) => {
@@ -35,13 +31,14 @@ export default function BreadCrumb({ items }: BreadCrumbProps) {
     return baseHref === pathname;
   });
 
-  // Handler to clear sessionStorage when clicking "Home" or any step you choose
+  // The set of paths where we want sessionStorage cleared
+  const pathsToClear = ["/calculate", "/emergency", "/rooms", "/packages"];
+
+  // Handler to clear sessionStorage if the item is in pathsToClear
   function handleBreadcrumbClick(e: React.MouseEvent<HTMLAnchorElement>, href: string) {
     e.preventDefault();
-    // 1) Clear sessionStorage
-    sessionStorage.clear();
-    // 2) Navigate
-    router.push(href);
+    sessionStorage.clear();  // 1) Clear sessionStorage
+    router.push(href);       // 2) Navigate
   }
 
   return (
@@ -52,16 +49,13 @@ export default function BreadCrumb({ items }: BreadCrumbProps) {
           const isActive = pathname === baseHref;
           const isPassed = index <= currentIndex;
 
-          // Decide if this is the "Home" step (or whichever step you want to clear session)
-          const shouldClearStorage = item.href === "/calculate"; 
-          // ↑ например, если label === "Home" или href === "/calculate"
+          // Decide if we clear storage on click
+          const shouldClearStorage = pathsToClear.includes(item.href);
 
           return (
             <div
               key={item.href}
-              className={`flex-1 relative ${
-                isPassed ? "border-b-2 border-brand -mb-[2px]" : ""
-              }`}
+              className={`flex-1 relative ${isPassed ? "border-b-2 border-brand -mb-[2px]" : ""}`}
             >
               {isPassed ? (
                 shouldClearStorage ? (
