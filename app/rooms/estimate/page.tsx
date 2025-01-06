@@ -68,7 +68,10 @@ export default function RoomsEstimate() {
 
   // Redirect if mismatch or no rooms
   useEffect(() => {
-    if (selectedRooms.length === 0 || chosenRooms.length !== selectedRooms.length) {
+    if (
+      selectedRooms.length === 0 ||
+      chosenRooms.length !== selectedRooms.length
+    ) {
       router.push("/rooms");
     }
   }, [selectedRooms, chosenRooms, router]);
@@ -85,16 +88,22 @@ export default function RoomsEstimate() {
   const country: string = loadFromSession("country", "");
 
   // Our selected services: { [roomId]: { [serviceId]: number } }
-  const selectedServicesState: Record<string, Record<string, number>> =
-    loadFromSession("rooms_selectedServicesWithQuantity", {});
+  const selectedServicesState: Record<
+    string,
+    Record<string, number>
+  > = loadFromSession("rooms_selectedServicesWithQuantity", {});
 
   // Calculation results from the server
-  const calculationResultsMap: Record<string, any> =
-    loadFromSession("calculationResultsMap", {});
+  const calculationResultsMap: Record<string, any> = loadFromSession(
+    "calculationResultsMap",
+    {}
+  );
 
   // If the user has their own materials
-  const clientOwnedMaterials: Record<string, string[]> =
-    loadFromSession("clientOwnedMaterials", {});
+  const clientOwnedMaterials: Record<string, string[]> = loadFromSession(
+    "clientOwnedMaterials",
+    {}
+  );
 
   // Redirect if no services selected or no address
   useEffect(() => {
@@ -125,7 +134,9 @@ export default function RoomsEstimate() {
   }, [timeCoefficient]);
 
   // 4) Overridden results if user removes finishing materials
-  const [overrideCalcResults, setOverrideCalcResults] = useState<Record<string, any>>({});
+  const [overrideCalcResults, setOverrideCalcResults] = useState<
+    Record<string, any>
+  >({});
 
   function getCalcResultFor(serviceId: string): any {
     return overrideCalcResults[serviceId] || calculationResultsMap[serviceId];
@@ -189,7 +200,8 @@ export default function RoomsEstimate() {
   }, [serviceFeeOnLabor, serviceFeeOnMaterials]);
 
   // sumBeforeTax = final labor + materials + fees
-  const sumBeforeTax = finalLabor + materialsSubtotal + serviceFeeOnLabor + serviceFeeOnMaterials;
+  const sumBeforeTax =
+    finalLabor + materialsSubtotal + serviceFeeOnLabor + serviceFeeOnMaterials;
 
   // 6) Find tax rate from the state
   const taxRatePercent = getTaxRateForState(stateName);
@@ -240,7 +252,8 @@ export default function RoomsEstimate() {
       }
     });
 
-    const categoryServicesMap: Record<string, (typeof ALL_SERVICES)[number][]> = {};
+    const categoryServicesMap: Record<string, (typeof ALL_SERVICES)[number][]> =
+      {};
     chosenRoomServiceIDs.forEach((serviceId) => {
       const catId = serviceId.split("-").slice(0, 2).join("-");
       if (!categoryServicesMap[catId]) {
@@ -271,6 +284,13 @@ export default function RoomsEstimate() {
     constructedAddress += country;
   }
 
+  saveToSession("rooms_laborSubtotal", laborSubtotal);
+  saveToSession("rooms_materialsSubtotal", materialsSubtotal);
+  saveToSession("rooms_sumBeforeTax", sumBeforeTax);
+  saveToSession("rooms_taxRatePercent", taxRatePercent);
+  saveToSession("rooms_taxAmount", taxAmount);
+  saveToSession("rooms_estimateFinalTotal", finalTotal);
+
   return (
     <main className="min-h-screen pt-24">
       <div className="container mx-auto">
@@ -289,7 +309,8 @@ export default function RoomsEstimate() {
                 const hasServices = Object.keys(roomServices).length > 0;
                 if (!hasServices) return null;
 
-                const { categoriesBySection, categoryServicesMap } = roomsData[room.id];
+                const { categoriesBySection, categoryServicesMap } =
+                  roomsData[room.id];
 
                 // Sum labor + materials for this room
                 let roomLabor = 0;
@@ -304,156 +325,208 @@ export default function RoomsEstimate() {
 
                 return (
                   <div key={room.id} className="mb-6">
-                    <h3 className="text-2xl font-semibold text-gray-800 mb-2">{room.title}</h3>
+                    <h3 className="text-2xl font-semibold text-gray-800 mb-2">
+                      {room.title}
+                    </h3>
 
-                    {Object.entries(categoriesBySection).map(([sectionName, catIds], sectionIdx) => {
-                      const sectionNumber = sectionIdx + 1;
-                      const relevantCats = catIds.filter((catId) => {
-                        const arr = categoryServicesMap[catId] || [];
-                        return arr.some((svc) => roomServices[svc.id] != null);
-                      });
-                      if (relevantCats.length === 0) return null;
+                    {Object.entries(categoriesBySection).map(
+                      ([sectionName, catIds], sectionIdx) => {
+                        const sectionNumber = sectionIdx + 1;
+                        const relevantCats = catIds.filter((catId) => {
+                          const arr = categoryServicesMap[catId] || [];
+                          return arr.some(
+                            (svc) => roomServices[svc.id] != null
+                          );
+                        });
+                        if (relevantCats.length === 0) return null;
 
-                      return (
-                        <div key={sectionName} className="mb-4 ml-2">
-                          <h4 className="text-xl font-medium text-gray-700 mb-2">
-                            {sectionNumber}. {sectionName}
-                          </h4>
+                        return (
+                          <div key={sectionName} className="mb-4 ml-2">
+                            <h4 className="text-xl font-medium text-gray-700 mb-2">
+                              {sectionNumber}. {sectionName}
+                            </h4>
 
-                          {relevantCats.map((catId, catIdx) => {
-                            const catNumber = `${sectionNumber}.${catIdx + 1}`;
-                            const catName = getCategoryNameById(catId);
-                            const servicesInCat = categoryServicesMap[catId] || [];
-                            const chosenServices = servicesInCat.filter(
-                              (svc) => roomServices[svc.id] != null
-                            );
-                            if (chosenServices.length === 0) return null;
+                            {relevantCats.map((catId, catIdx) => {
+                              const catNumber = `${sectionNumber}.${
+                                catIdx + 1
+                              }`;
+                              const catName = getCategoryNameById(catId);
+                              const servicesInCat =
+                                categoryServicesMap[catId] || [];
+                              const chosenServices = servicesInCat.filter(
+                                (svc) => roomServices[svc.id] != null
+                              );
+                              if (chosenServices.length === 0) return null;
 
-                            return (
-                              <div key={catId} className="mb-4 ml-4">
-                                <h5 className="text-lg font-medium text-gray-700 mb-2">
-                                  {catNumber}. {catName}
-                                </h5>
+                              return (
+                                <div key={catId} className="mb-4 ml-4">
+                                  <h5 className="text-lg font-medium text-gray-700 mb-2">
+                                    {catNumber}. {catName}
+                                  </h5>
 
-                                {chosenServices.map((svc, svcIdx) => {
-                                  const svcNumber = `${catNumber}.${svcIdx + 1}`;
-                                  const cr = getCalcResultFor(svc.id);
-                                  const qty = roomServices[svc.id] || 1;
-                                  const laborCost = cr ? parseFloat(cr.work_cost) || 0 : 0;
-                                  const matCost = cr ? parseFloat(cr.material_cost) || 0 : 0;
-                                  const totalCost = laborCost + matCost;
+                                  {chosenServices.map((svc, svcIdx) => {
+                                    const svcNumber = `${catNumber}.${
+                                      svcIdx + 1
+                                    }`;
+                                    const cr = getCalcResultFor(svc.id);
+                                    const qty = roomServices[svc.id] || 1;
+                                    const laborCost = cr
+                                      ? parseFloat(cr.work_cost) || 0
+                                      : 0;
+                                    const matCost = cr
+                                      ? parseFloat(cr.material_cost) || 0
+                                      : 0;
+                                    const totalCost = laborCost + matCost;
 
-                                  return (
-                                    <div
-                                      key={svc.id}
-                                      className="mb-6 ml-4 space-y-2"
-                                    >
-                                      <h6 className="font-medium text-md text-gray-700">
-                                        {svcNumber}. {svc.title}
-                                      </h6>
-                                      {svc.description && (
-                                        <p className="text-sm text-gray-500 mt-1">
-                                          {svc.description}
-                                        </p>
-                                      )}
+                                    return (
+                                      <div
+                                        key={svc.id}
+                                        className="mb-6 ml-4 space-y-2"
+                                      >
+                                        <h6 className="font-medium text-md text-gray-700">
+                                          {svcNumber}. {svc.title}
+                                        </h6>
+                                        {svc.description && (
+                                          <p className="text-sm text-gray-500 mt-1">
+                                            {svc.description}
+                                          </p>
+                                        )}
 
-                                      <div className="flex items-center justify-between mt-1">
-                                        <div className="text-md font-medium text-gray-700">
-                                          {qty} {svc.unit_of_measurement}
+                                        <div className="flex items-center justify-between mt-1">
+                                          <div className="text-md font-medium text-gray-700">
+                                            {qty} {svc.unit_of_measurement}
+                                          </div>
+                                          <div className="text-md font-medium text-gray-700">
+                                            ${formatWithSeparator(totalCost)}
+                                          </div>
                                         </div>
-                                        <div className="text-md font-medium text-gray-700">
-                                          ${formatWithSeparator(totalCost)}
-                                        </div>
-                                      </div>
 
-                                      {clientOwnedMaterials[svc.id] && (
-                                        <button
-                                          onClick={() => removeFinishingMaterials(svc.id)}
-                                          className="text-red-600 text-sm underline"
-                                        >
-                                          Remove finishing materials
-                                        </button>
-                                      )}
+                                        {clientOwnedMaterials[svc.id] && (
+                                          <button
+                                            onClick={() =>
+                                              removeFinishingMaterials(svc.id)
+                                            }
+                                            className="text-red-600 text-sm underline"
+                                          >
+                                            Remove finishing materials
+                                          </button>
+                                        )}
 
-                                      {cr && (
-                                        <div className="p-4 bg-gray-50 border rounded">
-                                          <div className="flex justify-between mb-3">
-                                            <span className="text-sm font-medium text-gray-800">
-                                              Labor:
-                                            </span>
-                                            <span className="text-sm text-gray-700">
-                                              {cr.work_cost
-                                                ? `$${formatWithSeparator(parseFloat(cr.work_cost))}`
-                                                : "—"}
-                                            </span>
-                                          </div>
-
-                                          <div className="flex justify-between mb-3">
-                                            <span className="text-sm font-medium text-gray-800">
-                                              Material:
-                                            </span>
-                                            <span className="text-sm text-gray-700">
-                                              {cr.material_cost
-                                                ? `$${formatWithSeparator(parseFloat(cr.material_cost))}`
-                                                : "—"}
-                                            </span>
-                                          </div>
-
-                                          <div className="flex justify-between border-t pt-2 mt-2">
-                                            <span className="text-sm font-medium text-gray-800">
-                                              Total:
-                                            </span>
-                                            <span className="text-sm font-medium text-gray-800">
-                                              {cr.total
-                                                ? `$${formatWithSeparator(parseFloat(cr.total))}`
-                                                : `$${formatWithSeparator(totalCost)}`}
-                                            </span>
-                                          </div>
-
-                                          {Array.isArray(cr.materials) && cr.materials.length > 0 && (
-                                            <div className="mt-4">
-                                              <h5 className="text-md font-medium text-gray-800 mb-2">
-                                                Materials
-                                              </h5>
-                                              <table className="table-auto w-full text-sm text-gray-700">
-                                                <thead>
-                                                  <tr className="border-b">
-                                                    <th className="py-2 px-1">Name</th>
-                                                    <th className="py-2 px-1">Price</th>
-                                                    <th className="py-2 px-1">Qty</th>
-                                                    <th className="py-2 px-1">Subtotal</th>
-                                                  </tr>
-                                                </thead>
-                                                <tbody className="divide-y divide-gray-200">
-                                                  {cr.materials.map((m: any, i: number) => (
-                                                    <tr key={`${m.external_id}-${i}`}>
-                                                      <td className="py-3 px-1">{m.name}</td>
-                                                      <td className="py-3 px-1">
-                                                        $
-                                                        {formatWithSeparator(parseFloat(m.cost_per_unit))}
-                                                      </td>
-                                                      <td className="py-3 px-3">{m.quantity}</td>
-                                                      <td className="py-3 px-3">
-                                                        $
-                                                        {formatWithSeparator(parseFloat(m.cost))}
-                                                      </td>
-                                                    </tr>
-                                                  ))}
-                                                </tbody>
-                                              </table>
+                                        {cr && (
+                                          <div className="p-4 bg-gray-50 border rounded">
+                                            <div className="flex justify-between mb-3">
+                                              <span className="text-sm font-medium text-gray-800">
+                                                Labor:
+                                              </span>
+                                              <span className="text-sm text-gray-700">
+                                                {cr.work_cost
+                                                  ? `$${formatWithSeparator(
+                                                      parseFloat(cr.work_cost)
+                                                    )}`
+                                                  : "—"}
+                                              </span>
                                             </div>
-                                          )}
-                                        </div>
-                                      )}
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      );
-                    })}
+
+                                            <div className="flex justify-between mb-3">
+                                              <span className="text-sm font-medium text-gray-800">
+                                                Material:
+                                              </span>
+                                              <span className="text-sm text-gray-700">
+                                                {cr.material_cost
+                                                  ? `$${formatWithSeparator(
+                                                      parseFloat(
+                                                        cr.material_cost
+                                                      )
+                                                    )}`
+                                                  : "—"}
+                                              </span>
+                                            </div>
+
+                                            <div className="flex justify-between border-t pt-2 mt-2">
+                                              <span className="text-sm font-medium text-gray-800">
+                                                Total:
+                                              </span>
+                                              <span className="text-sm font-medium text-gray-800">
+                                                {cr.total
+                                                  ? `$${formatWithSeparator(
+                                                      parseFloat(cr.total)
+                                                    )}`
+                                                  : `$${formatWithSeparator(
+                                                      totalCost
+                                                    )}`}
+                                              </span>
+                                            </div>
+
+                                            {Array.isArray(cr.materials) &&
+                                              cr.materials.length > 0 && (
+                                                <div className="mt-4">
+                                                  <h5 className="text-md font-medium text-gray-800 mb-2">
+                                                    Materials
+                                                  </h5>
+                                                  <table className="table-auto w-full text-sm text-gray-700">
+                                                    <thead>
+                                                      <tr className="border-b">
+                                                        <th className="py-2 px-1">
+                                                          Name
+                                                        </th>
+                                                        <th className="py-2 px-1">
+                                                          Price
+                                                        </th>
+                                                        <th className="py-2 px-1">
+                                                          Qty
+                                                        </th>
+                                                        <th className="py-2 px-1">
+                                                          Subtotal
+                                                        </th>
+                                                      </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-gray-200">
+                                                      {cr.materials.map(
+                                                        (m: any, i: number) => (
+                                                          <tr
+                                                            key={`${m.external_id}-${i}`}
+                                                          >
+                                                            <td className="py-3 px-1">
+                                                              {m.name}
+                                                            </td>
+                                                            <td className="py-3 px-1">
+                                                              $
+                                                              {formatWithSeparator(
+                                                                parseFloat(
+                                                                  m.cost_per_unit
+                                                                )
+                                                              )}
+                                                            </td>
+                                                            <td className="py-3 px-3">
+                                                              {m.quantity}
+                                                            </td>
+                                                            <td className="py-3 px-3">
+                                                              $
+                                                              {formatWithSeparator(
+                                                                parseFloat(
+                                                                  m.cost
+                                                                )
+                                                              )}
+                                                            </td>
+                                                          </tr>
+                                                        )
+                                                      )}
+                                                    </tbody>
+                                                  </table>
+                                                </div>
+                                              )}
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        );
+                      }
+                    )}
 
                     <div className="flex justify-between items-center mb-2 mt-2">
                       <span className="font-medium text-lg text-gray-700">
@@ -470,13 +543,17 @@ export default function RoomsEstimate() {
               {/* Final summary */}
               <div className="pt-4 mt-4 border-t">
                 <div className="flex justify-between mb-2">
-                  <span className="font-semibold text-lg text-gray-600">Labor</span>
+                  <span className="font-semibold text-lg text-gray-600">
+                    Labor
+                  </span>
                   <span className="font-semibold text-lg text-gray-600">
                     ${formatWithSeparator(laborSubtotal)}
                   </span>
                 </div>
                 <div className="flex justify-between mb-2">
-                  <span className="font-semibold text-lg text-gray-600">Materials</span>
+                  <span className="font-semibold text-lg text-gray-600">
+                    Materials
+                  </span>
                   <span className="font-semibold text-lg text-gray-600">
                     ${formatWithSeparator(materialsSubtotal)}
                   </span>
@@ -495,26 +572,34 @@ export default function RoomsEstimate() {
                       }`}
                     >
                       {timeCoefficient > 1 ? "+" : "-"}$
-                      {formatWithSeparator(Math.abs(finalLabor - laborSubtotal))}
+                      {formatWithSeparator(
+                        Math.abs(finalLabor - laborSubtotal)
+                      )}
                     </span>
                   </div>
                 )}
 
                 <div className="flex justify-between mb-2">
-                  <span className="text-gray-600">Service Fee (15% on labor)</span>
+                  <span className="text-gray-600">
+                    Service Fee (15% on labor)
+                  </span>
                   <span className="font-semibold text-lg text-gray-800">
                     ${formatWithSeparator(serviceFeeOnLabor)}
                   </span>
                 </div>
                 <div className="flex justify-between mb-2">
-                  <span className="text-gray-600">Delivery &amp; Processing (5% on materials)</span>
+                  <span className="text-gray-600">
+                    Delivery &amp; Processing (5% on materials)
+                  </span>
                   <span className="font-semibold text-lg text-gray-800">
                     ${formatWithSeparator(serviceFeeOnMaterials)}
                   </span>
                 </div>
 
                 <div className="flex justify-between mb-2">
-                  <span className="font-semibold text-xl text-gray-800">Subtotal</span>
+                  <span className="font-semibold text-xl text-gray-800">
+                    Subtotal
+                  </span>
                   <span className="font-semibold text-xl text-gray-800">
                     ${formatWithSeparator(sumBeforeTax)}
                   </span>
@@ -524,7 +609,9 @@ export default function RoomsEstimate() {
                   <span className="text-gray-600">
                     Sales tax
                     {stateName ? ` (${stateName})` : ""}
-                    {taxRatePercent > 0 ? ` (${taxRatePercent.toFixed(2)}%)` : ""}
+                    {taxRatePercent > 0
+                      ? ` (${taxRatePercent.toFixed(2)}%)`
+                      : ""}
                   </span>
                   <span>${formatWithSeparator(taxAmount)}</span>
                 </div>
@@ -542,7 +629,8 @@ export default function RoomsEstimate() {
                 </button>
                 {selectedTime && (
                   <p className="mt-2 text-gray-700 text-center font-medium">
-                    Selected Date: <span className="text-blue-600">{selectedTime}</span>
+                    Selected Date:{" "}
+                    <span className="text-blue-600">{selectedTime}</span>
                   </p>
                 )}
                 {showModal && (
@@ -573,7 +661,9 @@ export default function RoomsEstimate() {
 
               {/* Photos */}
               <div className="mt-6">
-                <h3 className="font-semibold text-xl text-gray-800">Uploaded Photos</h3>
+                <h3 className="font-semibold text-xl text-gray-800">
+                  Uploaded Photos
+                </h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
                   {photos.map((photo, index) => (
                     <div key={index} className="relative group">
@@ -591,13 +681,17 @@ export default function RoomsEstimate() {
                   ))}
                 </div>
                 {photos.length === 0 && (
-                  <p className="text-medium text-gray-500 mt-2">No photos uploaded</p>
+                  <p className="text-medium text-gray-500 mt-2">
+                    No photos uploaded
+                  </p>
                 )}
               </div>
 
               {/* Additional details */}
               <div className="mt-6">
-                <h3 className="font-semibold text-xl text-gray-800">Additional details</h3>
+                <h3 className="font-semibold text-xl text-gray-800">
+                  Additional details
+                </h3>
                 <p className="text-gray-500 mt-2 whitespace-pre-wrap">
                   {description || "No details provided"}
                 </p>

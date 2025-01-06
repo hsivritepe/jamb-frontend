@@ -368,7 +368,7 @@ export default function CheckoutPage() {
 
                   return (
                     <div key={sectionName} className="space-y-4">
-                      <h3 className="text-xl font-semibold text-gray-800">
+                      <h3 className="text-2xl font-semibold text-gray-700">
                         {sectionIndex}. {sectionName}
                       </h3>
 
@@ -403,7 +403,7 @@ export default function CheckoutPage() {
                                   className="flex flex-col gap-2 mb-4"
                                 >
                                   <div>
-                                    <h3 className="font-medium text-lg text-gray-800">
+                                    <h3 className="font-medium text-lg text-gray-700">
                                       {sectionIndex}.{catIndex}.{svcIndex}.{" "}
                                       {svc.title}
                                     </h3>
@@ -416,10 +416,10 @@ export default function CheckoutPage() {
 
                                   {/* quantity + cost */}
                                   <div className="flex items-center justify-between mt-2">
-                                    <div className="text-medium font-medium text-gray-800">
+                                    <div className="text-md font-medium text-gray-700">
                                       {quantity} {svc.unit_of_measurement}
                                     </div>
-                                    <span className="text-gray-800 font-medium text-lg">
+                                    <span className="text-gray-700 font-medium text-md mr-4">
                                       ${formatWithSeparator(finalCost)}
                                     </span>
                                   </div>
@@ -428,10 +428,10 @@ export default function CheckoutPage() {
                                   {calcResult && (
                                     <div className="mt-2 p-4 bg-gray-50 border rounded">
                                       <div className="flex justify-between mb-4">
-                                        <span className="text-md font-medium text-gray-800">
+                                        <span className="text-md font-medium text-gray-700">
                                           Labor:
                                         </span>
-                                        <span className="text-sm text-gray-700">
+                                        <span className="text-md text-gray-700">
                                           {calcResult.work_cost
                                             ? `$${formatWithSeparator(
                                                 parseFloat(calcResult.work_cost)
@@ -443,7 +443,7 @@ export default function CheckoutPage() {
                                       {Array.isArray(calcResult.materials) &&
                                         calcResult.materials.length > 0 && (
                                           <div>
-                                            <h5 className="text-md font-medium text-gray-800 mb-2">
+                                            <h5 className="text-md font-medium text-gray-700 mb-2">
                                               Materials:
                                             </h5>
                                             <table className="table-auto w-full text-sm text-left text-gray-700">
