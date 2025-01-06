@@ -416,10 +416,10 @@ export default function CheckoutPage() {
 
                                   {/* quantity + cost */}
                                   <div className="flex items-center justify-between mt-2">
-                                    <div className="text-md font-medium text-gray-700">
+                                    <div className="text-lg font-medium text-gray-700">
                                       {quantity} {svc.unit_of_measurement}
                                     </div>
-                                    <span className="text-gray-700 font-medium text-md mr-4">
+                                    <span className="text-gray-700 font-medium text-lg mr-4">
                                       ${formatWithSeparator(finalCost)}
                                     </span>
                                   </div>
@@ -429,9 +429,9 @@ export default function CheckoutPage() {
                                     <div className="mt-2 p-4 bg-gray-50 border rounded">
                                       <div className="flex justify-between mb-4">
                                         <span className="text-md font-medium text-gray-700">
-                                          Labor:
+                                          Labor
                                         </span>
-                                        <span className="text-md text-gray-700">
+                                        <span className="text-md font-medium text-gray-700">
                                           {calcResult.work_cost
                                             ? `$${formatWithSeparator(
                                                 parseFloat(calcResult.work_cost)
@@ -439,13 +439,18 @@ export default function CheckoutPage() {
                                             : "—"}
                                         </span>
                                       </div>
+                                      <div className="flex justify-between mb-3">
+                                          <span className="text-md font-medium text-gray-800">Materials, tools and equipment</span>
+                                          <span className="text-md font-medium text-gray-700">
+                                            {calcResult.material_cost
+                                              ? `$${formatWithSeparator(parseFloat(calcResult.material_cost))}`
+                                              : "—"}
+                                          </span>
+                                        </div>
 
                                       {Array.isArray(calcResult.materials) &&
                                         calcResult.materials.length > 0 && (
                                           <div>
-                                            <h5 className="text-md font-medium text-gray-700 mb-2">
-                                              Materials:
-                                            </h5>
                                             <table className="table-auto w-full text-sm text-left text-gray-700">
                                               <thead>
                                                 <tr className="border-b">
@@ -515,7 +520,7 @@ export default function CheckoutPage() {
             <div className="pt-4 mt-4 border-t">
               <div className="flex justify-between mb-2">
                 <span className="font-semibold text-lg text-gray-600">
-                  Labor
+                  Labor total
                 </span>
                 <span className="font-semibold text-lg text-gray-600">
                   ${formatWithSeparator(laborSubtotal)}
@@ -524,7 +529,7 @@ export default function CheckoutPage() {
 
               <div className="flex justify-between mb-2">
                 <span className="font-semibold text-lg text-gray-600">
-                  Materials
+                  Materials, tools and equipment
                 </span>
                 <span className="font-semibold text-lg text-gray-600">
                   ${formatWithSeparator(materialsSubtotal)}

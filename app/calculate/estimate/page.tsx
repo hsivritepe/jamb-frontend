@@ -345,9 +345,9 @@ export default function Estimate() {
                                       {/* Labor cost only */}
                                       <div className="flex justify-between mb-4">
                                         <span className="text-md font-medium text-gray-800">
-                                          Labor:
+                                          Labor
                                         </span>
-                                        <span className="text-sm text-gray-700">
+                                        <span className="text-md font-medium text-gray-700">
                                           {calcResult.work_cost
                                             ? `$${formatWithSeparator(
                                                 parseFloat(calcResult.work_cost)
@@ -355,14 +355,19 @@ export default function Estimate() {
                                             : "—"}
                                         </span>
                                       </div>
+                                      <div className="flex justify-between mb-3">
+                                          <span className="text-md font-medium text-gray-800">Materials, tools and equipment</span>
+                                          <span className="text-md font-medium text-gray-700">
+                                            {calcResult.material_cost
+                                              ? `$${formatWithSeparator(parseFloat(calcResult.material_cost))}`
+                                              : "—"}
+                                          </span>
+                                        </div>
 
                                       {/* Materials list */}
                                       {Array.isArray(calcResult.materials) &&
                                         calcResult.materials.length > 0 && (
                                           <div className="mt-2">
-                                            <h5 className="text-md font-medium text-gray-800 mb-2">
-                                              Materials:
-                                            </h5>
                                             <table className="table-auto w-full text-sm text-left text-gray-700">
                                               <thead>
                                                 <tr className="border-b">
@@ -411,7 +416,7 @@ export default function Estimate() {
               <div className="pt-4 mt-4 border-t">
                 {/* Labor (no coefficient) */}
                 <div className="flex justify-between mb-2">
-                  <span className="font-semibold text-lg text-gray-600">Labor</span>
+                  <span className="font-semibold text-lg text-gray-600">Labor total</span>
                   <span className="font-semibold text-lg text-gray-600">
                     ${formatWithSeparator(laborSubtotal)}
                   </span>
@@ -419,7 +424,7 @@ export default function Estimate() {
 
                 {/* Materials */}
                 <div className="flex justify-between mb-2">
-                  <span className="font-semibold text-lg text-gray-600">Materials</span>
+                  <span className="font-semibold text-lg text-gray-600">Materials, tools and equipment</span>
                   <span className="font-semibold text-lg text-gray-600">
                     ${formatWithSeparator(materialsSubtotal)}
                   </span>

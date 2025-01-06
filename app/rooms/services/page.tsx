@@ -923,38 +923,23 @@ export default function RoomDetails() {
                                                   </h4>
                                                   <div className="flex flex-col gap-2 mb-4">
                                                     <div className="flex justify-between">
-                                                      <span className="text-sm font-medium text-gray-700">
-                                                        Labor cost:
+                                                      <span className="text-md font-medium text-gray-700">
+                                                        Labor
                                                       </span>
-                                                      <span className="text-sm text-gray-700">
+                                                      <span className="text-md font-medium text-gray-700">
                                                         {calcResult.work_cost
                                                           ? `$${calcResult.work_cost}`
                                                           : "—"}
                                                       </span>
                                                     </div>
                                                     <div className="flex justify-between">
-                                                      <span className="text-sm font-medium text-gray-700">
-                                                        Material cost:
+                                                      <span className="text-md font-medium text-gray-700">
+                                                        Material, tools and equipment
                                                       </span>
-                                                      <span className="text-sm text-gray-700">
+                                                      <span className="text-md font-medium text-gray-700">
                                                         {calcResult.material_cost
                                                           ? `$${calcResult.material_cost}`
                                                           : "—"}
-                                                      </span>
-                                                    </div>
-                                                    <div className="flex justify-between border-t pt-2 mt-2">
-                                                      <span className="text-sm font-medium text-gray-800">
-                                                        Total:
-                                                      </span>
-                                                      <span className="text-sm font-medium text-gray-800">
-                                                        {calcResult.total
-                                                          ? `$${calcResult.total}`
-                                                          : `${
-                                                              (parseFloat(calcResult.work_cost) ||
-                                                                0) +
-                                                              (parseFloat(calcResult.material_cost) ||
-                                                                0)
-                                                            }`}
                                                       </span>
                                                     </div>
                                                   </div>
@@ -963,9 +948,6 @@ export default function RoomDetails() {
                                                   {Array.isArray(calcResult.materials) &&
                                                     calcResult.materials.length > 0 && (
                                                       <div className="mt-2">
-                                                        <h5 className="text-md font-medium text-gray-800 mb-2">
-                                                          Materials
-                                                        </h5>
                                                         <table className="table-auto w-full text-sm text-left text-gray-700">
                                                           <thead>
                                                             <tr className="border-b">
@@ -997,7 +979,7 @@ export default function RoomDetails() {
                                                                     "border border-red-500 bg-red-50";
                                                                 } else if (hasImage) {
                                                                   rowClass =
-                                                                    "border border-blue-300 bg-white cursor-pointer";
+                                                                    "border bg-white cursor-pointer";
                                                                 }
 
                                                                 return (

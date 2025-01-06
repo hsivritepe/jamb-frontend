@@ -11,9 +11,7 @@ import { ALL_CATEGORIES } from "@/constants/categories";
 import { ALL_SERVICES } from "@/constants/services";
 import { taxRatesUSA } from "@/constants/taxRatesUSA";
 
-/**
- * Formats a numeric value with commas and exactly two decimals.
- */
+// Formats a numeric value with commas and exactly two decimals
 function formatWithSeparator(value: number): string {
   return new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 2,
@@ -21,9 +19,7 @@ function formatWithSeparator(value: number): string {
   }).format(value);
 }
 
-/**
- * Loads data from sessionStorage (JSON.parse). Returns defaultValue if on server or parse error.
- */
+// Loads data from sessionStorage (JSON.parse). Returns defaultValue if on server or parse error
 function loadFromSession<T>(key: string, defaultValue: T): T {
   if (typeof window === "undefined") return defaultValue;
   const savedValue = sessionStorage.getItem(key);
@@ -35,19 +31,14 @@ function loadFromSession<T>(key: string, defaultValue: T): T {
   }
 }
 
-/**
- * Saves data to sessionStorage (JSON.stringify).
- */
+// Saves data to sessionStorage (JSON.stringify)
 function saveToSession(key: string, value: any) {
   if (typeof window !== "undefined") {
     sessionStorage.setItem(key, JSON.stringify(value));
   }
 }
 
-/**
- * Returns the combined state+local tax rate (in percentage) for a given state name.
- * Returns 0 if the state is not found.
- */
+// Returns the combined state+local tax rate (in percentage) for a given state name. Returns 0 if the state is not found
 function getTaxRateForState(stateName: string): number {
   if (!stateName) return 0;
   const row = taxRatesUSA.taxRates.find(
@@ -59,7 +50,7 @@ function getTaxRateForState(stateName: string): number {
 export default function RoomsEstimate() {
   const router = useRouter();
 
-  // 1) Load selected rooms
+  // Load selected rooms
   const selectedRooms: string[] = loadFromSession("rooms_selectedSections", []);
   const allRooms = [...ROOMS.indoor, ...ROOMS.outdoor];
   const chosenRooms = selectedRooms
@@ -76,14 +67,13 @@ export default function RoomsEstimate() {
     }
   }, [selectedRooms, chosenRooms, router]);
 
-  // 2) Load data from session
+  // Load data from session
   const address: string = loadFromSession("address", "");
   const photos: string[] = loadFromSession("photos", []);
   const description: string = loadFromSession("description", "");
   const stateName: string = loadFromSession("stateName", "");
   const zip: string = loadFromSession("zip", "");
-
-  // NEW: load city and country from session
+  // Load city and country from session
   const city: string = loadFromSession("city", "");
   const country: string = loadFromSession("country", "");
 
@@ -116,7 +106,7 @@ export default function RoomsEstimate() {
     }
   }, [chosenRooms, selectedServicesState, address, router]);
 
-  // 3) Time selection (timeCoefficient)
+  // Time selection (timeCoefficient)
   const [showModal, setShowModal] = useState(false);
   const [selectedTime, setSelectedTime] = useState<string | null>(() =>
     loadFromSession("selectedTime", null)
@@ -133,7 +123,7 @@ export default function RoomsEstimate() {
     saveToSession("timeCoefficient", timeCoefficient);
   }, [timeCoefficient]);
 
-  // 4) Overridden results if user removes finishing materials
+  // Overridden results if user removes finishing materials
   const [overrideCalcResults, setOverrideCalcResults] = useState<
     Record<string, any>
   >({});
@@ -154,7 +144,7 @@ export default function RoomsEstimate() {
     setOverrideCalcResults((prev) => ({ ...prev, [serviceId]: newObj }));
   }
 
-  // 5) Summation logic (labor, materials)
+  // Summation logic (labor, materials)
   function calculateLaborSubtotal(): number {
     let totalLabor = 0;
     for (const room of chosenRooms) {
@@ -185,11 +175,9 @@ export default function RoomsEstimate() {
 
   const laborSubtotal = calculateLaborSubtotal();
   const materialsSubtotal = calculateMaterialsSubtotal();
-
-  // We'll apply timeCoefficient to labor only
+  // Apply timeCoefficient to labor only
   const finalLabor = laborSubtotal * timeCoefficient;
-
-  // -------------- new fees: 15% on labor, 5% on materials --------------
+  // fees: 15% on labor, 5% on materials
   const serviceFeeOnLabor = finalLabor * 0.15;
   const serviceFeeOnMaterials = materialsSubtotal * 0.05;
 
@@ -203,23 +191,19 @@ export default function RoomsEstimate() {
   const sumBeforeTax =
     finalLabor + materialsSubtotal + serviceFeeOnLabor + serviceFeeOnMaterials;
 
-  // 6) Find tax rate from the state
+  // Find tax rate from the state
   const taxRatePercent = getTaxRateForState(stateName);
   const taxAmount = sumBeforeTax * (taxRatePercent / 100);
 
   // final total
   const finalTotal = sumBeforeTax + taxAmount;
 
-  /**
-   * Proceeds to the next step (e.g., /rooms/checkout).
-   */
+  // Proceeds to the next step (e.g., /rooms/checkout)
   function handleProceedToCheckout() {
     router.push("/rooms/checkout");
   }
 
-  /**
-   * Returns category title by id, or the id if no match found.
-   */
+  // Returns category title by id, or the id if no match found
   function getCategoryNameById(catId: string): string {
     const cat = ALL_CATEGORIES.find((x) => x.id === catId);
     return cat ? cat.title : catId;
@@ -396,7 +380,7 @@ export default function RoomsEstimate() {
                                           <div className="text-md font-medium text-gray-700">
                                             {qty} {svc.unit_of_measurement}
                                           </div>
-                                          <div className="text-md font-medium text-gray-700">
+                                          <div className="text-md font-medium text-gray-700 mr-2">
                                             ${formatWithSeparator(totalCost)}
                                           </div>
                                         </div>
@@ -416,9 +400,9 @@ export default function RoomsEstimate() {
                                           <div className="p-4 bg-gray-50 border rounded">
                                             <div className="flex justify-between mb-3">
                                               <span className="text-sm font-medium text-gray-800">
-                                                Labor:
+                                                Labor
                                               </span>
-                                              <span className="text-sm text-gray-700">
+                                              <span className="text-sm font-medium text-gray-700">
                                                 {cr.work_cost
                                                   ? `$${formatWithSeparator(
                                                       parseFloat(cr.work_cost)
@@ -429,9 +413,9 @@ export default function RoomsEstimate() {
 
                                             <div className="flex justify-between mb-3">
                                               <span className="text-sm font-medium text-gray-800">
-                                                Material:
+                                                Materials, tools and equipment
                                               </span>
-                                              <span className="text-sm text-gray-700">
+                                              <span className="text-sm font-medium text-gray-700">
                                                 {cr.material_cost
                                                   ? `$${formatWithSeparator(
                                                       parseFloat(
@@ -442,27 +426,9 @@ export default function RoomsEstimate() {
                                               </span>
                                             </div>
 
-                                            <div className="flex justify-between border-t pt-2 mt-2">
-                                              <span className="text-sm font-medium text-gray-800">
-                                                Total:
-                                              </span>
-                                              <span className="text-sm font-medium text-gray-800">
-                                                {cr.total
-                                                  ? `$${formatWithSeparator(
-                                                      parseFloat(cr.total)
-                                                    )}`
-                                                  : `$${formatWithSeparator(
-                                                      totalCost
-                                                    )}`}
-                                              </span>
-                                            </div>
-
                                             {Array.isArray(cr.materials) &&
                                               cr.materials.length > 0 && (
                                                 <div className="mt-4">
-                                                  <h5 className="text-md font-medium text-gray-800 mb-2">
-                                                    Materials
-                                                  </h5>
                                                   <table className="table-auto w-full text-sm text-gray-700">
                                                     <thead>
                                                       <tr className="border-b">
@@ -529,10 +495,10 @@ export default function RoomsEstimate() {
                     )}
 
                     <div className="flex justify-between items-center mb-2 mt-2">
-                      <span className="font-medium text-lg text-gray-700">
-                        {room.title} Total:
+                      <span className="font-semibold text-lg text-gray-700">
+                        {room.title} total:
                       </span>
-                      <span className="font-medium text-lg text-gray-700">
+                      <span className="font-semibold text-lg text-gray-700 mr-2">
                         ${formatWithSeparator(roomSubtotal)}
                       </span>
                     </div>
@@ -544,7 +510,7 @@ export default function RoomsEstimate() {
               <div className="pt-4 mt-4 border-t">
                 <div className="flex justify-between mb-2">
                   <span className="font-semibold text-lg text-gray-600">
-                    Labor
+                    Labor total:
                   </span>
                   <span className="font-semibold text-lg text-gray-600">
                     ${formatWithSeparator(laborSubtotal)}
@@ -552,7 +518,7 @@ export default function RoomsEstimate() {
                 </div>
                 <div className="flex justify-between mb-2">
                   <span className="font-semibold text-lg text-gray-600">
-                    Materials
+                    Materials, tools and equipment:
                   </span>
                   <span className="font-semibold text-lg text-gray-600">
                     ${formatWithSeparator(materialsSubtotal)}

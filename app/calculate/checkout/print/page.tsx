@@ -7,9 +7,7 @@ import { ALL_CATEGORIES } from "@/constants/categories";
 import { taxRatesUSA } from "@/constants/taxRatesUSA";
 import { DisclaimerBlock } from "@/components/ui/DisclaimerBlock";
 
-/**
- * Safely load a value from sessionStorage.
- */
+// Safely load a value from sessionStorage
 function loadFromSession<T>(key: string, defaultValue: T): T {
   if (typeof window === "undefined") return defaultValue;
   const savedValue = sessionStorage.getItem(key);
@@ -20,10 +18,7 @@ function loadFromSession<T>(key: string, defaultValue: T): T {
   }
 }
 
-/**
- * Formats a numeric value with commas + exactly two decimals.
- * e.g., 1234 => "1,234.00"
- */
+// Formats a numeric value with commas + exactly two decimals, e.g., 1234 => "1,234.00"
 function formatWithSeparator(value: number): string {
   return new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 2,
@@ -31,10 +26,7 @@ function formatWithSeparator(value: number): string {
   }).format(value);
 }
 
-/**
- * Returns the combined state+local tax rate (e.g. 8.85) for "CA" from taxRatesUSA
- * or 0 if not found.
- */
+// Returns the combined state+local tax rate (e.g. 8.85) for "CA" from taxRatesUSA
 function getTaxRateForState(stateCode: string): number {
   if (!stateCode) return 0;
   const row = taxRatesUSA.taxRates.find(
@@ -43,12 +35,8 @@ function getTaxRateForState(stateCode: string): number {
   return row ? row.combinedStateAndLocalTaxRate : 0;
 }
 
-/**
- * Converts a numeric USD amount into spelled-out English text (simplified).
- * Example: 1234.56 => "One thousand two hundred thirty-four and 56/100 dollars".
- */
+//Converts a numeric USD amount into spelled-out English text (simplified). Example: 1234.56 => "One thousand two hundred thirty-four and 56/100 dollars"
 function numberToWordsUSD(amount: number): string {
-  // Сокращённая логика преобразования для примера
   const onesMap: Record<number, string> = {
     0: "zero",
     1: "one",
@@ -129,9 +117,7 @@ function numberToWordsUSD(amount: number): string {
   return `${str} and ${dec}/100 dollars`;
 }
 
-/**
- * Builds an estimate number in the format "CA-94103-YYYYMMDD-HHMM" or fallback.
- */
+// Builds an estimate number in the format "CA-94103-YYYYMMDD-HHMM" or fallback
 function buildEstimateNumber(stateCode: string, zip: string): string {
   let stateZipPart = "??-00000";
   if (stateCode && zip) {
@@ -144,7 +130,6 @@ function buildEstimateNumber(stateCode: string, zip: string): string {
   const dd = String(now.getDate()).padStart(2, "0");
   const hh = String(now.getHours()).padStart(2, "0");
   const mins = String(now.getMinutes()).padStart(2, "0");
-
   const dateString = `${yyyy}${mm}${dd}`;
   const timeString = hh + mins;
 
@@ -154,7 +139,7 @@ function buildEstimateNumber(stateCode: string, zip: string): string {
 export default function PrintServicesEstimate() {
   const router = useRouter();
 
-  // 1) Load data from sessionStorage
+  // Load data from sessionStorage
   const selectedServicesState: Record<string, number> = loadFromSession(
     "selectedServicesWithQuantity",
     {}
@@ -168,28 +153,22 @@ export default function PrintServicesEstimate() {
   const description = loadFromSession("description", "");
   const selectedTime = loadFromSession<string | null>("selectedTime", null);
   const timeCoefficient = loadFromSession<number>("timeCoefficient", 1);
-
-  // (A) Загрузка сборов так же, как на странице Checkout:
   const serviceFeeOnLabor = loadFromSession("serviceFeeOnLabor", 0);
   const serviceFeeOnMaterials = loadFromSession("serviceFeeOnMaterials", 0);
-
   const userStateCode = loadFromSession("location_state", "");
   const userZip = loadFromSession("location_zip", "00000");
-
   const selectedCategories: string[] = loadFromSession(
     "services_selectedCategories",
     []
   );
   const searchQuery: string = loadFromSession("services_searchQuery", "");
 
-  // Если данных нет — редирект
   useEffect(() => {
     if (Object.keys(selectedServicesState).length === 0 || !address.trim()) {
       router.push("/calculate/estimate");
     }
   }, [selectedServicesState, address, router]);
 
-  // 2) Группировка
   const categoriesWithSection = selectedCategories
     .map((catId) => ALL_CATEGORIES.find((c) => c.id === catId) || null)
     .filter(Boolean) as (typeof ALL_CATEGORIES)[number][];
@@ -219,7 +198,6 @@ export default function PrintServicesEstimate() {
     return cat ? cat.title : catId;
   }
 
-  // 3) Расчёты
   function calculateLaborSubtotal(): number {
     let total = 0;
     for (const svcId of Object.keys(selectedServicesState)) {
@@ -242,20 +220,14 @@ export default function PrintServicesEstimate() {
 
   const laborSubtotal = calculateLaborSubtotal();
   const materialsSubtotal = calculateMaterialsSubtotal();
-
   const finalLabor = laborSubtotal * timeCoefficient;
-  // Подключаем fees, как было на Checkout:
-  const sumBeforeTax =
-    finalLabor + materialsSubtotal + serviceFeeOnLabor + serviceFeeOnMaterials;
-
-  // Далее всё как раньше
+  const sumBeforeTax = finalLabor + materialsSubtotal + serviceFeeOnLabor + serviceFeeOnMaterials;
   const taxRatePercent = getTaxRateForState(userStateCode);
   const taxAmount = sumBeforeTax * (taxRatePercent / 100);
   const finalTotal = sumBeforeTax + taxAmount;
   const finalTotalWords = numberToWordsUSD(finalTotal);
   const estimateNumber = buildEstimateNumber(userStateCode, userZip);
 
-  // Автопечать
   useEffect(() => {
     const oldTitle = document.title;
     document.title = `JAMB-Estimate-${estimateNumber}`;
@@ -266,7 +238,6 @@ export default function PrintServicesEstimate() {
     };
   }, [estimateNumber]);
 
-  // 4) Дополнительные специфические переменные (section, materials) остаются такими же
   interface MaterialSpec {
     name: string;
     totalQuantity: number;
@@ -275,10 +246,9 @@ export default function PrintServicesEstimate() {
   const materialsSpecMap: Record<string, MaterialSpec> = {};
   const sectionLaborMap: Record<string, number> = {};
 
-  // TimeCoefficient difference (не трогаем)
+  // TimeCoefficient difference
   const laborDiff = finalLabor - laborSubtotal;
 
-  // Сбор данных о секциях/материалах
   for (const svcId of Object.keys(selectedServicesState)) {
     const cr = calculationResultsMap[svcId];
     if (!cr) continue;
@@ -328,13 +298,11 @@ export default function PrintServicesEstimate() {
 
   return (
     <div className="print-page p-4 my-2">
-      {/* Логотип */}
       <div className="flex items-center justify-between mb-4">
         <img src="/images/logo.png" alt="JAMB Logo" className="h-10 w-auto" />
       </div>
       <hr className="border-gray-300 mb-4" />
 
-      {/* Основные данные */}
       <div className="flex justify-between items-center mb-4 mt-12">
         <div>
           <h1 className="text-2xl font-bold">Estimate</h1>
@@ -355,7 +323,6 @@ export default function PrintServicesEstimate() {
         <strong>Details:</strong> {description || "No details provided"}
       </p>
 
-      {/* Фото + дисклеймер */}
       {photos.length > 0 && (
         <section className="mb-6">
           <h3 className="font-semibold text-xl mb-2">Uploaded Photos</h3>
@@ -478,11 +445,11 @@ export default function PrintServicesEstimate() {
         {/* Summary totals */}
         <div className="border-t pt-4 mt-6 space-y-1 text-sm">
           <div className="flex justify-between">
-            <span>Labor:</span>
+            <span>Labor total:</span>
             <span>${formatWithSeparator(laborSubtotal)}</span>
           </div>
           <div className="flex justify-between">
-            <span>Materials:</span>
+            <span>Materials, tools and equipment:</span>
             <span>${formatWithSeparator(materialsSubtotal)}</span>
           </div>
 
@@ -500,18 +467,14 @@ export default function PrintServicesEstimate() {
             </div>
           )}
 
-          {/* (B) Отображаем два новых fee */}
+          {/* (B) Service fees */}
           <div className="flex justify-between">
             <span>Service Fee (15% on labor)</span>
-            <span>
-              ${formatWithSeparator(serviceFeeOnLabor)}
-            </span>
+            <span>${formatWithSeparator(serviceFeeOnLabor)}</span>
           </div>
           <div className="flex justify-between">
             <span>Delivery &amp; Processing (5% on materials)</span>
-            <span>
-              ${formatWithSeparator(serviceFeeOnMaterials)}
-            </span>
+            <span>${formatWithSeparator(serviceFeeOnMaterials)}</span>
           </div>
 
           <div className="flex justify-between font-semibold">
@@ -571,7 +534,7 @@ export default function PrintServicesEstimate() {
 
                 return (
                   <div key={catId} className="ml-4 mb-4 avoid-break">
-                    <h4 className="text-base font-medium text-gray-700 mb-2">
+                    <h4 className="text-base font-semibold text-gray-700 mb-2">
                       {sectionIndex}.{catIndex}. {catName}
                     </h4>
                     {chosenServices.map((svc, k2) => {
@@ -582,21 +545,21 @@ export default function PrintServicesEstimate() {
 
                       return (
                         <div key={svc.id} className="mb-4 avoid-break">
-                          <h5 className="text-sm font-medium text-gray-800 flex justify-between">
+                          <h5 className="text-sm font-semibold text-gray-800 flex justify-between">
                             <span>
                               {sectionIndex}.{catIndex}.{svcIndex}. {svc.title}
                             </span>
                           </h5>
                           {svc.description && (
-                            <p className="text-sm text-gray-500 mb-1">
+                            <p className="text-sm text-gray-500 my-1">
                               {svc.description}
                             </p>
                           )}
                           <p className="text-sm text-gray-800 flex justify-between">
-                            <span>
+                            <span className="font-semibold">
                               {quantity} {svc.unit_of_measurement}
                             </span>
-                            <span>${formatWithSeparator(finalCost)}</span>
+                            <span className="font-semibold mr-4">${formatWithSeparator(finalCost)}</span>
                           </p>
 
                           {/* cost breakdown */}
@@ -604,11 +567,23 @@ export default function PrintServicesEstimate() {
                             <div className="mt-2 p-3 bg-gray-50 border border-gray-300 rounded text-sm text-gray-700">
                               {/* Labor row */}
                               <div className="flex justify-between mb-1">
-                                <span className="font-semibold">Labor:</span>
-                                <span>
+                                <span className="font-semibold">Labor</span>
+                                <span className="font-semibold">
                                   {cr.work_cost
                                     ? `$${formatWithSeparator(
                                         parseFloat(cr.work_cost)
+                                      )}`
+                                    : "—"}
+                                </span>
+                              </div>
+                              <div className="flex justify-between mb-3">
+                                <span className="text-md font-semibold text-gray-800">
+                                  Materials, tools and equipment
+                                </span>
+                                <span className="text-md font-semibold text-gray-700">
+                                  {cr.material_cost
+                                    ? `$${formatWithSeparator(
+                                        parseFloat(cr.material_cost)
                                       )}`
                                     : "—"}
                                 </span>
@@ -617,9 +592,6 @@ export default function PrintServicesEstimate() {
                               {Array.isArray(cr.materials) &&
                                 cr.materials.length > 0 && (
                                   <div className="mt-2">
-                                    <p className="font-semibold mb-1">
-                                      Materials:
-                                    </p>
                                     <table className="table-auto w-full text-left text-gray-700">
                                       <thead>
                                         <tr className="border-b">
@@ -764,7 +736,7 @@ export default function PrintServicesEstimate() {
         {/* B) Materials specification */}
         <div>
           <h3 className="text-lg font-bold text-gray-800 mb-2">
-            B) Overall Materials
+            B) Overall Materials, tools and equipment
           </h3>
           {materialsSpecArray.length === 0 ? (
             <p className="text-sm text-gray-700">
@@ -812,7 +784,7 @@ export default function PrintServicesEstimate() {
                 </tbody>
               </table>
               <div className="flex justify-end mt-2 text-sm font-semibold">
-                <span className="mr-6">Total Materials:</span>
+                <span className="mr-6">Total Materials, tools and equipment:</span>
                 <span>${formatWithSeparator(totalMaterialsCost)}</span>
               </div>
             </div>

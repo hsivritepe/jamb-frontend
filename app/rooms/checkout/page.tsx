@@ -415,7 +415,7 @@ export default function RoomsCheckout() {
                                     {cr && (
                                       <div className="mt-2 p-4 bg-gray-50 border rounded">
                                         <div className="flex justify-between mb-3">
-                                          <span className="text-md font-medium text-gray-800">Labor:</span>
+                                          <span className="text-md font-medium text-gray-800">Labor</span>
                                           <span className="text-md text-gray-700">
                                             {cr.work_cost
                                               ? `$${formatWithSeparator(parseFloat(cr.work_cost))}`
@@ -423,27 +423,16 @@ export default function RoomsCheckout() {
                                           </span>
                                         </div>
                                         <div className="flex justify-between mb-3">
-                                          <span className="text-md font-medium text-gray-800">Material:</span>
+                                          <span className="text-md font-medium text-gray-800">Materials, tools and equipment</span>
                                           <span className="text-md text-gray-700">
                                             {cr.material_cost
                                               ? `$${formatWithSeparator(parseFloat(cr.material_cost))}`
                                               : "—"}
                                           </span>
                                         </div>
-                                        <div className="flex justify-between border-t pt-2 mt-2">
-                                          <span className="text-md font-medium text-gray-800">Total:</span>
-                                          <span className="text-md font-medium text-gray-800">
-                                            {cr.total
-                                              ? `$${formatWithSeparator(parseFloat(cr.total))}`
-                                              : `$${formatWithSeparator(totalCost)}`}
-                                          </span>
-                                        </div>
 
                                         {Array.isArray(cr.materials) && cr.materials.length > 0 && (
                                           <div className="mt-4">
-                                            <h6 className="text-md font-medium text-gray-800 mb-2">
-                                              Materials
-                                            </h6>
                                             <table className="table-auto w-full text-sm text-left text-gray-700">
                                               <thead>
                                                 <tr className="border-b">
@@ -499,14 +488,14 @@ export default function RoomsCheckout() {
           {/* 3) Overall summary */}
           <div className="pt-4 mt-4 border-t">
             <div className="flex justify-between mb-2">
-              <span className="font-semibold text-lg text-gray-600">Labor</span>
+              <span className="font-semibold text-lg text-gray-600">Labor total:</span>
               <span className="font-semibold text-lg text-gray-600">
                 ${formatWithSeparator(laborSubtotal)}
               </span>
             </div>
 
             <div className="flex justify-between mb-2">
-              <span className="font-semibold text-lg text-gray-600">Materials</span>
+              <span className="font-semibold text-lg text-gray-600">Materials, tools and equipment:</span>
               <span className="font-semibold text-lg text-gray-600">
                 ${formatWithSeparator(materialsSubtotal)}
               </span>
@@ -544,7 +533,7 @@ export default function RoomsCheckout() {
             </div>
 
             <div className="flex justify-between mb-2">
-              <span className="font-semibold text-xl text-gray-800">Subtotal</span>
+              <span className="font-semibold text-xl text-gray-800">Subtotal:</span>
               <span className="font-semibold text-xl text-gray-800">
                 ${formatWithSeparator(sumBeforeTax)}
               </span>
@@ -559,7 +548,7 @@ export default function RoomsCheckout() {
             </div>
 
             <div className="flex justify-between text-2xl font-semibold mt-4">
-              <span>Total</span>
+              <span>Total:</span>
               <span>${formatWithSeparator(finalTotal)}</span>
             </div>
 
