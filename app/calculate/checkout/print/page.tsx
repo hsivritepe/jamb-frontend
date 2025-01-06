@@ -305,7 +305,7 @@ export default function PrintServicesEstimate() {
 
       <div className="flex justify-between items-center mb-4 mt-12">
         <div>
-          <h1 className="text-2xl font-bold">Estimate</h1>
+          <h1 className="text-2xl font-bold">Estimate for Selected Services</h1>
           <h2 className="text-sm text-gray-500 mt-1">
             {estimateNumber} (temporary)
           </h2>
