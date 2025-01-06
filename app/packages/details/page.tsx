@@ -67,13 +67,24 @@ export default function PackagesDetailsHomePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Grab the packageId if it was passed in the query (e.g. from "Read more" link).
-  const packageId = searchParams.get("packageId") || ""; 
+  // 1) Try to read from query param
+  let packageId = searchParams.get("packageId");
+  // 2) If missing, fallback to session
+  if (!packageId) {
+    packageId = loadFromSession("packages_currentPackageId", "");
+  }
 
   // If there's no packageId, you could optionally redirect the user back to /packages
   useEffect(() => {
     if (!packageId) {
       // e.g. router.push("/packages");
+    }
+  }, [packageId]);
+
+  // 3) Save final packageId to session
+  useEffect(() => {
+    if (packageId) {
+      saveToSession("packages_currentPackageId", packageId);
     }
   }, [packageId]);
 
