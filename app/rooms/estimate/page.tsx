@@ -286,7 +286,7 @@ export default function RoomsEstimate() {
           {/* Left column with Estimate content */}
           <div className="w-[700px]">
             <div className="bg-brand-light p-6 rounded-xl border border-gray-300 overflow-hidden">
-              <SectionBoxSubtitle>Estimate</SectionBoxSubtitle>
+              <SectionBoxSubtitle>Estimate for Selected Rooms</SectionBoxSubtitle>
 
               {chosenRooms.map((room) => {
                 const roomServices = selectedServicesState[room.id] || {};

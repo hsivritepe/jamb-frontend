@@ -8,8 +8,14 @@ import Button from "@/components/ui/Button";
 import { SectionBoxTitle } from "@/components/ui/SectionBoxTitle";
 import { SectionBoxSubtitle } from "@/components/ui/SectionBoxSubtitle";
 
+// We import taxRatesUSA for all US states
+import { taxRatesUSA } from "@/constants/taxRatesUSA";
+
+// We import taxRatesCanada for all provinces
+import { taxRatesCanada } from "@/constants/taxRatesCanada";
+
 /**
- * Utility function: Save a key/value pair to sessionStorage as JSON (client side).
+ * Utility function: Save key-value to sessionStorage (client side) as JSON.
  */
 function saveToSession(key: string, value: any) {
   if (typeof window !== "undefined") {
@@ -18,7 +24,7 @@ function saveToSession(key: string, value: any) {
 }
 
 /**
- * Utility function: Load data from sessionStorage, or return a default if not found or SSR.
+ * Utility function: Load data from sessionStorage, or return defaultValue if SSR/not found.
  */
 function loadFromSession<T>(key: string, defaultValue: T): T {
   if (typeof window === "undefined") return defaultValue;
@@ -30,22 +36,23 @@ function loadFromSession<T>(key: string, defaultValue: T): T {
   }
 }
 
-/** 
- * Safely parse a string to a number. If invalid, return 0.
- */
+/** Safely parse a string to a number. If invalid, return 0. */
 function parseNumberOrZero(val: string): number {
   const num = parseFloat(val);
   return Number.isNaN(num) ? 0 : num;
 }
 
-/**
- * Default shape of the house/apartment info we want to collect.
- */
+/** Default shape of the house/apartment info. */
 const defaultHouseInfo = {
   country: "",
   city: "",
   zip: "",
   addressLine: "",
+  // For the USA state code
+  state: "",
+  // For the Canadian province name
+  province: "",
+
   houseType: "",
   floors: 1,
   squareFootage: 0,
@@ -67,48 +74,43 @@ export default function PackagesDetailsHomePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // 1) Try to read from query param
+  // Read packageId from query or from session
   let packageId = searchParams.get("packageId");
-  // 2) If missing, fallback to session
   if (!packageId) {
     packageId = loadFromSession("packages_currentPackageId", "");
   }
 
-  // If there's no packageId, you could optionally redirect the user back to /packages
+  // Optionally redirect if no packageId
   useEffect(() => {
     if (!packageId) {
       // e.g. router.push("/packages");
     }
   }, [packageId]);
 
-  // 3) Save final packageId to session
+  // Store packageId in session
   useEffect(() => {
     if (packageId) {
       saveToSession("packages_currentPackageId", packageId);
     }
   }, [packageId]);
 
-  // State to keep track of house info. It loads from session if available.
+  // Load house info from session or defaults
   const [houseInfo, setHouseInfo] = useState(() =>
     loadFromSession("packages_houseInfo", defaultHouseInfo)
   );
 
-  // Whenever houseInfo changes, we persist it to sessionStorage
+  // Whenever houseInfo changes, persist to session
   useEffect(() => {
     saveToSession("packages_houseInfo", houseInfo);
   }, [houseInfo]);
 
-  /**
-   * For text or select inputs that store string values in `houseInfo`.
-   */
+  /** Handles text or select changes for string fields. */
   function handleChange(e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     const { name, value } = e.target;
     setHouseInfo((prev) => ({ ...prev, [name]: value }));
   }
 
-  /**
-   * For numeric-based inputs or selects. We parse to number.
-   */
+  /** Handles numeric fields. */
   function handleNumber(e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     const { name, value } = e.target;
     setHouseInfo((prev) => ({
@@ -117,10 +119,7 @@ export default function PackagesDetailsHomePage() {
     }));
   }
 
-  /**
-   * Attempt to auto-detect city/zip/country from ipapi.co 
-   * and fill them into the form.
-   */
+  /** Attempt to auto-detect location from ipapi.co. */
   async function handleAutoFillLocation() {
     try {
       const response = await fetch("https://ipapi.co/json/");
@@ -131,12 +130,18 @@ export default function PackagesDetailsHomePage() {
       const city = data.city || "City";
       const zip = data.postal || "00000";
       const country = data.country_name || "";
+      // For US, region_code is "CA" or "NY"; for Canada, region might be a short or full name
+      const regionCode = data.region_code || "";
 
       setHouseInfo((prev) => ({
         ...prev,
         city,
         zip,
         country,
+        // If user is in the US, we store regionCode to "state". If user is in Canada, we might store regionCode to "province" or something similar.
+        // But we do not know for sure which country is detected, so you might want to do a small check here:
+        state: country === "United States" ? regionCode : "",
+        province: country === "Canada" ? regionCode : "",
       }));
     } catch (error) {
       console.error("Error fetching location:", error);
@@ -144,9 +149,7 @@ export default function PackagesDetailsHomePage() {
     }
   }
 
-  /**
-   * Validate required fields, then proceed to the next step (services selection).
-   */
+  /** Validate fields, then proceed to next step. */
   function handleNext() {
     if (!houseInfo.addressLine.trim()) {
       alert("Please enter your street address before proceeding.");
@@ -161,22 +164,17 @@ export default function PackagesDetailsHomePage() {
       return;
     }
 
-    // Navigate to /packages/services, preserving the packageId in the URL query
     router.push(`/packages/services?packageId=${packageId}`);
   }
 
-  /**
-   * Reset the entire form to the defaultHouseInfo state.
-   */
+  /** Reset form. */
   function handleClearAll() {
     const confirmed = window.confirm("Are you sure you want to clear all data?");
     if (!confirmed) return;
     setHouseInfo(defaultHouseInfo);
   }
 
-  /**
-   * Toggle the "hasGarage" boolean. If turning it off, reset garageCount to 0.
-   */
+  /** Toggles booleans for garage, yard, pool, boiler. */
   function toggleGarage() {
     setHouseInfo((prev) => ({
       ...prev,
@@ -185,9 +183,6 @@ export default function PackagesDetailsHomePage() {
     }));
   }
 
-  /**
-   * Toggle the "hasYard" boolean. If turning it off, reset yardArea to 0.
-   */
   function toggleYard() {
     setHouseInfo((prev) => ({
       ...prev,
@@ -196,9 +191,6 @@ export default function PackagesDetailsHomePage() {
     }));
   }
 
-  /**
-   * Toggle the "hasPool" boolean. If turning it off, reset poolArea to 0.
-   */
   function togglePool() {
     setHouseInfo((prev) => ({
       ...prev,
@@ -207,9 +199,6 @@ export default function PackagesDetailsHomePage() {
     }));
   }
 
-  /**
-   * Toggle the "hasBoiler" boolean. If turning it off, reset boilerType to "".
-   */
   function toggleBoiler() {
     setHouseInfo((prev) => ({
       ...prev,
@@ -218,19 +207,21 @@ export default function PackagesDetailsHomePage() {
     }));
   }
 
+  // We'll show the US states if user selected "USA"
+  const isUS = houseInfo.country === "USA";
+  // We'll show the provinces if user selected "Canada"
+  const isCanada = houseInfo.country === "Canada";
+
   return (
     <main className="min-h-screen pt-24 pb-16">
       <div className="container mx-auto">
-        {/* Breadcrumb nav */}
         <BreadCrumb items={PACKAGES_STEPS} />
 
-        {/* Top row: page title + Next button */}
         <div className="flex justify-between items-center mt-8">
           <SectionBoxTitle>Home / Apartment Information</SectionBoxTitle>
           <Button onClick={handleNext}>Next →</Button>
         </div>
 
-        {/* Small description and a "Clear" button */}
         <div className="flex justify-between items-center mt-2 max-w-3xl">
           <p className="text-gray-600">
             Please provide details about your home so we can tailor the package properly.
@@ -243,13 +234,11 @@ export default function PackagesDetailsHomePage() {
           </button>
         </div>
 
-        {/* Main form container */}
         <div className="bg-white border border-gray-300 mt-6 p-6 rounded-lg space-y-6 max-w-3xl">
-          {/* Address & Location Section */}
+          {/* Address & Location */}
           <div>
             <SectionBoxSubtitle>Address & Location</SectionBoxSubtitle>
 
-            {/* Street address */}
             <label className="block text-sm font-medium text-gray-700 mt-2">
               Street Address
             </label>
@@ -258,8 +247,6 @@ export default function PackagesDetailsHomePage() {
               name="addressLine"
               value={houseInfo.addressLine}
               onChange={handleChange}
-              onFocus={(e) => (e.target.placeholder = "")}
-              onBlur={(e) => (e.target.placeholder = "Your street address")}
               placeholder="Your street address"
               className="w-full px-4 py-2 border border-gray-300 rounded mt-1"
             />
@@ -275,8 +262,6 @@ export default function PackagesDetailsHomePage() {
                   name="city"
                   value={houseInfo.city}
                   onChange={handleChange}
-                  onFocus={(e) => (e.target.placeholder = "")}
-                  onBlur={(e) => (e.target.placeholder = "City")}
                   placeholder="City"
                   className="w-full px-4 py-2 border border-gray-300 rounded"
                 />
@@ -292,17 +277,14 @@ export default function PackagesDetailsHomePage() {
                   name="zip"
                   value={houseInfo.zip}
                   onChange={handleChange}
-                  onFocus={(e) => (e.target.placeholder = "")}
-                  onBlur={(e) => (e.target.placeholder = "ZIP Code")}
                   placeholder="ZIP Code"
                   className="w-full px-4 py-2 border border-gray-300 rounded"
                 />
               </div>
             </div>
 
-            {/* Country + auto-detect button */}
             <div className="flex gap-4 mt-4">
-              <div className="w-1/2">
+              <div className="w-1/3">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Country
                 </label>
@@ -315,23 +297,68 @@ export default function PackagesDetailsHomePage() {
                   <option value="">-- Select --</option>
                   <option value="USA">USA</option>
                   <option value="Canada">Canada</option>
-                  {/* Add more countries as needed */}
+                  {/* More countries if needed */}
                 </select>
               </div>
 
-              <div className="w-1/2 flex items-end">
+              {/* If "USA" => show state dropdown */}
+              {isUS && (
+                <div className="w-1/3">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    State (Short Code)
+                  </label>
+                  <select
+                    name="state"
+                    value={houseInfo.state}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded"
+                  >
+                    <option value="">-- Select --</option>
+                    {taxRatesUSA.taxRates.map((tr) => (
+                      <option key={tr.state} value={tr.state}>
+                        {tr.state}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* If "Canada" => show province dropdown */}
+              {isCanada && (
+                <div className="w-1/3">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Province
+                  </label>
+                  <select
+                    name="province"
+                    value={houseInfo.province}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded"
+                  >
+                    <option value="">-- Select --</option>
+                    {taxRatesCanada.taxRates.map((prov) => (
+                      <option key={prov.province} value={prov.province}>
+                        {prov.province}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Auto-detect button */}
+              <div className="w-1/3 flex items-end">
                 <button
                   type="button"
                   onClick={handleAutoFillLocation}
                   className="px-4 py-2 bg-blue-100 text-blue-600 border border-blue-400 rounded hover:bg-blue-200 transition-colors h-10"
                 >
-                  Auto Detect Location
+                  Auto Detect
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Indoor Details Section */}
+          {/* Indoor Details */}
           <div>
             <SectionBoxSubtitle>Indoor Details</SectionBoxSubtitle>
 
@@ -368,7 +395,6 @@ export default function PackagesDetailsHomePage() {
                   <option value="1">1</option>
                   <option value="2">2</option>
                   <option value="3">3+</option>
-                  {/* Adjust as needed */}
                 </select>
               </div>
             </div>
@@ -387,8 +413,6 @@ export default function PackagesDetailsHomePage() {
                     const val = parseNumberOrZero(e.target.value);
                     setHouseInfo((prev) => ({ ...prev, squareFootage: val }));
                   }}
-                  onFocus={(e) => (e.target.placeholder = "")}
-                  onBlur={(e) => (e.target.placeholder = "e.g. 1800")}
                   placeholder="e.g. 1800"
                   className="w-full px-4 py-2 border border-gray-300 rounded"
                 />
@@ -483,7 +507,13 @@ export default function PackagesDetailsHomePage() {
                     type="checkbox"
                     id="hasBoiler"
                     checked={houseInfo.hasBoiler}
-                    onChange={toggleBoiler}
+                    onChange={() => {
+                      setHouseInfo((prev) => ({
+                        ...prev,
+                        hasBoiler: !prev.hasBoiler,
+                        boilerType: !prev.hasBoiler ? "gas" : "",
+                      }));
+                    }}
                     className="w-5 h-5 text-blue-600 cursor-pointer"
                   />
                   <label htmlFor="hasBoiler" className="cursor-pointer">
@@ -574,8 +604,6 @@ export default function PackagesDetailsHomePage() {
                       const val = parseNumberOrZero(e.target.value);
                       setHouseInfo((prev) => ({ ...prev, yardArea: val }));
                     }}
-                    onFocus={(e) => (e.target.placeholder = "")}
-                    onBlur={(e) => (e.target.placeholder = "e.g. 300")}
                     placeholder="e.g. 300"
                     className="w-1/2 px-4 py-2 border border-gray-300 rounded"
                   />
@@ -610,8 +638,6 @@ export default function PackagesDetailsHomePage() {
                       const val = parseNumberOrZero(e.target.value);
                       setHouseInfo((prev) => ({ ...prev, poolArea: val }));
                     }}
-                    onFocus={(e) => (e.target.placeholder = "")}
-                    onBlur={(e) => (e.target.placeholder = "e.g. 250")}
                     placeholder="e.g. 250"
                     className="w-1/2 px-4 py-2 border border-gray-300 rounded"
                   />

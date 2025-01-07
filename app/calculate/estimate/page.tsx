@@ -260,7 +260,7 @@ export default function Estimate() {
           {/* Left column with Estimate content */}
           <div className="w-[700px]">
             <div className="bg-brand-light p-6 rounded-xl border border-gray-300 overflow-hidden">
-              <SectionBoxSubtitle>Estimate</SectionBoxSubtitle>
+              <SectionBoxSubtitle>Estimate for Selected Services</SectionBoxSubtitle>
 
               {/* 1) Group by section -> categories -> services with numbering */}
               <div className="mt-4 space-y-4">

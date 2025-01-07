@@ -96,7 +96,7 @@ function getShortTitle(pkgId: string): string {
   }
 }
 
-// Get data through API
+/** Get base URL for API calls. */
 function getApiBaseUrl(): string {
   return process.env.NEXT_PUBLIC_API_BASE_URL || "https://your-api.example.com";
 }
@@ -106,7 +106,7 @@ function convertServiceIdToApiFormat(serviceId: string) {
   return serviceId.replaceAll("-", ".");
 }
 
-/** Fetch finishing materials for a given work_code. (POST /work/finishing_materials) */
+/** Fetch finishing materials (POST /work/finishing_materials). */
 async function fetchFinishingMaterials(workCode: string) {
   const url = `${getApiBaseUrl()}/work/finishing_materials`;
   const res = await fetch(url, {
@@ -150,9 +150,7 @@ async function calculatePrice(params: {
   return res.json();
 }
 
-/**
- * Ensure finishing materials for a service are loaded.
- */
+/** Ensure finishing materials for a service are loaded. */
 async function ensureFinishingMaterialsLoaded(
   serviceId: string,
   finishingMaterialsMap: Record<string, any>,
@@ -166,7 +164,6 @@ async function ensureFinishingMaterialsLoaded(
 ) {
   try {
     if (!finishingMaterialsMap[serviceId]) {
-      // fetch them
       const dot = convertServiceIdToApiFormat(serviceId);
       const data = await fetchFinishingMaterials(dot);
       finishingMaterialsMap[serviceId] = data;
@@ -191,7 +188,7 @@ async function ensureFinishingMaterialsLoaded(
   }
 }
 
-/** fetchFinishingMaterialsForCategory => pre-load them for all services in that category. */
+/** Pre-load finishing materials for all services in a category. */
 async function fetchFinishingMaterialsForCategory(
   services: (typeof ALL_SERVICES)[number][],
   finishingMaterialsMap: Record<string, any>,
@@ -233,34 +230,21 @@ async function fetchFinishingMaterialsForCategory(
   }
 }
 
-/**
- * Additional helper function to recalculate costs if address or ZIP changes.
- */
-function recalcCostIfLocationChanges(newZip: string, oldZip: string) {
-  if (newZip !== oldZip) {
-    console.log(
-      `ZIP changed from ${oldZip} to ${newZip} - consider recalculating costs here.`
-    );
-  }
-}
-
 export default function PackageServicesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // (A) Identify the package ID
+  // Identify the package
   const packageId = searchParams.get("packageId");
   const chosenPackageRaw = PACKAGES.find((pkg) => pkg.id === packageId) || null;
 
-  // If not found => show loading
   if (!packageId || !chosenPackageRaw) {
     return <p>Loading package...</p>;
   }
 
-  // Here we assert it's not null after that check, so TS won't complain:
-  const chosenPackage = chosenPackageRaw!;
+  const chosenPackage = chosenPackageRaw;
 
-  // (B) Keep track of user selection => { indoor: {svcId -> qty}, outdoor: {svcId -> qty} }
+  // State: selectedServices => { indoor: {svcId: qty}, outdoor: {svcId: qty} }
   const [selectedServices, setSelectedServices] = useState<{
     indoor: Record<string, number>;
     outdoor: Record<string, number>;
@@ -268,7 +252,6 @@ export default function PackageServicesPage() {
     loadFromSession("packages_selectedServices", { indoor: {}, outdoor: {} })
   );
 
-  // Save to session
   useEffect(() => {
     saveToSession("packages_selectedServices", selectedServices);
   }, [selectedServices]);
@@ -298,70 +281,65 @@ export default function PackageServicesPage() {
     })
   );
 
-  // (C) Search filter
+  // Search query
   const [searchQuery, setSearchQuery] = useState(() =>
     loadFromSession("packages_searchQuery", "")
   );
-  // Keep search in session
   useEffect(() => {
     saveToSession("packages_searchQuery", searchQuery);
   }, [searchQuery]);
 
-  // (D) Toggle expanded categories
+  // Expanded categories
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
     new Set()
   );
-
   function toggleCategory(catId: string) {
     setExpandedCategories((prev) => {
       const copy = new Set(prev);
-      if (copy.has(catId)) copy.delete(catId);
-      else copy.add(catId);
+      copy.has(catId) ? copy.delete(catId) : copy.add(catId);
       return copy;
     });
   }
 
-  // (E) Real cost logic: finishingMaterials, calculationResults
+  // Materials & cost breakdown states
   const [finishingMaterialsMap, setFinishingMaterialsMap] = useState<
     Record<string, any>
   >({});
   const [finishingMaterialSelections, setFinishingMaterialSelections] =
     useState<Record<string, string[]>>({});
 
-  // cost breakdown
+  // calculationResultsMap => server response for each service
   const [calculationResultsMap, setCalculationResultsMap] = useState<
     Record<string, any>
   >({});
+  // serviceCosts => final numeric cost (labor + materials) for each service
   const [serviceCosts, setServiceCosts] = useState<Record<string, number>>({});
 
-  // Expand "cost breakdown" for a service
+  // For toggling cost breakdown UI
   const [expandedCostBreakdown, setExpandedCostBreakdown] = useState<
     Set<string>
   >(new Set());
   function toggleCostBreakdown(svcId: string) {
     setExpandedCostBreakdown((old) => {
       const copy = new Set(old);
-      if (copy.has(svcId)) copy.delete(svcId);
-      else copy.add(svcId);
+      copy.has(svcId) ? copy.delete(svcId) : copy.add(svcId);
       return copy;
     });
   }
 
-  // (F) manual typed values
+  // Manual input quantity
   const [manualInputValue, setManualInputValue] = useState<
     Record<string, string>
   >({});
 
-  // (G) store the packageId
+  // Keep packageId in session
   useEffect(() => {
     saveToSession("packages_currentPackageId", packageId);
   }, [packageId]);
 
-  // (H) select all / clear
+  // "Select all" and "Clear all"
   function handleClearAll() {
-    const sure = window.confirm(
-      "Are you sure you want to clear all selections?"
-    );
+    const sure = window.confirm("Are you sure you want to clear all selections?");
     if (!sure) return;
     setSelectedServices({ indoor: {}, outdoor: {} });
     setExpandedCategories(new Set());
@@ -376,7 +354,7 @@ export default function PackageServicesPage() {
     const sure = window.confirm("Select all services from this package?");
     if (!sure) return;
 
-    // 1) Collect all category IDs so we can expand them
+    // Gather catIds => expand them
     const allCatIds = new Set<string>();
     for (const it of chosenPackage.services.indoor) {
       const catId = it.id.split("-").slice(0, 2).join("-");
@@ -387,25 +365,18 @@ export default function PackageServicesPage() {
       allCatIds.add(catId);
     }
 
-    // 2) Prepare the nextIndoor and nextOutdoor objects with minimum quantities
     const nextIndoor: Record<string, number> = {};
     const nextOutdoor: Record<string, number> = {};
 
-    // Helper function to select a single service with its minQuantity
-    async function selectServiceWithMinQuantity(
-      svcId: string,
-      isIndoor: boolean
-    ) {
+    async function selectServiceWithMinQuantity(svcId: string, isIndoor: boolean) {
       const foundSvc = ALL_SERVICES.find((s) => s.id === svcId);
       const minQ = foundSvc?.min_quantity || 1;
-
       if (isIndoor) {
         nextIndoor[svcId] = minQ;
       } else {
         nextOutdoor[svcId] = minQ;
       }
-
-      // Load finishing materials, if needed
+      // load finishing materials
       await ensureFinishingMaterialsLoaded(
         svcId,
         finishingMaterialsMap,
@@ -413,25 +384,24 @@ export default function PackageServicesPage() {
         finishingMaterialSelections,
         setFinishingMaterialSelections
       );
-
-      // Update manual input value
+      // set manual input
       setManualInputValue((prev) => ({ ...prev, [svcId]: String(minQ) }));
     }
 
-    // 3) For each indoor/outdoor service, set min quantity and load finishing materials
+    // select all indoor
     for (const it of chosenPackage.services.indoor) {
       await selectServiceWithMinQuantity(it.id, true);
     }
+    // select all outdoor
     for (const it of chosenPackage.services.outdoor) {
       await selectServiceWithMinQuantity(it.id, false);
     }
 
-    // Update the selected services in state
     setSelectedServices({ indoor: nextIndoor, outdoor: nextOutdoor });
 
-    // 4) Expand all categories we gathered
+    // expand categories by converting Set => Array
     setExpandedCategories((prev) => {
-      const merged = new Set<string>(prev);
+      const merged = new Set(prev);
       for (const catId of Array.from(allCatIds)) {
         merged.add(catId);
       }
@@ -439,19 +409,17 @@ export default function PackageServicesPage() {
     });
   }
 
-  // (I) for toggling a service on/off
+  // Toggle a service on/off
   async function toggleService(serviceId: string) {
-    // see if it's indoor or outdoor in the chosen package
-    const isIndoor = !!chosenPackage.services.indoor.find(
-      (x) => x.id === serviceId
-    );
+    const isIndoor = !!chosenPackage.services.indoor.find((x) => x.id === serviceId);
     const sideKey = isIndoor ? "indoor" : "outdoor";
     const copy = { ...selectedServices[sideKey] };
-    const on = !!copy[serviceId];
-    if (on) {
-      // off
+    const isOn = !!copy[serviceId];
+
+    if (isOn) {
+      // turn off => remove from state
       delete copy[serviceId];
-      // remove cost data
+      // remove from results
       setCalculationResultsMap((old) => {
         const c = { ...old };
         delete c[serviceId];
@@ -467,13 +435,17 @@ export default function PackageServicesPage() {
         delete c[serviceId];
         return c;
       });
+      setManualInputValue((old) => {
+        const c = { ...old };
+        delete c[serviceId];
+        return c;
+      });
     } else {
-      // check minQuantity from ALL_SERVICES
+      // turn on => minQ
       const foundSvc = ALL_SERVICES.find((s) => s.id === serviceId);
-      const minQuantity = foundSvc?.min_quantity || 1;
-
-      copy[serviceId] = minQuantity;
-      // ensure finishing materials are loaded
+      const minQ = foundSvc?.min_quantity || 1;
+      copy[serviceId] = minQ;
+      // load materials
       await ensureFinishingMaterialsLoaded(
         serviceId,
         finishingMaterialsMap,
@@ -481,56 +453,44 @@ export default function PackageServicesPage() {
         finishingMaterialSelections,
         setFinishingMaterialSelections
       );
-      // Call calculatePrice below
-      setManualInputValue((m) => ({ ...m, [serviceId]: String(minQuantity) }));
+      setManualInputValue((m) => ({ ...m, [serviceId]: String(minQ) }));
     }
     setSelectedServices((prev) => ({ ...prev, [sideKey]: copy }));
   }
 
-  // (J) quantity increment/decrement
+  // increment/decrement
   function handleQuantityChange(
     serviceId: string,
     increment: boolean,
     unit: string
   ) {
-    const isIndoor = !!chosenPackage.services.indoor.find(
-      (x) => x.id === serviceId
-    );
+    const isIndoor = !!chosenPackage.services.indoor.find((x) => x.id === serviceId);
     const sideKey = isIndoor ? "indoor" : "outdoor";
     const copy = { ...selectedServices[sideKey] };
     const oldVal = copy[serviceId] || 1;
 
-    // Check the min quantity for this service
     const foundSvc = ALL_SERVICES.find((s) => s.id === serviceId);
     const minQ = foundSvc?.min_quantity || 1;
 
-    const newVal = increment ? oldVal + 1 : Math.max(minQ, oldVal - 1);
+    let newVal = increment ? oldVal + 1 : oldVal - 1;
+    if (newVal < minQ) newVal = minQ;
     copy[serviceId] = unit === "each" ? Math.round(newVal) : newVal;
     setSelectedServices((prev) => ({ ...prev, [sideKey]: copy }));
-    setManualInputValue((m) => ({
-      ...m,
-      [serviceId]: String(copy[serviceId]),
-    }));
+    setManualInputValue((m) => ({ ...m, [serviceId]: String(copy[serviceId]) }));
   }
 
-  function handleManualQuantityChange(
-    serviceId: string,
-    value: string,
-    unit: string
-  ) {
+  // manual input
+  function handleManualQuantityChange(serviceId: string, value: string, unit: string) {
     setManualInputValue((m) => ({ ...m, [serviceId]: value }));
   }
   function handleBlurInput(serviceId: string, unit: string) {
-    const isIndoor = !!chosenPackage.services.indoor.find(
-      (x) => x.id === serviceId
-    );
+    const isIndoor = !!chosenPackage.services.indoor.find((x) => x.id === serviceId);
     const sideKey = isIndoor ? "indoor" : "outdoor";
     const copy = { ...selectedServices[sideKey] };
 
-    const val = manualInputValue[serviceId] || "1";
-    let parsed = parsePositiveNumber(val);
+    const valStr = manualInputValue[serviceId] || "1";
+    let parsed = parsePositiveNumber(valStr);
 
-    // Check the service's min quantity
     const foundSvc = ALL_SERVICES.find((s) => s.id === serviceId);
     const minQ = foundSvc?.min_quantity || 1;
     if (parsed < minQ) {
@@ -539,13 +499,10 @@ export default function PackageServicesPage() {
 
     copy[serviceId] = unit === "each" ? Math.round(parsed) : parsed;
     setSelectedServices((prev) => ({ ...prev, [sideKey]: copy }));
-    setManualInputValue((m) => ({
-      ...m,
-      [serviceId]: String(copy[serviceId]),
-    }));
+    setManualInputValue((m) => ({ ...m, [serviceId]: String(copy[serviceId]) }));
   }
 
-  // (K) Combine services into a single array, apply searchQuery
+  // Build a combined list of services from chosenPackage, apply search filter
   const combinedServices: (typeof ALL_SERVICES)[number][] = [];
   function processSide(isIndoor: boolean) {
     const sideKey = isIndoor ? "indoor" : "outdoor";
@@ -556,8 +513,7 @@ export default function PackageServicesPage() {
         const lower = searchQuery.toLowerCase();
         const matchTitle = svcObj.title.toLowerCase().includes(lower);
         const matchDesc =
-          svcObj.description &&
-          svcObj.description.toLowerCase().includes(lower);
+          svcObj.description && svcObj.description.toLowerCase().includes(lower);
         if (!matchTitle && !matchDesc) return;
       }
       combinedServices.push(svcObj);
@@ -566,7 +522,7 @@ export default function PackageServicesPage() {
   processSide(true);
   processSide(false);
 
-  // group by indoor/outdoor => by section => by category
+  // Group by indoor/outdoor => by section => by category
   const homeSectionsMap: Record<string, Set<string>> = {};
   const gardenSectionsMap: Record<string, Set<string>> = {};
 
@@ -589,7 +545,7 @@ export default function PackageServicesPage() {
     }
   }
 
-  // catServicesMap: catId => array of services
+  // catServicesMap => catId => array of services
   const catServicesMap: Record<string, (typeof ALL_SERVICES)[number][]> = {};
   for (const svc of combinedServices) {
     const catId = svc.id.split("-").slice(0, 2).join("-");
@@ -599,8 +555,7 @@ export default function PackageServicesPage() {
     catServicesMap[catId].push(svc);
   }
 
-  // (L) After any selection changes or finishingMaterial changes, recalc cost
-  const [zip] = useState(() => loadFromSession("packages_houseZip", ""));
+  // Recalculate cost after any selection changes
   const userZip = houseInfo?.zip || "";
   useEffect(() => {
     async function recalcAll() {
@@ -608,7 +563,6 @@ export default function PackageServicesPage() {
         ...selectedServices.indoor,
         ...selectedServices.outdoor,
       })) {
-        // ensure finishing materials loaded
         await ensureFinishingMaterialsLoaded(
           svcId,
           finishingMaterialsMap,
@@ -616,7 +570,6 @@ export default function PackageServicesPage() {
           finishingMaterialSelections,
           setFinishingMaterialSelections
         );
-        // Now call /calculate
         const svcObj = ALL_SERVICES.find((s) => s.id === svcId);
         if (!svcObj) continue;
         const finishingIds = finishingMaterialSelections[svcId] || [];
@@ -634,7 +587,7 @@ export default function PackageServicesPage() {
           setCalculationResultsMap((old) => ({ ...old, [svcId]: result }));
           setServiceCosts((old) => ({ ...old, [svcId]: tot }));
         } catch (err) {
-          console.error("Error in recalcAll => ", err);
+          console.error("Error in recalcAll =>", err);
         }
       }
     }
@@ -648,20 +601,24 @@ export default function PackageServicesPage() {
     setFinishingMaterialSelections,
   ]);
 
-  // (M) next => /packages/estimate
+  // IMPORTANT: save results to session so that the Estimate page can read them
+  useEffect(() => {
+    saveToSession("packages_calculationResultsMap", calculationResultsMap);
+    saveToSession("packages_serviceCosts", serviceCosts);
+  }, [calculationResultsMap, serviceCosts]);
+
+  // Next => /packages/estimate
   function handleNext() {
-    // if no services => alert
     const anyIndoor = Object.keys(selectedServices.indoor).length > 0;
     const anyOutdoor = Object.keys(selectedServices.outdoor).length > 0;
     if (!anyIndoor && !anyOutdoor) {
       alert("Please select at least one service before continuing.");
       return;
     }
-    // store everything needed and go
     router.push("/packages/estimate");
   }
 
-  // compute annualPrice from serviceCosts
+  // compute "annualPrice" = sum of all real costs
   function calculateAnnualPrice(): number {
     let sum = 0;
     for (const cost of Object.values(serviceCosts)) {
@@ -671,22 +628,18 @@ export default function PackageServicesPage() {
   }
   const annualPrice = calculateAnnualPrice();
 
-  // Combine selected from both sides for summary
+  // Merge indoor+outdoor for summary
   const mergedSelected: Record<string, number> = {
     ...selectedServices.indoor,
     ...selectedServices.outdoor,
   };
 
-  // Build a structure for the summary
-  type ServiceItem = {
-    svcObj: (typeof ALL_SERVICES)[number];
-    qty: number;
-  };
+  // Build summary structure
+  type ServiceItem = { svcObj: (typeof ALL_SERVICES)[number]; qty: number };
   const summaryStructure: Record<string, Record<string, ServiceItem[]>> = {};
   for (const [svcId, qty] of Object.entries(mergedSelected)) {
     const svcObj = ALL_SERVICES.find((s) => s.id === svcId);
     if (!svcObj) continue;
-
     const catId = svcObj.id.split("-").slice(0, 2).join("-");
     const catObj = ALL_CATEGORIES.find((c) => c.id === catId);
     if (!catObj) continue;
@@ -701,7 +654,7 @@ export default function PackageServicesPage() {
     summaryStructure[sectionName][catId].push({ svcObj, qty });
   }
 
-  // (N) Toggling the active package
+  // Toggle package
   function handlePackageToggle(pkgId: string) {
     router.push(`/packages/services?packageId=${pkgId}`);
   }
@@ -719,7 +672,7 @@ export default function PackageServicesPage() {
       </div>
 
       <div className="container mx-auto">
-        {/* Top row: package toggler + Next button */}
+        {/* Toggler + Next */}
         <div className="flex justify-between items-center mt-11">
           <div className="inline-flex rounded-lg p-1 w-full max-w-[624px] h-14 border border-gray-300 bg-white">
             {packageIdsInOrder.map((pkgId) => {
@@ -731,13 +684,9 @@ export default function PackageServicesPage() {
                 <button
                   key={pkgId}
                   onClick={() => handlePackageToggle(pkgId)}
-                  className={`flex-1 px-4 py-2 rounded-md font-semibold transition-colors text-lg
-                    ${
-                      isActive
-                        ? "bg-blue-600 text-white"
-                        : "text-gray-600 hover:bg-gray-100"
-                    }
-                  `}
+                  className={`flex-1 px-4 py-2 rounded-md font-semibold transition-colors text-lg ${
+                    isActive ? "bg-blue-600 text-white" : "text-gray-600 hover:bg-gray-100"
+                  }`}
                 >
                   {displayTitle}
                 </button>
@@ -750,7 +699,7 @@ export default function PackageServicesPage() {
           </Button>
         </div>
 
-        {/* Search bar */}
+        {/* Search */}
         <div className="w-full max-w-[624px] mt-6 mb-4">
           <SearchServices
             value={searchQuery}
@@ -761,14 +710,11 @@ export default function PackageServicesPage() {
           />
         </div>
 
-        {/* "Select all" and "Clear" */}
+        {/* "Select all" / "Clear" */}
         <div className="flex justify-between items-center text-sm text-gray-500 mt-6 w-full max-w-[624px]">
           <span>
             No service?{" "}
-            <a
-              href="#"
-              className="text-blue-600 hover:underline focus:outline-none"
-            >
+            <a href="#" className="text-blue-600 hover:underline focus:outline-none">
               Contact support
             </a>
           </span>
@@ -788,9 +734,9 @@ export default function PackageServicesPage() {
           </div>
         </div>
 
-        {/* Layout: left = service listings, right = summary */}
+        {/* Layout: left=services, right=summary */}
         <div className="container mx-auto relative flex mt-8">
-          {/* LEFT COLUMN of services */}
+          {/* LEFT column */}
           <div className="flex-1 space-y-12">
             {/* For Home */}
             {Object.keys(homeSectionsMap).length > 0 && (
@@ -802,9 +748,7 @@ export default function PackageServicesPage() {
                   >
                     <div className="absolute inset-0 bg-black bg-opacity-30"></div>
                     <div className="relative z-10 flex items-center justify-center h-full">
-                      <SectionBoxTitle className="text-white">
-                        For Home
-                      </SectionBoxTitle>
+                      <SectionBoxTitle className="text-white">For Home</SectionBoxTitle>
                     </div>
                   </div>
                 </div>
@@ -831,18 +775,14 @@ export default function PackageServicesPage() {
                             }
                           });
 
-                          const catObj = ALL_CATEGORIES.find(
-                            (c) => c.id === catId
-                          );
+                          const catObj = ALL_CATEGORIES.find((c) => c.id === catId);
                           const catName = catObj ? catObj.title : catId;
 
                           return (
                             <div
                               key={catId}
                               className={`p-4 border rounded-xl bg-white mt-4 ${
-                                selectedInCat > 0
-                                  ? "border-blue-500"
-                                  : "border-gray-300"
+                                selectedInCat > 0 ? "border-blue-500" : "border-gray-300"
                               }`}
                             >
                               <button
@@ -851,9 +791,7 @@ export default function PackageServicesPage() {
                               >
                                 <h3
                                   className={`font-medium text-2xl ${
-                                    selectedInCat > 0
-                                      ? "text-blue-600"
-                                      : "text-black"
+                                    selectedInCat > 0 ? "text-blue-600" : "text-black"
                                   }`}
                                 >
                                   {catName}
@@ -865,9 +803,7 @@ export default function PackageServicesPage() {
                                 </h3>
                                 <ChevronDown
                                   className={`h-5 w-5 transform transition-transform ${
-                                    expandedCategories.has(catId)
-                                      ? "rotate-180"
-                                      : ""
+                                    expandedCategories.has(catId) ? "rotate-180" : ""
                                   }`}
                                 />
                               </button>
@@ -893,20 +829,16 @@ export default function PackageServicesPage() {
                                         ? manualInputValue[svc.id]
                                         : String(quantity);
 
-                                    const calcResult =
-                                      calculationResultsMap[svc.id];
+                                    const calcResult = calculationResultsMap[svc.id];
                                     const finalCost = serviceCosts[svc.id] || 0;
-                                    const isBreakdownOpen =
-                                      expandedCostBreakdown.has(svc.id);
+                                    const isBreakdownOpen = expandedCostBreakdown.has(svc.id);
 
                                     return (
                                       <div key={svc.id} className="space-y-2">
                                         <div className="flex justify-between items-center">
                                           <span
                                             className={`text-lg transition-colors duration-300 ${
-                                              isSelected
-                                                ? "text-blue-600"
-                                                : "text-gray-800"
+                                              isSelected ? "text-blue-600" : "text-gray-800"
                                             }`}
                                           >
                                             {svc.title}
@@ -915,9 +847,7 @@ export default function PackageServicesPage() {
                                             <input
                                               type="checkbox"
                                               checked={isSelected}
-                                              onChange={() =>
-                                                toggleService(svc.id)
-                                              }
+                                              onChange={() => toggleService(svc.id)}
                                               className="sr-only peer"
                                             />
                                             <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
@@ -950,12 +880,10 @@ export default function PackageServicesPage() {
                                                   type="text"
                                                   value={inputValue}
                                                   onClick={() =>
-                                                    setManualInputValue(
-                                                      (prev) => ({
-                                                        ...prev,
-                                                        [svc.id]: "",
-                                                      })
-                                                    )
+                                                    setManualInputValue((prev) => ({
+                                                      ...prev,
+                                                      [svc.id]: "",
+                                                    }))
                                                   }
                                                   onBlur={() =>
                                                     handleBlurInput(
@@ -989,22 +917,15 @@ export default function PackageServicesPage() {
                                                   {svc.unit_of_measurement}
                                                 </span>
                                               </div>
-                                              {/* Show cost + breakdown toggler */}
+                                              {/* cost + breakdown toggle */}
                                               <div className="flex items-center gap-2">
                                                 <span className="text-lg text-blue-600 font-medium text-right">
-                                                  $
-                                                  {formatWithSeparator(
-                                                    finalCost
-                                                  )}
+                                                  ${formatWithSeparator(finalCost)}
                                                 </span>
                                                 <button
-                                                  onClick={() =>
-                                                    toggleCostBreakdown(svc.id)
-                                                  }
+                                                  onClick={() => toggleCostBreakdown(svc.id)}
                                                   className={`text-blue-500 text-sm ml-2 ${
-                                                    isBreakdownOpen
-                                                      ? ""
-                                                      : "underline"
+                                                    isBreakdownOpen ? "" : "underline"
                                                   }`}
                                                 >
                                                   Details
@@ -1030,8 +951,7 @@ export default function PackageServicesPage() {
                                                   </div>
                                                   <div className="flex justify-between">
                                                     <span className="text-md font-medium text-gray-700">
-                                                      Materials, tools, &amp;
-                                                      equipment
+                                                      Materials, tools, &amp; equipment
                                                     </span>
                                                     <span>
                                                       {calcResult.material_cost
@@ -1041,36 +961,21 @@ export default function PackageServicesPage() {
                                                   </div>
                                                 </div>
 
-                                                {/* Materials table */}
-                                                {Array.isArray(
-                                                  calcResult.materials
-                                                ) &&
-                                                  calcResult.materials.length >
-                                                    0 && (
+                                                {Array.isArray(calcResult.materials) &&
+                                                  calcResult.materials.length > 0 && (
                                                     <div className="mt-2">
                                                       <table className="table-auto w-full text-sm text-left text-gray-700">
                                                         <thead>
                                                           <tr className="border-b">
-                                                            <th className="py-2 px-1">
-                                                              Name
-                                                            </th>
-                                                            <th className="py-2 px-1">
-                                                              Price
-                                                            </th>
-                                                            <th className="py-2 px-1">
-                                                              Qty
-                                                            </th>
-                                                            <th className="py-2 px-1">
-                                                              Subtotal
-                                                            </th>
+                                                            <th className="py-2 px-1">Name</th>
+                                                            <th className="py-2 px-1">Price</th>
+                                                            <th className="py-2 px-1">Qty</th>
+                                                            <th className="py-2 px-1">Subtotal</th>
                                                           </tr>
                                                         </thead>
                                                         <tbody className="divide-y divide-gray-200">
                                                           {calcResult.materials.map(
-                                                            (
-                                                              m: any,
-                                                              idx2: number
-                                                            ) => (
+                                                            (m: any, idx2: number) => (
                                                               <tr
                                                                 key={`${m.external_id}-${idx2}`}
                                                               >
@@ -1078,10 +983,7 @@ export default function PackageServicesPage() {
                                                                   {m.name}
                                                                 </td>
                                                                 <td className="py-3 px-1">
-                                                                  $
-                                                                  {
-                                                                    m.cost_per_unit
-                                                                  }
+                                                                  ${m.cost_per_unit}
                                                                 </td>
                                                                 <td className="py-3 px-3">
                                                                   {m.quantity}
@@ -1121,15 +1023,11 @@ export default function PackageServicesPage() {
                 <div className="w-full max-w-[624px] mx-auto">
                   <div
                     className="relative overflow-hidden rounded-xl border border-gray-300 h-32 bg-center bg-cover"
-                    style={{
-                      backgroundImage: `url(/images/rooms/landscape.jpg)`,
-                    }}
+                    style={{ backgroundImage: `url(/images/rooms/landscape.jpg)` }}
                   >
                     <div className="absolute inset-0 bg-black bg-opacity-30"></div>
                     <div className="relative z-10 flex items-center justify-center h-full">
-                      <SectionBoxTitle className="text-white">
-                        For Garden
-                      </SectionBoxTitle>
+                      <SectionBoxTitle className="text-white">For Garden</SectionBoxTitle>
                     </div>
                   </div>
                 </div>
@@ -1156,18 +1054,14 @@ export default function PackageServicesPage() {
                             }
                           });
 
-                          const catObj = ALL_CATEGORIES.find(
-                            (c) => c.id === catId
-                          );
+                          const catObj = ALL_CATEGORIES.find((c) => c.id === catId);
                           const catName = catObj ? catObj.title : catId;
 
                           return (
                             <div
                               key={catId}
                               className={`p-4 border rounded-xl bg-white mt-4 ${
-                                selectedInCat > 0
-                                  ? "border-blue-500"
-                                  : "border-gray-300"
+                                selectedInCat > 0 ? "border-blue-500" : "border-gray-300"
                               }`}
                             >
                               <button
@@ -1176,9 +1070,7 @@ export default function PackageServicesPage() {
                               >
                                 <h3
                                   className={`font-medium text-2xl ${
-                                    selectedInCat > 0
-                                      ? "text-blue-600"
-                                      : "text-black"
+                                    selectedInCat > 0 ? "text-blue-600" : "text-black"
                                   }`}
                                 >
                                   {catName}
@@ -1190,9 +1082,7 @@ export default function PackageServicesPage() {
                                 </h3>
                                 <ChevronDown
                                   className={`h-5 w-5 transform transition-transform ${
-                                    expandedCategories.has(catId)
-                                      ? "rotate-180"
-                                      : ""
+                                    expandedCategories.has(catId) ? "rotate-180" : ""
                                   }`}
                                 />
                               </button>
@@ -1200,17 +1090,17 @@ export default function PackageServicesPage() {
                               {expandedCategories.has(catId) && (
                                 <div className="mt-4 flex flex-col gap-3">
                                   {servicesForCat.map((svc) => {
-                                    const inIndoor =
-                                      selectedServices.indoor[svc.id];
-                                    const inOutdoor =
-                                      selectedServices.outdoor[svc.id];
+                                    const isIndoorSelected =
+                                      selectedServices.indoor[svc.id] != null;
+                                    const isOutdoorSelected =
+                                      selectedServices.outdoor[svc.id] != null;
                                     const isSelected =
-                                      !!inIndoor || !!inOutdoor;
+                                      isIndoorSelected || isOutdoorSelected;
 
-                                    const quantity = inIndoor
-                                      ? inIndoor
-                                      : inOutdoor
-                                      ? inOutdoor
+                                    const quantity = isIndoorSelected
+                                      ? selectedServices.indoor[svc.id]
+                                      : isOutdoorSelected
+                                      ? selectedServices.outdoor[svc.id]
                                       : 1;
 
                                     const inputVal =
@@ -1218,20 +1108,16 @@ export default function PackageServicesPage() {
                                         ? manualInputValue[svc.id]
                                         : String(quantity);
 
-                                    const calcResult =
-                                      calculationResultsMap[svc.id];
+                                    const calcResult = calculationResultsMap[svc.id];
                                     const finalCost = serviceCosts[svc.id] || 0;
-                                    const isBreakdownOpen =
-                                      expandedCostBreakdown.has(svc.id);
+                                    const isBreakdownOpen = expandedCostBreakdown.has(svc.id);
 
                                     return (
                                       <div key={svc.id} className="space-y-2">
                                         <div className="flex justify-between items-center">
                                           <span
                                             className={`text-lg transition-colors duration-300 ${
-                                              isSelected
-                                                ? "text-blue-600"
-                                                : "text-gray-800"
+                                              isSelected ? "text-blue-600" : "text-gray-800"
                                             }`}
                                           >
                                             {svc.title}
@@ -1240,15 +1126,14 @@ export default function PackageServicesPage() {
                                             <input
                                               type="checkbox"
                                               checked={isSelected}
-                                              onChange={() =>
-                                                toggleService(svc.id)
-                                              }
+                                              onChange={() => toggleService(svc.id)}
                                               className="sr-only peer"
                                             />
                                             <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
                                             <div className="absolute top-[2px] left-[2px] w-[22px] h-[22px] bg-white rounded-full shadow-md peer-checked:translate-x-[24px] transform transition-transform duration-300"></div>
                                           </label>
                                         </div>
+
                                         {isSelected && (
                                           <>
                                             {svc.description && (
@@ -1274,12 +1159,10 @@ export default function PackageServicesPage() {
                                                   type="text"
                                                   value={inputVal}
                                                   onClick={() =>
-                                                    setManualInputValue(
-                                                      (old) => ({
-                                                        ...old,
-                                                        [svc.id]: "",
-                                                      })
-                                                    )
+                                                    setManualInputValue((old) => ({
+                                                      ...old,
+                                                      [svc.id]: "",
+                                                    }))
                                                   }
                                                   onBlur={() =>
                                                     handleBlurInput(
@@ -1316,19 +1199,12 @@ export default function PackageServicesPage() {
                                               {/* cost + breakdown toggle */}
                                               <div className="flex items-center gap-2">
                                                 <span className="text-lg text-blue-600 font-medium text-right">
-                                                  $
-                                                  {formatWithSeparator(
-                                                    finalCost
-                                                  )}
+                                                  ${formatWithSeparator(finalCost)}
                                                 </span>
                                                 <button
-                                                  onClick={() =>
-                                                    toggleCostBreakdown(svc.id)
-                                                  }
+                                                  onClick={() => toggleCostBreakdown(svc.id)}
                                                   className={`text-blue-500 text-sm ml-2 ${
-                                                    isBreakdownOpen
-                                                      ? ""
-                                                      : "underline"
+                                                    isBreakdownOpen ? "" : "underline"
                                                   }`}
                                                 >
                                                   Details
@@ -1354,8 +1230,7 @@ export default function PackageServicesPage() {
                                                   </div>
                                                   <div className="flex justify-between">
                                                     <span className="text-md font-medium text-gray-700">
-                                                      Materials, tools, &amp;
-                                                      equipment
+                                                      Materials, tools, &amp; equipment
                                                     </span>
                                                     <span>
                                                       {calcResult.material_cost
@@ -1365,36 +1240,21 @@ export default function PackageServicesPage() {
                                                   </div>
                                                 </div>
 
-                                                {/* Materials table */}
-                                                {Array.isArray(
-                                                  calcResult.materials
-                                                ) &&
-                                                  calcResult.materials.length >
-                                                    0 && (
+                                                {Array.isArray(calcResult.materials) &&
+                                                  calcResult.materials.length > 0 && (
                                                     <div className="mt-2">
                                                       <table className="table-auto w-full text-sm text-left text-gray-700">
                                                         <thead>
                                                           <tr className="border-b">
-                                                            <th className="py-2 px-1">
-                                                              Name
-                                                            </th>
-                                                            <th className="py-2 px-1">
-                                                              Price
-                                                            </th>
-                                                            <th className="py-2 px-1">
-                                                              Qty
-                                                            </th>
-                                                            <th className="py-2 px-1">
-                                                              Subtotal
-                                                            </th>
+                                                            <th className="py-2 px-1">Name</th>
+                                                            <th className="py-2 px-1">Price</th>
+                                                            <th className="py-2 px-1">Qty</th>
+                                                            <th className="py-2 px-1">Subtotal</th>
                                                           </tr>
                                                         </thead>
                                                         <tbody className="divide-y divide-gray-200">
                                                           {calcResult.materials.map(
-                                                            (
-                                                              m: any,
-                                                              idx2: number
-                                                            ) => (
+                                                            (m: any, idx2: number) => (
                                                               <tr
                                                                 key={`${m.external_id}-${idx2}`}
                                                               >
@@ -1402,10 +1262,7 @@ export default function PackageServicesPage() {
                                                                   {m.name}
                                                                 </td>
                                                                 <td className="py-3 px-1">
-                                                                  $
-                                                                  {
-                                                                    m.cost_per_unit
-                                                                  }
+                                                                  ${m.cost_per_unit}
                                                                 </td>
                                                                 <td className="py-3 px-1">
                                                                   {m.quantity}
@@ -1440,13 +1297,10 @@ export default function PackageServicesPage() {
             )}
           </div>
 
-          {/* RIGHT COLUMN => summary */}
+          {/* RIGHT column => summary */}
           <div className="w-1/2 ml-auto pt-0 space-y-6">
-            {/* Summaries of selected services */}
             <div className="max-w-[500px] ml-auto bg-white p-4 rounded-lg border border-gray-300 overflow-hidden">
-              <SectionBoxSubtitle>
-                Your {chosenPackage.title}
-              </SectionBoxSubtitle>
+              <SectionBoxSubtitle>Your {chosenPackage.title}</SectionBoxSubtitle>
 
               {Object.keys(mergedSelected).length === 0 ? (
                 <div className="text-left text-gray-500 text-medium mt-4">
@@ -1455,63 +1309,57 @@ export default function PackageServicesPage() {
               ) : (
                 <>
                   <p className="text-gray-700 mb-4">
-                    These are the services you selected, grouped by section
-                    &amp; category:
+                    These are the services you selected, grouped by section &amp; category:
                   </p>
 
+                  {/* Build a local summary structure */}
                   <div className="space-y-6">
-                    {Object.entries(summaryStructure).map(
-                      ([sectionName, cats]) => {
-                        if (!Object.keys(cats).length) return null;
-                        return (
-                          <div key={sectionName}>
-                            <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                              {sectionName}
-                            </h3>
+                    {Object.entries(summaryStructure).map(([sectionName, cats]) => {
+                      if (!Object.keys(cats).length) return null;
+                      return (
+                        <div key={sectionName}>
+                          <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                            {sectionName}
+                          </h3>
 
-                            {Object.entries(cats).map(([catId, arr]) => {
-                              const catObj = ALL_CATEGORIES.find(
-                                (c) => c.id === catId
-                              );
-                              const catName = catObj ? catObj.title : catId;
-                              if (!arr.length) return null;
+                          {Object.entries(cats).map(([catId, arr]) => {
+                            const catObj = ALL_CATEGORIES.find((c) => c.id === catId);
+                            const catName = catObj ? catObj.title : catId;
+                            if (!arr.length) return null;
 
-                              return (
-                                <div key={catId} className="ml-4 mb-4">
-                                  <h4 className="text-lg font-medium text-gray-700 mb-2">
-                                    {catName}
-                                  </h4>
-                                  <ul className="space-y-1">
-                                    {arr.map(({ svcObj, qty }) => {
-                                      const cost = serviceCosts[svcObj.id] || 0;
-                                      return (
-                                        <li
-                                          key={svcObj.id}
-                                          className="flex justify-between items-center text-sm text-gray-600"
-                                        >
-                                          <span className="truncate w-1/2 pr-2">
-                                            {svcObj.title}
-                                          </span>
-                                          <span>
-                                            {qty} {svcObj.unit_of_measurement}
-                                          </span>
-                                          <span className="text-right w-1/4">
-                                            ${formatWithSeparator(cost)}
-                                          </span>
-                                        </li>
-                                      );
-                                    })}
-                                  </ul>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        );
-                      }
-                    )}
+                            return (
+                              <div key={catId} className="ml-4 mb-4">
+                                <h4 className="text-lg font-medium text-gray-700 mb-2">
+                                  {catName}
+                                </h4>
+                                <ul className="space-y-1">
+                                  {arr.map(({ svcObj, qty }) => {
+                                    const cost = serviceCosts[svcObj.id] || 0;
+                                    return (
+                                      <li
+                                        key={svcObj.id}
+                                        className="flex justify-between items-center text-sm text-gray-600"
+                                      >
+                                        <span className="truncate w-1/2 pr-2">{svcObj.title}</span>
+                                        <span>
+                                          {qty} {svcObj.unit_of_measurement}
+                                        </span>
+                                        <span className="text-right w-1/4">
+                                          ${formatWithSeparator(cost)}
+                                        </span>
+                                      </li>
+                                    );
+                                  })}
+                                </ul>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })}
                   </div>
 
-                  {/* Price totals */}
+                  {/* Price total */}
                   <div className="flex flex-col gap-2 items-end mt-6">
                     <div className="flex justify-between w-full">
                       <span className="text-2xl font-semibold text-gray-700">
@@ -1534,14 +1382,12 @@ export default function PackageServicesPage() {
               )}
             </div>
 
-            {/* House info summary */}
+            {/* House info */}
             <div className="max-w-[500px] ml-auto bg-white p-4 rounded-lg border border-gray-300 overflow-hidden">
               <SectionBoxSubtitle>Home Details</SectionBoxSubtitle>
-
               <div className="mt-2 space-y-1 text-sm text-gray-700">
                 <p>
-                  <strong>Address:</strong>{" "}
-                  {houseInfo.addressLine ? houseInfo.addressLine : "N/A"}
+                  <strong>Address:</strong> {houseInfo.addressLine || "N/A"}
                 </p>
                 <p>
                   <strong>City / Zip:</strong> {houseInfo.city || "?"},{" "}
@@ -1551,10 +1397,8 @@ export default function PackageServicesPage() {
                   <strong>Country:</strong> {houseInfo.country || "?"}
                 </p>
                 <hr className="my-2" />
-
                 <p>
-                  <strong>House Type:</strong>{" "}
-                  {formatHouseType(houseInfo.houseType)}
+                  <strong>House Type:</strong> {formatHouseType(houseInfo.houseType)}
                 </p>
                 <p>
                   <strong>Floors:</strong> {houseInfo.floors}
@@ -1577,12 +1421,9 @@ export default function PackageServicesPage() {
                 </p>
                 <p>
                   <strong>Boiler/Heater:</strong>{" "}
-                  {houseInfo.hasBoiler
-                    ? houseInfo.boilerType || "Yes"
-                    : "No / None"}
+                  {houseInfo.hasBoiler ? houseInfo.boilerType || "Yes" : "No / None"}
                 </p>
                 <hr className="my-2" />
-
                 <p>
                   <strong>Garage:</strong>{" "}
                   {houseInfo.hasGarage ? houseInfo.garageCount : "No"}
@@ -1595,9 +1436,7 @@ export default function PackageServicesPage() {
                 </p>
                 <p>
                   <strong>Pool:</strong>{" "}
-                  {houseInfo.hasPool
-                    ? `${houseInfo.poolArea} sq ft`
-                    : "No pool"}
+                  {houseInfo.hasPool ? `${houseInfo.poolArea} sq ft` : "No pool"}
                 </p>
               </div>
             </div>
