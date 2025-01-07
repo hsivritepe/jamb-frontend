@@ -11,9 +11,7 @@ import { ALL_SERVICES } from "@/constants/services";
 import { PACKAGES } from "@/constants/packages";
 import { taxRatesUSA } from "@/constants/taxRatesUSA";
 
-/**
- * Formats a number with commas and exactly two decimals.
- */
+/** Formats a number with commas and exactly two decimals. */
 function formatWithSeparator(value: number): string {
   return new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 2,
@@ -21,33 +19,26 @@ function formatWithSeparator(value: number): string {
   }).format(value);
 }
 
-/**
- * Loads JSON from sessionStorage or returns a default if SSR/not found.
- */
+/** Loads data from sessionStorage or returns a default if not found/SSR. */
 function loadFromSession<T>(key: string, defaultValue: T): T {
-  if (typeof window === "undefined") {
-    return defaultValue;
-  }
+  if (typeof window === "undefined") return defaultValue;
   const stored = sessionStorage.getItem(key);
+  if (!stored) return defaultValue;
   try {
-    return stored ? JSON.parse(stored) : defaultValue;
+    return JSON.parse(stored) as T;
   } catch {
     return defaultValue;
   }
 }
 
-/**
- * Saves JSON to sessionStorage.
- */
+/** Saves data to sessionStorage as JSON. */
 function saveToSession(key: string, value: any) {
   if (typeof window !== "undefined") {
     sessionStorage.setItem(key, JSON.stringify(value));
   }
 }
 
-/**
- * Returns the combined (state + local) tax rate for a given two-letter state code, or 0 if not found.
- */
+/** Returns the combined (state + local) tax rate by two-letter state code, or 0 if not found. */
 function getTaxRateForState(stateName: string): number {
   if (!stateName) return 0;
   const row = taxRatesUSA.taxRates.find(
@@ -56,9 +47,7 @@ function getTaxRateForState(stateName: string): number {
   return row ? row.combinedStateAndLocalTaxRate : 0;
 }
 
-/**
- * Converts a houseType code into a more user-friendly string.
- */
+/** Converts a houseType code into a user-friendly string. */
 function formatHouseType(value: string): string {
   switch (value) {
     case "single_family":
@@ -72,9 +61,7 @@ function formatHouseType(value: string): string {
   }
 }
 
-/**
- * A simple modal for monthly/quarterly/prepay selection.
- */
+/** Payment option modal for monthly/quarterly/prepay. */
 function PaymentOptionModal({
   subtotal,
   onClose,
@@ -121,7 +108,7 @@ function PaymentOptionModal({
 
         <div className="space-y-4">
           {options.map((opt) => {
-            const discounted = subtotal * opt.coefficient;
+            const discountedSubtotal = subtotal * opt.coefficient;
             return (
               <div
                 key={opt.label}
@@ -137,7 +124,7 @@ function PaymentOptionModal({
                   <p className="text-gray-700 text-sm mt-2">
                     New Subtotal:{" "}
                     <span className="font-medium text-blue-600">
-                      ${formatWithSeparator(discounted)}
+                      ${formatWithSeparator(discountedSubtotal)}
                     </span>
                   </p>
                 </div>
@@ -159,7 +146,7 @@ function PaymentOptionModal({
 export default function EstimatePage() {
   const router = useRouter();
 
-  // Which package is chosen
+  // Identify which package was chosen
   const storedPackageId = loadFromSession("packages_currentPackageId", null);
   const chosenPackage = PACKAGES.find((p) => p.id === storedPackageId) || null;
 
@@ -173,7 +160,7 @@ export default function EstimatePage() {
     ...selectedServicesData.outdoor,
   };
 
-  // If no services => redirect
+  // If no services, redirect
   useEffect(() => {
     if (Object.keys(mergedSelected).length === 0) {
       router.push(
@@ -184,7 +171,7 @@ export default function EstimatePage() {
     }
   }, [mergedSelected, router, storedPackageId]);
 
-  // Load calculation results from session
+  // Load calculation data
   const calculationResultsMap: Record<string, any> = loadFromSession(
     "packages_calculationResultsMap",
     {}
@@ -194,7 +181,7 @@ export default function EstimatePage() {
     {}
   );
 
-  // House info => show it in "Home Details"
+  // House info
   const houseInfo = loadFromSession("packages_houseInfo", {
     addressLine: "",
     city: "",
@@ -218,18 +205,20 @@ export default function EstimatePage() {
     airConditioners: 0,
   });
 
-  // Payment modal states
+  // Payment modal
   const [showModal, setShowModal] = useState(false);
-  const [selectedPaymentOption, setSelectedPaymentOption] = useState<
-    string | null
-  >(() => loadFromSession("packages_selectedTime", null));
+  const [selectedPaymentOption, setSelectedPaymentOption] = useState<string | null>(
+    () => loadFromSession("packages_selectedTime", null)
+  );
   const [paymentCoefficient, setPaymentCoefficient] = useState<number>(() =>
     loadFromSession("packages_timeCoefficient", 1)
   );
 
+  // Whenever user picks a payment option or coefficient, save to session
   useEffect(() => {
     saveToSession("packages_selectedTime", selectedPaymentOption);
   }, [selectedPaymentOption]);
+
   useEffect(() => {
     saveToSession("packages_timeCoefficient", paymentCoefficient);
   }, [paymentCoefficient]);
@@ -237,15 +226,14 @@ export default function EstimatePage() {
   // Summation logic
   let laborSubtotal = 0;
   let materialsSubtotal = 0;
-
-  for (const [svcId] of Object.entries(mergedSelected)) {
+  for (const svcId of Object.keys(mergedSelected)) {
     const res = calculationResultsMap[svcId];
     if (!res) continue;
     laborSubtotal += parseFloat(res.work_cost) || 0;
     materialsSubtotal += parseFloat(res.material_cost) || 0;
   }
 
-  // Apply paymentCoefficient to labor
+  // Apply paymentCoefficient => labor
   const finalLabor = laborSubtotal * paymentCoefficient;
 
   // Fees: 15% on labor, 5% on materials
@@ -253,36 +241,121 @@ export default function EstimatePage() {
   const serviceFeeOnMaterials = materialsSubtotal * 0.05;
 
   // sumBeforeTax
-  const sumBeforeTax =
-    finalLabor + materialsSubtotal + serviceFeeOnLabor + serviceFeeOnMaterials;
+  const sumBeforeTax = finalLabor + materialsSubtotal + serviceFeeOnLabor + serviceFeeOnMaterials;
 
-  // State code -> find tax rate
+  // Tax
   const userState = houseInfo.state || "";
   const taxRatePercent = getTaxRateForState(userState);
   const taxAmount = sumBeforeTax * (taxRatePercent / 100);
 
-  // final total
+  // final
   const finalTotal = sumBeforeTax + taxAmount;
+
+  // Build array => cost breakdown
+  type ServiceItem = {
+    svcId: string;
+    svcObj: (typeof ALL_SERVICES)[number];
+    quantity: number;
+    labor: number;
+    materials: number;
+    breakdown: any;
+  };
+
+  const servicesArray: ServiceItem[] = Object.entries(mergedSelected).map(
+    ([svcId, qty]) => {
+      const svcObj = ALL_SERVICES.find(s => s.id === svcId);
+      if (!svcObj) return null;
+      const breakdown = calculationResultsMap[svcId];
+      const laborVal = breakdown ? parseFloat(breakdown.work_cost) || 0 : 0;
+      const matVal = breakdown ? parseFloat(breakdown.material_cost) || 0 : 0;
+      return {
+        svcId,
+        svcObj,
+        quantity: qty,
+        labor: laborVal,
+        materials: matVal,
+        breakdown,
+      };
+    }
+  ).filter(Boolean) as ServiceItem[];
+
+  // Group by section->category
+  const summaryBySection: Record<string, Record<string, ServiceItem[]>> = {};
+  servicesArray.forEach(item => {
+    const catId = item.svcId.split("-").slice(0, 2).join("-");
+    const catObj = ALL_CATEGORIES.find(c => c.id === catId);
+    if (!catObj) return;
+    const sectionName = catObj.section;
+    if (!summaryBySection[sectionName]) {
+      summaryBySection[sectionName] = {};
+    }
+    if (!summaryBySection[sectionName][catId]) {
+      summaryBySection[sectionName][catId] = [];
+    }
+    summaryBySection[sectionName][catId].push(item);
+  });
+
+  // On "Proceed to checkout"
+  function handleProceedToCheckout() {
+    router.push("/packages/checkout");
+  }
+
+  // On "Go back to services"
+  function handleGoBack() {
+    if (storedPackageId) {
+      router.push(`/packages/services?packageId=${storedPackageId}`);
+    } else {
+      router.push("/packages/services");
+    }
+  }
+
+  // Save all final numbers so Checkout can read them
+  useEffect(() => {
+    saveToSession("packages_laborSubtotal", laborSubtotal);
+    saveToSession("packages_materialsSubtotal", materialsSubtotal);
+    saveToSession("serviceFeeOnLabor", serviceFeeOnLabor);
+    saveToSession("serviceFeeOnMaterials", serviceFeeOnMaterials);
+    saveToSession("packages_sumBeforeTax", sumBeforeTax);
+    saveToSession("packages_taxRatePercent", taxRatePercent);
+    saveToSession("packages_taxAmount", taxAmount);
+    saveToSession("packages_estimateFinalTotal", finalTotal);
+  }, [
+    laborSubtotal,
+    materialsSubtotal,
+    serviceFeeOnLabor,
+    serviceFeeOnMaterials,
+    sumBeforeTax,
+    taxRatePercent,
+    taxAmount,
+    finalTotal,
+  ]);
+
+  // Adjust breadcrumbs
+  const modifiedCrumbs = PACKAGES_STEPS.map((step) => {
+    if (!storedPackageId) return step;
+    if (step.href.startsWith("/packages") && !step.href.includes("?")) {
+      return { ...step, href: `${step.href}?packageId=${storedPackageId}` };
+    }
+    return step;
+  });
 
   // Payment schedule
   function renderPaymentSchedule() {
     if (!selectedPaymentOption) return null;
 
-    function formatDate(date: Date): string {
-      const mm = String(date.getMonth() + 1).padStart(2, "0");
-      const dd = String(date.getDate()).padStart(2, "0");
-      const yyyy = date.getFullYear();
-      return `${mm}/${dd}/${yyyy}`;
+    function formatDate(d: Date): string {
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const dd = String(d.getDate()).padStart(2, "0");
+      const y = d.getFullYear();
+      return `${m}/${dd}/${y}`;
     }
 
     if (selectedPaymentOption === "100% Prepayment") {
       return (
         <div className="mt-4">
-          <h4 className="text-xl font-semibold text-gray-800">
-            Payment Schedule
-          </h4>
+          <h4 className="text-xl font-semibold text-gray-800">Payment Schedule</h4>
           <p className="text-md text-gray-600 mt-2">
-            You pay the entire total sum of{" "}
+            You pay the entire total of{" "}
             <span className="font-medium text-blue-600">
               ${formatWithSeparator(finalTotal)}
             </span>{" "}
@@ -295,9 +368,7 @@ export default function EstimatePage() {
       const monthlyPayment = finalTotal / 12;
       return (
         <div className="mt-4">
-          <h4 className="text-xl font-semibold text-gray-800">
-            Payment Schedule
-          </h4>
+          <h4 className="text-xl font-semibold text-gray-800">Payment Schedule</h4>
           <p className="text-md text-gray-600 mt-2">
             You will pay{" "}
             <span className="font-medium text-blue-600">
@@ -313,29 +384,24 @@ export default function EstimatePage() {
       const now = new Date();
       const futureDates: string[] = [];
       for (let i = 0; i < 4; i++) {
-        const payDate = new Date(
-          now.getFullYear(),
-          now.getMonth() + i * 3,
-          now.getDate()
+        futureDates.push(
+          formatDate(new Date(now.getFullYear(), now.getMonth() + i * 3, now.getDate()))
         );
-        futureDates.push(formatDate(payDate));
       }
       return (
         <div className="mt-4">
-          <h4 className="text-xl font-semibold text-gray-800">
-            Payment Schedule (Quarterly)
-          </h4>
+          <h4 className="text-xl font-semibold text-gray-800">Payment Schedule (Quarterly)</h4>
           <p className="text-md text-gray-600 mt-2 mb-2">
             You will pay{" "}
             <span className="font-medium text-blue-600">
               ${formatWithSeparator(quarterlyPayment)}
             </span>{" "}
-            every 3 months (4 payments total).
+            every 3 months (4 total payments).
           </p>
           <ul className="list-disc list-inside text-md text-gray-600">
-            {futureDates.map((d, idx) => (
+            {futureDates.map((dateStr, idx) => (
               <li key={idx}>
-                Payment #{idx + 1}: {d}
+                Payment #{idx + 1}: {dateStr}
               </li>
             ))}
           </ul>
@@ -344,76 +410,6 @@ export default function EstimatePage() {
     }
     return null;
   }
-
-
-  type ServiceItem = {
-    svcId: string;
-    svcObj: (typeof ALL_SERVICES)[number];
-    quantity: number;
-    labor: number;
-    materials: number;
-    breakdown: any;
-  };
-
-  // Build an array of items
-  const servicesArray: ServiceItem[] = Object.entries(mergedSelected)
-    .map(([svcId, qty]) => {
-      const svcObj = ALL_SERVICES.find((s) => s.id === svcId);
-      if (!svcObj) return null;
-      const res = calculationResultsMap[svcId];
-      const laborVal = res ? parseFloat(res.work_cost) || 0 : 0;
-      const matVal = res ? parseFloat(res.material_cost) || 0 : 0;
-      return {
-        svcId,
-        svcObj,
-        quantity: qty,
-        labor: laborVal,
-        materials: matVal,
-        breakdown: res,
-      };
-    })
-    .filter(Boolean) as ServiceItem[];
-
-  // Group by section -> cat
-  const summaryBySection: Record<string, Record<string, ServiceItem[]>> = {};
-  servicesArray.forEach((item) => {
-    // e.g. svcId = "1-1-2"
-    const catId = item.svcId.split("-").slice(0, 2).join("-");
-    const catObj = ALL_CATEGORIES.find((c) => c.id === catId);
-    if (!catObj) return;
-
-    const sectionName = catObj.section; // e.g. "Electrical"
-    if (!summaryBySection[sectionName]) {
-      summaryBySection[sectionName] = {};
-    }
-    if (!summaryBySection[sectionName][catId]) {
-      summaryBySection[sectionName][catId] = [];
-    }
-    summaryBySection[sectionName][catId].push(item);
-  });
-
-  // Navigate to checkout
-  function handleProceedToCheckout() {
-    router.push("/packages/checkout");
-  }
-
-  // Go back to services
-  function handleGoBack() {
-    if (storedPackageId) {
-      router.push(`/packages/services?packageId=${storedPackageId}`);
-    } else {
-      router.push("/packages/services");
-    }
-  }
-
-  // Build breadcrumbs that keep ?packageId
-  const modifiedCrumbs = PACKAGES_STEPS.map((step) => {
-    if (!storedPackageId) return step;
-    if (step.href.startsWith("/packages") && !step.href.includes("?")) {
-      return { ...step, href: `${step.href}?packageId=${storedPackageId}` };
-    }
-    return step;
-  });
 
   return (
     <main className="min-h-screen pt-24 pb-16">
@@ -427,26 +423,21 @@ export default function EstimatePage() {
             Estimate for {chosenPackage ? chosenPackage.title : "No package found"}
           </SectionBoxSubtitle>
 
-          {/* Cost breakdown with numbering */}
+          {/* Cost breakdown */}
           <div className="mt-4 space-y-6">
             {Object.keys(summaryBySection).length === 0 ? (
               <p className="text-gray-500">No services selected</p>
             ) : (
-              // we have e.g. { "Electrical": { "1-1": [items], "1-2": [items] } ...}
-              Object.entries(summaryBySection).map(([sectionName, catMap], sectionIdx) => {
-                // sectionNumber => 1, 2, 3, ...
-                const sectionNumber = sectionIdx + 1;
-
+              Object.entries(summaryBySection).map(([sectionName, catMap], secIdx) => {
+                const sectionNumber = secIdx + 1;
                 return (
                   <div key={sectionName} className="space-y-4">
                     <h3 className="text-xl font-semibold text-gray-800">
                       {sectionNumber}. {sectionName}
                     </h3>
-
                     {Object.entries(catMap).map(([catId, items], catIdx) => {
-                      // catNumber => e.g. "1.1", "1.2"
                       const catNumber = `${sectionNumber}.${catIdx + 1}`;
-                      const catObj = ALL_CATEGORIES.find((c) => c.id === catId);
+                      const catObj = ALL_CATEGORIES.find(c => c.id === catId);
                       const catName = catObj ? catObj.title : catId;
 
                       return (
@@ -454,9 +445,7 @@ export default function EstimatePage() {
                           <h4 className="text-lg font-semibold text-gray-700">
                             {catNumber}. {catName}
                           </h4>
-
                           {items.map((svcItem, svcIdx) => {
-                            // svcNumber => e.g. "1.1.1", "1.1.2"
                             const svcNumber = `${catNumber}.${svcIdx + 1}`;
                             const totalCost = svcItem.labor + svcItem.materials;
                             const br = svcItem.breakdown;
@@ -476,14 +465,14 @@ export default function EstimatePage() {
                                 )}
                                 <div className="mt-2 flex justify-between items-center">
                                   <div className="text-md font-medium text-gray-700">
-                                    {svcItem.quantity} {svcItem.svcObj.unit_of_measurement}
+                                    {svcItem.quantity}{" "}
+                                    {svcItem.svcObj.unit_of_measurement}
                                   </div>
                                   <div className="text-md font-medium text-gray-800 mr-4">
                                     ${formatWithSeparator(totalCost)}
                                   </div>
                                 </div>
 
-                                {/* Full breakdown */}
                                 {br && (
                                   <div className="mt-2 p-4 bg-gray-50 border rounded">
                                     <div className="flex justify-between mb-2">
@@ -496,42 +485,43 @@ export default function EstimatePage() {
                                     </div>
                                     <div className="flex justify-between mb-2">
                                       <span className="text-sm font-medium text-gray-700">
-                                        Materials, tools &amp; equipment
+                                        Materials, tools & equipment
                                       </span>
                                       <span className="text-sm font-medium text-gray-700">
                                         ${formatWithSeparator(svcItem.materials)}
                                       </span>
                                     </div>
 
-                                    {Array.isArray(br.materials) &&
-                                      br.materials.length > 0 && (
-                                        <div className="mt-2">
-                                          <table className="table-auto w-full text-sm text-gray-700">
-                                            <thead>
-                                              <tr className="border-b">
-                                                <th className="py-2 px-1 text-left">Name</th>
-                                                <th className="py-2 px-1 text-left">Price</th>
-                                                <th className="py-2 px-1 text-left">Qty</th>
-                                                <th className="py-2 px-1 text-left">Subtotal</th>
+                                    {Array.isArray(br.materials) && br.materials.length > 0 && (
+                                      <div className="mt-2">
+                                        <table className="table-auto w-full text-sm text-gray-700">
+                                          <thead>
+                                            <tr className="border-b">
+                                              <th className="py-2 px-1 text-left">Name</th>
+                                              <th className="py-2 px-1 text-left">Price</th>
+                                              <th className="py-2 px-1 text-left">Qty</th>
+                                              <th className="py-2 px-1 text-left">Subtotal</th>
+                                            </tr>
+                                          </thead>
+                                          <tbody className="divide-y divide-gray-200">
+                                            {br.materials.map((m: any, i2: number) => (
+                                              <tr key={`${m.external_id}-${i2}`}>
+                                                <td className="py-3 px-1">{m.name}</td>
+                                                <td className="py-3 px-1">
+                                                  ${formatWithSeparator(parseFloat(m.cost_per_unit))}
+                                                </td>
+                                                <td className="py-3 px-3">
+                                                  {m.quantity}
+                                                </td>
+                                                <td className="py-3 px-3">
+                                                  ${formatWithSeparator(parseFloat(m.cost))}
+                                                </td>
                                               </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-gray-200">
-                                              {br.materials.map((m: any, i2: number) => (
-                                                <tr key={`${m.external_id}-${i2}`}>
-                                                  <td className="py-3 px-1">{m.name}</td>
-                                                  <td className="py-3 px-1">
-                                                    ${formatWithSeparator(parseFloat(m.cost_per_unit))}
-                                                  </td>
-                                                  <td className="py-3 px-3">{m.quantity}</td>
-                                                  <td className="py-3 px-3">
-                                                    ${formatWithSeparator(parseFloat(m.cost))}
-                                                  </td>
-                                                </tr>
-                                              ))}
-                                            </tbody>
-                                          </table>
-                                        </div>
-                                      )}
+                                            ))}
+                                          </tbody>
+                                        </table>
+                                      </div>
+                                    )}
                                   </div>
                                 )}
                               </div>
@@ -549,23 +539,21 @@ export default function EstimatePage() {
           {/* Subtotals and fees */}
           <div className="pt-4 mt-4 border-t border-gray-200">
             <div className="flex justify-between mb-2">
-              <span className="font-semibold text-lg text-gray-600">
-                Labor total:
-              </span>
+              <span className="font-semibold text-lg text-gray-600">Labor total:</span>
               <span className="font-semibold text-lg text-gray-600">
                 ${formatWithSeparator(laborSubtotal)}
               </span>
             </div>
             <div className="flex justify-between mb-2">
               <span className="font-semibold text-lg text-gray-600">
-                Materials, tools &amp; equipment:
+                Materials, tools & equipment:
               </span>
               <span className="font-semibold text-lg text-gray-600">
                 ${formatWithSeparator(materialsSubtotal)}
               </span>
             </div>
 
-            {/* Payment coefficient: discount or surcharge */}
+            {/* PaymentCoefficient => discount or surcharge */}
             {paymentCoefficient !== 1 && (
               <div className="flex justify-between mb-2">
                 <span className="text-gray-600">
@@ -582,7 +570,6 @@ export default function EstimatePage() {
               </div>
             )}
 
-            {/* Fees */}
             <div className="flex justify-between mb-2">
               <span className="text-gray-600">Service Fee (15% on labor)</span>
               <span className="font-semibold text-lg text-gray-800">
@@ -598,11 +585,8 @@ export default function EstimatePage() {
               </span>
             </div>
 
-            {/* Subtotal + tax */}
             <div className="flex justify-between mb-2">
-              <span className="font-semibold text-xl text-gray-800">
-                Subtotal
-              </span>
+              <span className="font-semibold text-xl text-gray-800">Subtotal</span>
               <span className="font-semibold text-xl text-gray-800">
                 ${formatWithSeparator(sumBeforeTax)}
               </span>
@@ -621,14 +605,10 @@ export default function EstimatePage() {
             <button
               onClick={() => setShowModal(true)}
               className={`w-full py-3 rounded-lg font-medium mt-4 border ${
-                selectedPaymentOption
-                  ? "text-red-500 border-red-500"
-                  : "text-brand border-brand"
+                selectedPaymentOption ? "text-red-500 border-red-500" : "text-brand border-brand"
               }`}
             >
-              {selectedPaymentOption
-                ? "Change Payment Option"
-                : "Select Payment Option"}
+              {selectedPaymentOption ? "Change Payment Option" : "Select Payment Option"}
             </button>
             {selectedPaymentOption && (
               <p className="mt-2 text-gray-700 text-center font-medium">
@@ -638,10 +618,10 @@ export default function EstimatePage() {
             )}
             {showModal && (
               <PaymentOptionModal
-                subtotal={laborSubtotal + materialsSubtotal}
+                subtotal={sumBeforeTax}
                 onClose={() => setShowModal(false)}
-                onConfirm={(opt, coeff) => {
-                  setSelectedPaymentOption(opt);
+                onConfirm={(lbl, coeff) => {
+                  setSelectedPaymentOption(lbl);
                   setPaymentCoefficient(coeff);
                   setShowModal(false);
                 }}
@@ -657,12 +637,13 @@ export default function EstimatePage() {
           {/* Payment schedule */}
           {renderPaymentSchedule()}
 
-          {/* Home Details */}
+          {/* House info */}
           <div className="mt-6">
             <h3 className="font-semibold text-xl text-gray-800">Home Details</h3>
             <div className="text-md text-gray-700 mt-4 space-y-1">
               <p>
-                <strong>Address:</strong> {houseInfo.addressLine || "—"}
+                <strong>Address:</strong>{" "}
+                {houseInfo.addressLine || "—"}
                 {houseInfo.state ? `, ${houseInfo.state}` : ""}
               </p>
               <p>
@@ -673,8 +654,7 @@ export default function EstimatePage() {
                 <strong>Country:</strong> {houseInfo.country || "—"}
               </p>
               <p>
-                <strong>House Type:</strong>{" "}
-                {formatHouseType(houseInfo.houseType)}
+                <strong>House Type:</strong> {formatHouseType(houseInfo.houseType)}
               </p>
               <p>
                 <strong>Floors:</strong> {houseInfo.floors}
