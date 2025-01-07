@@ -278,11 +278,11 @@ export default function EstimatePage() {
     if (selectedPaymentOption === "100% Prepayment") {
       return (
         <div className="mt-4">
-          <h4 className="text-lg font-semibold text-gray-800">
+          <h4 className="text-xl font-semibold text-gray-800">
             Payment Schedule
           </h4>
-          <p className="text-sm text-gray-600 mt-2">
-            You pay the entire total of{" "}
+          <p className="text-md text-gray-600 mt-2">
+            You pay the entire total sum of{" "}
             <span className="font-medium text-blue-600">
               ${formatWithSeparator(finalTotal)}
             </span>{" "}
@@ -295,10 +295,10 @@ export default function EstimatePage() {
       const monthlyPayment = finalTotal / 12;
       return (
         <div className="mt-4">
-          <h4 className="text-lg font-semibold text-gray-800">
+          <h4 className="text-xl font-semibold text-gray-800">
             Payment Schedule
           </h4>
-          <p className="text-sm text-gray-600 mt-2">
+          <p className="text-md text-gray-600 mt-2">
             You will pay{" "}
             <span className="font-medium text-blue-600">
               ${formatWithSeparator(monthlyPayment)}
@@ -322,17 +322,17 @@ export default function EstimatePage() {
       }
       return (
         <div className="mt-4">
-          <h4 className="text-lg font-semibold text-gray-800">
+          <h4 className="text-xl font-semibold text-gray-800">
             Payment Schedule (Quarterly)
           </h4>
-          <p className="text-sm text-gray-600 mt-2 mb-2">
+          <p className="text-md text-gray-600 mt-2 mb-2">
             You will pay{" "}
             <span className="font-medium text-blue-600">
               ${formatWithSeparator(quarterlyPayment)}
             </span>{" "}
             every 3 months (4 payments total).
           </p>
-          <ul className="list-disc list-inside text-sm text-gray-600">
+          <ul className="list-disc list-inside text-md text-gray-600">
             {futureDates.map((d, idx) => (
               <li key={idx}>
                 Payment #{idx + 1}: {d}
@@ -345,19 +345,7 @@ export default function EstimatePage() {
     return null;
   }
 
-  /**
-   * We will create a structure:
-   * summaryBySection = {
-   *   [sectionName]: {
-   *     [catId]: [ ServiceItem, ... ]
-   *   }
-   * }
-   *
-   * Then we'll number them like:
-   * 1. {sectionName}
-   * 1.1. {catName}
-   * 1.1.1. {svc title}
-   */
+
   type ServiceItem = {
     svcId: string;
     svcObj: (typeof ALL_SERVICES)[number];
@@ -487,10 +475,10 @@ export default function EstimatePage() {
                                   </p>
                                 )}
                                 <div className="mt-2 flex justify-between items-center">
-                                  <div className="text-sm text-gray-700">
+                                  <div className="text-md font-medium text-gray-700">
                                     {svcItem.quantity} {svcItem.svcObj.unit_of_measurement}
                                   </div>
-                                  <div className="text-sm font-medium text-gray-800">
+                                  <div className="text-md font-medium text-gray-800 mr-4">
                                     ${formatWithSeparator(totalCost)}
                                   </div>
                                 </div>
@@ -502,7 +490,7 @@ export default function EstimatePage() {
                                       <span className="text-sm font-medium text-gray-700">
                                         Labor
                                       </span>
-                                      <span className="text-sm text-gray-700">
+                                      <span className="text-sm font-medium text-gray-700">
                                         ${formatWithSeparator(svcItem.labor)}
                                       </span>
                                     </div>
@@ -510,7 +498,7 @@ export default function EstimatePage() {
                                       <span className="text-sm font-medium text-gray-700">
                                         Materials, tools &amp; equipment
                                       </span>
-                                      <span className="text-sm text-gray-700">
+                                      <span className="text-sm font-medium text-gray-700">
                                         ${formatWithSeparator(svcItem.materials)}
                                       </span>
                                     </div>
@@ -534,8 +522,8 @@ export default function EstimatePage() {
                                                   <td className="py-3 px-1">
                                                     ${formatWithSeparator(parseFloat(m.cost_per_unit))}
                                                   </td>
-                                                  <td className="py-3 px-1">{m.quantity}</td>
-                                                  <td className="py-3 px-1">
+                                                  <td className="py-3 px-3">{m.quantity}</td>
+                                                  <td className="py-3 px-3">
                                                     ${formatWithSeparator(parseFloat(m.cost))}
                                                   </td>
                                                 </tr>
@@ -672,7 +660,7 @@ export default function EstimatePage() {
           {/* Home Details */}
           <div className="mt-6">
             <h3 className="font-semibold text-xl text-gray-800">Home Details</h3>
-            <div className="text-sm text-gray-700 mt-4 space-y-1">
+            <div className="text-md text-gray-700 mt-4 space-y-1">
               <p>
                 <strong>Address:</strong> {houseInfo.addressLine || "—"}
                 {houseInfo.state ? `, ${houseInfo.state}` : ""}

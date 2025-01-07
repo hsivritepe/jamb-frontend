@@ -967,7 +967,7 @@ export default function PackageServicesPage() {
                                                       <table className="table-auto w-full text-sm text-left text-gray-700">
                                                         <thead>
                                                           <tr className="border-b">
-                                                            <th className="py-2 px-1">Name</th>
+                                                            <th className="py-2 px-1 text-left">Name</th>
                                                             <th className="py-2 px-1">Price</th>
                                                             <th className="py-2 px-1">Qty</th>
                                                             <th className="py-2 px-1">Subtotal</th>
