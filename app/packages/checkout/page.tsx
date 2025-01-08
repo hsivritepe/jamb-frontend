@@ -341,7 +341,7 @@ export default function CheckoutPage() {
     alert("Your order has been placed successfully!");
   }
   function handlePrint() {
-    console.log("Print the final checkout...");
+    router.push("/packages/checkout/print");
   }
   function handleShare() {
     console.log("Share the final checkout link...");
