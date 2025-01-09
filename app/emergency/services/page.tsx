@@ -14,15 +14,24 @@ import { ChevronDown } from "lucide-react";
 import { SectionBoxTitle } from "@/components/ui/SectionBoxTitle";
 import { useLocation } from "@/context/LocationContext";
 
-// Import the new reusable components
 import AddressSection from "@/components/ui/AddressSection";
 import PhotosAndDescription from "@/components/ui/PhotosAndDescription";
 
-// Helper functions for saving/loading data from sessionStorage
+/**
+ * Saves any arbitrary data to sessionStorage in JSON format.
+ */
 const saveToSession = (key: string, value: any) => {
-  sessionStorage.setItem(key, JSON.stringify(value));
+  if (typeof window !== "undefined") {
+    sessionStorage.setItem(key, JSON.stringify(value));
+  }
 };
+
+/**
+ * Loads data from sessionStorage (which was saved as JSON).
+ * If there's nothing stored or a parse error occurs, return `defaultValue`.
+ */
 const loadFromSession = (key: string, defaultValue: any) => {
+  if (typeof window === "undefined") return defaultValue;
   const savedValue = sessionStorage.getItem(key);
   try {
     return savedValue ? JSON.parse(savedValue) : defaultValue;
@@ -33,19 +42,26 @@ const loadFromSession = (key: string, defaultValue: any) => {
 };
 
 /**
- * This component is the first page of the "Emergency" flow.
- * Users select one or more emergency services, then provide an address,
- * optional photos, and optional description before continuing.
+ * EmergencyServices is the first step in the "Emergency" flow.
+ * The user selects one or more services, enters address details,
+ * optionally uploads photos, and provides a short description
+ * before continuing to the next page.
  */
 export default function EmergencyServices() {
   const router = useRouter();
+  const { location } = useLocation();
 
-  // Clear sessionStorage on first load to start fresh
+  /**
+   * Clear sessionStorage on the initial render to ensure a fresh start.
+   * You can remove this if you prefer to preserve data across sessions.
+   */
   useEffect(() => {
     sessionStorage.clear();
   }, []);
 
-  // States for selected services, expansions, search query, warnings, etc.
+  /**
+   * State for selected services, expanded categories, search query, and warnings.
+   */
   const [selectedServices, setSelectedServices] = useState<Record<string, string[]>>(
     loadFromSession("selectedServices", {})
   );
@@ -55,48 +71,72 @@ export default function EmergencyServices() {
   );
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
 
-  // States for address, description, and photos
+  /**
+   * Address section states: address, stateName, zip
+   * (matching the approach used in "calculate").
+   */
   const [address, setAddress] = useState<string>(loadFromSession("address", ""));
+  const [zip, setZip] = useState<string>(loadFromSession("zip", ""));
+  const [stateName, setStateName] = useState<string>(
+    loadFromSession("stateName", "")
+  );
+
+  /**
+   * Description and photos, both optional.
+   */
   const [description, setDescription] = useState<string>(
     loadFromSession("description", "")
   );
   const [photos, setPhotos] = useState<string[]>(loadFromSession("photos", []));
 
-  // Access user location from context (if available)
-  const { location } = useLocation();
-
-  // Persist states to sessionStorage whenever they change
+  /**
+   * Persist to sessionStorage whenever the relevant states change.
+   */
   useEffect(() => saveToSession("selectedServices", selectedServices), [selectedServices]);
   useEffect(() => saveToSession("searchQuery", searchQuery), [searchQuery]);
   useEffect(() => saveToSession("address", address), [address]);
+  useEffect(() => saveToSession("zip", zip), [zip]);
+  useEffect(() => saveToSession("stateName", stateName), [stateName]);
   useEffect(() => saveToSession("description", description), [description]);
   useEffect(() => saveToSession("photos", photos), [photos]);
 
-  // Calculate the total number of possible services (for placeholder text)
+  /**
+   * Combine address, stateName, and zip into one string if you want
+   * a single "fullAddress" in sessionStorage. This is optional.
+   */
+  useEffect(() => {
+    const combinedAddress = [address, stateName, zip].filter(Boolean).join(", ");
+    saveToSession("fullAddress", combinedAddress);
+  }, [address, stateName, zip]);
+
+  /**
+   * Count total number of possible emergency services for the search placeholder.
+   */
   const totalServices = Object.values(EMERGENCY_SERVICES).flatMap(
     ({ services }) => Object.keys(services)
   ).length;
 
-  // Expand/collapse category
+  /**
+   * Expand or collapse a category in the UI.
+   */
   const toggleCategory = (category: string) => {
     setExpandedCategories((prev) => {
       const next = new Set(prev);
-      if (next.has(category)) {
-        next.delete(category);
-      } else {
-        next.add(category);
-      }
+      next.has(category) ? next.delete(category) : next.add(category);
       return next;
     });
   };
 
-  // Select/unselect a service
+  /**
+   * Toggle a service within a category as selected or unselected.
+   * Clear the warning if the user selects a new service.
+   */
   const handleServiceSelect = (category: string, serviceKey: string) => {
     setSelectedServices((prev) => {
       const current = prev[category] || [];
       const isSelected = current.includes(serviceKey);
       if (!isSelected) {
-        setWarningMessage(null); // clear any warnings if newly selected
+        setWarningMessage(null);
       }
       return {
         ...prev,
@@ -107,43 +147,71 @@ export default function EmergencyServices() {
     });
   };
 
-  // Clear all selections
+  /**
+   * Clear all selected services and collapse all categories.
+   */
   const handleClearSelection = () => {
     const confirmed = window.confirm(
-      "Are you sure you want to clear all selected services? This will also collapse all expanded categories."
+      "Are you sure you want to clear all selected services? This will also collapse all categories."
     );
     if (!confirmed) return;
+
     setSelectedServices({});
     setExpandedCategories(new Set());
   };
 
-  // "Next" button: must have at least one service + an address
+  /**
+   * On "Next", ensure at least one service is selected,
+   * and that address/stateName/zip are non-empty.
+   */
   const handleNextClick = () => {
-    if (Object.values(selectedServices).flat().length === 0) {
+    const anyServiceSelected = Object.values(selectedServices).some(
+      (list) => list.length > 0
+    );
+    if (!anyServiceSelected) {
       setWarningMessage("Please select at least one service before proceeding.");
       return;
     }
-    if (!address.trim()) {
-      setWarningMessage("Please enter your address before proceeding.");
+    if (!address.trim() || !stateName.trim() || !zip.trim()) {
+      setWarningMessage("Please enter your address, state, and zip before proceeding.");
       return;
     }
-    // Everything is OK -> proceed
+
     router.push("/emergency/details");
   };
 
-  // Update address fields
+  /**
+   * Handlers for updating address, state, zip.
+   */
   const handleAddressChange = (e: ChangeEvent<HTMLInputElement>) => {
     setAddress(e.target.value);
   };
+  const handleStateChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setStateName(e.target.value);
+  };
+  const handleZipChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setZip(e.target.value);
+  };
+
+  /**
+   * Use location context to populate address fields if available.
+   * This is just an example; you might combine city + state + zip
+   * into your single address field or handle them separately.
+   */
   const handleUseMyLocation = () => {
-    if (location?.city && location?.zip) {
-      setAddress(`${location.city}, ${location.zip}, ${location.country || ""}`);
+    if (location?.city && location?.state && location?.zip) {
+      // For example, put the city into the "address" field
+      setAddress(location.city);
+      setStateName(location.state);
+      setZip(location.zip);
     } else {
       setWarningMessage("Location data is unavailable. Please enter manually.");
     }
   };
 
-  // Filter the EMERGENCY_SERVICES data based on search query
+  /**
+   * Filter the EMERGENCY_SERVICES by search query.
+   */
   const filteredServices: EmergencyServicesType = searchQuery
     ? Object.entries(EMERGENCY_SERVICES).reduce((acc, [category, { services }]) => {
         const matching = Object.entries(services).filter(([serviceKey]) =>
@@ -159,16 +227,16 @@ export default function EmergencyServices() {
   return (
     <main className="min-h-screen pt-24 pb-16">
       <div className="container mx-auto">
-        {/* Breadcrumb navigation */}
+        {/* Breadcrumb navigation for the multi-step Emergency flow */}
         <BreadCrumb items={EMERGENCY_STEPS} />
 
-        {/* Page Title & Next button */}
+        {/* Top row: page title + Next button */}
         <div className="flex justify-between items-start mt-8">
           <SectionBoxTitle>Let's Quickly Find the Help You Need</SectionBoxTitle>
           <Button onClick={handleNextClick}>Next →</Button>
         </div>
 
-        {/* Search field */}
+        {/* Search bar + Clear button */}
         <div className="flex flex-col gap-4 mt-8 w-full max-w-[600px]">
           <SearchServices
             value={searchQuery}
@@ -191,18 +259,18 @@ export default function EmergencyServices() {
           </div>
         </div>
 
-        {/* Possible warning messages */}
+        {/* Warning messages if needed */}
         <div className="h-6 mt-4 text-left">
           {warningMessage && <p className="text-red-500">{warningMessage}</p>}
         </div>
 
+        {/* Main content row: left = services, right = address/photos/description */}
         <div className="container mx-auto relative flex">
-          {/* Left section: categories + services */}
+          {/* LEFT side: categories + services */}
           <div className="flex-1">
             <div className="flex flex-col gap-3 mt-5 w-full max-w-[600px]">
               {Object.entries(filteredServices).map(([category, { services }]) => {
                 const categorySelectedCount = selectedServices[category]?.length || 0;
-                // Make a nicer label if needed
                 const categoryLabel = category.replace(/([A-Z])/g, " $1").trim();
 
                 return (
@@ -212,6 +280,7 @@ export default function EmergencyServices() {
                       categorySelectedCount > 0 ? "border-blue-500" : "border-gray-300"
                     }`}
                   >
+                    {/* Expand/collapse heading */}
                     <button
                       onClick={() => toggleCategory(category)}
                       className="flex justify-between items-center w-full"
@@ -235,13 +304,13 @@ export default function EmergencyServices() {
                       />
                     </button>
 
+                    {/* Expanded list of services */}
                     {expandedCategories.has(category) && (
                       <div className="mt-4 flex flex-col gap-3">
                         {Object.entries(services).map(([serviceKey]) => {
-                          // Convert key to a readable label
                           const serviceLabel = serviceKey
                             .replace(/([A-Z])/g, " $1")
-                            .replace(/^./, (str) => str.toUpperCase())
+                            .replace(/^./, (char) => char.toUpperCase())
                             .trim();
 
                           const isSelected =
@@ -280,16 +349,18 @@ export default function EmergencyServices() {
             </div>
           </div>
 
-          {/* Right section: use the new AddressSection & PhotosAndDescription */}
+          {/* RIGHT side: address section, photos, description */}
           <div className="w-1/2 ml-auto mt-4 pt-0">
-            {/* Reusable AddressSection */}
             <AddressSection
               address={address}
               onAddressChange={handleAddressChange}
+              zip={zip}
+              onZipChange={handleZipChange}
+              stateName={stateName}
+              onStateChange={handleStateChange}
               onUseMyLocation={handleUseMyLocation}
             />
 
-            {/* Reusable PhotosAndDescription */}
             <PhotosAndDescription
               photos={photos}
               description={description}
