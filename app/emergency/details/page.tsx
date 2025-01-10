@@ -791,11 +791,6 @@ export default function EmergencyDetails() {
                                   )}
                                 </>
                               )}
-
-                              {/* Horizontal separator between activities */}
-                              {i2 !== Object.keys(activities).length - 1 && (
-                                <hr className="border-gray-200" />
-                              )}
                             </div>
                           );
                         })}

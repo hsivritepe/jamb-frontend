@@ -321,10 +321,10 @@ export default function Estimate() {
 
                                   {/* quantity/unit + final cost on the same row */}
                                   <div className="flex items-center justify-between mt-2">
-                                    <div className="text-medium font-medium text-gray-800">
+                                    <div className="text-medium font-medium text-gray-700">
                                       {quantity} {svc.unit_of_measurement}
                                     </div>
-                                    <span className="text-gray-800 font-medium text-lg">
+                                    <span className="text-gray-700 font-medium text-lg mr-3">
                                       ${formatWithSeparator(finalCost)}
                                     </span>
                                   </div>
@@ -356,7 +356,7 @@ export default function Estimate() {
                                         </span>
                                       </div>
                                       <div className="flex justify-between mb-3">
-                                          <span className="text-md font-medium text-gray-800">Materials, tools and equipment</span>
+                                          <span className="text-md font-medium text-gray-800">Materials, tools & equipment</span>
                                           <span className="text-md font-medium text-gray-700">
                                             {calcResult.material_cost
                                               ? `$${formatWithSeparator(parseFloat(calcResult.material_cost))}`
@@ -452,14 +452,14 @@ export default function Estimate() {
                 {/* NEW fees (serviceFeeOnLabor, serviceFeeOnMaterials) */}
                 <div className="flex justify-between mb-2">
                   <span className="text-gray-600">Service Fee (15% on labor)</span>
-                  <span className="font-semibold text-lg text-gray-800">
+                  <span className="font-semibold text-lg text-gray-600">
                     ${formatWithSeparator(serviceFeeOnLabor)}
                   </span>
                 </div>
 
                 <div className="flex justify-between mb-2">
                   <span className="text-gray-600">Delivery &amp; Processing (5% on materials)</span>
-                  <span className="font-semibold text-lg text-gray-800">
+                  <span className="font-semibold text-lg text-gray-600">
                     ${formatWithSeparator(serviceFeeOnMaterials)}
                   </span>
                 </div>
