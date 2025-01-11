@@ -560,13 +560,13 @@ export default function CheckoutPage() {
               )}
 
               <div className="flex justify-between mb-2">
-                <span className="text-gray-700">Service Fee</span>
+                <span className="text-gray-700">Service Fee (20% on labor)</span>
                 <span className="text-lg text-gray-700 font-semibold">
                   ${formatWithSeparator(serviceFeeOnLabor)}
                 </span>
               </div>
               <div className="flex justify-between mb-2">
-                <span className="text-gray-700">Delivery &amp; Processing</span>
+                <span className="text-gray-700">Delivery &amp; Processing (10% on materials)</span>
                 <span className="text-lg text-gray-700 font-semibold">
                   ${formatWithSeparator(serviceFeeOnMaterials)}
                 </span>
