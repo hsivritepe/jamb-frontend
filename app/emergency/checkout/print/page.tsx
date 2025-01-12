@@ -482,9 +482,20 @@ export default function PrintEmergencyEstimate() {
 
         {/* Totals */}
         <div className="border-t pt-3 mt-4 space-y-1 text-sm">
+
+          <div className="flex justify-between">
+            <span>Labor:</span>
+            <span>${formatWithSeparator(finalLabor)}</span>
+          </div>
+
+          <div className="flex justify-between">
+            <span>Materials, tools &amp; equipment:</span>
+            <span>${formatWithSeparator(materialsSubtotal)}</span>
+          </div>
+
           {hasSurchargeOrDiscount && (
             <div className="flex justify-between">
-              <span>{timeCoefficient > 1 ? "Surcharge" : "Discount"}:</span>
+              <span>{timeCoefficient > 1 ? "Surcharge (urgency)" : "Discount (date selection)"}:</span>
               <span>
                 {timeCoefficient > 1 ? "+" : "-"}$
                 {formatWithSeparator(surchargeOrDiscount)}
@@ -493,19 +504,11 @@ export default function PrintEmergencyEstimate() {
           )}
 
           <div className="flex justify-between">
-            <span>Labor (final):</span>
-            <span>${formatWithSeparator(finalLabor)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Materials, tools &amp; equipment:</span>
-            <span>${formatWithSeparator(materialsSubtotal)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Service Fee:</span>
+            <span>Service Fee (20% on labor):</span>
             <span>${formatWithSeparator(serviceFeeOnLabor)}</span>
           </div>
           <div className="flex justify-between">
-            <span>Delivery &amp; Processing:</span>
+            <span>Delivery &amp; Processing (10% on materials):</span>
             <span>${formatWithSeparator(serviceFeeOnMaterials)}</span>
           </div>
 
