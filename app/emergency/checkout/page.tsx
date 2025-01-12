@@ -10,38 +10,10 @@ import { EMERGENCY_STEPS } from "@/constants/navigation";
 import { EMERGENCY_SERVICES } from "@/constants/emergency"; // For matching categories
 import { ALL_SERVICES } from "@/constants/services";
 
-/**
- * Saves data as JSON to sessionStorage (client-side only).
- */
-function saveToSession(key: string, value: any) {
-  if (typeof window !== "undefined") {
-    sessionStorage.setItem(key, JSON.stringify(value));
-  }
-}
-
-/**
- * Loads JSON data from sessionStorage, returning defaultValue if missing or parse error.
- */
-function loadFromSession<T>(key: string, defaultValue: T): T {
-  if (typeof window === "undefined") return defaultValue;
-  try {
-    const saved = sessionStorage.getItem(key);
-    return saved ? JSON.parse(saved) : defaultValue;
-  } catch (err) {
-    console.error(`Error loading "${key}" from sessionStorage:`, err);
-    return defaultValue;
-  }
-}
-
-/**
- * Formats a numeric value with commas and exactly two decimals, e.g. 1234.56 => "1,234.56".
- */
-function formatWithSeparator(value: number): string {
-  return new Intl.NumberFormat("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value);
-}
+// session utils
+import { getSessionItem, setSessionItem } from "@/utils/session";
+// format helper
+import { formatWithSeparator } from "@/utils/format";
 
 /**
  * Builds an estimate number: "SS-ZZZZZ-YYYYMMDD-HHMM",
@@ -151,7 +123,7 @@ function numberToWordsUSD(amount: number): string {
 
   const scale = ["", " thousand", " million", " billion"];
   let chunks: string[] = [];
-  let temp = integerPart;
+  let temp = Math.floor(amount);
   let i = 0;
 
   if (temp === 0) {
@@ -161,7 +133,8 @@ function numberToWordsUSD(amount: number): string {
     const c = temp % 1000;
     temp = Math.floor(temp / 1000);
     if (c > 0) {
-      chunks.unshift(threeDigitsToWords(c) + scale[i]);
+      const chunkStr = threeDigitsToWords(c).trim();
+      chunks.unshift(chunkStr + scale[i]);
     }
     i++;
   }
@@ -193,25 +166,28 @@ interface SelectedActivities {
 export default function CheckoutPage() {
   const router = useRouter();
 
-  // 1) Load from session
-  const selectedActivities = loadFromSession<SelectedActivities>("selectedActivities", {});
-  const calculationResultsMap = loadFromSession<Record<string, any>>("calculationResultsMap", {});
-  const fullAddress = loadFromSession<string>("fullAddress", "");
-  const photos = loadFromSession<string[]>("photos", []);
-  const description = loadFromSession<string>("description", "");
-  const date = loadFromSession<string>("selectedTime", "No date selected");
+  // Load from session
+  const selectedActivities = getSessionItem<SelectedActivities>("selectedActivities", {});
+  const calculationResultsMap = getSessionItem<Record<string, any>>("calculationResultsMap", {});
+  const fullAddress = getSessionItem<string>("fullAddress", "");
+  const photos = getSessionItem<string[]>("photos", []);
+  const description = getSessionItem<string>("description", "");
+  const date = getSessionItem<string>("selectedTime", "No date selected");
 
   // Steps array (immediate steps)
-  const filteredSteps = loadFromSession<{ serviceName: string; steps: any[] }[]>("filteredSteps", []);
+  const filteredSteps = getSessionItem<{ serviceName: string; steps: any[] }[]>(
+    "filteredSteps",
+    []
+  );
 
   // Fees and timeCoefficient
-  const timeCoefficient = loadFromSession<number>("timeCoefficient", 1);
-  const serviceFeeOnLabor = loadFromSession<number>("serviceFeeOnLabor", 0);
-  const serviceFeeOnMaterials = loadFromSession<number>("serviceFeeOnMaterials", 0);
+  const timeCoefficient = getSessionItem<number>("timeCoefficient", 1);
+  const serviceFeeOnLabor = getSessionItem<number>("serviceFeeOnLabor", 0);
+  const serviceFeeOnMaterials = getSessionItem<number>("serviceFeeOnMaterials", 0);
 
   // Attempt to parse state/zip from session, fallback to parse from fullAddress
-  let userStateName = loadFromSession<string>("location_state", "NoState");
-  let userZip = loadFromSession<string>("location_zip", "00000");
+  let userStateName = getSessionItem<string>("location_state", "NoState");
+  let userZip = getSessionItem<string>("location_zip", "00000");
   if (
     (userStateName === "NoState" || userStateName.length < 2 || userZip === "00000") &&
     fullAddress
@@ -224,9 +200,9 @@ export default function CheckoutPage() {
   }
 
   // userTaxRate (e.g. 8.25 => 8.25%)
-  const userTaxRate = loadFromSession<number>("userTaxRate", 0);
+  const userTaxRate = getSessionItem<number>("userTaxRate", 0);
 
-  // 2) If essential data is missing, redirect
+  // If essential data is missing, redirect
   useEffect(() => {
     if (!selectedActivities || Object.keys(selectedActivities).length === 0 || !fullAddress.trim()) {
       router.push("/emergency/estimate");
@@ -251,7 +227,7 @@ export default function CheckoutPage() {
       selectedActivities,
     };
     setCheckoutData(data);
-    saveToSession("checkoutData", data);
+    setSessionItem("checkoutData", data);
     // Only run once on mount
   }, []);
 
@@ -259,7 +235,7 @@ export default function CheckoutPage() {
     return <p>Loading...</p>;
   }
 
-  // 3) Summation logic
+  // Summation logic
   function sumLabor(): number {
     let total = 0;
     for (const acts of Object.values(selectedActivities)) {
@@ -306,13 +282,13 @@ export default function CheckoutPage() {
     ? Math.abs(laborSubtotal * (timeCoefficient - 1))
     : 0;
 
-  // 4) Build final estimate number
+  // Build final estimate number
   const estimateNumber = buildEstimateNumber(userStateName, userZip);
 
   // Convert final total to words
   const totalInWords = numberToWordsUSD(grandTotal);
 
-  // We add numbering for categories -> activities, using EMERGENCY_SERVICES for category
+  // Build an array => group by derived category
   interface RenderItem {
     category: string;
     activityKey: string;
@@ -326,7 +302,6 @@ export default function CheckoutPage() {
   function buildRenderItems(): RenderItem[] {
     const items: RenderItem[] = [];
 
-    // Build from selectedActivities
     for (const acts of Object.values(selectedActivities)) {
       for (const [activityKey, quantity] of Object.entries(acts)) {
         const cr = calculationResultsMap[activityKey];
@@ -338,10 +313,9 @@ export default function CheckoutPage() {
         const combinedCost =
           parseFloat(cr.work_cost || "0") + parseFloat(cr.material_cost || "0");
 
-        // Derive category from EMERGENCY_SERVICES
+        // derive category from EMERGENCY_SERVICES
         let matchedCategoryName = "Uncategorized";
         outerLoop: for (const catKey of Object.keys(EMERGENCY_SERVICES)) {
-          // Example: catKey = "plumbing", "electrical", etc.
           const catObj = EMERGENCY_SERVICES[catKey];
           if (!catObj?.services) continue;
           for (const svcName of Object.keys(catObj.services)) {

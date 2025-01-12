@@ -11,62 +11,47 @@ import { ChevronDown } from "lucide-react";
 import { useLocation } from "@/context/LocationContext";
 import { ALL_CATEGORIES } from "@/constants/categories";
 
+// Address and Photos components
 import AddressSection from "@/components/ui/AddressSection";
 import PhotosAndDescription from "@/components/ui/PhotosAndDescription";
 
-// Helpers for sessionStorage
-const saveToSession = (key: string, value: any) => {
-  if (typeof window !== "undefined") {
-    sessionStorage.setItem(key, JSON.stringify(value));
-  }
-};
-
-const loadFromSession = (key: string, defaultValue: any) => {
-  if (typeof window === "undefined") return defaultValue;
-  const savedValue = sessionStorage.getItem(key);
-  try {
-    return savedValue ? JSON.parse(savedValue) : defaultValue;
-  } catch (error) {
-    console.error(`Error parsing sessionStorage for key "${key}"`, error);
-    return defaultValue;
-  }
-};
+// Unified session utilities
+import { setSessionItem, getSessionItem } from "@/utils/session";
 
 export default function Services() {
   const router = useRouter();
   const { location } = useLocation();
 
   // 1) Load chosen "sections" from session
-  const selectedSections: string[] = loadFromSession("services_selectedSections", []);
+  const selectedSections: string[] = getSessionItem("services_selectedSections", []);
   useEffect(() => {
     if (selectedSections.length === 0) {
       router.push("/calculate");
     }
   }, [selectedSections, router]);
 
-  // 2) Various states from session
+  // 2) Various states restored from session
   const [searchQuery, setSearchQuery] = useState<string>(
-    loadFromSession("services_searchQuery", "")
+    getSessionItem("services_searchQuery", "")
   );
   const [address, setAddress] = useState<string>(
-    loadFromSession("address", "")
+    getSessionItem("address", "")
   );
   const [zip, setZip] = useState<string>(
-    loadFromSession("zip", "")
+    getSessionItem("zip", "")
   );
   const [stateName, setStateName] = useState<string>(
-    loadFromSession("stateName", "")
+    getSessionItem("stateName", "")
   );
-
   const [description, setDescription] = useState<string>(
-    loadFromSession("description", "")
+    getSessionItem("description", "")
   );
   const [photos, setPhotos] = useState<string[]>(
-    loadFromSession("photos", [])
+    getSessionItem("photos", [])
   );
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
 
-  // 3) Build map: section -> categories
+  // 3) Build a map: section -> categories
   const categoriesBySection: Record<string, { id: string; title: string }[]> = {};
   ALL_CATEGORIES.forEach((cat) => {
     if (!categoriesBySection[cat.section]) {
@@ -76,9 +61,9 @@ export default function Services() {
   });
 
   // 4) Restore selected categories from session
-  const storedSelectedCategoriesMap = loadFromSession("selectedCategoriesMap", null);
+  const storedSelectedCategories = getSessionItem("selectedCategoriesMap", null);
   const initialSelectedCategories: Record<string, string[]> =
-    storedSelectedCategoriesMap ||
+    storedSelectedCategories ||
     (() => {
       const init: Record<string, string[]> = {};
       selectedSections.forEach((section) => {
@@ -91,22 +76,19 @@ export default function Services() {
     Record<string, string[]>
   >(initialSelectedCategories);
 
-  // 5) Persist changes to session
-  useEffect(() => saveToSession("services_searchQuery", searchQuery), [searchQuery]);
-  useEffect(() => saveToSession("address", address), [address]);
-  useEffect(() => saveToSession("zip", zip), [zip]);
-  useEffect(() => saveToSession("stateName", stateName), [stateName]);
-  useEffect(() => saveToSession("description", description), [description]);
-  useEffect(() => saveToSession("photos", photos), [photos]);
-  useEffect(() => saveToSession("selectedCategoriesMap", selectedCategoriesMap), [selectedCategoriesMap]);
+  // 5) Persist states to session
+  useEffect(() => setSessionItem("services_searchQuery", searchQuery), [searchQuery]);
+  useEffect(() => setSessionItem("address", address), [address]);
+  useEffect(() => setSessionItem("zip", zip), [zip]);
+  useEffect(() => setSessionItem("stateName", stateName), [stateName]);
+  useEffect(() => setSessionItem("description", description), [description]);
+  useEffect(() => setSessionItem("photos", photos), [photos]);
+  useEffect(() => setSessionItem("selectedCategoriesMap", selectedCategoriesMap), [selectedCategoriesMap]);
 
-  // 6) Combine city (address), state, zip into one string
-  //    Example: "New York, NY, 10006"
+  // 6) Combine address/state/zip into one string
   useEffect(() => {
-    const combined = [address, stateName, zip]
-      .filter(Boolean)
-      .join(", ");
-    saveToSession("fullAddress", combined);
+    const combined = [address, stateName, zip].filter(Boolean).join(", ");
+    setSessionItem("fullAddress", combined);
   }, [address, stateName, zip]);
 
   // 7) Filter categories by search query
@@ -114,8 +96,8 @@ export default function Services() {
     selectedSections.map((section) => {
       const allCats = categoriesBySection[section] || [];
       const filtered = searchQuery
-        ? allCats.filter((c) =>
-            c.title.toLowerCase().includes(searchQuery.toLowerCase())
+        ? allCats.filter((cat) =>
+            cat.title.toLowerCase().includes(searchQuery.toLowerCase())
           )
         : allCats;
       return [section, filtered];
@@ -127,19 +109,19 @@ export default function Services() {
   const toggleSection = (section: string) => {
     setExpandedSections((prev) => {
       const next = new Set(prev);
-      if (next.has(section)) next.delete(section);
-      else next.add(section);
+      next.has(section) ? next.delete(section) : next.add(section);
       return next;
     });
   };
 
-  // Handling category toggles
+  // Handle category toggle
   const handleCategorySelect = (section: string, catId: string) => {
     setSelectedCategoriesMap((prev) => {
       const current = prev[section] || [];
       const isSelected = current.includes(catId);
-      if (!isSelected) setWarningMessage(null);
-
+      if (!isSelected) {
+        setWarningMessage(null);
+      }
       return {
         ...prev,
         [section]: isSelected
@@ -149,7 +131,7 @@ export default function Services() {
     });
   };
 
-  // Clear selections
+  // Clear all selections
   const handleClearSelection = () => {
     const userConfirmed = window.confirm(
       "Are you sure you want to clear all selections? This will also collapse all sections."
@@ -186,12 +168,12 @@ export default function Services() {
 
     // Flatten user's final chosen categories
     const chosenCategoryIDs = Object.values(selectedCategoriesMap).flat();
-    saveToSession("services_selectedCategories", chosenCategoryIDs);
+    setSessionItem("services_selectedCategories", chosenCategoryIDs);
 
     router.push("/calculate/details");
   };
 
-  // Handlers for address / state / zip changes
+  // Address handlers
   const handleAddressChange = (e: ChangeEvent<HTMLInputElement>) => {
     setAddress(e.target.value);
   };
@@ -202,7 +184,7 @@ export default function Services() {
     setStateName(e.target.value);
   };
 
-  // "Use my location" to fill city, state, zip from context if available
+  // "Use My Location"
   const handleUseMyLocation = () => {
     if (location?.city && location?.zip && location?.state) {
       setAddress(location.city);
@@ -213,7 +195,7 @@ export default function Services() {
     }
   };
 
-  // Photo removal
+  // Photo removal (optional, if you handle it that way)
   const handleRemovePhoto = (index: number) => {
     setPhotos((prev) => prev.filter((_, i) => i !== index));
   };
@@ -256,8 +238,8 @@ export default function Services() {
           {warningMessage && <p className="text-red-500">{warningMessage}</p>}
         </div>
 
-        <div className="flex container mx-auto relative">
-          {/* Left side: sections & categories */}
+        <div className="container mx-auto flex mt-8">
+          {/* Left side: selected sections with categories */}
           <div className="flex-1">
             <div className="flex flex-col gap-3 mt-5 w-full max-w-[600px]">
               {selectedSections.map((section) => {

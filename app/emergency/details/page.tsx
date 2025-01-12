@@ -11,9 +11,12 @@ import { EMERGENCY_SERVICES } from "@/constants/emergency";
 import { ALL_SERVICES } from "@/constants/services";
 import { ChevronDown } from "lucide-react";
 
-/**
- * Interface that describes a finishing material object, similar to `calculate` pages.
- */
+// Session utilities
+import { setSessionItem, getSessionItem } from "@/utils/session";
+// Number formatting utility
+import { formatWithSeparator } from "@/utils/format";
+
+/** Inline definition of the FinishingMaterial interface. */
 interface FinishingMaterial {
   id: number;
   image?: string;
@@ -65,8 +68,7 @@ async function calculatePrice(params: {
 }
 
 /**
- * fetchFinishingMaterials:
- * POST /work/finishing_materials
+ * fetchFinishingMaterials: POST /work/finishing_materials
  * Takes a "work_code" like "1.1.1" and returns an object with "sections".
  */
 async function fetchFinishingMaterials(workCode: string) {
@@ -88,37 +90,8 @@ async function fetchFinishingMaterials(workCode: string) {
 }
 
 /**
- * Helper to format a number with thousands separators and two decimal places.
- */
-function formatWithSeparator(value: number): string {
-  return new Intl.NumberFormat("en-US", { minimumFractionDigits: 2 }).format(value);
-}
-
-/**
- * Utility to save data to sessionStorage
- */
-function saveToSession(key: string, value: any) {
-  if (typeof window !== "undefined") {
-    sessionStorage.setItem(key, JSON.stringify(value));
-  }
-}
-
-/**
- * Utility to load data from sessionStorage
- */
-function loadFromSession<T>(key: string, defaultValue: T): T {
-  if (typeof window === "undefined") return defaultValue;
-  const savedValue = sessionStorage.getItem(key);
-  try {
-    return savedValue ? JSON.parse(savedValue) : defaultValue;
-  } catch (error) {
-    console.error(`Error parsing sessionStorage key "${key}":`, error);
-    return defaultValue;
-  }
-}
-
-/**
- * Capitalize or transform a string from possible camelCase/PascalCase to spaced Title
+ * Capitalize or transform a string from possible camelCase/PascalCase
+ * to a spaced, title-style string.
  */
 function capitalizeAndTransform(text: string): string {
   return text
@@ -130,18 +103,18 @@ function capitalizeAndTransform(text: string): string {
 export default function EmergencyDetails() {
   const router = useRouter();
 
-  // Basic user data from sessionStorage
-  const selectedServices = loadFromSession<Record<string, string[]>>("selectedServices", {});
-  const fullAddress = loadFromSession<string>("fullAddress", "");
-  const zip = loadFromSession<string>("zip", "");
-  const photos = loadFromSession<string[]>("photos", []);
-  const description = loadFromSession<string>("description", "");
+  // Read from session using your new utility:
+  const selectedServices = getSessionItem<Record<string, string[]>>("selectedServices", {});
+  const fullAddress = getSessionItem<string>("fullAddress", "");
+  const zip = getSessionItem<string>("zip", "");
+  const photos = getSessionItem<string[]>("photos", []);
+  const description = getSessionItem<string>("description", "");
 
   // Activities: each "service" can have multiple "activities"
   // Example: { plumbing: { "1-1-1": 2 }, ... }
   const [selectedActivities, setSelectedActivities] = useState<
     Record<string, Record<string, number>>
-  >(() => loadFromSession("selectedActivities", {}));
+  >(() => getSessionItem("selectedActivities", {}));
 
   // Manual input values for the quantity field
   const [manualInputValue, setManualInputValue] = useState<
@@ -161,12 +134,12 @@ export default function EmergencyDetails() {
   const [calculationResultsMap, setCalculationResultsMap] = useState<Record<string, any>>({});
 
   // Data for finishing materials if the user wants to pick them
-  // finishingMaterialsMapAll[activityKey] = { sections: ... }
+  // finishingMaterialsMapAll[activityKey] = { sections: Record<string, FinishingMaterial[]> }
   const [finishingMaterialsMapAll, setFinishingMaterialsMapAll] = useState<
     Record<string, { sections: Record<string, FinishingMaterial[]> }>
   >({});
 
-  // finishingMaterialSelections[activityKey] = string[] of external_ids
+  // finishingMaterialSelections[activityKey] = array of external_ids
   const [finishingMaterialSelections, setFinishingMaterialSelections] = useState<
     Record<string, string[]>
   >({});
@@ -183,7 +156,7 @@ export default function EmergencyDetails() {
 
   // Persist selectedActivities to sessionStorage on each change
   useEffect(() => {
-    saveToSession("selectedActivities", selectedActivities);
+    setSessionItem("selectedActivities", selectedActivities);
   }, [selectedActivities]);
 
   /**
@@ -214,7 +187,7 @@ export default function EmergencyDetails() {
       const quantity = getQuantityForActivity(activityKey);
       const dot = convertServiceIdToApiFormat(activityKey);
 
-      // Ensure finishing materials loaded
+      // Ensure finishing materials are loaded
       await ensureFinishingMaterialsLoaded(activityKey);
 
       try {
@@ -397,7 +370,8 @@ export default function EmergencyDetails() {
     setExpandedServices(new Set());
     setWarningMessage(null);
 
-    saveToSession("selectedActivities", {});
+    // Clear "selectedActivities" from session
+    setSessionItem("selectedActivities", {});
   }
 
   // Calculate total from serviceCosts
@@ -482,7 +456,7 @@ export default function EmergencyDetails() {
 
   // Save the entire calculationResultsMap to session if needed
   useEffect(() => {
-    saveToSession("calculationResultsMap", calculationResultsMap);
+    setSessionItem("calculationResultsMap", calculationResultsMap);
   }, [calculationResultsMap]);
 
   return (
@@ -525,6 +499,7 @@ export default function EmergencyDetails() {
               {servicesList.map(({ service, category, activities }, idx) => {
                 const serviceLabel = capitalizeAndTransform(service);
                 const isExpanded = expandedServices.has(service);
+
                 // how many chosen in this service
                 const chosenCount = Object.keys(selectedActivities[service] || {}).length;
 
@@ -721,11 +696,9 @@ export default function EmergencyDetails() {
 
                                                   let rowClass = "";
                                                   if (isClientOwned) {
-                                                    rowClass =
-                                                      "border border-red-500 bg-red-50";
+                                                    rowClass = "border border-red-500 bg-red-50";
                                                   } else if (hasImage) {
-                                                    rowClass =
-                                                      "border border-blue-300 bg-white cursor-pointer";
+                                                    rowClass = "border border-blue-300 bg-white cursor-pointer";
                                                   }
 
                                                   return (
@@ -746,9 +719,7 @@ export default function EmergencyDetails() {
                                                               if (
                                                                 Array.isArray(list) &&
                                                                 list.some(
-                                                                  (xx) =>
-                                                                    xx.external_id ===
-                                                                    m.external_id
+                                                                  (xx) => xx.external_id === m.external_id
                                                                 )
                                                               ) {
                                                                 foundSection = secName;

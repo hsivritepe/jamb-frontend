@@ -7,26 +7,13 @@ import { ALL_SERVICES } from "@/constants/services";
 import { taxRatesUSA } from "@/constants/taxRatesUSA";
 import { DisclaimerBlock } from "@/components/ui/DisclaimerBlock";
 
-/** Safely load JSON from sessionStorage or return defaultValue if parse error or SSR. */
-function loadFromSession<T>(key: string, defaultValue: T): T {
-  if (typeof window === "undefined") return defaultValue;
-  try {
-    const raw = sessionStorage.getItem(key);
-    return raw ? JSON.parse(raw) : defaultValue;
-  } catch {
-    return defaultValue;
-  }
-}
+// New imports:
+import { getSessionItem } from "@/utils/session";
+import { formatWithSeparator } from "@/utils/format";
 
-/** Formats a number with commas and two decimals. */
-function formatWithSeparator(value: number): string {
-  return new Intl.NumberFormat("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value);
-}
-
-/** Returns combined state+local tax rate from taxRatesUSA, or 0 if not found. */
+/**
+ * Returns combined state+local tax rate from taxRatesUSA, or 0 if not found.
+ */
 function getTaxRateForState(stateCode: string): number {
   if (!stateCode) return 0;
   const row = taxRatesUSA.taxRates.find(
@@ -35,7 +22,9 @@ function getTaxRateForState(stateCode: string): number {
   return row ? row.combinedStateAndLocalTaxRate : 0;
 }
 
-/** Converts a numeric USD amount into spelled-out text (simplified). */
+/**
+ * Converts a numeric USD amount into spelled-out text (simplified).
+ */
 function numberToWordsUSD(amount: number): string {
   const onesMap: Record<number, string> = {
     0: "zero",
@@ -85,7 +74,7 @@ function numberToWordsUSD(amount: number): string {
       if (remainder > 0) str += " ";
     }
     if (remainder > 0) {
-      str += (remainder < 100) ? twoDigits(remainder) : "";
+      str += remainder < 100 ? twoDigits(remainder) : "";
     }
     return str || "zero";
   }
@@ -126,17 +115,14 @@ function buildEstimateNumber(stateCode: string, zip: string): string {
     const upperState = stateCode.slice(0, 2).toUpperCase();
     stateZipBlock = `${upperState}-${zip}`;
   }
-
   const now = new Date();
   const yyyy = String(now.getFullYear());
   const mm = String(now.getMonth() + 1).padStart(2, "0");
   const dd = String(now.getDate()).padStart(2, "0");
   const hh = String(now.getHours()).padStart(2, "0");
   const mins = String(now.getMinutes()).padStart(2, "0");
-
   const dateString = `${yyyy}${mm}${dd}`;
   const timeString = hh + mins;
-
   return `${stateZipBlock}-${dateString}-${timeString}`;
 }
 
@@ -153,7 +139,6 @@ function parseStateAndZipFromAddress(fullAddr: string) {
       return { parsedState: potentialState, parsedZip: potentialZip };
     }
   }
-
   // fallback to a simplified pattern
   const regex = /([A-Za-z]+)\s+(\d{5})$/;
   const match = fullAddr.trim().match(regex);
@@ -187,21 +172,21 @@ interface SelectedActivities {
 export default function PrintEmergencyEstimate() {
   const router = useRouter();
 
-  // (1) Load from session
-  const selectedActivities = loadFromSession<SelectedActivities>("selectedActivities", {});
-  const calculationResultsMap = loadFromSession<Record<string, any>>("calculationResultsMap", {});
-  const fullAddress = loadFromSession<string>("fullAddress", "");
-  const photos = loadFromSession<string[]>("photos", []);
-  const description = loadFromSession<string>("description", "");
-  const date = loadFromSession<string>("selectedTime", "No date selected");
-
-  const timeCoefficient = loadFromSession<number>("timeCoefficient", 1);
-  const serviceFeeOnLabor = loadFromSession<number>("serviceFeeOnLabor", 0);
-  const serviceFeeOnMaterials = loadFromSession<number>("serviceFeeOnMaterials", 0);
+  // (1) Load from session using new helper
+  const selectedActivities = getSessionItem<SelectedActivities>("selectedActivities", {});
+  const calculationResultsMap = getSessionItem<Record<string, any>>("calculationResultsMap", {});
+  const fullAddress = getSessionItem<string>("fullAddress", "");
+  const photos = getSessionItem<string[]>("photos", []);
+  const description = getSessionItem<string>("description", "");
+  const date = getSessionItem<string>("selectedTime", "No date selected");
+  const timeCoefficient = getSessionItem<number>("timeCoefficient", 1);
+  const serviceFeeOnLabor = getSessionItem<number>("serviceFeeOnLabor", 0);
+  const serviceFeeOnMaterials = getSessionItem<number>("serviceFeeOnMaterials", 0);
+  const userTaxRate = getSessionItem<number>("userTaxRate", 0);
 
   // Possibly parse state/zip from address if missing
-  let userStateCode = loadFromSession<string>("location_state", "XX");
-  let userZip = loadFromSession<string>("location_zip", "00000");
+  let userStateCode = getSessionItem<string>("location_state", "XX");
+  let userZip = getSessionItem<string>("location_zip", "00000");
   if ((userStateCode === "XX" || userZip === "00000") && fullAddress) {
     const { parsedState, parsedZip } = parseStateAndZipFromAddress(fullAddress);
     if (parsedState && parsedState.length >= 2 && parsedZip && parsedZip.length === 5) {
@@ -210,10 +195,8 @@ export default function PrintEmergencyEstimate() {
     }
   }
 
-  const userTaxRate = loadFromSession<number>("userTaxRate", 0);
-
   // Steps array
-  const filteredSteps = loadFromSession<{ serviceName: string; steps: any[] }[]>(
+  const filteredSteps = getSessionItem<{ serviceName: string; steps: any[] }[]>(
     "filteredSteps",
     []
   );
@@ -251,13 +234,12 @@ export default function PrintEmergencyEstimate() {
   const laborSubtotal = sumLabor();
   const materialsSubtotal = sumMaterials();
   const finalLabor = laborSubtotal * timeCoefficient;
-
   const sumBeforeFees = finalLabor + materialsSubtotal;
   const sumBeforeTax = sumBeforeFees + serviceFeeOnLabor + serviceFeeOnMaterials;
   const taxAmount = sumBeforeTax * (userTaxRate / 100);
   const grandTotal = sumBeforeTax + taxAmount;
-
   const hasSurchargeOrDiscount = timeCoefficient !== 1;
+  const laborDiff = finalLabor - laborSubtotal;
   const surchargeOrDiscount = hasSurchargeOrDiscount
     ? Math.abs(laborSubtotal * (timeCoefficient - 1))
     : 0;
@@ -266,7 +248,7 @@ export default function PrintEmergencyEstimate() {
   const estimateNumber = buildEstimateNumber(userStateCode, userZip);
   const totalInWords = numberToWordsUSD(grandTotal);
 
-  // (A) Build array => group by derived category
+  // Build array => group by derived category
   interface RenderItem {
     category: string;
     activityKey: string;
@@ -309,25 +291,19 @@ export default function PrintEmergencyEstimate() {
   });
   const sortedCats = Object.keys(groupedByCategory).sort();
 
-  // For Section 3 specs => We'll need to gather:
-  //   (A) labor by category
-  //   (B) overall materials
+  // For specs => labor by category + overall materials
   const materialsSpecMap: Record<
     string,
     { name: string; totalQuantity: number; totalCost: number }
   > = {};
   const categoryLaborMap: Record<string, number> = {};
 
-  // We'll also track the difference from timeCoefficient if needed
-  const laborDiff = finalLabor - laborSubtotal;
-
-  // For each selected activity, add up the labor, and also the materials
+  // Accumulate
   for (const acts of Object.values(selectedActivities)) {
     for (const [activityKey] of Object.entries(acts)) {
       const cr = calculationResultsMap[activityKey];
       if (!cr) continue;
 
-      // find the category
       const cat = deriveCategoryFromActivityKey(activityKey);
       const laborVal = parseFloat(cr.work_cost) || 0;
       if (!categoryLaborMap[cat]) {
@@ -360,7 +336,7 @@ export default function PrintEmergencyEstimate() {
     0
   );
 
-  // (6) Adjust doc title + auto-print
+  // Adjust doc title + auto-print
   useEffect(() => {
     const oldTitle = document.title;
     document.title = `EmergencyEstimate-${estimateNumber}`;
@@ -482,7 +458,6 @@ export default function PrintEmergencyEstimate() {
 
         {/* Totals */}
         <div className="border-t pt-3 mt-4 space-y-1 text-sm">
-
           <div className="flex justify-between">
             <span>Labor:</span>
             <span>${formatWithSeparator(finalLabor)}</span>
@@ -729,9 +704,10 @@ export default function PrintEmergencyEstimate() {
                 </thead>
                 <tbody>
                   {materialsSpecArray.map((m) => {
-                    const unitPrice = m.totalQuantity
-                      ? m.totalCost / m.totalQuantity
-                      : 0;
+                    const unitPrice =
+                      m.totalQuantity > 0
+                        ? m.totalCost / m.totalQuantity
+                        : 0;
                     return (
                       <tr key={m.name} className="border-b last:border-0">
                         <td className="px-3 py-2 border-r border-gray-300">

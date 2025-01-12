@@ -12,8 +12,10 @@ import { ALL_CATEGORIES } from "@/constants/categories";
 import { ALL_SERVICES } from "@/constants/services";
 import { ChevronDown } from "lucide-react";
 
+import { setSessionItem, getSessionItem } from "@/utils/session";
+
 /** 
- * Describes a finishing material object returned by /work/finishing_materials.
+ * Interface describing a finishing material object returned by /work/finishing_materials.
  */
 interface FinishingMaterial {
   id: number;
@@ -33,31 +35,6 @@ function formatWithSeparator(value: number): string {
 }
 
 /**
- * saveToSession:
- * Saves a value to sessionStorage (only in the browser).
- */
-function saveToSession(key: string, value: any) {
-  if (typeof window !== "undefined") {
-    sessionStorage.setItem(key, JSON.stringify(value));
-  }
-}
-
-/**
- * loadFromSession:
- * Loads a value from sessionStorage, or returns a default value if not found (or SSR).
- */
-function loadFromSession<T>(key: string, defaultValue: T): T {
-  if (typeof window === "undefined") return defaultValue;
-  const savedValue = sessionStorage.getItem(key);
-  try {
-    return savedValue ? JSON.parse(savedValue) : defaultValue;
-  } catch (error) {
-    console.error(`Error parsing sessionStorage key "${key}":`, error);
-    return defaultValue;
-  }
-}
-
-/**
  * convertServiceIdToApiFormat:
  * Converts a hyphen-based service ID like "1-1-1" into a dotted format "1.1.1" required by the server.
  */
@@ -67,7 +44,7 @@ function convertServiceIdToApiFormat(serviceId: string) {
 
 /**
  * getApiBaseUrl:
- * Returns the base API URL from environment variables or a fallback
+ * Returns the base API URL from environment variables or a fallback.
  */
 function getApiBaseUrl(): string {
   return process.env.NEXT_PUBLIC_API_BASE_URL || "http://dev.thejamb.com";
@@ -128,18 +105,17 @@ async function calculatePrice(params: {
 export default function Details() {
   const router = useRouter();
 
-  /** 
-   * location from our custom context: 
-   * includes { city, zip, state, country, ... }
+  /**
+   * location from our custom context, containing { city, zip, state, country, ... }
    */
   const { location } = useLocation();
 
   // 1) Load user data from session
-  const selectedCategories = loadFromSession<string[]>("services_selectedCategories", []);
-  const [address, setAddress] = useState<string>(() => loadFromSession("address", ""));
-  const description = loadFromSession<string>("description", "");
-  const photos = loadFromSession<string[]>("photos", []);
-  const searchQuery = loadFromSession<string>("services_searchQuery", "");
+  const selectedCategories = getSessionItem<string[]>("services_selectedCategories", []);
+  const [address, setAddress] = useState<string>(() => getSessionItem("address", ""));
+  const description = getSessionItem<string>("description", "");
+  const photos = getSessionItem<string[]>("photos", []);
+  const searchQuery = getSessionItem<string>("services_searchQuery", "");
 
   // If no categories or no address, redirect to /calculate
   useEffect(() => {
@@ -150,7 +126,6 @@ export default function Details() {
 
   // Update address if location changes
   useEffect(() => {
-    // Build an address with city, state, zip, country
     const newAddress = [
       location.city || "",
       location.state || "",
@@ -160,20 +135,19 @@ export default function Details() {
       .filter(Boolean)
       .join(", ");
 
-    // If we get at least something, store it
     if (newAddress.trim() !== "") {
       setAddress(newAddress);
-      saveToSession("address", newAddress);
+      setSessionItem("address", newAddress);
     }
   }, [location]);
 
   // Potential warning shown above categories
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
 
-  // Expand/collapse categories (store catId in a Set)
+  // Expand/collapse categories
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
-  // Build categories by their "section" property
+  // Build categories by their "section"
   const categoriesWithSection = selectedCategories
     .map((catId) => ALL_CATEGORIES.find((c) => c.id === catId) || null)
     .filter(Boolean) as (typeof ALL_CATEGORIES)[number][];
@@ -200,13 +174,13 @@ export default function Details() {
 
   // (serviceId -> quantity)
   const [selectedServicesState, setSelectedServicesState] = useState<Record<string, number>>(
-    () => loadFromSession("selectedServicesWithQuantity", {})
+    () => getSessionItem("selectedServicesWithQuantity", {})
   );
 
   // (serviceId -> final numeric cost)
   const [serviceCosts, setServiceCosts] = useState<Record<string, number>>({});
 
-  // finishingMaterialsMapAll => (serviceId -> { sections: {...} })
+  // finishingMaterialsMapAll => (serviceId -> { sections: Record<string, FinishingMaterial[]> })
   const [finishingMaterialsMapAll, setFinishingMaterialsMapAll] = useState<
     Record<string, { sections: Record<string, FinishingMaterial[]> }>
   >({});
@@ -219,14 +193,13 @@ export default function Details() {
   // manualInputValue => user typed quantity for each service
   const [manualInputValue, setManualInputValue] = useState<Record<string, string | null>>({});
 
-  // Store the entire JSON from /calculate for each service to show the breakdown
+  // Store the entire JSON from /calculate for each service
   const [calculationResultsMap, setCalculationResultsMap] = useState<Record<string, any>>({});
 
   // Track which services have details expanded
   const [expandedServiceDetails, setExpandedServiceDetails] = useState<Set<string>>(new Set());
 
   // Track any finishing materials that are "client-owned" (highlight in red)
-  // clientOwnedMaterials[serviceId] = Set of external_ids
   const [clientOwnedMaterials, setClientOwnedMaterials] = useState<Record<string, Set<string>>>({});
 
   // which service + section user clicked => open modal
@@ -235,12 +208,12 @@ export default function Details() {
 
   // Save if services changed
   useEffect(() => {
-    saveToSession("selectedServicesWithQuantity", selectedServicesState);
+    setSessionItem("selectedServicesWithQuantity", selectedServicesState);
   }, [selectedServicesState]);
 
   /**
    * ensureFinishingMaterialsLoaded: fetch finishing materials if not loaded yet
-   * and select defaults in finishingMaterialSelections if not present
+   * and select defaults if not present
    */
   async function ensureFinishingMaterialsLoaded(serviceId: string) {
     try {
@@ -252,7 +225,6 @@ export default function Details() {
         setFinishingMaterialsMapAll({ ...finishingMaterialsMapAll });
       }
 
-      // If there's no finishingMaterialSelections for this service => pick the first from each section
       if (!finishingMaterialSelections[serviceId]) {
         const data = finishingMaterialsMapAll[serviceId];
         const singleSelections: string[] = [];
@@ -326,7 +298,7 @@ export default function Details() {
     setSelectedServicesState((old) => {
       const isOn = !!old[serviceId];
       if (isOn) {
-        // Turn OFF => remove from relevant states
+        // Turn OFF => remove references
         const updated = { ...old };
         delete updated[serviceId];
 
@@ -346,22 +318,19 @@ export default function Details() {
         delete scCopy[serviceId];
         setServiceCosts(scCopy);
 
-        // also remove from clientOwnedMaterials if any
         const coCopy = { ...clientOwnedMaterials };
         delete coCopy[serviceId];
         setClientOwnedMaterials(coCopy);
 
         return updated;
       } else {
-        // Turn ON => set quantity to minQ
+        // Turn ON => set quantity = minQ
         const found = ALL_SERVICES.find((s) => s.id === serviceId);
         if (!found) return old;
         const minQ = found.min_quantity ?? 1;
 
         const updated = { ...old, [serviceId]: minQ };
         setManualInputValue((mOld) => ({ ...mOld, [serviceId]: String(minQ) }));
-
-        // Ensure finishing materials
         ensureFinishingMaterialsLoaded(serviceId);
         return updated;
       }
@@ -390,7 +359,6 @@ export default function Details() {
       };
     });
 
-    // Reset manual input
     setManualInputValue((old) => ({ ...old, [serviceId]: null }));
   }
 
@@ -440,9 +408,7 @@ export default function Details() {
     setClientOwnedMaterials({});
   }
 
-  /**
-   * Recalculate price whenever services or location changes
-   */
+  /** Recalculate price whenever services or location changes */
   useEffect(() => {
     const serviceIds = Object.keys(selectedServicesState);
     if (serviceIds.length === 0) {
@@ -452,13 +418,11 @@ export default function Details() {
     }
 
     const { zip, country } = location;
-    // Show a warning if ZIP code is not a valid US ZIP
     if (country !== "United States" || !/^\d{5}$/.test(zip)) {
       setWarningMessage("Currently, our service is only available for US ZIP codes (5 digits).");
       return;
     }
 
-    // For each service => call /calculate
     serviceIds.forEach(async (serviceId) => {
       try {
         const quantity = selectedServicesState[serviceId];
@@ -467,7 +431,6 @@ export default function Details() {
         const unit = foundS?.unit_of_measurement || "each";
         const dot = convertServiceIdToApiFormat(serviceId);
 
-        // Ensure finishing materials loaded
         await ensureFinishingMaterialsLoaded(serviceId);
 
         const resp = await calculatePrice({
@@ -495,7 +458,7 @@ export default function Details() {
     return Object.values(serviceCosts).reduce((acc, val) => acc + val, 0);
   }
 
-  /** handleNext: proceed to the "estimate" page */
+  /** handleNext: proceed to /calculate/estimate */
   function handleNext() {
     if (Object.keys(selectedServicesState).length === 0) {
       setWarningMessage("Please select at least one service before proceeding.");
@@ -505,7 +468,6 @@ export default function Details() {
       setWarningMessage("Please enter your address before proceeding.");
       return;
     }
-    // Example: go to /calculate/estimate
     router.push("/calculate/estimate");
   }
 
@@ -547,13 +509,13 @@ export default function Details() {
     setFinishingMaterialSelections({ ...finishingMaterialSelections });
   }
 
-  /** closeModal: hide the modal that lists finishing materials for a section */
+  /** closeModal: hide the modal */
   function closeModal() {
     setShowModalServiceId(null);
     setShowModalSectionName(null);
   }
 
-  /** userHasOwnMaterial: highlight the finishing material in red, but don't remove it from calculation */
+  /** userHasOwnMaterial: highlight the finishing material in red, but don't remove it from calc */
   function userHasOwnMaterial(serviceId: string, externalId: string) {
     if (!clientOwnedMaterials[serviceId]) {
       clientOwnedMaterials[serviceId] = new Set();
@@ -562,15 +524,9 @@ export default function Details() {
     setClientOwnedMaterials({ ...clientOwnedMaterials });
   }
 
-  /** onClickFinishingMaterialRow: user clicked a finishing material row => open the modal for that section */
-  function onClickFinishingMaterialRow(serviceId: string, sectionName: string) {
-    setShowModalServiceId(serviceId);
-    setShowModalSectionName(sectionName);
-  }
-
-  /** save choice of services and materials to session storage*/
+  // Save choice of services and materials to session
   useEffect(() => {
-    saveToSession("calculationResultsMap", calculationResultsMap);
+    setSessionItem("calculationResultsMap", calculationResultsMap);
   }, [calculationResultsMap]);
 
   return (
@@ -659,9 +615,7 @@ export default function Details() {
                               const manualValue =
                                 rawManual != null ? rawManual : quantity.toString();
 
-                              // final cost from serviceCosts
                               const finalCost = serviceCosts[svc.id] || 0;
-                              // entire JSON from /calculate
                               const calcResult = calculationResultsMap[svc.id];
                               const detailsExpanded = expandedServiceDetails.has(svc.id);
 
@@ -812,7 +766,6 @@ export default function Details() {
                                                       const fmObj = findFinishingMaterialObj(svc.id, m.external_id);
                                                       const hasImage = fmObj?.image?.length ? true : false;
 
-                                                      // highlight row if client-owned or has image
                                                       const isClientOwned = clientOwnedMaterials[svc.id]?.has(
                                                         m.external_id
                                                       );
@@ -829,7 +782,6 @@ export default function Details() {
                                                           key={`${m.external_id}-${i}`}
                                                           className={`last:border-0 ${rowClass}`}
                                                           onClick={() => {
-                                                            // if not client-owned and has image => open modal
                                                             if (!isClientOwned && hasImage) {
                                                               let foundSection: string | null = null;
                                                               const fmData = finishingMaterialsMapAll[svc.id];
@@ -1009,7 +961,6 @@ export default function Details() {
         finishingMaterialsMapAll[showModalServiceId] &&
         finishingMaterialsMapAll[showModalServiceId].sections[showModalSectionName] && (
           <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-            {/* Example fixed size: w-[700px], h-[750px] */}
             <div className="bg-white rounded-lg w-[700px] h-[750px] overflow-hidden relative flex flex-col">
               {/* Sticky header */}
               <div className="p-4 border-b flex items-center justify-between sticky top-0 bg-white z-10">
@@ -1024,7 +975,7 @@ export default function Details() {
                 </button>
               </div>
 
-              {/* Info about current material (if any) */}
+              {/* Info about the current material */}
               {(() => {
                 const currentSel = finishingMaterialSelections[showModalServiceId] || [];
                 if (currentSel.length === 0) return null;
@@ -1050,7 +1001,7 @@ export default function Details() {
                 );
               })()}
 
-              {/* scrollable content */}
+              {/* Scrollable content */}
               <div className="overflow-auto p-4 flex-1">
                 {(() => {
                   const data = finishingMaterialsMapAll[showModalServiceId];
@@ -1065,7 +1016,6 @@ export default function Details() {
                     );
                   }
 
-                  // current selection
                   const curSel = finishingMaterialSelections[showModalServiceId] || [];
                   const currentExtId = curSel[0] || null;
                   let currentCost = 0;
@@ -1077,7 +1027,7 @@ export default function Details() {
                   return (
                     <div className="grid grid-cols-2 gap-4 mt-4">
                       {arr.map((material, i) => {
-                        if (!material.image) return null; // show only with image
+                        if (!material.image) return null;
                         const costNum = parseFloat(material.cost || "0") || 0;
                         const isSelected = currentExtId === material.external_id;
                         const diff = costNum - currentCost;

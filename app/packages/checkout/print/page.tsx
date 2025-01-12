@@ -7,26 +7,13 @@ import { ALL_SERVICES } from "@/constants/services";
 import { ALL_CATEGORIES } from "@/constants/categories";
 import { DisclaimerBlock } from "@/components/ui/DisclaimerBlock";
 
-/**
- * An interface describing the shape of selected services for packages
- */
+// Unified session utilities
+import { getSessionItem } from "@/utils/session";
+
+// An interface describing the shape of selected services for packages
 interface PackagesSelectedServices {
   indoor: Record<string, number>;
   outdoor: Record<string, number>;
-}
-
-/**
- * Safely load a value from sessionStorage or return the default if SSR.
- */
-function loadFromSession<T>(key: string, defaultValue: T): T {
-  if (typeof window === "undefined") return defaultValue;
-  const stored = sessionStorage.getItem(key);
-  if (!stored) return defaultValue;
-  try {
-    return JSON.parse(stored) as T;
-  } catch {
-    return defaultValue;
-  }
 }
 
 /**
@@ -165,28 +152,25 @@ export default function PackagesPrintPage() {
   const router = useRouter();
 
   // Which package was chosen
-  const storedPackageId = loadFromSession("packages_currentPackageId", null);
+  const storedPackageId = getSessionItem<string | null>("packages_currentPackageId", null);
   const chosenPackage = PACKAGES.find((p) => p.id === storedPackageId) || null;
 
   // Summaries from the Estimate page
-  const laborSubtotal = loadFromSession("packages_laborSubtotal", 0);
-  const materialsSubtotal = loadFromSession("packages_materialsSubtotal", 0);
-  const serviceFeeOnLabor = loadFromSession("serviceFeeOnLabor", 0);
-  const serviceFeeOnMaterials = loadFromSession("serviceFeeOnMaterials", 0);
-  const sumBeforeTax = loadFromSession("packages_sumBeforeTax", 0);
-  const taxRatePercent = loadFromSession("packages_taxRatePercent", 0);
-  const taxAmount = loadFromSession("packages_taxAmount", 0);
-  const finalTotal = loadFromSession("packages_estimateFinalTotal", 0);
+  const laborSubtotal = getSessionItem<number>("packages_laborSubtotal", 0);
+  const materialsSubtotal = getSessionItem<number>("packages_materialsSubtotal", 0);
+  const serviceFeeOnLabor = getSessionItem<number>("serviceFeeOnLabor", 0);
+  const serviceFeeOnMaterials = getSessionItem<number>("serviceFeeOnMaterials", 0);
+  const sumBeforeTax = getSessionItem<number>("packages_sumBeforeTax", 0);
+  const taxRatePercent = getSessionItem<number>("packages_taxRatePercent", 0);
+  const taxAmount = getSessionItem<number>("packages_taxAmount", 0);
+  const finalTotal = getSessionItem<number>("packages_estimateFinalTotal", 0);
 
   // Payment plan
-  const selectedPaymentOption = loadFromSession<string | null>(
-    "packages_selectedTime",
-    null
-  );
-  const paymentCoefficient = loadFromSession("packages_timeCoefficient", 1);
+  const selectedPaymentOption = getSessionItem<string | null>("packages_selectedTime", null);
+  const paymentCoefficient = getSessionItem<number>("packages_timeCoefficient", 1);
 
   // House info
-  const houseInfo = loadFromSession("packages_houseInfo", {
+  const houseInfo = getSessionItem("packages_houseInfo", {
     addressLine: "",
     city: "",
     state: "",
@@ -210,14 +194,11 @@ export default function PackagesPrintPage() {
   });
 
   // The user-chosen services
-  const selectedServicesData = loadFromSession<PackagesSelectedServices>(
+  const selectedServicesData = getSessionItem<PackagesSelectedServices>(
     "packages_selectedServices",
-    {
-      indoor: {},
-      outdoor: {},
-    }
+    { indoor: {}, outdoor: {} }
   );
-  const calculationResultsMap: Record<string, any> = loadFromSession(
+  const calculationResultsMap: Record<string, any> = getSessionItem(
     "packages_calculationResultsMap",
     {}
   );
@@ -241,7 +222,7 @@ export default function PackagesPrintPage() {
   // Convert total to words
   const finalTotalWords = numberToWordsUSD(finalTotal);
 
-  // Auto-print after short delay => rename the doc title:
+  // Auto-print after short delay => rename the doc title
   useEffect(() => {
     const oldTitle = document.title;
     const pkgName = chosenPackage ? chosenPackage.title : "Unknown";
@@ -321,9 +302,7 @@ export default function PackagesPrintPage() {
             </p>
             <p>
               <strong>Boiler/Heater:</strong>{" "}
-              {houseInfo.hasBoiler
-                ? houseInfo.boilerType || "Yes"
-                : "No / None"}
+              {houseInfo.hasBoiler ? houseInfo.boilerType || "Yes" : "No / None"}
             </p>
             <p>
               <strong>Garage:</strong>{" "}
@@ -331,9 +310,7 @@ export default function PackagesPrintPage() {
             </p>
             <p>
               <strong>Yard:</strong>{" "}
-              {houseInfo.hasYard
-                ? `${houseInfo.yardArea} sq ft`
-                : "No yard/garden"}
+              {houseInfo.hasYard ? `${houseInfo.yardArea} sq ft` : "No yard/garden"}
             </p>
             <p>
               <strong>Pool:</strong>{" "}
@@ -350,6 +327,9 @@ export default function PackagesPrintPage() {
     );
   }
 
+  /**
+   * Page 2 => (1) Summary with "For Home" / "For Garden"
+   */
   function renderPage2Summary() {
     function buildGroupedServices(services: Record<string, number>) {
       const result: Record<string, Record<string, string[]>> = {};
@@ -371,9 +351,6 @@ export default function PackagesPrintPage() {
 
     const indoorMap = buildGroupedServices(selectedServicesData.indoor);
     const outdoorMap = buildGroupedServices(selectedServicesData.outdoor);
-
-    // Prepare final total spelled out
-    const finalTotalWordsLocal = finalTotalWords; // Just reference
 
     return (
       <section className="page-break mt-8">
@@ -426,15 +403,10 @@ export default function PackagesPrintPage() {
                         <tbody>
                           {svcIds.map((svcId, svcIdx) => {
                             const svcNumber = `${catNumber}.${svcIdx + 1}`;
-                            const foundSvc = ALL_SERVICES.find(
-                              (s) => s.id === svcId
-                            );
+                            const foundSvc = ALL_SERVICES.find((s) => s.id === svcId);
                             const svcTitle = foundSvc ? foundSvc.title : svcId;
                             const qty = selectedServicesData.indoor[svcId] || 1;
-                            const cr = getCalcResultFor(
-                              svcId,
-                              calculationResultsMap
-                            );
+                            const cr = getCalcResultFor(svcId, calculationResultsMap);
 
                             let totalCost = 0;
                             if (cr && (cr.work_cost || cr.material_cost)) {
@@ -471,9 +443,7 @@ export default function PackagesPrintPage() {
         )}
 
         {/* For Garden */}
-        <h3 className="text-lg font-bold text-gray-800 mt-6 mb-2">
-          For Garden
-        </h3>
+        <h3 className="text-lg font-bold text-gray-800 mt-6 mb-2">For Garden</h3>
         {Object.keys(outdoorMap).length === 0 ? (
           <p className="text-sm text-gray-500 ml-4">No outdoor services.</p>
         ) : (
@@ -515,16 +485,10 @@ export default function PackagesPrintPage() {
                         <tbody>
                           {svcIds.map((svcId, svcIdx) => {
                             const svcNumber = `${catNumber}.${svcIdx + 1}`;
-                            const foundSvc = ALL_SERVICES.find(
-                              (s) => s.id === svcId
-                            );
+                            const foundSvc = ALL_SERVICES.find((s) => s.id === svcId);
                             const svcTitle = foundSvc ? foundSvc.title : svcId;
-                            const qty =
-                              selectedServicesData.outdoor[svcId] || 1;
-                            const cr = getCalcResultFor(
-                              svcId,
-                              calculationResultsMap
-                            );
+                            const qty = selectedServicesData.outdoor[svcId] || 1;
+                            const cr = getCalcResultFor(svcId, calculationResultsMap);
 
                             let totalCost = 0;
                             if (cr && (cr.work_cost || cr.material_cost)) {
@@ -618,8 +582,10 @@ export default function PackagesPrintPage() {
     );
   }
 
+  /**
+   * Page 3 => (2) Cost Breakdown
+   */
   function renderPage3CostBreakdown() {
-    const blocks = ["indoor", "outdoor"] as const;
     const blockConfigs: { blockId: "indoor" | "outdoor"; title: string }[] = [
       { blockId: "indoor", title: "Indoor" },
       { blockId: "outdoor", title: "Outdoor" },
@@ -627,22 +593,19 @@ export default function PackagesPrintPage() {
 
     return (
       <section className="page-break mt-10">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">
-          2) Cost Breakdown
-        </h2>
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">2) Cost Breakdown</h2>
         <p className="text-sm text-gray-700 mb-4">
           A more detailed breakdown of each service&apos;s labor and materials,
           including line items for each material if available.
         </p>
 
         {blockConfigs.map((blockObj, idxBlock) => {
-          const blockId = blockObj.blockId; // "indoor" or "outdoor"
-          const blockTitle = blockObj.title; // "Indoor" or "Outdoor"
+          const { blockId, title: blockTitle } = blockObj;
 
           // If user selected no items in that block => skip
           const blockServices = selectedServicesData[blockId];
           const hasAny = Object.keys(blockServices).length > 0;
-          if (!hasAny) return null; // skip if none
+          if (!hasAny) return null;
 
           // Build a "breakdown" structure => section -> cat -> array
           const breakdownMap: Record<string, Record<string, string[]>> = {};
@@ -660,166 +623,115 @@ export default function PackagesPrintPage() {
 
           return (
             <div key={blockId} className="mb-8">
-              <h3 className="text-lg font-bold text-gray-800 mb-2">
-                {blockTitle}
-              </h3>
+              <h3 className="text-lg font-bold text-gray-800 mb-2">{blockTitle}</h3>
 
-              {Object.entries(breakdownMap).map(
-                ([secName, catObjMap], secIdx) => {
-                  const secNumber = `${idxBlock + 1}.${secIdx + 1}`;
-                  return (
-                    <div key={secName} className="ml-4 mb-4">
-                      <h4 className="text-md font-bold text-gray-700 mb-2">
-                        {secNumber}. {secName}
-                      </h4>
+              {Object.entries(breakdownMap).map(([secName, catObjMap], secIdx) => {
+                const secNumber = `${idxBlock + 1}.${secIdx + 1}`;
+                return (
+                  <div key={secName} className="ml-4 mb-4">
+                    <h4 className="text-md font-bold text-gray-700 mb-2">
+                      {secNumber}. {secName}
+                    </h4>
 
-                      {Object.entries(catObjMap).map(
-                        ([catId, svcIds], cIdx) => {
-                          const catNumber = `${secNumber}.${cIdx + 1}`;
-                          const catNameObj = ALL_CATEGORIES.find(
-                            (c) => c.id === catId
-                          );
-                          const catName = catNameObj ? catNameObj.title : catId;
+                    {Object.entries(catObjMap).map(([catId, svcIds], cIdx) => {
+                      const catNumber = `${secNumber}.${cIdx + 1}`;
+                      const catNameObj = ALL_CATEGORIES.find((c) => c.id === catId);
+                      const catName = catNameObj ? catNameObj.title : catId;
 
-                          return (
-                            <div key={catId} className="ml-4 mb-4">
-                              <h5 className="text-sm font-semibold text-gray-700 mb-2">
-                                {catNumber}. {catName}
-                              </h5>
+                      return (
+                        <div key={catId} className="ml-4 mb-4">
+                          <h5 className="text-sm font-semibold text-gray-700 mb-2">
+                            {catNumber}. {catName}
+                          </h5>
 
-                              {svcIds.map((svcId, sIdx) => {
-                                const svcNumber = `${catNumber}.${sIdx + 1}`;
-                                const foundSvc = ALL_SERVICES.find(
-                                  (s) => s.id === svcId
-                                );
-                                const svcTitle = foundSvc
-                                  ? foundSvc.title
-                                  : svcId;
-                                // Calculation results
-                                const cr = getCalcResultFor(
-                                  svcId,
-                                  calculationResultsMap
-                                );
-                                const laborCost = cr
-                                  ? parseFloat(cr.work_cost) || 0
-                                  : 0;
-                                const materialCost = cr
-                                  ? parseFloat(cr.material_cost) || 0
-                                  : 0;
-                                const totalCost = cr
-                                  ? parseFloat(cr.total) || 0
-                                  : 0;
+                          {svcIds.map((svcId, sIdx) => {
+                            const svcNumber = `${catNumber}.${sIdx + 1}`;
+                            const foundSvc = ALL_SERVICES.find((s) => s.id === svcId);
+                            const svcTitle = foundSvc ? foundSvc.title : svcId;
+                            const svcDesc = foundSvc?.description;
 
-                                return (
-                                  <div
-                                    key={svcId}
-                                    className="ml-4 mb-4 p-3 bg-gray-50 border border-gray-200 rounded"
-                                  >
-                                    <h6 className="text-sm font-semibold text-gray-800">
-                                      {svcNumber}. {svcTitle}
-                                    </h6>
-                                    {foundSvc?.description && (
-                                      <p className="text-xs text-gray-500 my-1">
-                                        {foundSvc.description}
-                                      </p>
-                                    )}
+                            const cr = getCalcResultFor(svcId, calculationResultsMap);
+                            const laborCost = cr ? parseFloat(cr.work_cost) || 0 : 0;
+                            const materialCost = cr ? parseFloat(cr.material_cost) || 0 : 0;
 
-                                    {/* Show labor vs. materials */}
-                                    <div className="mt-2 space-y-1 text-sm">
-                                      <div className="flex justify-between">
-                                        <span className="font-medium">
-                                          Labor:
-                                        </span>
-                                        <span>
-                                          {laborCost > 0
-                                            ? `$${formatWithSeparator(
-                                                laborCost
-                                              )}`
-                                            : "—"}
-                                        </span>
-                                      </div>
-                                      <div className="flex justify-between">
-                                        <span className="font-medium">
-                                          Materials, tools &amp; equipment:
-                                        </span>
-                                        <span>
-                                          {materialCost > 0
-                                            ? `$${formatWithSeparator(
-                                                materialCost
-                                              )}`
-                                            : "—"}
-                                        </span>
-                                      </div>
-                                    </div>
+                            return (
+                              <div
+                                key={svcId}
+                                className="ml-4 mb-4 p-3 bg-gray-50 border border-gray-200 rounded"
+                              >
+                                <h6 className="text-sm font-semibold text-gray-800">
+                                  {svcNumber}. {svcTitle}
+                                </h6>
+                                {svcDesc && (
+                                  <p className="text-xs text-gray-500 my-1">
+                                    {svcDesc}
+                                  </p>
+                                )}
 
-                                    {/* If materials array is present => show table of line items */}
-                                    {cr &&
-                                      Array.isArray(cr.materials) &&
-                                      cr.materials.length > 0 && (
-                                        <div className="mt-3 text-sm">
-                                          <table className="table-auto w-full text-left text-gray-700 text-xs md:text-sm">
-                                            <thead>
-                                              <tr className="border-b">
-                                                <th className="py-1 px-1">
-                                                  Name
-                                                </th>
-                                                <th className="py-1 px-1">
-                                                  Price
-                                                </th>
-                                                <th className="py-1 px-1">
-                                                  Qty
-                                                </th>
-                                                <th className="py-1 px-1">
-                                                  Subtotal
-                                                </th>
-                                              </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-gray-200">
-                                              {cr.materials.map(
-                                                (m: any, idx2: number) => (
-                                                  <tr
-                                                    key={`${m.external_id}-${idx2}`}
-                                                  >
-                                                    <td className="py-2 px-1">
-                                                      {m.name}
-                                                    </td>
-                                                    <td className="py-2 px-1">
-                                                      {m.cost_per_unit
-                                                        ? `$${formatWithSeparator(
-                                                            parseFloat(
-                                                              m.cost_per_unit
-                                                            )
-                                                          )}`
-                                                        : "—"}
-                                                    </td>
-                                                    <td className="py-2 px-1">
-                                                      {m.quantity}
-                                                    </td>
-                                                    <td className="py-2 px-1">
-                                                      {m.cost
-                                                        ? `$${formatWithSeparator(
-                                                            parseFloat(m.cost)
-                                                          )}`
-                                                        : "—"}
-                                                    </td>
-                                                  </tr>
-                                                )
-                                              )}
-                                            </tbody>
-                                          </table>
-                                        </div>
-                                      )}
+                                <div className="mt-2 space-y-1 text-sm">
+                                  <div className="flex justify-between">
+                                    <span className="font-medium">Labor:</span>
+                                    <span>
+                                      {laborCost > 0
+                                        ? `$${formatWithSeparator(laborCost)}`
+                                        : "—"}
+                                    </span>
                                   </div>
-                                );
-                              })}
-                            </div>
-                          );
-                        }
-                      )}
-                    </div>
-                  );
-                }
-              )}
+                                  <div className="flex justify-between">
+                                    <span className="font-medium">
+                                      Materials, tools &amp; equipment:
+                                    </span>
+                                    <span>
+                                      {materialCost > 0
+                                        ? `$${formatWithSeparator(materialCost)}`
+                                        : "—"}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {cr && Array.isArray(cr.materials) && cr.materials.length > 0 && (
+                                  <div className="mt-3 text-sm">
+                                    <table className="table-auto w-full text-left text-gray-700 text-xs md:text-sm">
+                                      <thead>
+                                        <tr className="border-b">
+                                          <th className="py-1 px-1">Name</th>
+                                          <th className="py-1 px-1">Price</th>
+                                          <th className="py-1 px-1">Qty</th>
+                                          <th className="py-1 px-1">Subtotal</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody className="divide-y divide-gray-200">
+                                        {cr.materials.map((m: any, idx2: number) => (
+                                          <tr key={`${m.external_id}-${idx2}`}>
+                                            <td className="py-2 px-1">{m.name}</td>
+                                            <td className="py-2 px-1">
+                                              {m.cost_per_unit
+                                                ? `$${formatWithSeparator(
+                                                    parseFloat(m.cost_per_unit)
+                                                  )}`
+                                                : "—"}
+                                            </td>
+                                            <td className="py-2 px-1">{m.quantity}</td>
+                                            <td className="py-2 px-1">
+                                              {m.cost
+                                                ? `$${formatWithSeparator(parseFloat(m.cost))}`
+                                                : "—"}
+                                            </td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
             </div>
           );
         })}
@@ -827,8 +739,8 @@ export default function PackagesPrintPage() {
     );
   }
 
-  /** (3) Specifications
-   * Labor by section (including date surcharges/discounts) + overall materials.
+  /**
+   * (4) Specifications => labor by section + overall materials
    */
   function renderPage4Specifications() {
     const mergedSelectedAll: Record<string, number> = {
@@ -898,12 +810,8 @@ export default function PackagesPrintPage() {
           <table className="w-full table-auto border border-gray-300 text-sm text-gray-700">
             <thead className="bg-gray-100">
               <tr>
-                <th className="px-3 py-2 border border-gray-300 text-left">
-                  Section
-                </th>
-                <th className="px-3 py-2 border border-gray-300  text-right">
-                  Labor
-                </th>
+                <th className="px-3 py-2 border border-gray-300 text-left">Section</th>
+                <th className="px-3 py-2 border border-gray-300 text-right">Labor</th>
               </tr>
             </thead>
             <tbody>
@@ -925,31 +833,30 @@ export default function PackagesPrintPage() {
           <div className="text-right text-sm mt-2">
             <div>
               <p>
-                <span className="">Labor Sum:</span>
+                <span>Labor Sum:</span>{" "}
                 <span>${formatWithSeparator(laborSubtotal)}</span>
               </p>
               {paymentCoefficient !== 1 && (
                 <p>
-                  <span className="text-right">
-                    {paymentCoefficient > 1 ? "Surcharge (payment option)" : "Discount (payment option)"}:  
+                  <span>
+                    {paymentCoefficient > 1
+                      ? "Surcharge (payment option)"
+                      : "Discount (payment option)"}:{" "}
                   </span>
                   <span>
                     {paymentCoefficient > 1 ? "+" : "-"}$
                     {formatWithSeparator(
-                      Math.abs(
-                        laborSubtotal * paymentCoefficient - laborSubtotal
-                      )
+                      Math.abs(laborSubtotal * paymentCoefficient - laborSubtotal)
                     )}
                   </span>
                 </p>
               )}
               <p className="text-right font-semibold mt-1">
-                <span className="mr-4">Total Labor:   </span>
+                <span className="mr-4">Total Labor:</span>
                 <span>
                   $
                   {formatWithSeparator(
-                    laborSubtotal *
-                      (paymentCoefficient !== 1 ? paymentCoefficient : 1)
+                    laborSubtotal * (paymentCoefficient !== 1 ? paymentCoefficient : 1)
                   )}
                 </span>
               </p>
@@ -980,7 +887,9 @@ export default function PackagesPrintPage() {
                     <th className="px-3 py-2 border border-gray-300 text-center">
                       Price
                     </th>
-                    <th className="px-3 py-2 border border-gray-300 text-center">Subtotal</th>
+                    <th className="px-3 py-2 border border-gray-300 text-center">
+                      Subtotal
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1009,9 +918,7 @@ export default function PackagesPrintPage() {
                 </tbody>
               </table>
               <div className="flex justify-end mt-2 text-sm font-semibold">
-                <span className="mr-6">
-                  Total materials, tools &amp; equipment:
-                </span>
+                <span className="mr-6">Total materials, tools &amp; equipment:</span>
                 <span>${formatWithSeparator(totalMaterialsCost)}</span>
               </div>
             </div>
@@ -1029,7 +936,7 @@ export default function PackagesPrintPage() {
       {/* Page 2 => (1) Summary with "For Home" / "For Garden" */}
       {renderPage2Summary()}
 
-      {/* Page 3 => (2) Cost Breakdown, rooms-style */}
+      {/* Page 3 => (2) Cost Breakdown */}
       {renderPage3CostBreakdown()}
 
       {/* Page 4 => (3) Specifications */}

@@ -6,19 +6,11 @@ import { ALL_SERVICES } from "@/constants/services";
 import { ALL_CATEGORIES } from "@/constants/categories";
 import { taxRatesUSA } from "@/constants/taxRatesUSA";
 import { DisclaimerBlock } from "@/components/ui/DisclaimerBlock";
+import { getSessionItem, setSessionItem } from "@/utils/session";
 
-// Safely load a value from sessionStorage
-function loadFromSession<T>(key: string, defaultValue: T): T {
-  if (typeof window === "undefined") return defaultValue;
-  const savedValue = sessionStorage.getItem(key);
-  try {
-    return savedValue ? JSON.parse(savedValue) : defaultValue;
-  } catch {
-    return defaultValue;
-  }
-}
-
-// Formats a numeric value with commas + exactly two decimals, e.g., 1234 => "1,234.00"
+/**
+ * Formats a number with commas and exactly two decimals, e.g. 1234 => "1,234.00"
+ */
 function formatWithSeparator(value: number): string {
   return new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 2,
@@ -26,7 +18,9 @@ function formatWithSeparator(value: number): string {
   }).format(value);
 }
 
-// Returns the combined state+local tax rate (e.g. 8.85) for "CA" from taxRatesUSA
+/**
+ * Returns the combined state+local tax rate (e.g. 8.85) for "CA" from taxRatesUSA.
+ */
 function getTaxRateForState(stateCode: string): number {
   if (!stateCode) return 0;
   const row = taxRatesUSA.taxRates.find(
@@ -35,7 +29,10 @@ function getTaxRateForState(stateCode: string): number {
   return row ? row.combinedStateAndLocalTaxRate : 0;
 }
 
-//Converts a numeric USD amount into spelled-out English text (simplified). Example: 1234.56 => "One thousand two hundred thirty-four and 56/100 dollars"
+/**
+ * Converts a numeric USD amount into spelled-out English text (simplified).
+ * Example: 1234.56 => "One thousand two hundred thirty-four and 56/100 dollars"
+ */
 function numberToWordsUSD(amount: number): string {
   const onesMap: Record<number, string> = {
     0: "zero",
@@ -69,7 +66,7 @@ function numberToWordsUSD(amount: number): string {
   };
 
   function twoDigits(num: number): string {
-    if (num <= 20) return onesMap[num];
+    if (num <= 20) return onesMap[num] || "";
     const tens = Math.floor(num / 10) * 10;
     const ones = num % 10;
     if (ones === 0) return onesMap[tens];
@@ -117,7 +114,9 @@ function numberToWordsUSD(amount: number): string {
   return `${str} and ${dec}/100 dollars`;
 }
 
-// Builds an estimate number in the format "CA-94103-YYYYMMDD-HHMM" or fallback
+/**
+ * Builds an estimate number in the format "CA-94103-YYYYMMDD-HHMM" or fallback.
+ */
 function buildEstimateNumber(stateCode: string, zip: string): string {
   let stateZipPart = "??-00000";
   if (stateCode && zip) {
@@ -136,39 +135,51 @@ function buildEstimateNumber(stateCode: string, zip: string): string {
   return `${stateZipPart}-${dateString}-${timeString}`;
 }
 
+/**
+ * getCategoryNameById:
+ * Locates a category by its ID from ALL_CATEGORIES and returns its title,
+ * or returns the ID if not found.
+ */
+function getCategoryNameById(catId: string): string {
+  const found = ALL_CATEGORIES.find((c) => c.id === catId);
+  return found ? found.title : catId;
+}
+
 export default function PrintServicesEstimate() {
   const router = useRouter();
 
-  // Load data from sessionStorage
-  const selectedServicesState: Record<string, number> = loadFromSession(
+  // Load data from session using getSessionItem
+  const selectedServicesState: Record<string, number> = getSessionItem(
     "selectedServicesWithQuantity",
     {}
   );
-  const calculationResultsMap: Record<string, any> = loadFromSession(
+  const calculationResultsMap: Record<string, any> = getSessionItem(
     "calculationResultsMap",
     {}
   );
-  const address = loadFromSession("address", "");
-  const photos: string[] = loadFromSession("photos", []);
-  const description = loadFromSession("description", "");
-  const selectedTime = loadFromSession<string | null>("selectedTime", null);
-  const timeCoefficient = loadFromSession<number>("timeCoefficient", 1);
-  const serviceFeeOnLabor = loadFromSession("serviceFeeOnLabor", 0);
-  const serviceFeeOnMaterials = loadFromSession("serviceFeeOnMaterials", 0);
-  const userStateCode = loadFromSession("location_state", "");
-  const userZip = loadFromSession("location_zip", "00000");
-  const selectedCategories: string[] = loadFromSession(
+  const address = getSessionItem("address", "");
+  const photos: string[] = getSessionItem("photos", []);
+  const description = getSessionItem("description", "");
+  const selectedTime = getSessionItem<string | null>("selectedTime", null);
+  const timeCoefficient = getSessionItem<number>("timeCoefficient", 1);
+  const serviceFeeOnLabor = getSessionItem("serviceFeeOnLabor", 0);
+  const serviceFeeOnMaterials = getSessionItem("serviceFeeOnMaterials", 0);
+  const userStateCode = getSessionItem("location_state", "");
+  const userZip = getSessionItem("location_zip", "00000");
+  const selectedCategories: string[] = getSessionItem(
     "services_selectedCategories",
     []
   );
-  const searchQuery: string = loadFromSession("services_searchQuery", "");
+  const searchQuery: string = getSessionItem("services_searchQuery", "");
 
+  // If no data => redirect
   useEffect(() => {
     if (Object.keys(selectedServicesState).length === 0 || !address.trim()) {
       router.push("/calculate/estimate");
     }
   }, [selectedServicesState, address, router]);
 
+  // Build categories by section
   const categoriesWithSection = selectedCategories
     .map((catId) => ALL_CATEGORIES.find((c) => c.id === catId) || null)
     .filter(Boolean) as (typeof ALL_CATEGORIES)[number][];
@@ -181,8 +192,8 @@ export default function PrintServicesEstimate() {
     categoriesBySection[cat.section].push(cat.id);
   });
 
-  const categoryServicesMap: Record<string, (typeof ALL_SERVICES)[number][]> =
-    {};
+  // Build cat->services map
+  const categoryServicesMap: Record<string, (typeof ALL_SERVICES)[number][]> = {};
   selectedCategories.forEach((catId) => {
     let matched = ALL_SERVICES.filter((svc) => svc.id.startsWith(`${catId}-`));
     if (searchQuery) {
@@ -193,11 +204,7 @@ export default function PrintServicesEstimate() {
     categoryServicesMap[catId] = matched;
   });
 
-  function getCategoryNameById(catId: string): string {
-    const cat = ALL_CATEGORIES.find((x) => x.id === catId);
-    return cat ? cat.title : catId;
-  }
-
+  // Summation
   function calculateLaborSubtotal(): number {
     let total = 0;
     for (const svcId of Object.keys(selectedServicesState)) {
@@ -228,6 +235,7 @@ export default function PrintServicesEstimate() {
   const finalTotalWords = numberToWordsUSD(finalTotal);
   const estimateNumber = buildEstimateNumber(userStateCode, userZip);
 
+  // Print on mount
   useEffect(() => {
     const oldTitle = document.title;
     document.title = `JAMB-Estimate-${estimateNumber}`;
@@ -238,6 +246,7 @@ export default function PrintServicesEstimate() {
     };
   }, [estimateNumber]);
 
+  // We'll also build a materials breakdown, plus labor-by-section
   interface MaterialSpec {
     name: string;
     totalQuantity: number;
@@ -246,21 +255,19 @@ export default function PrintServicesEstimate() {
   const materialsSpecMap: Record<string, MaterialSpec> = {};
   const sectionLaborMap: Record<string, number> = {};
 
-  // TimeCoefficient difference
-  const laborDiff = finalLabor - laborSubtotal;
-
   for (const svcId of Object.keys(selectedServicesState)) {
     const cr = calculationResultsMap[svcId];
     if (!cr) continue;
 
+    // find which cat -> which section
     const catIdFound = selectedCategories.find((catId) =>
       svcId.startsWith(catId + "-")
     );
     if (!catIdFound) continue;
     const catObj = ALL_CATEGORIES.find((x) => x.id === catIdFound);
     if (!catObj) continue;
-
     const secName = catObj.section;
+
     const laborVal = parseFloat(cr.work_cost) || 0;
     if (!sectionLaborMap[secName]) {
       sectionLaborMap[secName] = 0;
@@ -287,17 +294,12 @@ export default function PrintServicesEstimate() {
   }
 
   const materialsSpecArray = Object.values(materialsSpecMap);
-  const totalMaterialsCost = materialsSpecArray.reduce(
-    (a, b) => a + b.totalCost,
-    0
-  );
-  const totalLaborAllSections = Object.values(sectionLaborMap).reduce(
-    (a, b) => a + b,
-    0
-  );
+  const totalMaterialsCost = materialsSpecArray.reduce((acc, m) => acc + m.totalCost, 0);
+  const laborDiff = finalLabor - laborSubtotal;
 
   return (
     <div className="print-page p-4 my-2">
+      {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <img src="/images/logo.png" alt="JAMB Logo" className="h-10 w-auto" />
       </div>
@@ -311,6 +313,7 @@ export default function PrintServicesEstimate() {
           </h2>
         </div>
       </div>
+
       {selectedTime && (
         <p className="mb-2 text-gray-700">
           <strong>Date of Service:</strong> {selectedTime}
@@ -354,14 +357,10 @@ export default function PrintServicesEstimate() {
         <table className="w-full table-auto border border-gray-300 text-sm text-gray-700">
           <thead>
             <tr className="border-b bg-white">
-              <th className="px-3 py-2 border-r border-gray-300">#</th>
-              <th className="px-3 py-2 border-r border-gray-300 text-left">
-                Service
-              </th>
-              <th className="px-3 py-2 border-r border-gray-300 text-center">
-                Qty
-              </th>
-              <th className="px-3 py-2 text-center">Total Cost</th>
+              <th className="px-3 py-2 border-r border-gray-300 w-14 text-center">#</th>
+              <th className="px-3 py-2 border-r border-gray-300 text-left">Service</th>
+              <th className="px-3 py-2 border-r border-gray-300 text-center w-20">Qty</th>
+              <th className="px-3 py-2 text-center w-24">Total Cost</th>
             </tr>
           </thead>
           <tbody>
@@ -467,7 +466,6 @@ export default function PrintServicesEstimate() {
             </div>
           )}
 
-          {/* (B) Service fees */}
           <div className="flex justify-between">
             <span>Service Fee (15% on labor)</span>
             <span>${formatWithSeparator(serviceFeeOnLabor)}</span>
@@ -485,7 +483,8 @@ export default function PrintServicesEstimate() {
             <span>
               Sales tax
               {userStateCode ? ` (${userStateCode})` : ""}
-              {taxRatePercent > 0 ? ` (${taxRatePercent.toFixed(2)}%)` : ""}:
+              {taxRatePercent > 0 ? ` (${taxRatePercent.toFixed(2)}%)` : ""}
+              :
             </span>
             <span>${formatWithSeparator(taxAmount)}</span>
           </div>
@@ -513,7 +512,7 @@ export default function PrintServicesEstimate() {
           const sectionIndex = i + 1;
           const catsWithServices = catIds.filter((catId) => {
             const arr = categoryServicesMap[catId] || [];
-            return arr.some((s) => selectedServicesState[s.id] != null);
+            return arr.some((svc) => selectedServicesState[svc.id] != null);
           });
           if (catsWithServices.length === 0) return null;
 
@@ -559,13 +558,14 @@ export default function PrintServicesEstimate() {
                             <span className="font-semibold">
                               {quantity} {svc.unit_of_measurement}
                             </span>
-                            <span className="font-semibold mr-4">${formatWithSeparator(finalCost)}</span>
+                            <span className="font-semibold mr-4">
+                              ${formatWithSeparator(finalCost)}
+                            </span>
                           </p>
 
                           {/* cost breakdown */}
                           {cr && (
                             <div className="mt-2 p-3 bg-gray-50 border border-gray-300 rounded text-sm text-gray-700">
-                              {/* Labor row */}
                               <div className="flex justify-between mb-1">
                                 <span className="font-semibold">Labor</span>
                                 <span className="font-semibold">
@@ -577,10 +577,10 @@ export default function PrintServicesEstimate() {
                                 </span>
                               </div>
                               <div className="flex justify-between mb-3">
-                                <span className="text-md font-semibold text-gray-800">
+                                <span className="font-semibold">
                                   Materials, tools and equipment
                                 </span>
-                                <span className="text-md font-semibold text-gray-700">
+                                <span className="font-semibold">
                                   {cr.material_cost
                                     ? `$${formatWithSeparator(
                                         parseFloat(cr.material_cost)
@@ -588,7 +588,7 @@ export default function PrintServicesEstimate() {
                                     : "—"}
                                 </span>
                               </div>
-                              {/* Materials */}
+
                               {Array.isArray(cr.materials) &&
                                 cr.materials.length > 0 && (
                                   <div className="mt-2">
@@ -674,39 +674,35 @@ export default function PrintServicesEstimate() {
               </tr>
             </thead>
             <tbody>
-              {categoriesWithSection
-                .map((cat) => cat.section)
-                .filter((v, i, arr) => arr.indexOf(v) === i)
-                .map((sectionName) => {
-                  let laborSum = 0;
-                  for (const svcId of Object.keys(selectedServicesState)) {
-                    const cr = calculationResultsMap[svcId];
-                    if (!cr) continue;
-                    const foundCat = selectedCategories.find((catId) =>
-                      svcId.startsWith(catId + "-")
-                    );
-                    if (!foundCat) continue;
-                    const catObj = ALL_CATEGORIES.find(
-                      (x) => x.id === foundCat
-                    );
-                    if (!catObj) continue;
-                    if (catObj.section === sectionName) {
-                      laborSum += parseFloat(cr.work_cost) || 0;
+              {Object.keys(categoriesBySection).map((sectionName) => {
+                // Summation for each section
+                let laborSum = 0;
+                // For each category in that section => for each chosen service => accumulate labor
+                const catIds = categoriesBySection[sectionName];
+                catIds.forEach((catId) => {
+                  const arr = categoryServicesMap[catId] || [];
+                  arr.forEach((svc) => {
+                    if (selectedServicesState[svc.id]) {
+                      const cr = calculationResultsMap[svc.id];
+                      if (cr && cr.work_cost) {
+                        laborSum += parseFloat(cr.work_cost);
+                      }
                     }
-                  }
-                  if (laborSum === 0) return null;
+                  });
+                });
+                if (laborSum === 0) return null;
 
-                  return (
-                    <tr key={sectionName} className="border-b last:border-0">
-                      <td className="px-3 py-2 border border-gray-300">
-                        {sectionName}
-                      </td>
-                      <td className="px-3 py-2 border border-gray-300 text-right">
-                        ${formatWithSeparator(laborSum)}
-                      </td>
-                    </tr>
-                  );
-                })}
+                return (
+                  <tr key={sectionName} className="border-b last:border-0">
+                    <td className="px-3 py-2 border border-gray-300">
+                      {sectionName}
+                    </td>
+                    <td className="px-3 py-2 border border-gray-300 text-right">
+                      ${formatWithSeparator(laborSum)}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
           {/* Explanation */}
@@ -733,11 +729,12 @@ export default function PrintServicesEstimate() {
           </div>
         </div>
 
-        {/* B) Materials specification */}
+        {/* B) Overall Materials */}
         <div>
           <h3 className="text-lg font-bold text-gray-800 mb-2">
             B) Overall Materials, tools and equipment
           </h3>
+          {/* If no materials => show message */}
           {materialsSpecArray.length === 0 ? (
             <p className="text-sm text-gray-700">
               No materials used in this estimate.

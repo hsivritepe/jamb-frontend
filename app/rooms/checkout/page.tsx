@@ -7,29 +7,16 @@ import { SectionBoxTitle } from "@/components/ui/SectionBoxTitle";
 import { SectionBoxSubtitle } from "@/components/ui/SectionBoxSubtitle";
 import ActionIconsBar from "@/components/ui/ActionIconsBar";
 import { ROOMS_STEPS } from "@/constants/navigation";
+import { ROOMS } from "@/constants/rooms";
 import { ALL_SERVICES } from "@/constants/services";
 import { ALL_CATEGORIES } from "@/constants/categories";
-import { ROOMS } from "@/constants/rooms";
 
-// Saves data to sessionStorage (client-only)
-function saveToSession(key: string, value: any) {
-  if (typeof window !== "undefined") {
-    sessionStorage.setItem(key, JSON.stringify(value));
-  }
-}
+// Unified session utilities
+import { getSessionItem, setSessionItem } from "@/utils/session";
 
-// Loads data from sessionStorage, or returns defaultValue if not found (or SSR)
-function loadFromSession<T>(key: string, defaultValue: T): T {
-  if (typeof window === "undefined") return defaultValue;
-  const stored = sessionStorage.getItem(key);
-  try {
-    return stored ? (JSON.parse(stored) as T) : defaultValue;
-  } catch {
-    return defaultValue;
-  }
-}
-
-// Formats a number with commas and exactly two decimals
+/**
+ * Formats a numeric value with commas and exactly two decimals.
+ */
 function formatWithSeparator(num: number): string {
   return new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 2,
@@ -37,37 +24,46 @@ function formatWithSeparator(num: number): string {
   }).format(num);
 }
 
-// Returns a room object by ID from ROOMS.indoor/outdoor, or null if not found
+/**
+ * Finds a room object by ID from ROOMS.indoor/outdoor arrays, or returns null if not found.
+ */
 function getRoomById(roomId: string) {
   const allRooms = [...ROOMS.indoor, ...ROOMS.outdoor];
   return allRooms.find((r) => r.id === roomId) || null;
 }
 
-// Returns the "category" portion from a service ID like "1-1-2". For example, "1-1" if the service ID is "1-1-2"
+/**
+ * Extracts the category part ("1-1") from a service ID like "1-1-2".
+ */
 function getCategoryIdFromServiceId(serviceId: string): string {
   return serviceId.split("-").slice(0, 2).join("-");
 }
 
-// Finds a category name from ALL_CATEGORIES by ID, or returns the ID if not found
+/**
+ * Returns a category name from ALL_CATEGORIES by its ID, or the ID itself if not found.
+ */
 function getCategoryNameById(catId: string): string {
   const found = ALL_CATEGORIES.find((c) => c.id === catId);
   return found ? found.title : catId;
 }
 
-// If user removed finishing materials, we have override data in rooms_overrideCalcResults. Otherwise we use calculationResultsMap.
+/**
+ * Returns either the overridden calc results (if user removed finishing materials)
+ * or the normal calculation results from the server.
+ */
 function getCalcResultFor(
   serviceId: string,
   overrideCalcResults: Record<string, any>,
   calculationResultsMap: Record<string, any>
 ) {
-  return (
-    overrideCalcResults[serviceId] || calculationResultsMap[serviceId] || null
-  );
+  return overrideCalcResults[serviceId] || calculationResultsMap[serviceId] || null;
 }
 
-// Builds a temporary estimate number, e.g. "NY-10006-20250615-0930" from (stateName, zip)
+/**
+ * Builds a reference number using partial state name, zip, and current datetime.
+ * Example: "NY-10006-20250910-1415"
+ */
 function buildEstimateNumber(stateName: string, zip: string): string {
-  // We'll take the first 2 letters of stateName (uppercase), then zip
   let stateZipBlock = "??-00000";
   if (stateName && zip) {
     const st = stateName.trim().split(" ")[0].slice(0, 2).toUpperCase();
@@ -84,7 +80,9 @@ function buildEstimateNumber(stateName: string, zip: string): string {
   return `${stateZipBlock}-${yyyy}${mm}${dd}-${hh}${mins}`;
 }
 
-// Converts a numeric USD amount into words, in a simplified manner
+/**
+ * Converts a numeric USD amount to words in a simplified manner, e.g. "one hundred and 50/100".
+ */
 function numberToWordsUSD(amount: number): string {
   const integerPart = Math.floor(amount);
   const decimalPart = Math.round((amount - integerPart) * 100);
@@ -160,7 +158,6 @@ function numberToWordsUSD(amount: number): string {
 
   const integerWords = resultWords.join(" ").trim() || "zero";
   const decimalStr = decimalPart < 10 ? `0${decimalPart}` : String(decimalPart);
-
   return `${integerWords} and ${decimalStr}/100 dollars`;
 }
 
@@ -169,56 +166,55 @@ export default function RoomsCheckout() {
 
   // Load data from session
   const selectedServicesState: Record<string, Record<string, number>> =
-    loadFromSession("rooms_selectedServicesWithQuantity", {});
-  const address: string = loadFromSession("address", "");
-  const description: string = loadFromSession("description", "");
-  const photos: string[] = loadFromSession("photos", []);
+    getSessionItem("rooms_selectedServicesWithQuantity", {});
+  const address: string = getSessionItem("address", "");
+  const description: string = getSessionItem("description", "");
+  const photos: string[] = getSessionItem("photos", []);
 
-  // city/stateName/zip/country for constructing address
-  const city: string = loadFromSession("city", "");
-  const stateName: string = loadFromSession("stateName", "");
-  const zip: string = loadFromSession("zip", "");
-  const country: string = loadFromSession("country", "");
+  // City/state/zip/country
+  const city: string = getSessionItem("city", "");
+  const stateName: string = getSessionItem("stateName", "");
+  const zip: string = getSessionItem("zip", "");
+  const country: string = getSessionItem("country", "");
 
-  // Time selection
-  const selectedTime: string | null = loadFromSession("selectedTime", null);
-  const timeCoefficient: number = loadFromSession("timeCoefficient", 1);
+  // Date/time selection
+  const selectedTime: string | null = getSessionItem("selectedTime", null);
+  const timeCoefficient: number = getSessionItem("timeCoefficient", 1);
 
-  // The big data: normal + overrides
-  const calculationResultsMap: Record<string, any> =
-    loadFromSession("calculationResultsMap", {});
-  const overrideCalcResults: Record<string, any> =
-    loadFromSession("rooms_overrideCalcResults", {});
+  // Calculation results
+  const calculationResultsMap: Record<string, any> = getSessionItem("calculationResultsMap", {});
+  const overrideCalcResults: Record<string, any> = getSessionItem("rooms_overrideCalcResults", {});
 
   // Summaries from the previous step
-  const laborSubtotal: number = loadFromSession("rooms_laborSubtotal", 0);
-  const materialsSubtotal: number = loadFromSession("rooms_materialsSubtotal", 0);
-  const sumBeforeTax: number = loadFromSession("rooms_sumBeforeTax", 0);
-  const taxRatePercent: number = loadFromSession("rooms_taxRatePercent", 0);
-  const taxAmount: number = loadFromSession("rooms_taxAmount", 0);
-  const finalTotal: number = loadFromSession("rooms_estimateFinalTotal", 0);
-  const serviceFeeOnLabor: number = loadFromSession("serviceFeeOnLabor", 0);
-  const serviceFeeOnMaterials: number = loadFromSession("serviceFeeOnMaterials", 0);
+  const laborSubtotal: number = getSessionItem("rooms_laborSubtotal", 0);
+  const materialsSubtotal: number = getSessionItem("rooms_materialsSubtotal", 0);
+  const sumBeforeTax: number = getSessionItem("rooms_sumBeforeTax", 0);
+  const taxRatePercent: number = getSessionItem("rooms_taxRatePercent", 0);
+  const taxAmount: number = getSessionItem("rooms_taxAmount", 0);
+  const finalTotal: number = getSessionItem("rooms_estimateFinalTotal", 0);
+  const serviceFeeOnLabor: number = getSessionItem("serviceFeeOnLabor", 0);
+  const serviceFeeOnMaterials: number = getSessionItem("serviceFeeOnMaterials", 0);
 
-  // If no services or no address => redirect
+  // If no selected services or no address => redirect
   useEffect(() => {
-    let anyServices = false;
+    let anySelected = false;
     for (const roomId in selectedServicesState) {
       if (Object.keys(selectedServicesState[roomId] || {}).length > 0) {
-        anyServices = true;
+        anySelected = true;
         break;
       }
     }
-    if (!anyServices || !address.trim()) {
+    if (!anySelected || !address.trim()) {
       router.push("/rooms/details");
     }
   }, [selectedServicesState, address, router]);
 
+  // The set of rooms that actually have chosen services
   const chosenRoomIds = Object.keys(selectedServicesState).filter(
     (roomId) => Object.keys(selectedServicesState[roomId]).length > 0
   );
 
-  // Reconstruct full address
+  // Build a combined address
   let constructedAddress = "";
   if (city) constructedAddress += city;
   if (stateName) {
@@ -234,13 +230,13 @@ export default function RoomsCheckout() {
     constructedAddress += country;
   }
 
-  // Build a "temporary" estimate number
+  // Build the estimate number
   const estimateNumber = buildEstimateNumber(stateName, zip);
 
-  // Convert the finalTotal to a spelled-out version
+  // Convert final total to words
   const finalTotalWords = numberToWordsUSD(finalTotal);
 
-  // Actions
+  // Action handlers
   function handlePlaceOrder() {
     alert("Your Rooms order has been placed!");
   }
@@ -261,7 +257,7 @@ export default function RoomsCheckout() {
       </div>
 
       <div className="container mx-auto pt-8">
-        {/* Top row: back link + Place Order */}
+        {/* Top row: back + place order */}
         <div className="flex items-center justify-between mb-6">
           <span className="text-blue-600 cursor-pointer" onClick={() => router.back()}>
             ← Back
@@ -270,49 +266,41 @@ export default function RoomsCheckout() {
             className="bg-yellow-400 hover:bg-yellow-500 text-black py-3 px-6 rounded-md font-semibold text-lg shadow-sm transition-colors duration-200"
             onClick={handlePlaceOrder}
           >
-            Place your order
+            Place Your Order
           </button>
         </div>
 
-        {/* Title + Action Icons */}
+        {/* Header row: "Checkout" + Action icons */}
         <div className="flex items-center justify-between">
           <SectionBoxTitle>Checkout</SectionBoxTitle>
           <ActionIconsBar onPrint={handlePrint} onShare={handleShare} onSave={handleSave} />
         </div>
 
-        {/* Main white card */}
         <div className="bg-white border border-gray-300 mt-8 p-6 rounded-lg space-y-6">
-          {/* Header: "Estimate (...)" */}
           <SectionBoxSubtitle>
-            Estimate <span className="ml-2 text-sm text-gray-500">({estimateNumber})</span>
+            Estimate for Selected Rooms
+            <span className="ml-2 text-sm text-gray-500">({estimateNumber})</span>
           </SectionBoxSubtitle>
-          <p className="text-xs text-gray-400 -mt-2 ml-1">
+          <p className="text-xs text-gray-400 ml-1">
             *This number is temporary and will be replaced with a permanent order number after confirmation.
           </p>
 
-          <div className="mt-4 space-y-8">
+          {/* Rooms breakdown */}
+          <div className="space-y-6 mt-4">
             {chosenRoomIds.map((roomId) => {
-              // The room => e.g. "Attic" or "Basement"
+              // Find the actual room info for UI
               const roomObj = getRoomById(roomId);
               const roomTitle = roomObj ? roomObj.title : roomId;
-              const roomServicesMap = selectedServicesState[roomId] || {};
+
+              // The services within this room
+              const roomServices = selectedServicesState[roomId] || {};
+              // We'll group them by "section -> category -> list of serviceIds"
               const sectionMap: Record<string, Record<string, string[]>> = {};
 
-              for (const svcId of Object.keys(roomServicesMap)) {
-                const catId = getCategoryIdFromServiceId(svcId);
-                // find category => has .section => e.g. "Electrical"
-                const catObj = ALL_CATEGORIES.find((c) => c.id === catId);
-                const sectionName = catObj ? catObj.section : "Other";
-
-                if (!sectionMap[sectionName]) sectionMap[sectionName] = {};
-                if (!sectionMap[sectionName][catId]) sectionMap[sectionName][catId] = [];
-                sectionMap[sectionName][catId].push(svcId);
-              }
-
-              // Summation of labor+mat for the entire room
+              // Summation for the entire room
               let roomLabor = 0;
               let roomMat = 0;
-              for (const svcId of Object.keys(roomServicesMap)) {
+              for (const svcId of Object.keys(roomServices)) {
                 const cr = getCalcResultFor(svcId, overrideCalcResults, calculationResultsMap);
                 if (!cr) continue;
                 roomLabor += parseFloat(cr.work_cost) || 0;
@@ -320,24 +308,32 @@ export default function RoomsCheckout() {
               }
               const roomSubtotal = roomLabor + roomMat;
 
+              // Build the structure
+              Object.keys(roomServices).forEach((svcId) => {
+                const catId = getCategoryIdFromServiceId(svcId);
+                const catObj = ALL_CATEGORIES.find((c) => c.id === catId);
+                const sectionName = catObj ? catObj.section : "Other";
+
+                if (!sectionMap[sectionName]) sectionMap[sectionName] = {};
+                if (!sectionMap[sectionName][catId]) sectionMap[sectionName][catId] = [];
+                sectionMap[sectionName][catId].push(svcId);
+              });
+
               return (
                 <div key={roomId} className="space-y-4">
-                  {/* The room name, no numbering */}
                   <h3 className="text-2xl font-semibold text-gray-800">
                     {roomTitle}
                   </h3>
 
                   {Object.entries(sectionMap).map(([sectionName, catObjMap], sectionIdx) => {
-                    const sectionNum = sectionIdx + 1; // e.g. "1"
+                    const sectionNum = sectionIdx + 1;
                     return (
                       <div key={sectionName} className="ml-4 space-y-4">
-                        {/* L1 => "1. <sectionName>" */}
                         <h4 className="text-xl font-medium text-gray-700">
                           {sectionNum}. {sectionName}
                         </h4>
 
                         {Object.entries(catObjMap).map(([catId, svcList], catIdx) => {
-                          // L2 => "1.1. <catName>"
                           const catNum = `${sectionNum}.${catIdx + 1}`;
                           const catName = getCategoryNameById(catId);
 
@@ -348,12 +344,11 @@ export default function RoomsCheckout() {
                               </h5>
 
                               {svcList.map((svcId, svcIdx) => {
-                                // L3 => "1.1.1. <svcTitle>"
                                 const svcNum = `${catNum}.${svcIdx + 1}`;
                                 const foundSvc = ALL_SERVICES.find((s) => s.id === svcId);
                                 const svcTitle = foundSvc ? foundSvc.title : svcId;
                                 const svcDesc = foundSvc?.description || "";
-                                const qty = roomServicesMap[svcId] || 1;
+                                const qty = roomServices[svcId] || 1;
 
                                 const cr = getCalcResultFor(svcId, overrideCalcResults, calculationResultsMap);
                                 const laborCost = cr ? parseFloat(cr.work_cost) || 0 : 0;
@@ -372,17 +367,15 @@ export default function RoomsCheckout() {
                                       </p>
                                     )}
 
-                                    {/* quantity + total cost */}
                                     <div className="flex items-center justify-between mt-1">
                                       <div className="text-md font-medium text-gray-700">
                                         {qty} {foundSvc?.unit_of_measurement || "units"}
                                       </div>
-                                      <div className="text-md font-medium mr-4 text-gray-700">
+                                      <div className="text-md font-medium text-gray-700 mr-2">
                                         ${formatWithSeparator(totalCost)}
                                       </div>
                                     </div>
 
-                                    {/* cost breakdown */}
                                     {cr && (
                                       <div className="mt-2 p-4 bg-gray-50 border rounded">
                                         <div className="flex justify-between mb-3">
@@ -394,7 +387,9 @@ export default function RoomsCheckout() {
                                           </span>
                                         </div>
                                         <div className="flex justify-between mb-3">
-                                          <span className="text-md font-medium text-gray-700">Materials, tools and equipment</span>
+                                          <span className="text-md font-medium text-gray-700">
+                                            Materials, tools and equipment
+                                          </span>
                                           <span className="text-md font-medium text-gray-700">
                                             {cr.material_cost
                                               ? `$${formatWithSeparator(parseFloat(cr.material_cost))}`
@@ -442,7 +437,6 @@ export default function RoomsCheckout() {
                     );
                   })}
 
-                  {/* Room total */}
                   <div className="flex justify-between items-center mt-2">
                     <span className="font-medium text-xl text-gray-700">
                       {roomTitle} Total:
@@ -466,7 +460,9 @@ export default function RoomsCheckout() {
             </div>
 
             <div className="flex justify-between mb-2">
-              <span className="font-semibold text-lg text-gray-600">Materials, tools and equipment:</span>
+              <span className="font-semibold text-lg text-gray-600">
+                Materials, tools and equipment:
+              </span>
               <span className="font-semibold text-lg text-gray-600">
                 ${formatWithSeparator(materialsSubtotal)}
               </span>
@@ -546,7 +542,9 @@ export default function RoomsCheckout() {
           <hr className="my-6 border-gray-200" />
           <div>
             <SectionBoxSubtitle>Location</SectionBoxSubtitle>
-            <p className="text-gray-800">{constructedAddress.trim() || "No address provided"}</p>
+            <p className="text-gray-800">
+              {constructedAddress.trim() || "No address provided"}
+            </p>
           </div>
 
           {/* Photos */}

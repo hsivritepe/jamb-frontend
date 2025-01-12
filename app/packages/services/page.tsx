@@ -19,25 +19,10 @@ import {
 
 import { ChevronDown } from "lucide-react";
 
-/** Save data to sessionStorage as JSON */
-function saveToSession(key: string, value: any) {
-  if (typeof window !== "undefined") {
-    sessionStorage.setItem(key, JSON.stringify(value));
-  }
-}
+// Use session.ts
+import { getSessionItem, setSessionItem } from "@/utils/session";
 
-/** Load data from sessionStorage or return defaultValue if SSR/not found. */
-function loadFromSession<T>(key: string, defaultValue: T): T {
-  if (typeof window === "undefined") return defaultValue;
-  const stored = sessionStorage.getItem(key);
-  try {
-    return stored ? JSON.parse(stored) : defaultValue;
-  } catch {
-    return defaultValue;
-  }
-}
-
-/** Formats a numeric value with 2 decimals and comma separators. */
+/** Formats a numeric value with two decimals and comma separators. */
 function formatWithSeparator(num: number): string {
   return new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 2,
@@ -68,16 +53,12 @@ function formatHouseType(ht: string): string {
 
 /** Check if the section is an indoor one. */
 function isIndoorSection(sectionValue: string): boolean {
-  return (Object.values(INDOOR_SERVICE_SECTIONS) as string[]).includes(
-    sectionValue
-  );
+  return (Object.values(INDOOR_SERVICE_SECTIONS) as string[]).includes(sectionValue);
 }
 
 /** Check if the section is an outdoor one. */
 function isOutdoorSection(sectionValue: string): boolean {
-  return (Object.values(OUTDOOR_SERVICE_SECTIONS) as string[]).includes(
-    sectionValue
-  );
+  return (Object.values(OUTDOOR_SERVICE_SECTIONS) as string[]).includes(sectionValue);
 }
 
 /** Return a shorter label for each package ID (for the toggler). */
@@ -96,11 +77,6 @@ function getShortTitle(pkgId: string): string {
   }
 }
 
-/** Get base URL for API calls. */
-function getApiBaseUrl(): string {
-  return process.env.NEXT_PUBLIC_API_BASE_URL || "https://your-api.example.com";
-}
-
 /** Convert "1-1-2" => "1.1.2" so the backend recognizes it. */
 function convertServiceIdToApiFormat(serviceId: string) {
   return serviceId.replaceAll("-", ".");
@@ -108,7 +84,8 @@ function convertServiceIdToApiFormat(serviceId: string) {
 
 /** Fetch finishing materials (POST /work/finishing_materials). */
 async function fetchFinishingMaterials(workCode: string) {
-  const url = `${getApiBaseUrl()}/work/finishing_materials`;
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "https://your-api.example.com";
+  const url = `${baseUrl}/work/finishing_materials`;
   const res = await fetch(url, {
     method: "POST",
     headers: {
@@ -118,9 +95,7 @@ async function fetchFinishingMaterials(workCode: string) {
     body: JSON.stringify({ work_code: workCode }),
   });
   if (!res.ok) {
-    throw new Error(
-      `Failed to fetch finishing materials (work_code=${workCode}).`
-    );
+    throw new Error(`Failed to fetch finishing materials (work_code=${workCode}).`);
   }
   return res.json();
 }
@@ -133,7 +108,9 @@ async function calculatePrice(params: {
   square: number;
   finishing_materials: string[];
 }) {
-  const url = `${getApiBaseUrl()}/calculate`;
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "https://your-api.example.com";
+  const url = `${baseUrl}/calculate`;
+
   const res = await fetch(url, {
     method: "POST",
     headers: {
@@ -143,9 +120,7 @@ async function calculatePrice(params: {
     body: JSON.stringify(params),
   });
   if (!res.ok) {
-    throw new Error(
-      `Failed to calculate price (work_code=${params.work_code}).`
-    );
+    throw new Error(`Failed to calculate price (work_code=${params.work_code}).`);
   }
   return res.json();
 }
@@ -154,13 +129,9 @@ async function calculatePrice(params: {
 async function ensureFinishingMaterialsLoaded(
   serviceId: string,
   finishingMaterialsMap: Record<string, any>,
-  setFinishingMaterialsMap: React.Dispatch<
-    React.SetStateAction<Record<string, any>>
-  >,
+  setFinishingMaterialsMap: React.Dispatch<React.SetStateAction<Record<string, any>>>,
   finishingMaterialSelections: Record<string, string[]>,
-  setFinishingMaterialSelections: React.Dispatch<
-    React.SetStateAction<Record<string, string[]>>
-  >
+  setFinishingMaterialSelections: React.Dispatch<React.SetStateAction<Record<string, string[]>>>
 ) {
   try {
     if (!finishingMaterialsMap[serviceId]) {
@@ -188,48 +159,6 @@ async function ensureFinishingMaterialsLoaded(
   }
 }
 
-/** Pre-load finishing materials for all services in a category. */
-async function fetchFinishingMaterialsForCategory(
-  services: (typeof ALL_SERVICES)[number][],
-  finishingMaterialsMap: Record<string, any>,
-  setFinishingMaterialsMap: React.Dispatch<
-    React.SetStateAction<Record<string, any>>
-  >,
-  finishingMaterialSelections: Record<string, string[]>,
-  setFinishingMaterialSelections: React.Dispatch<
-    React.SetStateAction<Record<string, string[]>>
-  >
-) {
-  const promises = services.map(async (svc) => {
-    if (!finishingMaterialsMap[svc.id]) {
-      try {
-        const dot = convertServiceIdToApiFormat(svc.id);
-        const data = await fetchFinishingMaterials(dot);
-        finishingMaterialsMap[svc.id] = data;
-
-        // pick the first from each sub-section
-        const picks: string[] = [];
-        for (const arr of Object.values(data.sections || {})) {
-          if (Array.isArray(arr) && arr.length > 0) {
-            picks.push(arr[0].external_id);
-          }
-        }
-        finishingMaterialSelections[svc.id] = picks;
-      } catch (err) {
-        console.error("Error fetchFinishingMaterialsForCategory:", err);
-      }
-    }
-  });
-
-  try {
-    await Promise.all(promises);
-    setFinishingMaterialsMap({ ...finishingMaterialsMap });
-    setFinishingMaterialSelections({ ...finishingMaterialSelections });
-  } catch (err) {
-    console.error("Error in fetchFinishingMaterialsForCategory:", err);
-  }
-}
-
 export default function PackageServicesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -241,24 +170,21 @@ export default function PackageServicesPage() {
   if (!packageId || !chosenPackageRaw) {
     return <p>Loading package...</p>;
   }
-
   const chosenPackage = chosenPackageRaw;
 
-  // State: selectedServices => { indoor: {svcId: qty}, outdoor: {svcId: qty} }
+  // Selected services: { indoor: { svcId: qty }, outdoor: { svcId: qty } }
   const [selectedServices, setSelectedServices] = useState<{
     indoor: Record<string, number>;
     outdoor: Record<string, number>;
-  }>(() =>
-    loadFromSession("packages_selectedServices", { indoor: {}, outdoor: {} })
-  );
+  }>(() => getSessionItem("packages_selectedServices", { indoor: {}, outdoor: {} }));
 
   useEffect(() => {
-    saveToSession("packages_selectedServices", selectedServices);
+    setSessionItem("packages_selectedServices", selectedServices);
   }, [selectedServices]);
 
   // House info
   const [houseInfo] = useState(() =>
-    loadFromSession("packages_houseInfo", {
+    getSessionItem("packages_houseInfo", {
       country: "",
       city: "",
       zip: "",
@@ -283,16 +209,14 @@ export default function PackageServicesPage() {
 
   // Search query
   const [searchQuery, setSearchQuery] = useState(() =>
-    loadFromSession("packages_searchQuery", "")
+    getSessionItem("packages_searchQuery", "")
   );
   useEffect(() => {
-    saveToSession("packages_searchQuery", searchQuery);
+    setSessionItem("packages_searchQuery", searchQuery);
   }, [searchQuery]);
 
   // Expanded categories
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
-    new Set()
-  );
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   function toggleCategory(catId: string) {
     setExpandedCategories((prev) => {
       const copy = new Set(prev);
@@ -301,24 +225,19 @@ export default function PackageServicesPage() {
     });
   }
 
-  // Materials & cost breakdown states
-  const [finishingMaterialsMap, setFinishingMaterialsMap] = useState<
-    Record<string, any>
+  // Materials & cost breakdown
+  const [finishingMaterialsMap, setFinishingMaterialsMap] = useState<Record<string, any>>({});
+  const [finishingMaterialSelections, setFinishingMaterialSelections] = useState<
+    Record<string, string[]>
   >({});
-  const [finishingMaterialSelections, setFinishingMaterialSelections] =
-    useState<Record<string, string[]>>({});
 
   // calculationResultsMap => server response for each service
-  const [calculationResultsMap, setCalculationResultsMap] = useState<
-    Record<string, any>
-  >({});
+  const [calculationResultsMap, setCalculationResultsMap] = useState<Record<string, any>>({});
   // serviceCosts => final numeric cost (labor + materials) for each service
   const [serviceCosts, setServiceCosts] = useState<Record<string, number>>({});
 
   // For toggling cost breakdown UI
-  const [expandedCostBreakdown, setExpandedCostBreakdown] = useState<
-    Set<string>
-  >(new Set());
+  const [expandedCostBreakdown, setExpandedCostBreakdown] = useState<Set<string>>(new Set());
   function toggleCostBreakdown(svcId: string) {
     setExpandedCostBreakdown((old) => {
       const copy = new Set(old);
@@ -327,20 +246,19 @@ export default function PackageServicesPage() {
     });
   }
 
-  // Manual input quantity
-  const [manualInputValue, setManualInputValue] = useState<
-    Record<string, string>
-  >({});
+  // Manual input for quantity
+  const [manualInputValue, setManualInputValue] = useState<Record<string, string>>({});
 
   // Keep packageId in session
   useEffect(() => {
-    saveToSession("packages_currentPackageId", packageId);
+    setSessionItem("packages_currentPackageId", packageId);
   }, [packageId]);
 
   // "Select all" and "Clear all"
   function handleClearAll() {
     const sure = window.confirm("Are you sure you want to clear all selections?");
     if (!sure) return;
+
     setSelectedServices({ indoor: {}, outdoor: {} });
     setExpandedCategories(new Set());
     setFinishingMaterialsMap({});
@@ -350,76 +268,77 @@ export default function PackageServicesPage() {
     setManualInputValue({});
   }
 
+  // Select all services from the chosen package
   async function handleSelectAll() {
     const sure = window.confirm("Select all services from this package?");
     if (!sure) return;
 
-    // Gather catIds => expand them
     const allCatIds = new Set<string>();
-    for (const it of chosenPackage.services.indoor) {
+    // We'll add catIds from indoor + outdoor to expand them visually
+    chosenPackage.services.indoor.forEach((it) => {
       const catId = it.id.split("-").slice(0, 2).join("-");
       allCatIds.add(catId);
-    }
-    for (const it of chosenPackage.services.outdoor) {
+    });
+    chosenPackage.services.outdoor.forEach((it) => {
       const catId = it.id.split("-").slice(0, 2).join("-");
       allCatIds.add(catId);
-    }
+    });
 
     const nextIndoor: Record<string, number> = {};
     const nextOutdoor: Record<string, number> = {};
 
-    async function selectServiceWithMinQuantity(svcId: string, isIndoor: boolean) {
-      const foundSvc = ALL_SERVICES.find((s) => s.id === svcId);
-      const minQ = foundSvc?.min_quantity || 1;
+    async function selectServiceWithMinQuantity(serviceId: string, isIndoor: boolean) {
+      const found = ALL_SERVICES.find((s) => s.id === serviceId);
+      const minQ = found?.min_quantity || 1;
       if (isIndoor) {
-        nextIndoor[svcId] = minQ;
+        nextIndoor[serviceId] = minQ;
       } else {
-        nextOutdoor[svcId] = minQ;
+        nextOutdoor[serviceId] = minQ;
       }
       // load finishing materials
       await ensureFinishingMaterialsLoaded(
-        svcId,
+        serviceId,
         finishingMaterialsMap,
         setFinishingMaterialsMap,
         finishingMaterialSelections,
         setFinishingMaterialSelections
       );
       // set manual input
-      setManualInputValue((prev) => ({ ...prev, [svcId]: String(minQ) }));
+      setManualInputValue((prev) => ({ ...prev, [serviceId]: String(minQ) }));
     }
 
-    // select all indoor
+    // Select all indoor
     for (const it of chosenPackage.services.indoor) {
       await selectServiceWithMinQuantity(it.id, true);
     }
-    // select all outdoor
+    // Select all outdoor
     for (const it of chosenPackage.services.outdoor) {
       await selectServiceWithMinQuantity(it.id, false);
     }
 
+    // Update state
     setSelectedServices({ indoor: nextIndoor, outdoor: nextOutdoor });
 
-    // expand categories by converting Set => Array
+    // Expand categories
     setExpandedCategories((prev) => {
       const merged = new Set(prev);
-      for (const catId of Array.from(allCatIds)) {
-        merged.add(catId);
-      }
+      allCatIds.forEach((catId) => merged.add(catId));
       return merged;
     });
   }
 
   // Toggle a service on/off
   async function toggleService(serviceId: string) {
+    // Determine isIndoor by checking if the service is in .indoor array
     const isIndoor = !!chosenPackage.services.indoor.find((x) => x.id === serviceId);
     const sideKey = isIndoor ? "indoor" : "outdoor";
     const copy = { ...selectedServices[sideKey] };
     const isOn = !!copy[serviceId];
 
     if (isOn) {
-      // turn off => remove from state
+      // Turn off => remove from selected
       delete copy[serviceId];
-      // remove from results
+      // Also clear cost breakdown, finishing materials, etc.
       setCalculationResultsMap((old) => {
         const c = { ...old };
         delete c[serviceId];
@@ -441,11 +360,11 @@ export default function PackageServicesPage() {
         return c;
       });
     } else {
-      // turn on => minQ
+      // Turn on => use minQ
       const foundSvc = ALL_SERVICES.find((s) => s.id === serviceId);
       const minQ = foundSvc?.min_quantity || 1;
       copy[serviceId] = minQ;
-      // load materials
+      // load finishing materials
       await ensureFinishingMaterialsLoaded(
         serviceId,
         finishingMaterialsMap,
@@ -453,17 +372,15 @@ export default function PackageServicesPage() {
         finishingMaterialSelections,
         setFinishingMaterialSelections
       );
+      // set manual input
       setManualInputValue((m) => ({ ...m, [serviceId]: String(minQ) }));
     }
     setSelectedServices((prev) => ({ ...prev, [sideKey]: copy }));
   }
 
-  // increment/decrement
-  function handleQuantityChange(
-    serviceId: string,
-    increment: boolean,
-    unit: string
-  ) {
+  // increment/decrement for the quantity
+  function handleQuantityChange(serviceId: string, increment: boolean, unit: string) {
+    // isIndoor => check chosenPackage.services.indoor
     const isIndoor = !!chosenPackage.services.indoor.find((x) => x.id === serviceId);
     const sideKey = isIndoor ? "indoor" : "outdoor";
     const copy = { ...selectedServices[sideKey] };
@@ -474,16 +391,18 @@ export default function PackageServicesPage() {
 
     let newVal = increment ? oldVal + 1 : oldVal - 1;
     if (newVal < minQ) newVal = minQ;
+    // If unit is "each", we might want to keep it integer
     copy[serviceId] = unit === "each" ? Math.round(newVal) : newVal;
     setSelectedServices((prev) => ({ ...prev, [sideKey]: copy }));
-    setManualInputValue((m) => ({ ...m, [serviceId]: String(copy[serviceId]) }));
+    setManualInputValue((old) => ({ ...old, [serviceId]: String(copy[serviceId]) }));
   }
 
-  // manual input
+  // Manually typed quantity
   function handleManualQuantityChange(serviceId: string, value: string, unit: string) {
-    setManualInputValue((m) => ({ ...m, [serviceId]: value }));
+    setManualInputValue((old) => ({ ...old, [serviceId]: value }));
   }
   function handleBlurInput(serviceId: string, unit: string) {
+    // isIndoor => check chosenPackage
     const isIndoor = !!chosenPackage.services.indoor.find((x) => x.id === serviceId);
     const sideKey = isIndoor ? "indoor" : "outdoor";
     const copy = { ...selectedServices[sideKey] };
@@ -496,10 +415,9 @@ export default function PackageServicesPage() {
     if (parsed < minQ) {
       parsed = minQ;
     }
-
     copy[serviceId] = unit === "each" ? Math.round(parsed) : parsed;
     setSelectedServices((prev) => ({ ...prev, [sideKey]: copy }));
-    setManualInputValue((m) => ({ ...m, [serviceId]: String(copy[serviceId]) }));
+    setManualInputValue((old) => ({ ...old, [serviceId]: String(copy[serviceId]) }));
   }
 
   // Build a combined list of services from chosenPackage, apply search filter
@@ -509,11 +427,11 @@ export default function PackageServicesPage() {
     chosenPackage.services[sideKey].forEach((pkgItem) => {
       const svcObj = ALL_SERVICES.find((s) => s.id === pkgItem.id);
       if (!svcObj) return;
+      // If there's a search query => filter by title/desc
       if (searchQuery) {
         const lower = searchQuery.toLowerCase();
         const matchTitle = svcObj.title.toLowerCase().includes(lower);
-        const matchDesc =
-          svcObj.description && svcObj.description.toLowerCase().includes(lower);
+        const matchDesc = svcObj.description?.toLowerCase().includes(lower);
         if (!matchTitle && !matchDesc) return;
       }
       combinedServices.push(svcObj);
@@ -522,7 +440,7 @@ export default function PackageServicesPage() {
   processSide(true);
   processSide(false);
 
-  // Group by indoor/outdoor => by section => by category
+  // Group by section => cat => ...
   const homeSectionsMap: Record<string, Set<string>> = {};
   const gardenSectionsMap: Record<string, Set<string>> = {};
 
@@ -545,7 +463,7 @@ export default function PackageServicesPage() {
     }
   }
 
-  // catServicesMap => catId => array of services
+  // catServicesMap => catId -> array of services
   const catServicesMap: Record<string, (typeof ALL_SERVICES)[number][]> = {};
   for (const svc of combinedServices) {
     const catId = svc.id.split("-").slice(0, 2).join("-");
@@ -555,14 +473,13 @@ export default function PackageServicesPage() {
     catServicesMap[catId].push(svc);
   }
 
-  // Recalculate cost after any selection changes
+  // After each selection change => recalc
   const userZip = houseInfo?.zip || "";
   useEffect(() => {
     async function recalcAll() {
-      for (const [svcId, qty] of Object.entries({
-        ...selectedServices.indoor,
-        ...selectedServices.outdoor,
-      })) {
+      const merged = { ...selectedServices.indoor, ...selectedServices.outdoor };
+      for (const [svcId, qty] of Object.entries(merged)) {
+        // Ensure finishing materials loaded
         await ensureFinishingMaterialsLoaded(
           svcId,
           finishingMaterialsMap,
@@ -570,6 +487,7 @@ export default function PackageServicesPage() {
           finishingMaterialSelections,
           setFinishingMaterialSelections
         );
+        // Then call /calculate
         const svcObj = ALL_SERVICES.find((s) => s.id === svcId);
         if (!svcObj) continue;
         const finishingIds = finishingMaterialSelections[svcId] || [];
@@ -583,9 +501,8 @@ export default function PackageServicesPage() {
           });
           const labor = parseFloat(result.work_cost) || 0;
           const mat = parseFloat(result.material_cost) || 0;
-          const tot = labor + mat;
           setCalculationResultsMap((old) => ({ ...old, [svcId]: result }));
-          setServiceCosts((old) => ({ ...old, [svcId]: tot }));
+          setServiceCosts((old) => ({ ...old, [svcId]: labor + mat }));
         } catch (err) {
           console.error("Error in recalcAll =>", err);
         }
@@ -601,13 +518,13 @@ export default function PackageServicesPage() {
     setFinishingMaterialSelections,
   ]);
 
-  // IMPORTANT: save results to session so that the Estimate page can read them
+  // Save to session so Estimate page can read
   useEffect(() => {
-    saveToSession("packages_calculationResultsMap", calculationResultsMap);
-    saveToSession("packages_serviceCosts", serviceCosts);
+    setSessionItem("packages_calculationResultsMap", calculationResultsMap);
+    setSessionItem("packages_serviceCosts", serviceCosts);
   }, [calculationResultsMap, serviceCosts]);
 
-  // Next => /packages/estimate
+  // "Next" => go to /packages/estimate
   function handleNext() {
     const anyIndoor = Object.keys(selectedServices.indoor).length > 0;
     const anyOutdoor = Object.keys(selectedServices.outdoor).length > 0;
@@ -618,7 +535,7 @@ export default function PackageServicesPage() {
     router.push("/packages/estimate");
   }
 
-  // compute "annualPrice" = sum of all real costs
+  // Compute total
   function calculateAnnualPrice(): number {
     let sum = 0;
     for (const cost of Object.values(serviceCosts)) {
@@ -628,15 +545,16 @@ export default function PackageServicesPage() {
   }
   const annualPrice = calculateAnnualPrice();
 
-  // Merge indoor+outdoor for summary
+  // Merge indoor+outdoor
   const mergedSelected: Record<string, number> = {
     ...selectedServices.indoor,
     ...selectedServices.outdoor,
   };
 
-  // Build summary structure
+  // Build summary structure => section -> catId -> array of {svcObj, qty}
   type ServiceItem = { svcObj: (typeof ALL_SERVICES)[number]; qty: number };
   const summaryStructure: Record<string, Record<string, ServiceItem[]>> = {};
+
   for (const [svcId, qty] of Object.entries(mergedSelected)) {
     const svcObj = ALL_SERVICES.find((s) => s.id === svcId);
     if (!svcObj) continue;
@@ -654,10 +572,11 @@ export default function PackageServicesPage() {
     summaryStructure[sectionName][catId].push({ svcObj, qty });
   }
 
-  // Toggle package
-  function handlePackageToggle(pkgId: string) {
-    router.push(`/packages/services?packageId=${pkgId}`);
+  // Toggle package (the 4-button switch)
+  function handlePackageToggle(newPkgId: string) {
+    router.push(`/packages/services?packageId=${newPkgId}`);
   }
+
   const packageIdsInOrder = [
     "basic_package",
     "enhanced_package",
@@ -703,9 +622,7 @@ export default function PackageServicesPage() {
         <div className="w-full max-w-[624px] mt-6 mb-4">
           <SearchServices
             value={searchQuery}
-            onChange={(e: ChangeEvent<HTMLInputElement>) =>
-              setSearchQuery(e.target.value)
-            }
+            onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
             placeholder="Search for services..."
           />
         </div>
@@ -734,9 +651,9 @@ export default function PackageServicesPage() {
           </div>
         </div>
 
-        {/* Layout: left=services, right=summary */}
+        {/* Left=services, Right=summary */}
         <div className="container mx-auto relative flex mt-8">
-          {/* LEFT column */}
+          {/* LEFT column: services grouped by indoor/outdoor => by section => by category */}
           <div className="flex-1 space-y-12">
             {/* For Home */}
             {Object.keys(homeSectionsMap).length > 0 && (
@@ -756,7 +673,7 @@ export default function PackageServicesPage() {
                 <div className="mt-6 space-y-6">
                   {Object.keys(homeSectionsMap).map((sectionName) => {
                     const catIdsSet = homeSectionsMap[sectionName];
-                    if (!catIdsSet || catIdsSet.size === 0) return null;
+                    if (!catIdsSet?.size) return null;
                     const catIdsArray = Array.from(catIdsSet);
 
                     return (
@@ -815,8 +732,7 @@ export default function PackageServicesPage() {
                                       selectedServices.indoor[svc.id] != null;
                                     const isOutdoorSelected =
                                       selectedServices.outdoor[svc.id] != null;
-                                    const isSelected =
-                                      isIndoorSelected || isOutdoorSelected;
+                                    const isSelected = isIndoorSelected || isOutdoorSelected;
 
                                     const quantity = isIndoorSelected
                                       ? selectedServices.indoor[svc.id]
@@ -886,10 +802,7 @@ export default function PackageServicesPage() {
                                                     }))
                                                   }
                                                   onBlur={() =>
-                                                    handleBlurInput(
-                                                      svc.id,
-                                                      svc.unit_of_measurement
-                                                    )
+                                                    handleBlurInput(svc.id, svc.unit_of_measurement)
                                                   }
                                                   onChange={(e) =>
                                                     handleManualQuantityChange(
@@ -967,7 +880,9 @@ export default function PackageServicesPage() {
                                                       <table className="table-auto w-full text-sm text-left text-gray-700">
                                                         <thead>
                                                           <tr className="border-b">
-                                                            <th className="py-2 px-1 text-left">Name</th>
+                                                            <th className="py-2 px-1 text-left">
+                                                              Name
+                                                            </th>
                                                             <th className="py-2 px-1">Price</th>
                                                             <th className="py-2 px-1">Qty</th>
                                                             <th className="py-2 px-1">Subtotal</th>
@@ -1094,8 +1009,7 @@ export default function PackageServicesPage() {
                                       selectedServices.indoor[svc.id] != null;
                                     const isOutdoorSelected =
                                       selectedServices.outdoor[svc.id] != null;
-                                    const isSelected =
-                                      isIndoorSelected || isOutdoorSelected;
+                                    const isSelected = isIndoorSelected || isOutdoorSelected;
 
                                     const quantity = isIndoorSelected
                                       ? selectedServices.indoor[svc.id]
@@ -1165,10 +1079,7 @@ export default function PackageServicesPage() {
                                                     }))
                                                   }
                                                   onBlur={() =>
-                                                    handleBlurInput(
-                                                      svc.id,
-                                                      svc.unit_of_measurement
-                                                    )
+                                                    handleBlurInput(svc.id, svc.unit_of_measurement)
                                                   }
                                                   onChange={(e) =>
                                                     handleManualQuantityChange(
@@ -1299,6 +1210,7 @@ export default function PackageServicesPage() {
 
           {/* RIGHT column => summary */}
           <div className="w-1/2 ml-auto pt-0 space-y-6">
+            {/* Summary Card */}
             <div className="max-w-[500px] ml-auto bg-white p-4 rounded-lg border border-gray-300 overflow-hidden">
               <SectionBoxSubtitle>Your {chosenPackage.title}</SectionBoxSubtitle>
 
@@ -1321,7 +1233,6 @@ export default function PackageServicesPage() {
                           <h3 className="text-xl font-semibold text-gray-800 mb-2">
                             {sectionName}
                           </h3>
-
                           {Object.entries(cats).map(([catId, arr]) => {
                             const catObj = ALL_CATEGORIES.find((c) => c.id === catId);
                             const catName = catObj ? catObj.title : catId;
@@ -1340,7 +1251,9 @@ export default function PackageServicesPage() {
                                         key={svcObj.id}
                                         className="flex justify-between items-center text-sm text-gray-600"
                                       >
-                                        <span className="truncate w-1/2 pr-2">{svcObj.title}</span>
+                                        <span className="truncate w-1/2 pr-2">
+                                          {svcObj.title}
+                                        </span>
                                         <span>
                                           {qty} {svcObj.unit_of_measurement}
                                         </span>
@@ -1430,9 +1343,7 @@ export default function PackageServicesPage() {
                 </p>
                 <p>
                   <strong>Yard:</strong>{" "}
-                  {houseInfo.hasYard
-                    ? `${houseInfo.yardArea} sq ft`
-                    : "No yard/garden"}
+                  {houseInfo.hasYard ? `${houseInfo.yardArea} sq ft` : "No yard/garden"}
                 </p>
                 <p>
                   <strong>Pool:</strong>{" "}

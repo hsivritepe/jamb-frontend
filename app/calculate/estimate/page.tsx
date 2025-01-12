@@ -8,11 +8,13 @@ import { CALCULATE_STEPS } from "@/constants/navigation";
 import { ALL_CATEGORIES } from "@/constants/categories";
 import { ALL_SERVICES } from "@/constants/services";
 import ServiceTimePicker from "@/components/ui/ServiceTimePicker";
-import { useLocation } from "@/context/LocationContext";   // we get the state from context
-import { taxRatesUSA } from "@/constants/taxRatesUSA";      // tax table
+import { useLocation } from "@/context/LocationContext"; // for userState
+import { taxRatesUSA } from "@/constants/taxRatesUSA";
+
+import { setSessionItem, getSessionItem } from "@/utils/session";
 
 /**
- * Formats a numeric value with a comma/decimal separator, exactly two decimals.
+ * Formats a numeric value with commas and exactly two decimals.
  */
 function formatWithSeparator(value: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -22,31 +24,7 @@ function formatWithSeparator(value: number): string {
 }
 
 /**
- * Loads data from sessionStorage. Returns a defaultValue if on server or parsing fails.
- */
-function loadFromSession<T>(key: string, defaultValue: T): T {
-  if (typeof window === "undefined") return defaultValue;
-  const savedValue = sessionStorage.getItem(key);
-  try {
-    return savedValue ? JSON.parse(savedValue) : defaultValue;
-  } catch (error) {
-    console.error(`Error parsing sessionStorage key "${key}":`, error);
-    return defaultValue;
-  }
-}
-
-/**
- * Saves data to sessionStorage if in the browser environment.
- */
-function saveToSession(key: string, value: any) {
-  if (typeof window !== "undefined") {
-    sessionStorage.setItem(key, JSON.stringify(value));
-  }
-}
-
-/**
- * Returns the combined state+local tax rate (in percentage) for a given state name from taxRatesUSA.
- * Example: if state = "Texas", returns 8.19 (which means 8.19%).
+ * Returns the combined state+local tax rate for a given state name.
  * If not found, returns 0.
  */
 function getTaxRateForState(stateName: string): number {
@@ -59,36 +37,25 @@ function getTaxRateForState(stateName: string): number {
 
 export default function Estimate() {
   const router = useRouter();
-
-  // 1) Get user location from context => { city, zip, country, state, ... }
   const { location } = useLocation();
-  const userState = location.state || ""; // e.g. "California"
+  const userState = location.state || ""; // example: "California"
 
-  // 2) Load data from sessionStorage
-  const selectedServicesState: Record<string, number> = loadFromSession(
+  // Load data from session
+  const selectedServicesState: Record<string, number> = getSessionItem(
     "selectedServicesWithQuantity",
     {}
   );
-  const calculationResultsMap: Record<string, any> = loadFromSession(
+  const calculationResultsMap: Record<string, any> = getSessionItem(
     "calculationResultsMap",
     {}
   );
-  const address: string = loadFromSession("address", "");
-  const photos: string[] = loadFromSession("photos", []);
-  const description: string = loadFromSession("description", "");
-  const selectedCategories: string[] = loadFromSession(
-    "services_selectedCategories",
-    []
-  );
-  const searchQuery: string = loadFromSession("services_searchQuery", "");
+  const address: string = getSessionItem("address", "");
+  const photos: string[] = getSessionItem("photos", []);
+  const description: string = getSessionItem("description", "");
+  const selectedCategories: string[] = getSessionItem("services_selectedCategories", []);
+  const searchQuery: string = getSessionItem("services_searchQuery", "");
 
-  // This object indicates that the user has their own finishing materials for some services.
-  const clientOwnedMaterials: Record<string, string[]> = loadFromSession(
-    "clientOwnedMaterials",
-    {}
-  );
-
-  // If user lands here without any data, redirect to /calculate
+  // If no data => redirect to /calculate
   useEffect(() => {
     if (
       Object.keys(selectedServicesState).length === 0 ||
@@ -99,7 +66,116 @@ export default function Estimate() {
     }
   }, [selectedServicesState, address, selectedCategories, router]);
 
-  // 3) Build section/category grouping
+  // Some user might have their own finishing materials => override
+  const clientOwnedMaterials: Record<string, string[]> = getSessionItem(
+    "clientOwnedMaterials",
+    {}
+  );
+
+  // Local state for overriding calculation results if user removes finishing materials
+  const [overrideCalcResults, setOverrideCalcResults] = useState<Record<string, any>>({});
+
+  /**
+   * Returns the effective calcResult for a service, 
+   * either from overrideCalcResults or from calculationResultsMap.
+   */
+  function getCalcResultFor(serviceId: string): any {
+    return overrideCalcResults[serviceId] || calculationResultsMap[serviceId];
+  }
+
+  /**
+   * Zeroes out material_cost and materials array for a given service,
+   * simulating "user-provided" materials.
+   */
+  function removeFinishingMaterials(serviceId: string) {
+    const original = getCalcResultFor(serviceId);
+    if (!original) return;
+
+    const newObj = {
+      ...original,
+      material_cost: "0.00",
+      materials: [],
+      total: original.work_cost, // labor cost only
+    };
+    setOverrideCalcResults((prev) => ({
+      ...prev,
+      [serviceId]: newObj,
+    }));
+  }
+
+  /**
+   * Sums up labor cost for all selected services (before applying timeCoefficient).
+   */
+  function calculateLaborSubtotal(): number {
+    let total = 0;
+    for (const serviceId of Object.keys(selectedServicesState)) {
+      const calcResult = getCalcResultFor(serviceId);
+      if (!calcResult) continue;
+      total += parseFloat(calcResult.work_cost) || 0;
+    }
+    return total;
+  }
+
+  /**
+   * Sums up materials cost for all selected services.
+   */
+  function calculateMaterialsSubtotal(): number {
+    let total = 0;
+    for (const serviceId of Object.keys(selectedServicesState)) {
+      const calcResult = getCalcResultFor(serviceId);
+      if (!calcResult) continue;
+      total += parseFloat(calcResult.material_cost) || 0;
+    }
+    return total;
+  }
+
+  const laborSubtotal = calculateLaborSubtotal();
+  const materialsSubtotal = calculateMaterialsSubtotal();
+
+  // Time selection for labor cost
+  const [showModal, setShowModal] = useState(false);
+  const [selectedTime, setSelectedTime] = useState<string | null>(() =>
+    getSessionItem("selectedTime", null)
+  );
+  const [timeCoefficient, setTimeCoefficient] = useState<number>(() =>
+    getSessionItem("timeCoefficient", 1)
+  );
+
+  // Save timeCoefficient and selectedTime
+  useEffect(() => {
+    setSessionItem("selectedTime", selectedTime);
+  }, [selectedTime]);
+  useEffect(() => {
+    setSessionItem("timeCoefficient", timeCoefficient);
+  }, [timeCoefficient]);
+
+  // final labor
+  const finalLabor = laborSubtotal * timeCoefficient;
+
+  // new fees
+  const serviceFeeOnLabor = finalLabor * 0.15;
+  const serviceFeeOnMaterials = materialsSubtotal * 0.05;
+
+  // store them in session
+  useEffect(() => {
+    setSessionItem("serviceFeeOnLabor", serviceFeeOnLabor);
+    setSessionItem("serviceFeeOnMaterials", serviceFeeOnMaterials);
+  }, [serviceFeeOnLabor, serviceFeeOnMaterials]);
+
+  // sumBeforeTax
+  const sumBeforeTax = finalLabor + materialsSubtotal + serviceFeeOnLabor + serviceFeeOnMaterials;
+
+  // tax
+  const taxRatePercent = getTaxRateForState(userState);
+  const taxAmount = sumBeforeTax * (taxRatePercent / 100);
+
+  const finalTotal = sumBeforeTax + taxAmount;
+
+  function handleProceedToCheckout() {
+    router.push("/calculate/checkout");
+  }
+
+  // Category grouping
   const categoriesWithSection = selectedCategories
     .map((catId) => ALL_CATEGORIES.find((c) => c.id === catId) || null)
     .filter(Boolean) as (typeof ALL_CATEGORIES)[number][];
@@ -114,141 +190,20 @@ export default function Estimate() {
 
   const categoryServicesMap: Record<string, (typeof ALL_SERVICES)[number][]> = {};
   selectedCategories.forEach((catId) => {
-    let matchedServices = ALL_SERVICES.filter((svc) =>
-      svc.id.startsWith(`${catId}-`)
-    );
+    let matched = ALL_SERVICES.filter((svc) => svc.id.startsWith(`${catId}-`));
     if (searchQuery) {
-      matchedServices = matchedServices.filter((svc) =>
+      matched = matched.filter((svc) =>
         svc.title.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
-    categoryServicesMap[catId] = matchedServices;
+    categoryServicesMap[catId] = matched;
   });
 
-  // 4) Local state to hold overridden calc results if user removes finishing materials
-  const [overrideCalcResults, setOverrideCalcResults] = useState<
-    Record<string, any>
-  >({});
-
-  /**
-   * Returns the effective calculation result for a service,
-   * either from overrideCalcResults or the original calculationResultsMap.
-   */
-  function getCalcResultFor(serviceId: string): any {
-    return overrideCalcResults[serviceId] || calculationResultsMap[serviceId];
-  }
-
-  /**
-   * Removes finishing materials for a given service by setting material_cost=0,
-   * materials=[] and total=work_cost. This simulates the user selecting "I have my own materials."
-   */
-  function removeFinishingMaterials(serviceId: string) {
-    const original = getCalcResultFor(serviceId);
-    if (!original) return;
-
-    // Construct new object with zeroed out material cost
-    const newObj = {
-      ...original,
-      material_cost: "0.00",
-      materials: [],
-      total: original.work_cost, // total = labor cost only
-    };
-
-    setOverrideCalcResults((prev) => ({
-      ...prev,
-      [serviceId]: newObj,
-    }));
-  }
-
-  /**
-   * Calculates total labor cost by summing all work_cost across selected services.
-   * (no timeCoefficient applied here; we will apply it later)
-   */
-  function calculateLaborSubtotal(): number {
-    let totalLabor = 0;
-    for (const serviceId of Object.keys(selectedServicesState)) {
-      const calcResult = getCalcResultFor(serviceId);
-      if (!calcResult) continue;
-      totalLabor += parseFloat(calcResult.work_cost) || 0;
-    }
-    return totalLabor;
-  }
-
-  /**
-   * Calculates total materials cost by summing all material_cost across selected services.
-   */
-  function calculateMaterialsSubtotal(): number {
-    let totalMat = 0;
-    for (const serviceId of Object.keys(selectedServicesState)) {
-      const calcResult = getCalcResultFor(serviceId);
-      if (!calcResult) continue;
-      totalMat += parseFloat(calcResult.material_cost) || 0;
-    }
-    return totalMat;
-  }
-
-  // 5) Summation logic
-  const laborSubtotal = calculateLaborSubtotal();
-  const materialsSubtotal = calculateMaterialsSubtotal();
-
-  // We'll apply timeCoefficient to labor only. So finalLabor = laborSubtotal * timeCoefficient
-  const [showModal, setShowModal] = useState(false);
-  const [selectedTime, setSelectedTime] = useState<string | null>(() =>
-    loadFromSession("selectedTime", null)
-  );
-  const [timeCoefficient, setTimeCoefficient] = useState<number>(() =>
-    loadFromSession("timeCoefficient", 1)
-  );
-
-  useEffect(() => {
-    saveToSession("selectedTime", selectedTime);
-  }, [selectedTime]);
-
-  useEffect(() => {
-    saveToSession("timeCoefficient", timeCoefficient);
-  }, [timeCoefficient]);
-
-  // final labor after timeCoefficient
-  const finalLabor = laborSubtotal * timeCoefficient;
-
-  // -------------- new fees: 15% on labor, 5% on materials --------------
-  const serviceFeeOnLabor = finalLabor * 0.15;
-  const serviceFeeOnMaterials = materialsSubtotal * 0.05;
-
-  // Store them in session for the next page
-  useEffect(() => {
-    saveToSession("serviceFeeOnLabor", serviceFeeOnLabor);
-    saveToSession("serviceFeeOnMaterials", serviceFeeOnMaterials);
-  }, [serviceFeeOnLabor, serviceFeeOnMaterials]);
-
-  // sumBeforeTax = final labor + materials + fees
-  const sumBeforeTax =
-    finalLabor + materialsSubtotal + serviceFeeOnLabor + serviceFeeOnMaterials;
-
-  // 6) Find tax rate from the state (e.g. "California" => 8.85%). If not found => 0
-  const taxRatePercent = getTaxRateForState(userState); // e.g. 8.85
-  const taxAmount = sumBeforeTax * (taxRatePercent / 100);
-
-  // final total = sumBeforeTax + tax
-  const finalTotal = sumBeforeTax + taxAmount;
-
-  /**
-   * Proceeds to the next step (e.g., /calculate/checkout).
-   */
-  function handleProceedToCheckout() {
-    router.push("/calculate/checkout");
-  }
-
-  /**
-   * Returns category title by id, or the id if no match found.
-   */
   function getCategoryNameById(catId: string): string {
-    const cat = ALL_CATEGORIES.find((x) => x.id === catId);
-    return cat ? cat.title : catId;
+    const c = ALL_CATEGORIES.find((x) => x.id === catId);
+    return c ? c.title : catId;
   }
 
-  // Helper counters to produce "1. Electrical, 1.1. Smoke Detector, 1.1.1. Battery-Operated..."
-  // We'll iterate over sections with index i, then categories with index j, then services with index k.
   return (
     <main className="min-h-screen pt-24">
       <div className="container mx-auto">
@@ -257,57 +212,50 @@ export default function Estimate() {
 
       <div className="container mx-auto py-12">
         <div className="flex gap-12">
-          {/* Left column with Estimate content */}
+          {/* Left column */}
           <div className="w-[700px]">
             <div className="bg-brand-light p-6 rounded-xl border border-gray-300 overflow-hidden">
               <SectionBoxSubtitle>Estimate for Selected Services</SectionBoxSubtitle>
 
-              {/* 1) Group by section -> categories -> services with numbering */}
               <div className="mt-4 space-y-4">
                 {Object.entries(categoriesBySection).map(([sectionName, catIds], i) => {
-                  // "i" is the index of the section
-                  const sectionIndex = i + 1; // for numbering
-                  // Filter out categories that have no selected services
-                  const catsWithSelected = catIds.filter((catId) => {
-                    const services = categoryServicesMap[catId] || [];
-                    return services.some((s) => selectedServicesState[s.id] != null);
+                  const sectionIndex = i + 1;
+                  // filter categories with chosen services
+                  const catsWithServices = catIds.filter((catId) => {
+                    const arr = categoryServicesMap[catId] || [];
+                    return arr.some((s) => selectedServicesState[s.id] != null);
                   });
-                  if (catsWithSelected.length === 0) return null;
+                  if (catsWithServices.length === 0) return null;
 
                   return (
                     <div key={sectionName} className="space-y-4">
-                      {/* Example: "1. Electrical" */}
                       <h3 className="text-xl font-semibold text-gray-800">
                         {sectionIndex}. {sectionName}
                       </h3>
 
-                      {catsWithSelected.map((catId, j) => {
+                      {catsWithServices.map((catId, j) => {
                         const catIndex = j + 1;
-                        const servicesInCat = categoryServicesMap[catId] || [];
-                        const chosenServices = servicesInCat.filter(
-                          (s) => selectedServicesState[s.id] != null
+                        const servicesArr = categoryServicesMap[catId] || [];
+                        const chosen = servicesArr.filter(
+                          (x) => selectedServicesState[x.id] != null
                         );
-                        if (chosenServices.length === 0) return null;
-
+                        if (chosen.length === 0) return null;
                         const catName = getCategoryNameById(catId);
 
                         return (
                           <div key={catId} className="ml-4 space-y-4">
-                            {/* Example: "1.1. Smoke Detector" */}
                             <h4 className="text-xl font-medium text-gray-700">
                               {sectionIndex}.{catIndex}. {catName}
                             </h4>
 
-                            {chosenServices.map((svc, k) => {
+                            {chosen.map((svc, k) => {
                               const svcIndex = k + 1;
-                              const quantity = selectedServicesState[svc.id] || 1;
+                              const qty = selectedServicesState[svc.id] || 1;
                               const calcResult = getCalcResultFor(svc.id);
-                              const finalCost =
-                                calcResult ? parseFloat(calcResult.total) || 0 : 0;
+                              const finalCost = calcResult ? parseFloat(calcResult.total) || 0 : 0;
 
                               return (
                                 <div key={svc.id} className="flex flex-col gap-2 mb-2">
-                                  {/* Example: "1.1.1. Battery-Operated Smoke Detector Installation" */}
                                   <div>
                                     <h3 className="font-medium text-lg text-gray-800">
                                       {sectionIndex}.{catIndex}.{svcIndex}. {svc.title}
@@ -319,17 +267,15 @@ export default function Estimate() {
                                     )}
                                   </div>
 
-                                  {/* quantity/unit + final cost on the same row */}
                                   <div className="flex items-center justify-between mt-2">
                                     <div className="text-medium font-medium text-gray-700">
-                                      {quantity} {svc.unit_of_measurement}
+                                      {qty} {svc.unit_of_measurement}
                                     </div>
                                     <span className="text-gray-700 font-medium text-lg mr-3">
                                       ${formatWithSeparator(finalCost)}
                                     </span>
                                   </div>
 
-                                  {/* "Remove finishing materials" if user indicated client-owned */}
                                   {clientOwnedMaterials[svc.id] && (
                                     <button
                                       onClick={() => removeFinishingMaterials(svc.id)}
@@ -339,10 +285,8 @@ export default function Estimate() {
                                     </button>
                                   )}
 
-                                  {/* Cost Breakdown always visible */}
                                   {calcResult && (
                                     <div className="mt-1 p-4 bg-gray-50 border rounded">
-                                      {/* Labor cost only */}
                                       <div className="flex justify-between mb-4">
                                         <span className="text-md font-medium text-gray-800">
                                           Labor
@@ -356,15 +300,18 @@ export default function Estimate() {
                                         </span>
                                       </div>
                                       <div className="flex justify-between mb-3">
-                                          <span className="text-md font-medium text-gray-800">Materials, tools & equipment</span>
-                                          <span className="text-md font-medium text-gray-700">
-                                            {calcResult.material_cost
-                                              ? `$${formatWithSeparator(parseFloat(calcResult.material_cost))}`
-                                              : "—"}
-                                          </span>
-                                        </div>
+                                        <span className="text-md font-medium text-gray-800">
+                                          Materials, tools & equipment
+                                        </span>
+                                        <span className="text-md font-medium text-gray-700">
+                                          {calcResult.material_cost
+                                            ? `$${formatWithSeparator(
+                                                parseFloat(calcResult.material_cost)
+                                              )}`
+                                            : "—"}
+                                        </span>
+                                      </div>
 
-                                      {/* Materials list */}
                                       {Array.isArray(calcResult.materials) &&
                                         calcResult.materials.length > 0 && (
                                           <div className="mt-2">
@@ -385,7 +332,8 @@ export default function Estimate() {
                                                   >
                                                     <td className="py-3 px-1">{m.name}</td>
                                                     <td className="py-3 px-1">
-                                                      ${formatWithSeparator(
+                                                      $
+                                                      {formatWithSeparator(
                                                         parseFloat(m.cost_per_unit)
                                                       )}
                                                     </td>
@@ -414,7 +362,7 @@ export default function Estimate() {
 
               {/* Summary */}
               <div className="pt-4 mt-4 border-t">
-                {/* Labor (no coefficient) */}
+                {/* Labor */}
                 <div className="flex justify-between mb-2">
                   <span className="font-semibold text-lg text-gray-600">Labor total</span>
                   <span className="font-semibold text-lg text-gray-600">
@@ -424,19 +372,18 @@ export default function Estimate() {
 
                 {/* Materials */}
                 <div className="flex justify-between mb-2">
-                  <span className="font-semibold text-lg text-gray-600">Materials, tools and equipment</span>
+                  <span className="font-semibold text-lg text-gray-600">
+                    Materials, tools & equipment
+                  </span>
                   <span className="font-semibold text-lg text-gray-600">
                     ${formatWithSeparator(materialsSubtotal)}
                   </span>
                 </div>
 
-                {/* timeCoefficient => show if != 1 */}
                 {timeCoefficient !== 1 && (
                   <div className="flex justify-between mb-2">
                     <span className="text-gray-600">
-                      {timeCoefficient > 1
-                        ? "Surcharge (date selection)"
-                        : "Discount (day selection)"}
+                      {timeCoefficient > 1 ? "Surcharge (date selection)" : "Discount (day selection)"}
                     </span>
                     <span
                       className={`font-semibold text-lg ${
@@ -444,19 +391,18 @@ export default function Estimate() {
                       }`}
                     >
                       {timeCoefficient > 1 ? "+" : "-"}$
-                      {formatWithSeparator(Math.abs(finalLabor - laborSubtotal))}
+                      {formatWithSeparator(Math.abs(laborSubtotal * timeCoefficient - laborSubtotal))}
                     </span>
                   </div>
                 )}
 
-                {/* NEW fees (serviceFeeOnLabor, serviceFeeOnMaterials) */}
+                {/* Fees */}
                 <div className="flex justify-between mb-2">
                   <span className="text-gray-600">Service Fee (15% on labor)</span>
                   <span className="font-semibold text-lg text-gray-600">
                     ${formatWithSeparator(serviceFeeOnLabor)}
                   </span>
                 </div>
-
                 <div className="flex justify-between mb-2">
                   <span className="text-gray-600">Delivery &amp; Processing (5% on materials)</span>
                   <span className="font-semibold text-lg text-gray-600">
@@ -464,7 +410,6 @@ export default function Estimate() {
                   </span>
                 </div>
 
-                {/* Subtotal = finalLabor + materials + fees */}
                 <div className="flex justify-between mb-2">
                   <span className="font-semibold text-xl text-gray-800">
                     Subtotal
@@ -474,38 +419,31 @@ export default function Estimate() {
                   </span>
                 </div>
 
-                {/* tax if any */}
+                {/* tax */}
                 <div className="flex justify-between mb-2">
                   <span className="text-gray-600">
-                    Sales tax{userState ? ` (${userState})` : ""}
+                    Sales tax {userState ? `(${userState})` : ""}
                     {taxRatePercent > 0 ? ` (${taxRatePercent.toFixed(2)}%)` : ""}
                   </span>
                   <span>${formatWithSeparator(taxAmount)}</span>
                 </div>
 
-                {/* Button to open the time selection modal */}
+                {/* Time selection */}
                 <button
                   onClick={() => setShowModal(true)}
                   className={`w-full py-3 rounded-lg font-medium mt-4 border ${
-                    selectedTime
-                      ? "text-red-500 border-red-500"
-                      : "text-brand border-brand"
+                    selectedTime ? "text-red-500 border-red-500" : "text-brand border-brand"
                   }`}
                 >
                   {selectedTime ? "Change Date" : "Select Available Time"}
                 </button>
-
                 {selectedTime && (
                   <p className="mt-2 text-gray-700 text-center font-medium">
-                    Selected Date:{" "}
-                    <span className="text-blue-600">{selectedTime}</span>
+                    Selected Date: <span className="text-blue-600">{selectedTime}</span>
                   </p>
                 )}
-
-                {/* Time selection modal */}
                 {showModal && (
                   <ServiceTimePicker
-                    // We pass only laborSubtotal as base, because timeCoefficient applies to labor alone
                     subtotal={laborSubtotal}
                     onClose={() => setShowModal(false)}
                     onConfirm={(date, coefficient) => {
@@ -516,7 +454,6 @@ export default function Estimate() {
                   />
                 )}
 
-                {/* Final total */}
                 <div className="flex justify-between text-2xl font-semibold mt-4">
                   <span>Total</span>
                   <span>${formatWithSeparator(finalTotal)}</span>
@@ -545,9 +482,7 @@ export default function Estimate() {
                         className="w-full h-32 object-cover rounded-lg border border-gray-300 transition-transform duration-300 group-hover:scale-105"
                       />
                       <div className="absolute inset-0 bg-black bg-opacity-20 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
-                        <span className="text-white font-medium">
-                          Photo {index + 1}
-                        </span>
+                        <span className="text-white font-medium">Photo {index + 1}</span>
                       </div>
                     </div>
                   ))}
@@ -569,19 +504,19 @@ export default function Estimate() {
                 </p>
               </div>
 
-              {/* Action buttons */}
+              {/* Buttons */}
               <div className="mt-6 space-y-4">
                 <button
                   className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium"
                   onClick={handleProceedToCheckout}
                 >
-                  Proceed to Checkout &nbsp;→
+                  Proceed to Checkout →
                 </button>
                 <button
                   onClick={() => router.push("/calculate/details")}
                   className="w-full text-brand border border-brand py-3 rounded-lg font-medium"
                 >
-                  Add more services &nbsp;→
+                  Add more services →
                 </button>
               </div>
             </div>

@@ -14,32 +14,15 @@ import { ChevronDown } from "lucide-react";
 import { SectionBoxTitle } from "@/components/ui/SectionBoxTitle";
 import { useLocation } from "@/context/LocationContext";
 
+// New imports from your session utils
+import {
+  setSessionItem,
+  getSessionItem,
+  clearSession,
+} from "@/utils/session";
+
 import AddressSection from "@/components/ui/AddressSection";
 import PhotosAndDescription from "@/components/ui/PhotosAndDescription";
-
-/**
- * Saves any arbitrary data to sessionStorage in JSON format.
- */
-const saveToSession = (key: string, value: any) => {
-  if (typeof window !== "undefined") {
-    sessionStorage.setItem(key, JSON.stringify(value));
-  }
-};
-
-/**
- * Loads data from sessionStorage (which was saved as JSON).
- * If there's nothing stored or a parse error occurs, return `defaultValue`.
- */
-const loadFromSession = (key: string, defaultValue: any) => {
-  if (typeof window === "undefined") return defaultValue;
-  const savedValue = sessionStorage.getItem(key);
-  try {
-    return savedValue ? JSON.parse(savedValue) : defaultValue;
-  } catch (error) {
-    console.error(`Error parsing sessionStorage for key "${key}"`, error);
-    return defaultValue;
-  }
-};
 
 /**
  * EmergencyServices is the first step in the "Emergency" flow.
@@ -52,72 +35,91 @@ export default function EmergencyServices() {
   const { location } = useLocation();
 
   /**
-   * Clear sessionStorage on the initial render to ensure a fresh start.
-   * You can remove this if you prefer to preserve data across sessions.
+   * Clear session data on initial render to ensure a fresh start.
+   * Remove if you want to preserve data across visits.
    */
   useEffect(() => {
-    sessionStorage.clear();
+    clearSession();
   }, []);
 
   /**
-   * State for selected services, expanded categories, search query, and warnings.
+   * State for selected services, expanded categories, search query, warnings, etc.
    */
   const [selectedServices, setSelectedServices] = useState<Record<string, string[]>>(
-    loadFromSession("selectedServices", {})
+    getSessionItem("selectedServices", {})
   );
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState<string>(
-    loadFromSession("searchQuery", "")
+    getSessionItem("searchQuery", "")
   );
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
 
   /**
    * Address section states: address, stateName, zip
-   * (matching the approach used in "calculate").
    */
-  const [address, setAddress] = useState<string>(loadFromSession("address", ""));
-  const [zip, setZip] = useState<string>(loadFromSession("zip", ""));
+  const [address, setAddress] = useState<string>(getSessionItem("address", ""));
+  const [zip, setZip] = useState<string>(getSessionItem("zip", ""));
   const [stateName, setStateName] = useState<string>(
-    loadFromSession("stateName", "")
+    getSessionItem("stateName", "")
   );
 
   /**
-   * Description and photos, both optional.
+   * Description and photos (both optional)
    */
   const [description, setDescription] = useState<string>(
-    loadFromSession("description", "")
+    getSessionItem("description", "")
   );
-  const [photos, setPhotos] = useState<string[]>(loadFromSession("photos", []));
+  const [photos, setPhotos] = useState<string[]>(getSessionItem("photos", []));
 
   /**
-   * Persist to sessionStorage whenever the relevant states change.
+   * Keep these states in sync with session storage whenever they change
    */
-  useEffect(() => saveToSession("selectedServices", selectedServices), [selectedServices]);
-  useEffect(() => saveToSession("searchQuery", searchQuery), [searchQuery]);
-  useEffect(() => saveToSession("address", address), [address]);
-  useEffect(() => saveToSession("zip", zip), [zip]);
-  useEffect(() => saveToSession("stateName", stateName), [stateName]);
-  useEffect(() => saveToSession("description", description), [description]);
-  useEffect(() => saveToSession("photos", photos), [photos]);
+  useEffect(() => {
+    setSessionItem("selectedServices", selectedServices);
+  }, [selectedServices]);
+
+  useEffect(() => {
+    setSessionItem("searchQuery", searchQuery);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    setSessionItem("address", address);
+  }, [address]);
+
+  useEffect(() => {
+    setSessionItem("zip", zip);
+  }, [zip]);
+
+  useEffect(() => {
+    setSessionItem("stateName", stateName);
+  }, [stateName]);
+
+  useEffect(() => {
+    setSessionItem("description", description);
+  }, [description]);
+
+  useEffect(() => {
+    setSessionItem("photos", photos);
+  }, [photos]);
 
   /**
-   * Combine address, stateName, and zip into one string if you want
-   * a single "fullAddress" in sessionStorage. This is optional.
+   * Combine address, stateName, and zip into a single "fullAddress" in session
+   * This is optional.
    */
   useEffect(() => {
     const combinedAddress = [address, stateName, zip].filter(Boolean).join(", ");
-    saveToSession("fullAddress", combinedAddress);
+    setSessionItem("fullAddress", combinedAddress);
   }, [address, stateName, zip]);
 
   /**
-   * Count total number of possible emergency services for the search placeholder.
+   * Count total number of possible emergency services for the search placeholder
    */
   const totalServices = Object.values(EMERGENCY_SERVICES).flatMap(
     ({ services }) => Object.keys(services)
   ).length;
 
   /**
-   * Expand or collapse a category in the UI.
+   * Expand or collapse a category in the UI
    */
   const toggleCategory = (category: string) => {
     setExpandedCategories((prev) => {
@@ -128,16 +130,18 @@ export default function EmergencyServices() {
   };
 
   /**
-   * Toggle a service within a category as selected or unselected.
-   * Clear the warning if the user selects a new service.
+   * Toggle a service within a category as selected or unselected
+   * Clear the warning if the user selects a new service
    */
   const handleServiceSelect = (category: string, serviceKey: string) => {
     setSelectedServices((prev) => {
       const current = prev[category] || [];
       const isSelected = current.includes(serviceKey);
+
       if (!isSelected) {
         setWarningMessage(null);
       }
+
       return {
         ...prev,
         [category]: isSelected
@@ -148,7 +152,7 @@ export default function EmergencyServices() {
   };
 
   /**
-   * Clear all selected services and collapse all categories.
+   * Clear all selected services and collapse all categories
    */
   const handleClearSelection = () => {
     const confirmed = window.confirm(
@@ -162,7 +166,7 @@ export default function EmergencyServices() {
 
   /**
    * On "Next", ensure at least one service is selected,
-   * and that address/stateName/zip are non-empty.
+   * and that address/stateName/zip are non-empty
    */
   const handleNextClick = () => {
     const anyServiceSelected = Object.values(selectedServices).some(
@@ -176,12 +180,11 @@ export default function EmergencyServices() {
       setWarningMessage("Please enter your address, state, and zip before proceeding.");
       return;
     }
-
     router.push("/emergency/details");
   };
 
   /**
-   * Handlers for updating address, state, zip.
+   * Handlers for updating address, stateName, and zip
    */
   const handleAddressChange = (e: ChangeEvent<HTMLInputElement>) => {
     setAddress(e.target.value);
@@ -194,13 +197,11 @@ export default function EmergencyServices() {
   };
 
   /**
-   * Use location context to populate address fields if available.
-   * This is just an example; you might combine city + state + zip
-   * into your single address field or handle them separately.
+   * Use location context to fill address fields if available
+   * You could combine city + state + zip into a single address, if preferred
    */
   const handleUseMyLocation = () => {
     if (location?.city && location?.state && location?.zip) {
-      // For example, put the city into the "address" field
       setAddress(location.city);
       setStateName(location.state);
       setZip(location.zip);
@@ -210,7 +211,7 @@ export default function EmergencyServices() {
   };
 
   /**
-   * Filter the EMERGENCY_SERVICES by search query.
+   * Filter EMERGENCY_SERVICES by the current search query
    */
   const filteredServices: EmergencyServicesType = searchQuery
     ? Object.entries(EMERGENCY_SERVICES).reduce((acc, [category, { services }]) => {
@@ -259,18 +260,19 @@ export default function EmergencyServices() {
           </div>
         </div>
 
-        {/* Warning messages if needed */}
+        {/* Warning message */}
         <div className="h-6 mt-4 text-left">
           {warningMessage && <p className="text-red-500">{warningMessage}</p>}
         </div>
 
-        {/* Main content row: left = services, right = address/photos/description */}
+        {/* Main content row: left = services, right = address + photos + description */}
         <div className="container mx-auto relative flex">
           {/* LEFT side: categories + services */}
           <div className="flex-1">
             <div className="flex flex-col gap-3 mt-5 w-full max-w-[600px]">
               {Object.entries(filteredServices).map(([category, { services }]) => {
                 const categorySelectedCount = selectedServices[category]?.length || 0;
+                // Basic transform for the category label
                 const categoryLabel = category.replace(/([A-Z])/g, " $1").trim();
 
                 return (
@@ -304,17 +306,17 @@ export default function EmergencyServices() {
                       />
                     </button>
 
-                    {/* Expanded list of services */}
+                    {/* If expanded => show list of services */}
                     {expandedCategories.has(category) && (
                       <div className="mt-4 flex flex-col gap-3">
                         {Object.entries(services).map(([serviceKey]) => {
+                          // Basic transform for the service label
                           const serviceLabel = serviceKey
                             .replace(/([A-Z])/g, " $1")
                             .replace(/^./, (char) => char.toUpperCase())
                             .trim();
 
-                          const isSelected =
-                            selectedServices[category]?.includes(serviceKey) || false;
+                          const isSelected = selectedServices[category]?.includes(serviceKey) || false;
 
                           return (
                             <div
@@ -349,7 +351,7 @@ export default function EmergencyServices() {
             </div>
           </div>
 
-          {/* RIGHT side: address section, photos, description */}
+          {/* RIGHT side: address, photos, description */}
           <div className="w-1/2 ml-auto mt-4 pt-0">
             <AddressSection
               address={address}

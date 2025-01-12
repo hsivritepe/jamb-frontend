@@ -7,34 +7,11 @@ import { PACKAGES_STEPS } from "@/constants/navigation";
 import Button from "@/components/ui/Button";
 import { SectionBoxTitle } from "@/components/ui/SectionBoxTitle";
 import { SectionBoxSubtitle } from "@/components/ui/SectionBoxSubtitle";
-
-// We import taxRatesUSA for all US states
 import { taxRatesUSA } from "@/constants/taxRatesUSA";
-
-// We import taxRatesCanada for all provinces
 import { taxRatesCanada } from "@/constants/taxRatesCanada";
 
-/**
- * Utility function: Save key-value to sessionStorage (client side) as JSON.
- */
-function saveToSession(key: string, value: any) {
-  if (typeof window !== "undefined") {
-    sessionStorage.setItem(key, JSON.stringify(value));
-  }
-}
-
-/**
- * Utility function: Load data from sessionStorage, or return defaultValue if SSR/not found.
- */
-function loadFromSession<T>(key: string, defaultValue: T): T {
-  if (typeof window === "undefined") return defaultValue;
-  const stored = sessionStorage.getItem(key);
-  try {
-    return stored ? JSON.parse(stored) : defaultValue;
-  } catch {
-    return defaultValue;
-  }
-}
+// If you have your new session utility:
+import { getSessionItem, setSessionItem } from "@/utils/session";
 
 /** Safely parse a string to a number. If invalid, return 0. */
 function parseNumberOrZero(val: string): number {
@@ -74,43 +51,43 @@ export default function PackagesDetailsHomePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Read packageId from query or from session
+  // Try to read packageId from query or from session
   let packageId = searchParams.get("packageId");
   if (!packageId) {
-    packageId = loadFromSession("packages_currentPackageId", "");
+    packageId = getSessionItem("packages_currentPackageId", "");
   }
 
-  // Optionally redirect if no packageId
+  // If no packageId, optionally redirect
   useEffect(() => {
     if (!packageId) {
-      // e.g. router.push("/packages");
+      // router.push("/packages");
     }
   }, [packageId]);
 
-  // Store packageId in session
+  // Always store (or refresh) the packageId in session
   useEffect(() => {
     if (packageId) {
-      saveToSession("packages_currentPackageId", packageId);
+      setSessionItem("packages_currentPackageId", packageId);
     }
   }, [packageId]);
 
-  // Load house info from session or defaults
+  // Load house info from session or use default
   const [houseInfo, setHouseInfo] = useState(() =>
-    loadFromSession("packages_houseInfo", defaultHouseInfo)
+    getSessionItem("packages_houseInfo", defaultHouseInfo)
   );
 
   // Whenever houseInfo changes, persist to session
   useEffect(() => {
-    saveToSession("packages_houseInfo", houseInfo);
+    setSessionItem("packages_houseInfo", houseInfo);
   }, [houseInfo]);
 
-  /** Handles text or select changes for string fields. */
+  /** Handle text or select changes for simple string fields */
   function handleChange(e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     const { name, value } = e.target;
     setHouseInfo((prev) => ({ ...prev, [name]: value }));
   }
 
-  /** Handles numeric fields. */
+  /** Handle numeric fields with parseNumberOrZero. */
   function handleNumber(e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     const { name, value } = e.target;
     setHouseInfo((prev) => ({
@@ -127,19 +104,19 @@ export default function PackagesDetailsHomePage() {
         throw new Error("Failed to fetch location data");
       }
       const data = await response.json();
+
+      // Example mapping from ipapi.co fields
       const city = data.city || "City";
       const zip = data.postal || "00000";
       const country = data.country_name || "";
-      // For US, region_code is "CA" or "NY"; for Canada, region might be a short or full name
-      const regionCode = data.region_code || "";
+      const regionCode = data.region_code || ""; // e.g. "CA", "NY"
 
       setHouseInfo((prev) => ({
         ...prev,
         city,
         zip,
         country,
-        // If user is in the US, we store regionCode to "state". If user is in Canada, we might store regionCode to "province" or something similar.
-        // But we do not know for sure which country is detected, so you might want to do a small check here:
+        // If user is in the US, store regionCode to "state"; for Canada, store it to "province"
         state: country === "United States" ? regionCode : "",
         province: country === "Canada" ? regionCode : "",
       }));
@@ -163,18 +140,18 @@ export default function PackagesDetailsHomePage() {
       alert("Please select your house type.");
       return;
     }
-
+    // go to next
     router.push(`/packages/services?packageId=${packageId}`);
   }
 
-  /** Reset form. */
+  /** Reset form to default state. */
   function handleClearAll() {
     const confirmed = window.confirm("Are you sure you want to clear all data?");
     if (!confirmed) return;
     setHouseInfo(defaultHouseInfo);
   }
 
-  /** Toggles booleans for garage, yard, pool, boiler. */
+  /** Toggle booleans */
   function toggleGarage() {
     setHouseInfo((prev) => ({
       ...prev,

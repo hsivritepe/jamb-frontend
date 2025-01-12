@@ -12,6 +12,11 @@ import ServiceTimePicker from "@/components/ui/ServiceTimePicker";
 import { useLocation } from "@/context/LocationContext"; // for userState
 import { taxRatesUSA } from "@/constants/taxRatesUSA"; // table with { state, combinedStateAndLocalTaxRate }[]
 
+// session utils
+import { getSessionItem, setSessionItem } from "@/utils/session";
+// format helper
+import { formatWithSeparator } from "@/utils/format";
+
 /**
  * Returns a numeric tax rate for a given state. Example: "California" => 8.85
  * If not found, fallback to 8.25
@@ -22,39 +27,6 @@ function getTaxRateForState(stateName: string): number {
     (row) => row.state.toLowerCase() === stateName.toLowerCase()
   );
   return found ? found.combinedStateAndLocalTaxRate : 8.25;
-}
-
-/**
- * Formats a numeric value with two decimal places and thousands separators.
- */
-function formatWithSeparator(value: number): string {
-  return new Intl.NumberFormat("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value);
-}
-
-/**
- * Loads JSON data from sessionStorage, or returns defaultValue if not found or parse error.
- */
-function loadFromSession<T>(key: string, defaultValue: T): T {
-  if (typeof window === "undefined") return defaultValue;
-  try {
-    const val = sessionStorage.getItem(key);
-    return val ? JSON.parse(val) : defaultValue;
-  } catch (err) {
-    console.error(`Error parsing session storage key=${key}`, err);
-    return defaultValue;
-  }
-}
-
-/**
- * Saves a JS value as JSON into sessionStorage (browser only).
- */
-function saveToSession(key: string, value: any) {
-  if (typeof window !== "undefined") {
-    sessionStorage.setItem(key, JSON.stringify(value));
-  }
 }
 
 /**
@@ -77,24 +49,24 @@ export default function EmergencyEstimate() {
   // Date/time selection (coefficient)
   const [showModal, setShowModal] = useState(false);
   const [selectedTime, setSelectedTime] = useState<string | null>(() =>
-    loadFromSession("selectedTime", null)
+    getSessionItem("selectedTime", null)
   );
   const [timeCoefficient, setTimeCoefficient] = useState<number>(() =>
-    loadFromSession("timeCoefficient", 1)
+    getSessionItem("timeCoefficient", 1)
   );
 
   // 1) Load data from session
-  const selectedActivities = loadFromSession<Record<string, Record<string, number>>>(
+  const selectedActivities = getSessionItem<Record<string, Record<string, number>>>(
     "selectedActivities",
     {}
   );
-  const calculationResultsMap = loadFromSession<Record<string, any>>(
+  const calculationResultsMap = getSessionItem<Record<string, any>>(
     "calculationResultsMap",
     {}
   );
-  const fullAddress = loadFromSession<string>("fullAddress", "");
-  const photos = loadFromSession<string[]>("photos", []);
-  const description = loadFromSession<string>("description", "");
+  const fullAddress = getSessionItem<string>("fullAddress", "");
+  const photos = getSessionItem<string[]>("photos", []);
+  const description = getSessionItem<string>("description", "");
 
   // 2) If no data => redirect
   useEffect(() => {
@@ -109,11 +81,11 @@ export default function EmergencyEstimate() {
 
   // Keep time selection in session
   useEffect(() => {
-    saveToSession("selectedTime", selectedTime);
+    setSessionItem("selectedTime", selectedTime);
   }, [selectedTime]);
 
   useEffect(() => {
-    saveToSession("timeCoefficient", timeCoefficient);
+    setSessionItem("timeCoefficient", timeCoefficient);
   }, [timeCoefficient]);
 
   /**
@@ -213,15 +185,19 @@ export default function EmergencyEstimate() {
 
   // 7) Save steps in session
   useEffect(() => {
-    saveToSession("filteredSteps", stepsList);
+    setSessionItem("filteredSteps", stepsList);
   }, [stepsList]);
 
   function handleProceedToCheckout() {
+    if (!selectedTime) {
+      alert("Please select a start date before proceeding.");
+      return;
+    }
     router.push("/emergency/checkout");
   }
 
   /**
-   * Instead of using found.category from ALL_SERVICES, 
+   * Instead of using found.category from ALL_SERVICES,
    * we derive the category name from EMERGENCY_SERVICES to match steps.
    */
   function getAllChosenActivities() {
@@ -235,7 +211,7 @@ export default function EmergencyEstimate() {
       category: string; // derived from EMERGENCY_SERVICES
     }[] = [];
 
-    // for each selected activity
+    // For each selected activity
     Object.values(selectedActivities).forEach((acts) => {
       Object.entries(acts).forEach(([activityKey, quantity]) => {
         const foundService = ALL_SERVICES.find((x) => x.id === activityKey);
@@ -249,7 +225,7 @@ export default function EmergencyEstimate() {
           sumCost = lab + mat;
         }
 
-        // find matching EMERGENCY_SERVICES "category"
+        // Find matching EMERGENCY_SERVICES "category"
         let matchedCategoryName = "Uncategorized";
         outerLoop: for (const catKey of Object.keys(EMERGENCY_SERVICES)) {
           // catKey e.g. "plumbing", "electrical", ...
@@ -280,7 +256,7 @@ export default function EmergencyEstimate() {
 
   const chosenActivitiesRaw = getAllChosenActivities();
 
-  // group them by derived category
+  // Group them by derived category
   const groupedByCategory: Record<string, typeof chosenActivitiesRaw> = {};
   chosenActivitiesRaw.forEach((act) => {
     if (!groupedByCategory[act.category]) {
@@ -289,14 +265,14 @@ export default function EmergencyEstimate() {
     groupedByCategory[act.category].push(act);
   });
 
-  // sort category names for consistent numbering
+  // Sort category names for consistent numbering
   const categoriesInOrder = Object.keys(groupedByCategory).sort();
 
   // Save fees, taxRate to session for next page
   useEffect(() => {
-    saveToSession("serviceFeeOnLabor", serviceFeeOnLabor);
-    saveToSession("serviceFeeOnMaterials", serviceFeeOnMaterials);
-    saveToSession("userTaxRate", taxRatePercent);
+    setSessionItem("serviceFeeOnLabor", serviceFeeOnLabor);
+    setSessionItem("serviceFeeOnMaterials", serviceFeeOnMaterials);
+    setSessionItem("userTaxRate", taxRatePercent);
   }, [serviceFeeOnLabor, serviceFeeOnMaterials, taxRatePercent]);
 
   return (
@@ -461,7 +437,9 @@ export default function EmergencyEstimate() {
 
                 {/* 10% on materials */}
                 <div className="flex justify-between mb-2">
-                  <span className="text-gray-600">Delivery &amp; Processing (10% on materials)</span>
+                  <span className="text-gray-600">
+                    Delivery &amp; Processing (10% on materials)
+                  </span>
                   <span className="font-semibold text-lg text-gray-600">
                     ${formatWithSeparator(serviceFeeOnMaterials)}
                   </span>
@@ -558,13 +536,7 @@ export default function EmergencyEstimate() {
               <div className="mt-6 space-y-4">
                 <button
                   className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium"
-                  onClick={() => {
-                    if (!selectedTime) {
-                      alert("Please select a start date before proceeding.");
-                      return;
-                    }
-                    handleProceedToCheckout();
-                  }}
+                  onClick={handleProceedToCheckout}
                 >
                   Proceed to Checkout →
                 </button>

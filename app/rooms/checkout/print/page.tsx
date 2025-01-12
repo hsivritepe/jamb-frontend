@@ -8,18 +8,12 @@ import { ALL_CATEGORIES } from "@/constants/categories";
 import { DisclaimerBlock } from "@/components/ui/DisclaimerBlock";
 import { taxRatesUSA } from "@/constants/taxRatesUSA";
 
-// Safely load a value from sessionStorage, or return the default if SSR or not found.
-function loadFromSession<T>(key: string, defaultValue: T): T {
-  if (typeof window === "undefined") return defaultValue;
-  const stored = sessionStorage.getItem(key);
-  try {
-    return stored ? (JSON.parse(stored) as T) : defaultValue;
-  } catch {
-    return defaultValue;
-  }
-}
+// Unified session utilities
+import { getSessionItem, setSessionItem } from "@/utils/session";
 
-// Format a numeric value with commas and exactly two decimals.
+/**
+ * Formats a numeric value with commas and exactly two decimals.
+ */
 function formatWithSeparator(num: number): string {
   return new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 2,
@@ -27,7 +21,10 @@ function formatWithSeparator(num: number): string {
   }).format(num);
 }
 
-// Returns the combined state+local tax rate from taxRatesUSA by matching state code.
+/**
+ * Looks up the combined state+local tax rate from taxRatesUSA based on a given state code (e.g. "CA").
+ * If not found, returns 0.
+ */
 function getTaxRateForState(stateCode: string): number {
   if (!stateCode) return 0;
   const match = taxRatesUSA.taxRates.find(
@@ -36,9 +33,10 @@ function getTaxRateForState(stateCode: string): number {
   return match ? match.combinedStateAndLocalTaxRate : 0;
 }
 
-// Converts a numeric USD amount into spelled-out English text (simplified).
+/**
+ * Converts a numeric USD amount into spelled-out English text (simplified).
+ */
 function numberToWordsUSD(amount: number): string {
-  // Basic English words mapping for ones and tens
   const onesMap: Record<number, string> = {
     0: "zero",
     1: "one",
@@ -84,9 +82,7 @@ function numberToWordsUSD(amount: number): string {
     let result = "";
     if (hundreds > 0) {
       result += `${onesMap[hundreds]} hundred`;
-      if (remainder > 0) {
-        result += " ";
-      }
+      if (remainder > 0) result += " ";
     }
     if (remainder > 0) {
       if (remainder < 100) {
@@ -99,9 +95,7 @@ function numberToWordsUSD(amount: number): string {
   let integerPart = Math.floor(amount);
   const decimalPart = Math.round((amount - integerPart) * 100);
 
-  if (integerPart === 0) {
-    integerPart = 0;
-  }
+  if (integerPart === 0) integerPart = 0;
 
   let words = "";
   const units = ["", "thousand", "million", "billion"];
@@ -126,7 +120,10 @@ function numberToWordsUSD(amount: number): string {
   return `${words} and ${dec}/100 dollars`;
 }
 
-// Builds an estimate number in "ST-ZIP-YYYYMMDD-HHMM" format or fallback.
+/**
+ * Builds an estimate number in the format "ST-ZIP-YYYYMMDD-HHMM".
+ * Example: "CA-90001-20250910-1445".
+ */
 function buildEstimateNumber(stateName: string, zip: string): string {
   let stateZipBlock = "??-00000";
   if (stateName && zip) {
@@ -134,7 +131,6 @@ function buildEstimateNumber(stateName: string, zip: string): string {
     stateZipBlock = `${st}-${zip}`;
   }
 
-  // Current date/time
   const now = new Date();
   const yyyy = String(now.getFullYear());
   const mm = String(now.getMonth() + 1).padStart(2, "0");
@@ -145,24 +141,32 @@ function buildEstimateNumber(stateName: string, zip: string): string {
   return `${stateZipBlock}-${yyyy}${mm}${dd}-${hh}${mins}`;
 }
 
-// Returns a room object from ROOMS.indoor/outdoor by ID, or null if not found.
+/**
+ * Returns a room object from ROOMS.indoor/outdoor arrays by its ID, or null if not found.
+ */
 function getRoomById(roomId: string) {
   const allRooms = [...ROOMS.indoor, ...ROOMS.outdoor];
   return allRooms.find((r) => r.id === roomId) || null;
 }
 
-// Extract the category portion from a service ID like "1-1-2" => "1-1".
+/**
+ * Extracts the category portion from a service ID (e.g. "1-1-2" => "1-1").
+ */
 function getCategoryIdFromServiceId(serviceId: string): string {
   return serviceId.split("-").slice(0, 2).join("-");
 }
 
-// Look up a category name by ID from ALL_CATEGORIES, or return the catId if not found.
+/**
+ * Returns a category name from ALL_CATEGORIES by ID, or the catId itself if not found.
+ */
 function getCategoryNameById(catId: string): string {
   const found = ALL_CATEGORIES.find((c) => c.id === catId);
   return found ? found.title : catId;
 }
 
-// Decide whether to use override data or normal calculation data for a given serviceId.
+/**
+ * Decides whether to use override data or normal calculation data for a given serviceId.
+ */
 function getCalcResultFor(
   serviceId: string,
   overrideCalc: Record<string, any>,
@@ -174,54 +178,42 @@ function getCalcResultFor(
 export default function PrintRoomsEstimate() {
   const router = useRouter();
 
-  // LOAD all relevant data from sessionStorage
-  const address: string = loadFromSession("address", "");
-  const city: string = loadFromSession("city", "");
-  const stateName: string = loadFromSession("stateName", "");
-  const zip: string = loadFromSession("zip", "");
-  const country: string = loadFromSession("country", "");
-  const photos: string[] = loadFromSession("photos", []);
-  const description: string = loadFromSession("description", "");
-  const selectedTime: string | null = loadFromSession("selectedTime", null);
+  // Load data from session
+  const address: string = getSessionItem("address", "");
+  const city: string = getSessionItem("city", "");
+  const stateName: string = getSessionItem("stateName", "");
+  const zip: string = getSessionItem("zip", "");
+  const country: string = getSessionItem("country", "");
+  const photos: string[] = getSessionItem("photos", []);
+  const description: string = getSessionItem("description", "");
+  const selectedTime: string | null = getSessionItem("selectedTime", null);
 
   // Subtotals and fees
-  const laborSubtotal: number = loadFromSession("rooms_laborSubtotal", 0);
-  const materialsSubtotal: number = loadFromSession(
-    "rooms_materialsSubtotal",
-    0
-  );
-  const serviceFeeOnLabor: number = loadFromSession("serviceFeeOnLabor", 0);
-  const serviceFeeOnMaterials: number = loadFromSession(
-    "serviceFeeOnMaterials",
-    0
-  );
+  const laborSubtotal: number = getSessionItem("rooms_laborSubtotal", 0);
+  const materialsSubtotal: number = getSessionItem("rooms_materialsSubtotal", 0);
+  const serviceFeeOnLabor: number = getSessionItem("serviceFeeOnLabor", 0);
+  const serviceFeeOnMaterials: number = getSessionItem("serviceFeeOnMaterials", 0);
 
   // Summaries
-  const sumBeforeTax: number = loadFromSession("rooms_sumBeforeTax", 0);
-  const taxRatePercent: number = loadFromSession("rooms_taxRatePercent", 0);
-  const taxAmount: number = loadFromSession("rooms_taxAmount", 0);
-  const finalTotal: number = loadFromSession("rooms_estimateFinalTotal", 0);
+  const sumBeforeTax: number = getSessionItem("rooms_sumBeforeTax", 0);
+  const taxRatePercent: number = getSessionItem("rooms_taxRatePercent", 0);
+  const taxAmount: number = getSessionItem("rooms_taxAmount", 0);
+  const finalTotal: number = getSessionItem("rooms_estimateFinalTotal", 0);
 
-  // The "selected services": record of (roomId -> { serviceId -> qty })
-  const selectedServicesState: Record<
-    string,
-    Record<string, number>
-  > = loadFromSession("rooms_selectedServicesWithQuantity", {});
+  // The selected services: (roomId -> { serviceId -> qty })
+  const selectedServicesState: Record<string, Record<string, number>> =
+    getSessionItem("rooms_selectedServicesWithQuantity", {});
 
   // The big data: normal + overrides
-  const calculationResultsMap: Record<string, any> = loadFromSession(
-    "calculationResultsMap",
-    {}
-  );
-  const overrideCalcResults: Record<string, any> = loadFromSession(
-    "rooms_overrideCalcResults",
-    {}
-  );
+  const calculationResultsMap: Record<string, any> =
+    getSessionItem("calculationResultsMap", {});
+  const overrideCalcResults: Record<string, any> =
+    getSessionItem("rooms_overrideCalcResults", {});
 
-  // Surcharges/discounts:
-  const timeCoefficient: number = loadFromSession("timeCoefficient", 1);
+  // Surcharges/discounts
+  const timeCoefficient: number = getSessionItem("timeCoefficient", 1);
 
-  // If no services or address => redirect
+  // If no services or no address => redirect
   useEffect(() => {
     let hasServices = false;
     for (const roomId in selectedServicesState) {
@@ -237,10 +229,10 @@ export default function PrintRoomsEstimate() {
 
   // Build the estimate number
   const estimateNumber = buildEstimateNumber(stateName, zip);
-  // Convert final total to words
+  // Convert final total to spelled-out English
   const finalTotalWords = numberToWordsUSD(finalTotal);
 
-  // Auto-print after short delay
+  // Auto-print after a short delay
   useEffect(() => {
     const oldTitle = document.title;
     document.title = `JAMB-Estimate-${estimateNumber}`;
@@ -253,7 +245,7 @@ export default function PrintRoomsEstimate() {
     };
   }, [estimateNumber]);
 
-  // Construct a single-line address (city, state, zip, country).
+  // Construct a single-line address
   let constructedAddress = address.trim();
   if (stateName) constructedAddress += `, ${stateName}`;
   if (zip) constructedAddress += ` ${zip}`;
@@ -261,23 +253,17 @@ export default function PrintRoomsEstimate() {
 
   // Build "sectionLaborMap" and "materialsSpecMap" for the SPECIFICATIONS
   const sectionLaborMap: Record<string, number> = {};
-  const materialsSpecMap: Record<
-    string,
-    { name: string; totalQuantity: number; totalCost: number }
-  > = {};
+  const materialsSpecMap: Record<string, { name: string; totalQuantity: number; totalCost: number }> =
+    {};
 
-  // Scan each service, get final calc result, add to (A) labor sum, (B) materials
+  // Gather labor and materials data from each selected service
   for (const roomId in selectedServicesState) {
     const servicesInRoom = selectedServicesState[roomId];
     for (const svcId of Object.keys(servicesInRoom)) {
-      const cr = getCalcResultFor(
-        svcId,
-        overrideCalcResults,
-        calculationResultsMap
-      );
+      const cr = getCalcResultFor(svcId, overrideCalcResults, calculationResultsMap);
       if (!cr) continue;
 
-      // A) Add labor
+      // A) Add labor to the corresponding section
       const catId = getCategoryIdFromServiceId(svcId);
       const catObj = ALL_CATEGORIES.find((c) => c.id === catId);
       const sectionName = catObj ? catObj.section : "Other";
@@ -308,13 +294,10 @@ export default function PrintRoomsEstimate() {
     }
   }
 
-  // Convert materialsSpecMap to array
+  // Convert materialsSpecMap to an array
   const materialsSpecArray = Object.values(materialsSpecMap);
   // Sum all materials cost
-  const totalMaterialsCost = materialsSpecArray.reduce(
-    (acc, m) => acc + m.totalCost,
-    0
-  );
+  const totalMaterialsCost = materialsSpecArray.reduce((acc, m) => acc + m.totalCost, 0);
 
   return (
     <div className="print-page p-4 my-2">
@@ -328,11 +311,10 @@ export default function PrintRoomsEstimate() {
       <div className="flex justify-between items-center mb-4 mt-4">
         <div>
           <h1 className="text-2xl font-bold">Estimate for Selected Rooms</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            {estimateNumber} (temporary)
-          </p>
+          <p className="text-sm text-gray-500 mt-1">{estimateNumber} (temporary)</p>
         </div>
       </div>
+
       {selectedTime && (
         <p className="mb-2 text-gray-700">
           <strong>Work Start Date:</strong> {selectedTime}
@@ -350,10 +332,7 @@ export default function PrintRoomsEstimate() {
           <h3 className="font-semibold text-xl mb-2">Uploaded Photos</h3>
           <div className="grid grid-cols-6 grid-rows-2 gap-2 w-full">
             {photos.slice(0, 12).map((photoUrl, idx) => (
-              <div
-                key={idx}
-                className="aspect-square overflow-hidden rounded-md border border-gray-300"
-              >
+              <div key={idx} className="aspect-square overflow-hidden rounded-md border border-gray-300">
                 <img
                   src={photoUrl}
                   alt={`Photo ${idx + 1}`}
@@ -371,22 +350,15 @@ export default function PrintRoomsEstimate() {
       <section className="page-break mt-8">
         <h2 className="text-xl font-semibold text-gray-800 mb-4">1) Summary</h2>
         <p className="text-sm text-gray-700 mb-4">
-          This table provides a simple overview of each selected service,
-          quantity, and total cost.
+          This table provides a simple overview of each selected service, quantity, and total cost.
         </p>
 
         <table className="w-full table-auto border border-gray-300 text-sm text-gray-700">
           <thead>
             <tr className="border-b border-gray-300 bg-white">
-              <th className="px-3 py-2 border-r border-gray-300 w-16 text-center">
-                #
-              </th>
-              <th className="px-3 py-2 border-r border-gray-300 text-left">
-                Service
-              </th>
-              <th className="px-3 py-2 border-r border-gray-300 text-center w-20">
-                Qty
-              </th>
+              <th className="px-3 py-2 border-r border-gray-300 w-16 text-center">#</th>
+              <th className="px-3 py-2 border-r border-gray-300 text-left">Service</th>
+              <th className="px-3 py-2 border-r border-gray-300 text-center w-20">Qty</th>
               <th className="px-3 py-2 text-center w-24">Total Cost</th>
             </tr>
           </thead>
@@ -398,10 +370,9 @@ export default function PrintRoomsEstimate() {
 
               // Group by section => cat => list of services
               const sectionMap: Record<string, Record<string, string[]>> = {};
-              // Track the total for the entire room
               let roomTotal = 0;
 
-              // Build our grouping structure
+              // Build grouping structure
               for (const svcId of Object.keys(servicesInThisRoom)) {
                 const catId = getCategoryIdFromServiceId(svcId);
                 const catObj = ALL_CATEGORIES.find((c) => c.id === catId);
@@ -417,7 +388,7 @@ export default function PrintRoomsEstimate() {
 
               return (
                 <React.Fragment key={roomId}>
-                  {/* Room heading row (without numbering) */}
+                  {/* Room heading row */}
                   <tr>
                     <td
                       colSpan={4}
@@ -427,95 +398,80 @@ export default function PrintRoomsEstimate() {
                     </td>
                   </tr>
 
-                  {/* Now sections + categories */}
-                  {Object.entries(sectionMap).map(
-                    ([secName, catObjMap], sIdx) => {
-                      // Keep the section numbering if desired, or remove if you want no numbering there either
-                      const sectionNumber = sIdx + 1;
+                  {/* Sections + categories */}
+                  {Object.entries(sectionMap).map(([secName, catObjMap], sIdx) => {
+                    const sectionNumber = sIdx + 1;
 
-                      return (
-                        <React.Fragment key={secName}>
-                          <tr>
-                            <td
-                              colSpan={4}
-                              className="px-5 py-2 border-b border-gray-300 font-medium text-lg bg-white"
-                            >
-                              {/* e.g. "1. Electrical" */}
-                              {sectionNumber}. {secName}
-                            </td>
-                          </tr>
+                    return (
+                      <React.Fragment key={secName}>
+                        <tr>
+                          <td
+                            colSpan={4}
+                            className="px-5 py-2 border-b border-gray-300 font-medium text-lg bg-white"
+                          >
+                            {sectionNumber}. {secName}
+                          </td>
+                        </tr>
 
-                          {Object.entries(catObjMap).map(
-                            ([catId, svcIds], cIdx) => {
-                              const catNumber = `${sectionNumber}.${cIdx + 1}`;
-                              const catName = getCategoryNameById(catId);
+                        {Object.entries(catObjMap).map(([catId, svcIds], cIdx) => {
+                          const catNumber = `${sectionNumber}.${cIdx + 1}`;
+                          const catName = getCategoryNameById(catId);
 
-                              return (
-                                <React.Fragment key={catId}>
-                                  <tr>
-                                    <td
-                                      colSpan={4}
-                                      className="px-8 py-2 border-b border-gray-300 font-medium text-md bg-white"
-                                    >
-                                      {catNumber}. {catName}
+                          return (
+                            <React.Fragment key={catId}>
+                              <tr>
+                                <td
+                                  colSpan={4}
+                                  className="px-8 py-2 border-b border-gray-300 font-medium text-md bg-white"
+                                >
+                                  {catNumber}. {catName}
+                                </td>
+                              </tr>
+
+                              {svcIds.map((svcId, si) => {
+                                const svcNumber = `${catNumber}.${si + 1}`;
+                                const foundSvc = ALL_SERVICES.find((s) => s.id === svcId);
+                                const svcTitle = foundSvc ? foundSvc.title : svcId;
+                                const qty = servicesInThisRoom[svcId] || 1;
+
+                                const cr = getCalcResultFor(
+                                  svcId,
+                                  overrideCalcResults,
+                                  calculationResultsMap
+                                );
+                                let finalCost = 0;
+                                if (cr && cr.total) {
+                                  finalCost = parseFloat(cr.total) || 0;
+                                }
+
+                                roomTotal += finalCost;
+
+                                return (
+                                  <tr
+                                    key={svcId}
+                                    className="border-b border-gray-300 last:border-0"
+                                  >
+                                    <td className="px-3 py-2 border-r border-gray-300 text-center font-medium text-md">
+                                      {svcNumber}
+                                    </td>
+                                    <td className="px-3 py-2 border-r border-gray-300 font-medium text-md">
+                                      {svcTitle}
+                                    </td>
+                                    <td className="px-3 py-2 border-r border-gray-300 text-center font-medium text-md">
+                                      {qty} {foundSvc?.unit_of_measurement || "units"}
+                                    </td>
+                                    <td className="px-3 py-2 text-center font-medium text-md">
+                                      ${formatWithSeparator(finalCost)}
                                     </td>
                                   </tr>
-
-                                  {svcIds.map((svcId, si) => {
-                                    const svcNumber = `${catNumber}.${si + 1}`;
-                                    const foundSvc = ALL_SERVICES.find(
-                                      (s) => s.id === svcId
-                                    );
-                                    const svcTitle = foundSvc
-                                      ? foundSvc.title
-                                      : svcId;
-                                    const qty = servicesInThisRoom[svcId] || 1;
-
-                                    // Use normal or override data
-                                    const cr = getCalcResultFor(
-                                      svcId,
-                                      overrideCalcResults,
-                                      calculationResultsMap
-                                    );
-
-                                    let finalCost = 0;
-                                    if (cr && cr.total) {
-                                      finalCost = parseFloat(cr.total) || 0;
-                                    }
-
-                                    // Accumulate into roomTotal
-                                    roomTotal += finalCost;
-
-                                    return (
-                                      <tr
-                                        key={svcId}
-                                        className="border-b border-gray-300 last:border-0"
-                                      >
-                                        <td className="px-3 py-2 border-r border-gray-300 text-center font-medium text-md">
-                                          {svcNumber}
-                                        </td>
-                                        <td className="px-3 py-2 border-r border-gray-300 font-medium text-md">
-                                          {svcTitle}
-                                        </td>
-                                        <td className="px-3 py-2 border-r border-gray-300 text-center font-medium text-md">
-                                          {qty}{" "}
-                                          {foundSvc?.unit_of_measurement ||
-                                            "units"}
-                                        </td>
-                                        <td className="px-3 py-2 text-center font-medium text-md">
-                                          ${formatWithSeparator(finalCost)}
-                                        </td>
-                                      </tr>
-                                    );
-                                  })}
-                                </React.Fragment>
-                              );
-                            }
-                          )}
-                        </React.Fragment>
-                      );
-                    }
-                  )}
+                                );
+                              })}
+                            </React.Fragment>
+                          );
+                        })}
+                      </React.Fragment>
+                    );
+                  })}
 
                   {/* Room total row */}
                   <tr className="border-t border-gray-300 font-semibold text-lg bg-white">
@@ -532,7 +488,6 @@ export default function PrintRoomsEstimate() {
           </tbody>
         </table>
 
-        {/* Summary totals */}
         <div className="border-t pt-4 mt-6 space-y-1 text-sm">
           <div className="flex justify-between">
             <span>Labor total:</span>
@@ -546,9 +501,7 @@ export default function PrintRoomsEstimate() {
           {timeCoefficient !== 1 && (
             <div className="flex justify-between">
               <span>
-                {timeCoefficient > 1
-                  ? "Surcharge (date selection)"
-                  : "Discount (date selection)"}
+                {timeCoefficient > 1 ? "Surcharge (date selection)" : "Discount (date selection)"}
               </span>
               <span>
                 {timeCoefficient > 1 ? "+" : "-"}$
@@ -589,14 +542,12 @@ export default function PrintRoomsEstimate() {
         </div>
       </section>
 
-      {/* 2) COST BREAKDOWN */}
+      {/* (2) COST BREAKDOWN */}
       <section className="page-break mt-10">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">
-          2) Cost Breakdown
-        </h2>
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">2) Cost Breakdown</h2>
         <p className="text-sm text-gray-700 mb-4">
-          This section shows a more detailed breakdown of each service’s labor
-          and materials, including line items for each material if available.
+          This section shows a more detailed breakdown of each service’s labor and materials,
+          including line items for each material if available.
         </p>
 
         {Object.keys(selectedServicesState).map((roomId, rIndex) => {
@@ -606,10 +557,12 @@ export default function PrintRoomsEstimate() {
 
           // Group by section => cat => list of services
           const breakdownMap: Record<string, Record<string, string[]>> = {};
+
           for (const svcId of Object.keys(roomServices)) {
             const catId = getCategoryIdFromServiceId(svcId);
             const catObj = ALL_CATEGORIES.find((c) => c.id === catId);
             const sectionName = catObj ? catObj.section : "Other";
+
             if (!breakdownMap[sectionName]) breakdownMap[sectionName] = {};
             if (!breakdownMap[sectionName][catId]) {
               breakdownMap[sectionName][catId] = [];
@@ -619,213 +572,144 @@ export default function PrintRoomsEstimate() {
 
           return (
             <div key={roomId} className="mb-8">
-              {/* Removed the numbering so it just shows the room title */}
-              <h3 className="text-lg font-bold text-gray-800 mb-2">
-                {roomTitle}
-              </h3>
+              <h3 className="text-lg font-bold text-gray-800 mb-2">{roomTitle}</h3>
 
-              {Object.entries(breakdownMap).map(
-                ([secName, catObjMap], secIdx) => {
-                  const secNumber = `${rIndex + 1}.${secIdx + 1}`;
-                  return (
-                    <div key={secName} className="ml-4 mb-4">
-                      <h4 className="text-md font-bold text-gray-700 mb-2">
-                        {secNumber}. {secName}
-                      </h4>
+              {Object.entries(breakdownMap).map(([secName, catObjMap], secIdx) => {
+                const secNumber = `${rIndex + 1}.${secIdx + 1}`;
+                return (
+                  <div key={secName} className="ml-4 mb-4">
+                    <h4 className="text-md font-bold text-gray-700 mb-2">
+                      {secNumber}. {secName}
+                    </h4>
 
-                      {Object.entries(catObjMap).map(
-                        ([catId, svcIds], cIdx) => {
-                          const catNumber = `${secNumber}.${cIdx + 1}`;
-                          const catName = getCategoryNameById(catId);
+                    {Object.entries(catObjMap).map(([catId, svcIds], cIdx) => {
+                      const catNumber = `${secNumber}.${cIdx + 1}`;
+                      const catName = getCategoryNameById(catId);
 
-                          return (
-                            <div key={catId} className="ml-4 mb-4">
-                              <h5 className="text-sm font-semibold text-gray-700 mb-2">
-                                {catNumber}. {catName}
-                              </h5>
+                      return (
+                        <div key={catId} className="ml-4 mb-4">
+                          <h5 className="text-sm font-semibold text-gray-700 mb-2">
+                            {catNumber}. {catName}
+                          </h5>
 
-                              {svcIds.map((svcId, sIdx) => {
-                                const svcNumber = `${catNumber}.${sIdx + 1}`;
-                                const foundSvc = ALL_SERVICES.find(
-                                  (s) => s.id === svcId
-                                );
-                                const svcTitle = foundSvc
-                                  ? foundSvc.title
-                                  : svcId;
-                                const cr = getCalcResultFor(
-                                  svcId,
-                                  overrideCalcResults,
-                                  calculationResultsMap
-                                );
+                          {svcIds.map((svcId, sIdx) => {
+                            const svcNumber = `${catNumber}.${sIdx + 1}`;
+                            const foundSvc = ALL_SERVICES.find((s) => s.id === svcId);
+                            const svcTitle = foundSvc ? foundSvc.title : svcId;
 
-                                // If we have cr => show labor + materials detail
-                                const laborCost = cr
-                                  ? parseFloat(cr.work_cost) || 0
-                                  : 0;
-                                const materialCost = cr
-                                  ? parseFloat(cr.material_cost) || 0
-                                  : 0;
-                                const totalCost = cr
-                                  ? parseFloat(cr.total) || 0
-                                  : 0;
+                            const cr = getCalcResultFor(svcId, overrideCalcResults, calculationResultsMap);
+                            const laborCost = cr ? parseFloat(cr.work_cost) || 0 : 0;
+                            const materialCost = cr ? parseFloat(cr.material_cost) || 0 : 0;
+                            const totalCost = cr ? parseFloat(cr.total) || 0 : 0;
 
-                                return (
-                                  <div
-                                    key={svcId}
-                                    className="ml-4 mb-4 p-3 bg-gray-50 border border-gray-200 rounded"
-                                  >
-                                    <h6 className="text-sm font-semibold text-gray-800">
-                                      {svcNumber}. {svcTitle}
-                                    </h6>
-                                    {foundSvc?.description && (
-                                      <p className="text-xs text-gray-500 my-1">
-                                        {foundSvc.description}
-                                      </p>
-                                    )}
+                            return (
+                              <div
+                                key={svcId}
+                                className="ml-4 mb-4 p-3 bg-gray-50 border border-gray-200 rounded"
+                              >
+                                <h6 className="text-sm font-semibold text-gray-800">
+                                  {svcNumber}. {svcTitle}
+                                </h6>
+                                {foundSvc?.description && (
+                                  <p className="text-xs text-gray-500 my-1">
+                                    {foundSvc.description}
+                                  </p>
+                                )}
 
-                                    {/* Show labor vs. materials */}
-                                    <div className="mt-2 space-y-1 text-sm">
-                                      <div className="flex justify-between">
-                                        <span className="font-medium">
-                                          Labor:
-                                        </span>
-                                        <span>
-                                          {laborCost > 0
-                                            ? `$${formatWithSeparator(
-                                                laborCost
-                                              )}`
-                                            : "—"}
-                                        </span>
-                                      </div>
-                                      <div className="flex justify-between">
-                                        <span className="font-medium">
-                                          Materials, tools &amp; equipment:
-                                        </span>
-                                        <span>
-                                          {materialCost > 0
-                                            ? `$${formatWithSeparator(
-                                                materialCost
-                                              )}`
-                                            : "—"}
-                                        </span>
-                                      </div>
-                                      <div className="flex justify-between border-t mt-2 pt-2">
-                                        <span className="font-semibold">
-                                          Total:
-                                        </span>
-                                        <span>
-                                          {totalCost > 0
-                                            ? `$${formatWithSeparator(
-                                                totalCost
-                                              )}`
-                                            : "$0.00"}
-                                        </span>
-                                      </div>
-                                    </div>
-
-                                    {/* If materials array is present => show table of line items */}
-                                    {cr &&
-                                      Array.isArray(cr.materials) &&
-                                      cr.materials.length > 0 && (
-                                        <div className="mt-3 text-sm">
-                                          <p className="font-semibold mb-1">
-                                            Materials:
-                                          </p>
-                                          <table className="table-auto w-full text-left text-gray-700 text-xs md:text-sm">
-                                            <thead>
-                                              <tr className="border-b">
-                                                <th className="py-1 px-1">
-                                                  Name
-                                                </th>
-                                                <th className="py-1 px-1">
-                                                  Price
-                                                </th>
-                                                <th className="py-1 px-1">
-                                                  Qty
-                                                </th>
-                                                <th className="py-1 px-1">
-                                                  Subtotal
-                                                </th>
-                                              </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-gray-200">
-                                              {cr.materials.map(
-                                                (m: any, idx2: number) => (
-                                                  <tr
-                                                    key={`${m.external_id}-${idx2}`}
-                                                  >
-                                                    <td className="py-2 px-1">
-                                                      {m.name}
-                                                    </td>
-                                                    <td className="py-2 px-1">
-                                                      {m.cost_per_unit
-                                                        ? `$${formatWithSeparator(
-                                                            parseFloat(
-                                                              m.cost_per_unit
-                                                            )
-                                                          )}`
-                                                        : "—"}
-                                                    </td>
-                                                    <td className="py-2 px-1">
-                                                      {m.quantity}
-                                                    </td>
-                                                    <td className="py-2 px-1">
-                                                      {m.cost
-                                                        ? `$${formatWithSeparator(
-                                                            parseFloat(m.cost)
-                                                          )}`
-                                                        : "—"}
-                                                    </td>
-                                                  </tr>
-                                                )
-                                              )}
-                                            </tbody>
-                                          </table>
-                                        </div>
-                                      )}
+                                <div className="mt-2 space-y-1 text-sm">
+                                  <div className="flex justify-between">
+                                    <span className="font-medium">Labor:</span>
+                                    <span>
+                                      {laborCost > 0
+                                        ? `$${formatWithSeparator(laborCost)}`
+                                        : "—"}
+                                    </span>
                                   </div>
-                                );
-                              })}
-                            </div>
-                          );
-                        }
-                      )}
-                    </div>
-                  );
-                }
-              )}
+                                  <div className="flex justify-between">
+                                    <span className="font-medium">
+                                      Materials, tools &amp; equipment:
+                                    </span>
+                                    <span>
+                                      {materialCost > 0
+                                        ? `$${formatWithSeparator(materialCost)}`
+                                        : "—"}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between border-t mt-2 pt-2">
+                                    <span className="font-semibold">Total:</span>
+                                    <span>
+                                      {totalCost > 0
+                                        ? `$${formatWithSeparator(totalCost)}`
+                                        : "$0.00"}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {/* If materials array is present => line items */}
+                                {cr && Array.isArray(cr.materials) && cr.materials.length > 0 && (
+                                  <div className="mt-3 text-sm">
+                                    <p className="font-semibold mb-1">Materials:</p>
+                                    <table className="table-auto w-full text-left text-gray-700 text-xs md:text-sm">
+                                      <thead>
+                                        <tr className="border-b">
+                                          <th className="py-1 px-1">Name</th>
+                                          <th className="py-1 px-1">Price</th>
+                                          <th className="py-1 px-1">Qty</th>
+                                          <th className="py-1 px-1">Subtotal</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody className="divide-y divide-gray-200">
+                                        {cr.materials.map((m: any, idx2: number) => (
+                                          <tr key={`${m.external_id}-${idx2}`}>
+                                            <td className="py-2 px-1">{m.name}</td>
+                                            <td className="py-2 px-1">
+                                              {m.cost_per_unit
+                                                ? `$${formatWithSeparator(parseFloat(m.cost_per_unit))}`
+                                                : "—"}
+                                            </td>
+                                            <td className="py-2 px-1">{m.quantity}</td>
+                                            <td className="py-2 px-1">
+                                              {m.cost
+                                                ? `$${formatWithSeparator(parseFloat(m.cost))}`
+                                                : "—"}
+                                            </td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
             </div>
           );
         })}
       </section>
 
-      {/* 3) SPECIFICATIONS (Labor by section, materials) -- same as in Services */}
+      {/* 3) SPECIFICATIONS */}
       <section className="page-break mt-10">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">
-          3) Specifications
-        </h2>
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">3) Specifications</h2>
         <p className="text-sm text-gray-700 mb-4">
-          This section shows labor by section (including any date
-          surcharges/discounts) and an overall list of materials, tools and
-          equipment.
+          This section shows labor by section (including any date surcharges/discounts)
+          and an overall list of materials, tools, and equipment.
         </p>
 
         {/* A) Labor by Section */}
         <div className="mb-8">
-          <h3 className="text-lg font-bold text-gray-800 mb-2">
-            A) Labor by Section
-          </h3>
+          <h3 className="text-lg font-bold text-gray-800 mb-2">A) Labor by Section</h3>
 
-          {/* Build a table with section -> labor */}
           <table className="w-full table-auto border border-gray-300 text-sm text-gray-700 mb-3">
             <thead className="bg-gray-100">
               <tr>
-                <th className="px-3 py-2 border border-gray-300 text-left">
-                  Section
-                </th>
-                <th className="px-3 py-2 border border-gray-300 text-right">
-                  Labor
-                </th>
+                <th className="px-3 py-2 border border-gray-300 text-left">Section</th>
+                <th className="px-3 py-2 border border-gray-300 text-right">Labor</th>
               </tr>
             </thead>
             <tbody>
@@ -833,12 +717,8 @@ export default function PrintRoomsEstimate() {
                 if (totalLab === 0) return null;
                 return (
                   <tr key={secName} className="border-b last:border-0">
-                    <td className="px-3 py-2 border-r border-gray-300">
-                      {secName}
-                    </td>
-                    <td className="px-3 py-2 text-right">
-                      ${formatWithSeparator(totalLab)}
-                    </td>
+                    <td className="px-3 py-2 border-r border-gray-300">{secName}</td>
+                    <td className="px-3 py-2 text-right">${formatWithSeparator(totalLab)}</td>
                   </tr>
                 );
               })}
@@ -883,13 +763,10 @@ export default function PrintRoomsEstimate() {
             B) Overall Materials, tools and equipment
           </h3>
           <p className="text-sm text-gray-500 mb-2">
-            All materials, tools, and equipment used across all services, summed
-            together.
+            All materials, tools, and equipment used across all services, summed together.
           </p>
           {materialsSpecArray.length === 0 ? (
-            <p className="text-sm text-gray-700">
-              No materials used in this estimate.
-            </p>
+            <p className="text-sm text-gray-700">No materials used in this estimate.</p>
           ) : (
             <div>
               <table className="w-full table-auto border border-gray-300 text-sm text-gray-700">
@@ -910,14 +787,10 @@ export default function PrintRoomsEstimate() {
                 <tbody>
                   {materialsSpecArray.map((mat) => {
                     const unitPrice =
-                      mat.totalQuantity > 0
-                        ? mat.totalCost / mat.totalQuantity
-                        : 0;
+                      mat.totalQuantity > 0 ? mat.totalCost / mat.totalQuantity : 0;
                     return (
                       <tr key={mat.name} className="border-b last:border-0">
-                        <td className="px-3 py-2 border-r border-gray-300">
-                          {mat.name}
-                        </td>
+                        <td className="px-3 py-2 border-r border-gray-300">{mat.name}</td>
                         <td className="px-3 py-2 border-r border-gray-300 text-center">
                           {mat.totalQuantity}
                         </td>
@@ -933,9 +806,7 @@ export default function PrintRoomsEstimate() {
                 </tbody>
               </table>
               <div className="flex justify-end mt-2 text-sm font-semibold">
-                <span className="mr-6">
-                  Total materials, tools and equipment:
-                </span>
+                <span className="mr-6">Total materials, tools and equipment:</span>
                 <span>${formatWithSeparator(totalMaterialsCost)}</span>
               </div>
             </div>

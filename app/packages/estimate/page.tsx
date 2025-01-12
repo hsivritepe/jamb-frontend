@@ -5,13 +5,19 @@ import { useRouter } from "next/navigation";
 import BreadCrumb from "@/components/ui/BreadCrumb";
 import Button from "@/components/ui/Button";
 import { SectionBoxSubtitle } from "@/components/ui/SectionBoxSubtitle";
+
 import { PACKAGES_STEPS } from "@/constants/navigation";
 import { ALL_CATEGORIES } from "@/constants/categories";
 import { ALL_SERVICES } from "@/constants/services";
 import { PACKAGES } from "@/constants/packages";
 import { taxRatesUSA } from "@/constants/taxRatesUSA";
 
-/** Formats a number with commas and exactly two decimals. */
+// Unified session utilities
+import { getSessionItem, setSessionItem } from "@/utils/session";
+
+/**
+ * Formats a number with commas and exactly two decimals.
+ */
 function formatWithSeparator(value: number): string {
   return new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 2,
@@ -19,26 +25,10 @@ function formatWithSeparator(value: number): string {
   }).format(value);
 }
 
-/** Loads data from sessionStorage or returns a default if not found/SSR. */
-function loadFromSession<T>(key: string, defaultValue: T): T {
-  if (typeof window === "undefined") return defaultValue;
-  const stored = sessionStorage.getItem(key);
-  if (!stored) return defaultValue;
-  try {
-    return JSON.parse(stored) as T;
-  } catch {
-    return defaultValue;
-  }
-}
-
-/** Saves data to sessionStorage as JSON. */
-function saveToSession(key: string, value: any) {
-  if (typeof window !== "undefined") {
-    sessionStorage.setItem(key, JSON.stringify(value));
-  }
-}
-
-/** Returns the combined (state + local) tax rate by two-letter state code, or 0 if not found. */
+/**
+ * Returns the combined (state + local) tax rate by two-letter state code,
+ * or 0 if not found.
+ */
 function getTaxRateForState(stateName: string): number {
   if (!stateName) return 0;
   const row = taxRatesUSA.taxRates.find(
@@ -47,7 +37,9 @@ function getTaxRateForState(stateName: string): number {
   return row ? row.combinedStateAndLocalTaxRate : 0;
 }
 
-/** Converts a houseType code into a user-friendly string. */
+/**
+ * Converts a houseType code into a user-friendly string.
+ */
 function formatHouseType(value: string): string {
   switch (value) {
     case "single_family":
@@ -61,7 +53,9 @@ function formatHouseType(value: string): string {
   }
 }
 
-/** Payment option modal for monthly/quarterly/prepay. */
+/**
+ * Modal component to select a payment option, such as monthly or prepayment.
+ */
 function PaymentOptionModal({
   subtotal,
   onClose,
@@ -147,20 +141,22 @@ export default function EstimatePage() {
   const router = useRouter();
 
   // Identify which package was chosen
-  const storedPackageId = loadFromSession("packages_currentPackageId", null);
+  const storedPackageId = getSessionItem<string | null>("packages_currentPackageId", null);
   const chosenPackage = PACKAGES.find((p) => p.id === storedPackageId) || null;
 
   // Load selected services
-  const selectedServicesData = loadFromSession("packages_selectedServices", {
+  const selectedServicesData = getSessionItem("packages_selectedServices", {
     indoor: {},
     outdoor: {},
-  });
+  } as Record<string, Record<string, number>>);
+
+  // Merge indoor + outdoor
   const mergedSelected: Record<string, number> = {
     ...selectedServicesData.indoor,
     ...selectedServicesData.outdoor,
   };
 
-  // If no services, redirect
+  // Redirect if no services selected
   useEffect(() => {
     if (Object.keys(mergedSelected).length === 0) {
       router.push(
@@ -172,17 +168,14 @@ export default function EstimatePage() {
   }, [mergedSelected, router, storedPackageId]);
 
   // Load calculation data
-  const calculationResultsMap: Record<string, any> = loadFromSession(
+  const calculationResultsMap = getSessionItem<Record<string, any>>(
     "packages_calculationResultsMap",
     {}
   );
-  const serviceCosts: Record<string, number> = loadFromSession(
-    "packages_serviceCosts",
-    {}
-  );
+  const serviceCosts = getSessionItem<Record<string, number>>("packages_serviceCosts", {});
 
   // House info
-  const houseInfo = loadFromSession("packages_houseInfo", {
+  const houseInfo = getSessionItem("packages_houseInfo", {
     addressLine: "",
     city: "",
     state: "",
@@ -208,22 +201,23 @@ export default function EstimatePage() {
   // Payment modal
   const [showModal, setShowModal] = useState(false);
   const [selectedPaymentOption, setSelectedPaymentOption] = useState<string | null>(
-    () => loadFromSession("packages_selectedTime", null)
+    () => getSessionItem("packages_selectedTime", null)
   );
   const [paymentCoefficient, setPaymentCoefficient] = useState<number>(() =>
-    loadFromSession("packages_timeCoefficient", 1)
+    getSessionItem("packages_timeCoefficient", 1)
   );
 
-  // Whenever user picks a payment option or coefficient, save to session
+  // Save user-chosen payment option
   useEffect(() => {
-    saveToSession("packages_selectedTime", selectedPaymentOption);
+    setSessionItem("packages_selectedTime", selectedPaymentOption);
   }, [selectedPaymentOption]);
 
+  // Save paymentCoefficient
   useEffect(() => {
-    saveToSession("packages_timeCoefficient", paymentCoefficient);
+    setSessionItem("packages_timeCoefficient", paymentCoefficient);
   }, [paymentCoefficient]);
 
-  // Summation logic
+  // Summation
   let laborSubtotal = 0;
   let materialsSubtotal = 0;
   for (const svcId of Object.keys(mergedSelected)) {
@@ -233,10 +227,10 @@ export default function EstimatePage() {
     materialsSubtotal += parseFloat(res.material_cost) || 0;
   }
 
-  // Apply paymentCoefficient => labor
+  // Apply paymentCoefficient to labor
   const finalLabor = laborSubtotal * paymentCoefficient;
 
-  // Fees: 15% on labor, 5% on materials
+  // Fees
   const serviceFeeOnLabor = finalLabor * 0.15;
   const serviceFeeOnMaterials = materialsSubtotal * 0.05;
 
@@ -251,7 +245,7 @@ export default function EstimatePage() {
   // final
   const finalTotal = sumBeforeTax + taxAmount;
 
-  // Build array => cost breakdown
+  // Build an array => cost breakdown
   type ServiceItem = {
     svcId: string;
     svcObj: (typeof ALL_SERVICES)[number];
@@ -261,9 +255,9 @@ export default function EstimatePage() {
     breakdown: any;
   };
 
-  const servicesArray: ServiceItem[] = Object.entries(mergedSelected).map(
-    ([svcId, qty]) => {
-      const svcObj = ALL_SERVICES.find(s => s.id === svcId);
+  const servicesArray: ServiceItem[] = Object.entries(mergedSelected)
+    .map(([svcId, qty]) => {
+      const svcObj = ALL_SERVICES.find((s) => s.id === svcId);
       if (!svcObj) return null;
       const breakdown = calculationResultsMap[svcId];
       const laborVal = breakdown ? parseFloat(breakdown.work_cost) || 0 : 0;
@@ -276,14 +270,14 @@ export default function EstimatePage() {
         materials: matVal,
         breakdown,
       };
-    }
-  ).filter(Boolean) as ServiceItem[];
+    })
+    .filter(Boolean) as ServiceItem[];
 
   // Group by section->category
   const summaryBySection: Record<string, Record<string, ServiceItem[]>> = {};
-  servicesArray.forEach(item => {
+  servicesArray.forEach((item) => {
     const catId = item.svcId.split("-").slice(0, 2).join("-");
-    const catObj = ALL_CATEGORIES.find(c => c.id === catId);
+    const catObj = ALL_CATEGORIES.find((c) => c.id === catId);
     if (!catObj) return;
     const sectionName = catObj.section;
     if (!summaryBySection[sectionName]) {
@@ -295,12 +289,12 @@ export default function EstimatePage() {
     summaryBySection[sectionName][catId].push(item);
   });
 
-  // On "Proceed to checkout"
+  // Proceed to checkout
   function handleProceedToCheckout() {
     router.push("/packages/checkout");
   }
 
-  // On "Go back to services"
+  // Go back to services
   function handleGoBack() {
     if (storedPackageId) {
       router.push(`/packages/services?packageId=${storedPackageId}`);
@@ -309,16 +303,16 @@ export default function EstimatePage() {
     }
   }
 
-  // Save all final numbers so Checkout can read them
+  // Save final numbers so the checkout page can read them
   useEffect(() => {
-    saveToSession("packages_laborSubtotal", laborSubtotal);
-    saveToSession("packages_materialsSubtotal", materialsSubtotal);
-    saveToSession("serviceFeeOnLabor", serviceFeeOnLabor);
-    saveToSession("serviceFeeOnMaterials", serviceFeeOnMaterials);
-    saveToSession("packages_sumBeforeTax", sumBeforeTax);
-    saveToSession("packages_taxRatePercent", taxRatePercent);
-    saveToSession("packages_taxAmount", taxAmount);
-    saveToSession("packages_estimateFinalTotal", finalTotal);
+    setSessionItem("packages_laborSubtotal", laborSubtotal);
+    setSessionItem("packages_materialsSubtotal", materialsSubtotal);
+    setSessionItem("serviceFeeOnLabor", serviceFeeOnLabor);
+    setSessionItem("serviceFeeOnMaterials", serviceFeeOnMaterials);
+    setSessionItem("packages_sumBeforeTax", sumBeforeTax);
+    setSessionItem("packages_taxRatePercent", taxRatePercent);
+    setSessionItem("packages_taxAmount", taxAmount);
+    setSessionItem("packages_estimateFinalTotal", finalTotal);
   }, [
     laborSubtotal,
     materialsSubtotal,
@@ -330,7 +324,7 @@ export default function EstimatePage() {
     finalTotal,
   ]);
 
-  // Adjust breadcrumbs
+  // Tweak breadcrumbs
   const modifiedCrumbs = PACKAGES_STEPS.map((step) => {
     if (!storedPackageId) return step;
     if (step.href.startsWith("/packages") && !step.href.includes("?")) {
@@ -339,7 +333,7 @@ export default function EstimatePage() {
     return step;
   });
 
-  // Payment schedule
+  // Helper to render payment schedule
   function renderPaymentSchedule() {
     if (!selectedPaymentOption) return null;
 
@@ -364,6 +358,7 @@ export default function EstimatePage() {
         </div>
       );
     }
+
     if (selectedPaymentOption === "Monthly") {
       const monthlyPayment = finalTotal / 12;
       return (
@@ -379,6 +374,7 @@ export default function EstimatePage() {
         </div>
       );
     }
+
     if (selectedPaymentOption === "Quarterly") {
       const quarterlyPayment = finalTotal / 4;
       const now = new Date();
@@ -408,6 +404,7 @@ export default function EstimatePage() {
         </div>
       );
     }
+
     return null;
   }
 
@@ -423,7 +420,7 @@ export default function EstimatePage() {
             Estimate for {chosenPackage ? chosenPackage.title : "No package found"}
           </SectionBoxSubtitle>
 
-          {/* Cost breakdown */}
+          {/* Cost breakdown by section/category */}
           <div className="mt-4 space-y-6">
             {Object.keys(summaryBySection).length === 0 ? (
               <p className="text-gray-500">No services selected</p>
@@ -435,9 +432,10 @@ export default function EstimatePage() {
                     <h3 className="text-xl font-semibold text-gray-800">
                       {sectionNumber}. {sectionName}
                     </h3>
+
                     {Object.entries(catMap).map(([catId, items], catIdx) => {
                       const catNumber = `${sectionNumber}.${catIdx + 1}`;
-                      const catObj = ALL_CATEGORIES.find(c => c.id === catId);
+                      const catObj = ALL_CATEGORIES.find((c) => c.id === catId);
                       const catName = catObj ? catObj.title : catId;
 
                       return (
@@ -465,14 +463,14 @@ export default function EstimatePage() {
                                 )}
                                 <div className="mt-2 flex justify-between items-center">
                                   <div className="text-md font-medium text-gray-700">
-                                    {svcItem.quantity}{" "}
-                                    {svcItem.svcObj.unit_of_measurement}
+                                    {svcItem.quantity} {svcItem.svcObj.unit_of_measurement}
                                   </div>
                                   <div className="text-md font-medium text-gray-800 mr-4">
                                     ${formatWithSeparator(totalCost)}
                                   </div>
                                 </div>
 
+                                {/* Cost breakdown details */}
                                 {br && (
                                   <div className="mt-2 p-4 bg-gray-50 border rounded">
                                     <div className="flex justify-between mb-2">
@@ -510,9 +508,7 @@ export default function EstimatePage() {
                                                 <td className="py-3 px-1">
                                                   ${formatWithSeparator(parseFloat(m.cost_per_unit))}
                                                 </td>
-                                                <td className="py-3 px-3">
-                                                  {m.quantity}
-                                                </td>
+                                                <td className="py-3 px-3">{m.quantity}</td>
                                                 <td className="py-3 px-3">
                                                   ${formatWithSeparator(parseFloat(m.cost))}
                                                 </td>
@@ -577,9 +573,7 @@ export default function EstimatePage() {
               </span>
             </div>
             <div className="flex justify-between mb-2">
-              <span className="text-gray-600">
-                Delivery &amp; Processing (5% on materials)
-              </span>
+              <span className="text-gray-600">Delivery &amp; Processing (5% on materials)</span>
               <span className="font-semibold text-lg text-gray-800">
                 ${formatWithSeparator(serviceFeeOnMaterials)}
               </span>
@@ -642,8 +636,7 @@ export default function EstimatePage() {
             <h3 className="font-semibold text-xl text-gray-800">Home Details</h3>
             <div className="text-md text-gray-700 mt-4 space-y-1">
               <p>
-                <strong>Address:</strong>{" "}
-                {houseInfo.addressLine || "—"}
+                <strong>Address:</strong> {houseInfo.addressLine || "—"}
                 {houseInfo.state ? `, ${houseInfo.state}` : ""}
               </p>
               <p>
@@ -696,7 +689,7 @@ export default function EstimatePage() {
             </div>
           </div>
 
-          {/* Buttons */}
+          {/* Actions */}
           <div className="mt-6 space-y-4">
             <button
               onClick={handleProceedToCheckout}
