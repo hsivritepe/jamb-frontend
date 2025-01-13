@@ -16,13 +16,14 @@ import { ChevronDown } from "lucide-react";
 import AddressSection from "@/components/ui/AddressSection";
 import PhotosAndDescription from "@/components/ui/PhotosAndDescription";
 
-// Unified session utilities
 import {
   setSessionItem,
   getSessionItem,
-  clearSession,
 } from "@/utils/session";
 
+/** 
+ * Interface for finishing materials returned by /work/finishing_materials
+ */
 interface FinishingMaterial {
   id: number;
   image?: string;
@@ -101,99 +102,14 @@ async function calculatePrice(params: {
   return res.json();
 }
 
-/**
- * Ensures finishing materials are loaded for a specific serviceId. Picks defaults if none selected.
- */
-async function ensureFinishingMaterialsLoaded(
-  serviceId: string,
-  finishingMaterialsMapAll: Record<string, { sections: Record<string, FinishingMaterial[]> }>,
-  setFinishingMaterialsMapAll: React.Dispatch<
-    React.SetStateAction<Record<string, { sections: Record<string, FinishingMaterial[]> }>>
-  >,
-  finishingMaterialSelections: Record<string, string[]>,
-  setFinishingMaterialSelections: React.Dispatch<React.SetStateAction<Record<string, string[]>>>
-) {
-  if (!finishingMaterialsMapAll[serviceId]) {
-    try {
-      const dot = convertServiceIdToApiFormat(serviceId);
-      const data = await fetchFinishingMaterials(dot);
-      finishingMaterialsMapAll[serviceId] = data;
-      setFinishingMaterialsMapAll({ ...finishingMaterialsMapAll });
-    } catch (err) {
-      console.error("Error in ensureFinishingMaterialsLoaded:", err);
-      return;
-    }
-  }
-  if (!finishingMaterialSelections[serviceId]) {
-    const data = finishingMaterialsMapAll[serviceId];
-    if (!data) return;
-    const picks: string[] = [];
-    for (const arr of Object.values(data.sections || {})) {
-      if (Array.isArray(arr) && arr.length > 0) {
-        picks.push(arr[0].external_id);
-      }
-    }
-    finishingMaterialSelections[serviceId] = picks;
-    setFinishingMaterialSelections({ ...finishingMaterialSelections });
-  }
-}
-
-/**
- * Fetch finishing materials for each service in a category, picking defaults if none selected.
- */
-async function fetchFinishingMaterialsForCategory(
-  services: (typeof ALL_SERVICES)[number][],
-  finishingMaterialsMapAll: Record<string, { sections: Record<string, FinishingMaterial[]> }>,
-  setFinishingMaterialsMapAll: React.Dispatch<
-    React.SetStateAction<Record<string, { sections: Record<string, FinishingMaterial[]> }>>
-  >,
-  finishingMaterialSelections: Record<string, string[]>,
-  setFinishingMaterialSelections: React.Dispatch<React.SetStateAction<Record<string, string[]>>>
-) {
-  const promises = services.map(async (svc) => {
-    if (!finishingMaterialsMapAll[svc.id]) {
-      try {
-        const dot = convertServiceIdToApiFormat(svc.id);
-        const data = await fetchFinishingMaterials(dot);
-
-        finishingMaterialsMapAll[svc.id] = data;
-        // pick the first from each sub-section
-        const picks: string[] = [];
-        for (const arr of Object.values(data.sections || {})) {
-          if (Array.isArray(arr) && arr.length > 0) {
-            picks.push(arr[0].external_id);
-          }
-        }
-        finishingMaterialSelections[svc.id] = picks;
-      } catch (err) {
-        console.error("Error fetching finishing materials:", err);
-      }
-    }
-  });
-
-  try {
-    await Promise.all(promises);
-    setFinishingMaterialsMapAll({ ...finishingMaterialsMapAll });
-    setFinishingMaterialSelections({ ...finishingMaterialSelections });
-  } catch (err) {
-    console.error("Error fetchFinishingMaterialsForCategory:", err);
-  }
-}
-
 export default function RoomDetails() {
   const router = useRouter();
   const { location } = useLocation();
 
   // Basic states
-  const [searchQuery, setSearchQuery] = useState<string>(
-    getSessionItem("rooms_searchQuery", "")
-  );
-  const [photos, setPhotos] = useState<string[]>(() =>
-    getSessionItem("photos", [])
-  );
-  const [description, setDescription] = useState<string>(
-    getSessionItem("description", "")
-  );
+  const [searchQuery, setSearchQuery] = useState<string>(getSessionItem("rooms_searchQuery", ""));
+  const [photos, setPhotos] = useState<string[]>(() => getSessionItem("photos", []));
+  const [description, setDescription] = useState<string>(getSessionItem("description", ""));
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
 
   // Address states
@@ -205,7 +121,7 @@ export default function RoomDetails() {
   const [city, setCity] = useState<string>(getSessionItem("city", ""));
   const [country, setCountry] = useState<string>(getSessionItem("country", ""));
 
-  // Persist new states
+  // Persist new states into session storage
   useEffect(() => setSessionItem("city", city), [city]);
   useEffect(() => setSessionItem("country", country), [country]);
 
@@ -241,6 +157,7 @@ export default function RoomDetails() {
     return <p>Loading...</p>;
   }
 
+  // We'll build data structures to know which categories & services belong to each chosen room
   type RoomData = {
     categoriesBySection: Record<string, string[]>;
     categoryServicesMap: Record<string, (typeof ALL_SERVICES)[number][]>;
@@ -248,10 +165,10 @@ export default function RoomDetails() {
   const roomsData: Record<string, RoomData> = {};
 
   for (const room of chosenRooms) {
-    // each room => gather service IDs
+    // gather service IDs
     const chosenRoomServiceIDs = room.services.map((s) => s.id);
 
-    // 1) compute categories
+    // compute categories
     const categoriesWithSection = room.services
       .map((s) => {
         const catId = s.id.split("-").slice(0, 2).join("-");
@@ -264,12 +181,13 @@ export default function RoomDetails() {
       if (!categoriesBySection[cat.section]) {
         categoriesBySection[cat.section] = [];
       }
+      // ensure no duplicates
       if (!categoriesBySection[cat.section].includes(cat.id)) {
         categoriesBySection[cat.section].push(cat.id);
       }
     });
 
-    // 2) build category->services map
+    // build cat->services map for this room
     const categoryServicesMap: Record<string, (typeof ALL_SERVICES)[number][]> = {};
     chosenRoomServiceIDs.forEach((serviceId) => {
       const catId = serviceId.split("-").slice(0, 2).join("-");
@@ -282,7 +200,7 @@ export default function RoomDetails() {
       }
     });
 
-    // 3) filter by search
+    // filter by search query
     if (searchQuery) {
       for (const catId in categoryServicesMap) {
         categoryServicesMap[catId] = categoryServicesMap[catId].filter(
@@ -297,12 +215,11 @@ export default function RoomDetails() {
     roomsData[room.id] = { categoriesBySection, categoryServicesMap };
   }
 
-  // Main selection: { roomId: { serviceId: quantity } }
+  // Main selection => { roomId: { serviceId: quantity } }
   const [selectedServicesState, setSelectedServicesState] = useState<
     Record<string, Record<string, number>>
   >(getSessionItem("rooms_selectedServicesWithQuantity", {}));
 
-  // Save changes
   useEffect(() => {
     setSessionItem("rooms_selectedServicesWithQuantity", selectedServicesState);
   }, [selectedServicesState]);
@@ -310,7 +227,7 @@ export default function RoomDetails() {
   // For user typed quantity
   const [manualInputValue, setManualInputValue] = useState<Record<string, string | null>>({});
 
-  // finishingMaterialsMapAll => serviceId -> { sections: ... }
+  // finishingMaterialsMapAll => serviceId -> { sections: {...} }
   const [finishingMaterialsMapAll, setFinishingMaterialsMapAll] = useState<
     Record<string, { sections: Record<string, FinishingMaterial[]> }>
   >({});
@@ -320,53 +237,157 @@ export default function RoomDetails() {
     Record<string, string[]>
   >({});
 
-  // cost for each service
+  // cost for each service => (serviceId -> number)
   const [serviceCosts, setServiceCosts] = useState<Record<string, number>>({});
-  // full JSON for cost breakdown
+  // full JSON for cost breakdown => (serviceId -> object)
   const [calculationResultsMap, setCalculationResultsMap] = useState<Record<string, any>>({});
 
-  // expanded categories: { roomId: Set<catId> }
+  // expanded categories => { roomId: Set<catId> }
   const [expandedCategoriesByRoom, setExpandedCategoriesByRoom] = useState<
     Record<string, Set<string>>
   >({});
 
-  // expanded service details
+  // expanded service details => set of serviceId
   const [expandedServiceDetails, setExpandedServiceDetails] = useState<Set<string>>(new Set());
 
-  // user-owned materials
+  // user-owned materials => (serviceId -> Set<externalId>)
   const [clientOwnedMaterials, setClientOwnedMaterials] = useState<Record<string, Set<string>>>({});
 
+  // This is the new "finishingAllLoaded" flag to handle race conditions:
+  const [finishingAllLoaded, setFinishingAllLoaded] = useState<boolean>(false);
+
+  /**
+   * Step 1: On mount, load finishing materials for all selected services,
+   * pick defaults if not present, then set finishingAllLoaded = true
+   */
+  useEffect(() => {
+    async function loadAllFinishingMaterials() {
+      try {
+        // Gather all serviceId from selectedServicesState
+        const allServiceIds: string[] = [];
+        Object.values(selectedServicesState).forEach((roomServices) => {
+          Object.keys(roomServices).forEach((svcId) => {
+            allServiceIds.push(svcId);
+          });
+        });
+
+        if (allServiceIds.length === 0) {
+          // If no services are selected, we're trivially done
+          setFinishingAllLoaded(true);
+          return;
+        }
+
+        // For each serviceId => ensure finishing materials are loaded
+        for (const svcId of allServiceIds) {
+          if (!finishingMaterialsMapAll[svcId]) {
+            try {
+              const dot = convertServiceIdToApiFormat(svcId);
+              const data = await fetchFinishingMaterials(dot);
+              finishingMaterialsMapAll[svcId] = data;
+
+              // If no finishingMaterialSelections => pick the first item in each sub-section
+              if (!finishingMaterialSelections[svcId]) {
+                const picks: string[] = [];
+                for (const arr of Object.values(data.sections || {})) {
+                  if (Array.isArray(arr) && arr.length > 0) {
+                    picks.push(arr[0].external_id);
+                  }
+                }
+                finishingMaterialSelections[svcId] = picks;
+              }
+            } catch (err) {
+              console.error("Error in loadAllFinishingMaterials:", err);
+            }
+          }
+        }
+
+        setFinishingMaterialsMapAll({ ...finishingMaterialsMapAll });
+        setFinishingMaterialSelections({ ...finishingMaterialSelections });
+      } catch (err) {
+        console.error("Error loading finishing materials globally:", err);
+      }
+      // done => mark finishingAllLoaded
+      setFinishingAllLoaded(true);
+    }
+
+    loadAllFinishingMaterials();
+  }, []);
+
+  /**
+   * Step 2: Recompute cost on toggles, but only if finishingAllLoaded = true
+   * and we have a valid ZIP code.
+   */
+  useEffect(() => {
+    // If we haven't loaded finishing materials yet, skip
+    if (!finishingAllLoaded) return;
+
+    const { zip: userZip, country } = location;
+    if (country !== "United States" || !/^\d{5}$/.test(userZip)) {
+      setWarningMessage("Currently, our service is only available for US ZIP codes (5 digits).");
+      return;
+    }
+
+    Object.keys(selectedServicesState).forEach((roomId) => {
+      const roomServices = selectedServicesState[roomId];
+      Object.keys(roomServices).forEach(async (serviceId) => {
+        try {
+          const quantity = roomServices[serviceId];
+          const fmSelections = finishingMaterialSelections[serviceId] || [];
+          const foundSvc = ALL_SERVICES.find((x) => x.id === serviceId);
+          if (!foundSvc) return;
+          const dot = convertServiceIdToApiFormat(serviceId);
+
+          // at this point finishing materials are presumably loaded
+          const resp = await calculatePrice({
+            work_code: dot,
+            zipcode: userZip,
+            unit_of_measurement: foundSvc.unit_of_measurement || "each",
+            square: quantity,
+            finishing_materials: fmSelections,
+          });
+
+          const laborCost = parseFloat(resp.work_cost) || 0;
+          const matCost = parseFloat(resp.material_cost) || 0;
+          const total = laborCost + matCost;
+
+          setServiceCosts((old) => ({ ...old, [serviceId]: total }));
+          setCalculationResultsMap((old) => ({ ...old, [serviceId]: resp }));
+        } catch (err) {
+          console.error("Error calculating price:", err);
+        }
+      });
+    });
+  }, [
+    finishingAllLoaded,
+    selectedServicesState,
+    finishingMaterialSelections,
+    location,
+  ]);
+
+  // Save calculationResultsMap to session
+  useEffect(() => {
+    setSessionItem("calculationResultsMap", calculationResultsMap);
+  }, [calculationResultsMap]);
+
+  // Toggling categories in the UI
   function toggleCategory(roomId: string, catId: string) {
     setExpandedCategoriesByRoom((prev) => {
       const next = { ...prev };
       const expansions = next[roomId] ? new Set(next[roomId]) : new Set<string>();
-      if (expansions.has(catId)) {
-        expansions.delete(catId);
-      } else {
-        expansions.add(catId);
-
-        // load finishing materials for all services in this category
-        const { categoryServicesMap } = roomsData[roomId];
-        const services = categoryServicesMap[catId] || [];
-        fetchFinishingMaterialsForCategory(
-          services,
-          finishingMaterialsMapAll,
-          setFinishingMaterialsMapAll,
-          finishingMaterialSelections,
-          setFinishingMaterialSelections
-        );
-      }
+      if (expansions.has(catId)) expansions.delete(catId);
+      else expansions.add(catId);
       next[roomId] = expansions;
       return next;
     });
   }
 
+  // Toggling a service
   async function handleServiceToggle(roomId: string, serviceId: string) {
     const roomServices = { ...(selectedServicesState[roomId] || {}) };
     const isOn = !!roomServices[serviceId];
 
     if (isOn) {
-      // turn off => remove everything
+      // Turn off => remove references
       delete roomServices[serviceId];
 
       const fmCopy = { ...finishingMaterialSelections };
@@ -397,24 +418,40 @@ export default function RoomDetails() {
         return cpy;
       });
     } else {
-      // turn on => use minQ
+      // Turn on => set quantity = minQ
       const foundSvc = ALL_SERVICES.find((s) => s.id === serviceId);
       const minQ = foundSvc?.min_quantity ?? 1;
       roomServices[serviceId] = minQ;
 
-      await ensureFinishingMaterialsLoaded(
-        serviceId,
-        finishingMaterialsMapAll,
-        setFinishingMaterialsMapAll,
-        finishingMaterialSelections,
-        setFinishingMaterialSelections
-      );
+      // Make sure finishing materials are loaded for this service
+      if (!finishingMaterialsMapAll[serviceId]) {
+        try {
+          const dot = convertServiceIdToApiFormat(serviceId);
+          const data = await fetchFinishingMaterials(dot);
+          finishingMaterialsMapAll[serviceId] = data;
+          setFinishingMaterialsMapAll({ ...finishingMaterialsMapAll });
+
+          if (!finishingMaterialSelections[serviceId]) {
+            const picks: string[] = [];
+            for (const arr of Object.values(data.sections || {})) {
+              if (Array.isArray(arr) && arr.length > 0) {
+                picks.push(arr[0].external_id);
+              }
+            }
+            finishingMaterialSelections[serviceId] = picks;
+            setFinishingMaterialSelections({ ...finishingMaterialSelections });
+          }
+        } catch (err) {
+          console.error("Error ensuring finishing materials for service:", err);
+        }
+      }
       setManualInputValue((mOld) => ({ ...mOld, [serviceId]: String(minQ) }));
     }
     setSelectedServicesState((old) => ({ ...old, [roomId]: roomServices }));
     setWarningMessage(null);
   }
 
+  // increment/decrement quantity
   function handleQuantityChange(
     roomId: string,
     serviceId: string,
@@ -442,6 +479,7 @@ export default function RoomDetails() {
     setManualInputValue((old) => ({ ...old, [serviceId]: null }));
   }
 
+  // typed quantity
   function handleManualQuantityChange(
     roomId: string,
     serviceId: string,
@@ -474,6 +512,7 @@ export default function RoomDetails() {
     }
   }
 
+  // Clear all
   function handleClearAll() {
     const ok = window.confirm("Are you sure you want to clear all selections?");
     if (!ok) return;
@@ -492,58 +531,7 @@ export default function RoomDetails() {
     setClientOwnedMaterials({});
   }
 
-  // Recompute cost on toggles, location changes, etc.
-  useEffect(() => {
-    const { zip, country } = location;
-    if (country !== "United States" || !/^\d{5}$/.test(zip)) {
-      setWarningMessage("Currently, our service is only available for US ZIP codes (5 digits).");
-      return;
-    }
-
-    Object.keys(selectedServicesState).forEach((roomId) => {
-      const roomServices = selectedServicesState[roomId];
-      Object.keys(roomServices).forEach(async (serviceId) => {
-        try {
-          const quantity = roomServices[serviceId];
-          const fmSelections = finishingMaterialSelections[serviceId] || [];
-          const foundSvc = ALL_SERVICES.find((x) => x.id === serviceId);
-          if (!foundSvc) return;
-          const dot = convertServiceIdToApiFormat(serviceId);
-
-          await ensureFinishingMaterialsLoaded(
-            serviceId,
-            finishingMaterialsMapAll,
-            setFinishingMaterialsMapAll,
-            finishingMaterialSelections,
-            setFinishingMaterialSelections
-          );
-
-          const resp = await calculatePrice({
-            work_code: dot,
-            zipcode: zip,
-            unit_of_measurement: foundSvc.unit_of_measurement || "each",
-            square: quantity,
-            finishing_materials: fmSelections,
-          });
-
-          const laborCost = parseFloat(resp.work_cost) || 0;
-          const matCost = parseFloat(resp.material_cost) || 0;
-          const total = laborCost + matCost;
-
-          setServiceCosts((old) => ({ ...old, [serviceId]: total }));
-          setCalculationResultsMap((old) => ({ ...old, [serviceId]: resp }));
-        } catch (err) {
-          console.error("Error calculating price:", err);
-        }
-      });
-    });
-  }, [
-    selectedServicesState,
-    finishingMaterialSelections,
-    location,
-    finishingMaterialsMapAll,
-  ]);
-
+  // Calculate total across all rooms
   function calculateTotalAllRooms() {
     let sum = 0;
     for (const cost of Object.values(serviceCosts)) {
@@ -552,6 +540,7 @@ export default function RoomDetails() {
     return sum;
   }
 
+  // Next => verify everything
   function handleNext() {
     let anySelected = false;
     for (const roomId of Object.keys(selectedServicesState)) {
@@ -592,6 +581,7 @@ export default function RoomDetails() {
     router.push("/rooms/estimate");
   }
 
+  // toggle details
   function toggleServiceDetails(serviceId: string) {
     setExpandedServiceDetails((old) => {
       const copy = new Set(old);
@@ -601,10 +591,8 @@ export default function RoomDetails() {
     });
   }
 
-  function findFinishingMaterialObj(
-    serviceId: string,
-    externalId: string
-  ): FinishingMaterial | null {
+  // Find finishing material by external_id
+  function findFinishingMaterialObj(serviceId: string, externalId: string): FinishingMaterial | null {
     const data = finishingMaterialsMapAll[serviceId];
     if (!data) return null;
     for (const arr of Object.values(data.sections || {})) {
@@ -616,11 +604,13 @@ export default function RoomDetails() {
     return null;
   }
 
+  // pick a new finishing material
   function pickMaterial(serviceId: string, externalId: string) {
     finishingMaterialSelections[serviceId] = [externalId];
     setFinishingMaterialSelections({ ...finishingMaterialSelections });
   }
 
+  // user has own material
   function userHasOwnMaterial(serviceId: string, externalId: string) {
     if (!clientOwnedMaterials[serviceId]) {
       clientOwnedMaterials[serviceId] = new Set();
@@ -629,7 +619,7 @@ export default function RoomDetails() {
     setClientOwnedMaterials({ ...clientOwnedMaterials });
   }
 
-  // Finishing-materials modal
+  // finishing-material modal states
   const [showModalServiceId, setShowModalServiceId] = useState<string | null>(null);
   const [showModalSectionName, setShowModalSectionName] = useState<string | null>(null);
 
@@ -950,7 +940,9 @@ export default function RoomDetails() {
                                                                         let foundSection: string | null =
                                                                           null;
                                                                         const fmData =
-                                                                          finishingMaterialsMapAll[svc.id];
+                                                                          finishingMaterialsMapAll[
+                                                                            svc.id
+                                                                          ];
                                                                         if (fmData?.sections) {
                                                                           for (const [
                                                                             secName,
