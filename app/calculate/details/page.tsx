@@ -14,9 +14,7 @@ import { ChevronDown } from "lucide-react";
 
 import { setSessionItem, getSessionItem } from "@/utils/session";
 
-/** 
- * Interface describing a finishing material object returned by /work/finishing_materials.
- */
+/** Interface describing a finishing material object (from /work/finishing_materials). */
 interface FinishingMaterial {
   id: number;
   image?: string;
@@ -26,35 +24,22 @@ interface FinishingMaterial {
   cost: string;
 }
 
-/**
- * formatWithSeparator:
- * Helper to format a numeric value with commas, e.g., 1000 -> "1,000.00"
- */
+/** Helper to format e.g. 1000 => "1,000.00". */
 function formatWithSeparator(value: number): string {
   return new Intl.NumberFormat("en-US", { minimumFractionDigits: 2 }).format(value);
 }
 
-/**
- * convertServiceIdToApiFormat:
- * Converts a hyphen-based service ID like "1-1-1" into a dotted format "1.1.1" required by the server.
- */
+/** Convert "1-1-1" => "1.1.1" for the API. */
 function convertServiceIdToApiFormat(serviceId: string) {
   return serviceId.replaceAll("-", ".");
 }
 
-/**
- * getApiBaseUrl:
- * Returns the base API URL from environment variables or a fallback.
- */
+/** Return the base API URL or default. */
 function getApiBaseUrl(): string {
   return process.env.NEXT_PUBLIC_API_BASE_URL || "http://dev.thejamb.com";
 }
 
-/**
- * fetchFinishingMaterials:
- * POST /work/finishing_materials
- * Takes a "work_code" like "1.1.1" and returns an object with "sections".
- */
+/** POST /work/finishing_materials => fetch finishing materials for a given work_code. */
 async function fetchFinishingMaterials(workCode: string) {
   const baseUrl = getApiBaseUrl();
   const url = `${baseUrl}/work/finishing_materials`;
@@ -73,11 +58,7 @@ async function fetchFinishingMaterials(workCode: string) {
   return res.json();
 }
 
-/**
- * calculatePrice:
- * POST /calculate
- * Expects fields like { work_code, zipcode, unit_of_measurement, square, finishing_materials }
- */
+/** POST /calculate => compute labor + materials cost for a service. */
 async function calculatePrice(params: {
   work_code: string;
   zipcode: string;
@@ -104,52 +85,42 @@ async function calculatePrice(params: {
 
 export default function Details() {
   const router = useRouter();
-
-  /**
-   * location from our custom context, containing { city, zip, state, country, ... }
-   */
   const { location } = useLocation();
 
-  // 1) Load user data from session
+  // 1) Load from session
   const selectedCategories = getSessionItem<string[]>("services_selectedCategories", []);
   const [address, setAddress] = useState<string>(() => getSessionItem("address", ""));
   const description = getSessionItem<string>("description", "");
   const photos = getSessionItem<string[]>("photos", []);
   const searchQuery = getSessionItem<string>("services_searchQuery", "");
 
-  // If no categories or no address, redirect to /calculate
+  // If no categories or no address => redirect
   useEffect(() => {
     if (selectedCategories.length === 0 || !address) {
       router.push("/calculate");
     }
   }, [selectedCategories, address, router]);
 
-  // Update address if location changes
+  // Sync address if location changes
   useEffect(() => {
-    const newAddress = [
-      location.city || "",
-      location.state || "",
-      location.zip || "",
-      location.country || "",
-    ]
+    const newAddress = [location.city, location.state, location.zip, location.country]
       .filter(Boolean)
       .join(", ");
-
     if (newAddress.trim() !== "") {
       setAddress(newAddress);
       setSessionItem("address", newAddress);
     }
   }, [location]);
 
-  // Potential warning shown above categories
+  // potential warnings
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
 
-  // Expand/collapse categories
+  // expand/collapse categories
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
-  // Build categories by their "section"
+  // build categories by "section"
   const categoriesWithSection = selectedCategories
-    .map((catId) => ALL_CATEGORIES.find((c) => c.id === catId) || null)
+    .map((id) => ALL_CATEGORIES.find((c) => c.id === id) || null)
     .filter(Boolean) as (typeof ALL_CATEGORIES)[number][];
 
   const categoriesBySection: Record<string, string[]> = {};
@@ -160,7 +131,7 @@ export default function Details() {
     categoriesBySection[cat.section].push(cat.id);
   });
 
-  // Map catId -> array of services
+  // cat -> array of services
   const categoryServicesMap: Record<string, (typeof ALL_SERVICES)[number][]> = {};
   selectedCategories.forEach((catId) => {
     let arr = ALL_SERVICES.filter((svc) => svc.id.startsWith(`${catId}-`));
@@ -172,173 +143,113 @@ export default function Details() {
     categoryServicesMap[catId] = arr;
   });
 
-  // (serviceId -> quantity)
+  // serviceId -> quantity
   const [selectedServicesState, setSelectedServicesState] = useState<Record<string, number>>(
     () => getSessionItem("selectedServicesWithQuantity", {})
   );
-
-  // (serviceId -> final numeric cost)
-  const [serviceCosts, setServiceCosts] = useState<Record<string, number>>({});
-
-  // finishingMaterialsMapAll => (serviceId -> { sections: Record<string, FinishingMaterial[]> })
-  const [finishingMaterialsMapAll, setFinishingMaterialsMapAll] = useState<
-    Record<string, { sections: Record<string, FinishingMaterial[]> }>
-  >({});
-
-  // finishingMaterialSelections => (serviceId -> string[] of external_ids)
-  const [finishingMaterialSelections, setFinishingMaterialSelections] = useState<
-    Record<string, string[]>
-  >({});
-
-  // manualInputValue => user typed quantity for each service
-  const [manualInputValue, setManualInputValue] = useState<Record<string, string | null>>({});
-
-  // Store the entire JSON from /calculate for each service
-  const [calculationResultsMap, setCalculationResultsMap] = useState<Record<string, any>>({});
-
-  // Track which services have details expanded
-  const [expandedServiceDetails, setExpandedServiceDetails] = useState<Set<string>>(new Set());
-
-  // Track any finishing materials that are "client-owned" (highlight in red)
-  const [clientOwnedMaterials, setClientOwnedMaterials] = useState<Record<string, Set<string>>>({});
-
-  // which service + section user clicked => open modal
-  const [showModalServiceId, setShowModalServiceId] = useState<string | null>(null);
-  const [showModalSectionName, setShowModalSectionName] = useState<string | null>(null);
-
-  // Save if services changed
   useEffect(() => {
     setSessionItem("selectedServicesWithQuantity", selectedServicesState);
   }, [selectedServicesState]);
 
-  /**
-   * ensureFinishingMaterialsLoaded: fetch finishing materials if not loaded yet
-   * and select defaults if not present
-   */
-  async function ensureFinishingMaterialsLoaded(serviceId: string) {
-    try {
-      if (!finishingMaterialsMapAll[serviceId]) {
-        const dot = convertServiceIdToApiFormat(serviceId);
-        const data = await fetchFinishingMaterials(dot);
+  // finishingMaterialsMapAll => serviceId -> { sections: {...} }
+  const [finishingMaterialsMapAll, setFinishingMaterialsMapAll] = useState<
+    Record<string, { sections: Record<string, FinishingMaterial[]> }>
+  >({});
 
-        finishingMaterialsMapAll[serviceId] = data;
-        setFinishingMaterialsMapAll({ ...finishingMaterialsMapAll });
-      }
+  // finishingMaterialSelections => serviceId -> array of external_ids
+  const [finishingMaterialSelections, setFinishingMaterialSelections] = useState<
+    Record<string, string[]>
+  >({});
 
-      if (!finishingMaterialSelections[serviceId]) {
-        const data = finishingMaterialsMapAll[serviceId];
-        const singleSelections: string[] = [];
+  // typed quantity => serviceId -> string or null
+  const [manualInputValue, setManualInputValue] = useState<Record<string, string | null>>({});
 
-        for (const arr of Object.values(data.sections || {})) {
-          if (Array.isArray(arr) && arr.length > 0) {
-            singleSelections.push(arr[0].external_id);
-          }
-        }
-        finishingMaterialSelections[serviceId] = singleSelections;
-        setFinishingMaterialSelections({ ...finishingMaterialSelections });
-      }
-    } catch (err) {
-      console.error("Error in ensureFinishingMaterialsLoaded:", err);
-    }
-  }
+  // serviceId -> final cost
+  const [serviceCosts, setServiceCosts] = useState<Record<string, number>>({});
 
-  /**
-   * fetchFinishingMaterialsForCategory:
-   * For all services in a category, fetch finishing materials if not loaded
-   */
-  async function fetchFinishingMaterialsForCategory(services: (typeof ALL_SERVICES)[number][]) {
-    const promises = services.map(async (svc) => {
-      if (!finishingMaterialsMapAll[svc.id]) {
-        try {
-          const dot = convertServiceIdToApiFormat(svc.id);
-          const data = await fetchFinishingMaterials(dot);
+  // serviceId -> full JSON
+  const [calculationResultsMap, setCalculationResultsMap] = useState<Record<string, any>>({});
 
-          finishingMaterialsMapAll[svc.id] = data;
-          // pick the first item from each section
-          const singleSelections: string[] = [];
-          for (const arr of Object.values(data.sections || {})) {
-            if (Array.isArray(arr) && arr.length > 0) {
-              singleSelections.push(arr[0].external_id);
-            }
-          }
-          finishingMaterialSelections[svc.id] = singleSelections;
-        } catch (err) {
-          console.error("Error fetching finishing materials:", err);
-        }
-      }
-    });
+  // expanded service details
+  const [expandedServiceDetails, setExpandedServiceDetails] = useState<Set<string>>(new Set());
 
-    try {
-      await Promise.all(promises);
-      setFinishingMaterialsMapAll({ ...finishingMaterialsMapAll });
-      setFinishingMaterialSelections({ ...finishingMaterialSelections });
-    } catch (err) {
-      console.error("Error fetchFinishingMaterialsForCategory:", err);
-    }
-  }
+  // user-owned materials => serviceId -> set of externalIds
+  const [clientOwnedMaterials, setClientOwnedMaterials] = useState<Record<string, Set<string>>>({});
 
-  /** toggleCategory: expand/collapse a category panel */
+  // finishing-material modal
+  const [showModalServiceId, setShowModalServiceId] = useState<string | null>(null);
+  const [showModalSectionName, setShowModalSectionName] = useState<string | null>(null);
+
+  // Save calc results to session
+  useEffect(() => {
+    setSessionItem("calculationResultsMap", calculationResultsMap);
+  }, [calculationResultsMap]);
+
+  /** Expand/collapse a category. Also fetch finishing materials for all services in it. */
   function toggleCategory(catId: string) {
-    setExpandedCategories((prev) => {
-      const next = new Set(prev);
+    setExpandedCategories((old) => {
+      const next = new Set(old);
       if (next.has(catId)) {
         next.delete(catId);
       } else {
         next.add(catId);
-        // fetch finishing materials for all services in this cat
-        const servicesInCat = categoryServicesMap[catId] || [];
-        fetchFinishingMaterialsForCategory(servicesInCat);
+        // fetch finishing materials for each service in this category
+        const arr = categoryServicesMap[catId] || [];
+        fetchFinishingMaterialsForCategory(arr);
       }
       return next;
     });
   }
 
-  /** handleServiceToggle: user toggles a service ON/OFF */
+  /** Turn a service ON/OFF. If turning on => set quantity = minQ. */
   function handleServiceToggle(serviceId: string) {
     setSelectedServicesState((old) => {
-      const isOn = !!old[serviceId];
+      const isOn = old[serviceId] != null;
       if (isOn) {
-        // Turn OFF => remove references
-        const updated = { ...old };
-        delete updated[serviceId];
-
+        // turn off
+        const copy = { ...old };
+        delete copy[serviceId];
+        // remove finishing material selections
         const fmCopy = { ...finishingMaterialSelections };
         delete fmCopy[serviceId];
         setFinishingMaterialSelections(fmCopy);
 
+        // remove manual input
         const muCopy = { ...manualInputValue };
         delete muCopy[serviceId];
         setManualInputValue(muCopy);
 
+        // remove calc results
         const crCopy = { ...calculationResultsMap };
         delete crCopy[serviceId];
         setCalculationResultsMap(crCopy);
 
+        // remove cost
         const scCopy = { ...serviceCosts };
         delete scCopy[serviceId];
         setServiceCosts(scCopy);
 
+        // remove user-owned
         const coCopy = { ...clientOwnedMaterials };
         delete coCopy[serviceId];
         setClientOwnedMaterials(coCopy);
 
-        return updated;
+        return copy;
       } else {
-        // Turn ON => set quantity = minQ
+        // turn on => minQ
         const found = ALL_SERVICES.find((s) => s.id === serviceId);
-        if (!found) return old;
-        const minQ = found.min_quantity ?? 1;
-
-        const updated = { ...old, [serviceId]: minQ };
-        setManualInputValue((mOld) => ({ ...mOld, [serviceId]: String(minQ) }));
+        const minQ = found?.min_quantity ?? 1;
+        const copy = { ...old, [serviceId]: minQ };
+        setManualInputValue((mm) => ({ ...mm, [serviceId]: String(minQ) }));
+        // ensure finishing materials
         ensureFinishingMaterialsLoaded(serviceId);
-        return updated;
+        return copy;
       }
     });
     setWarningMessage(null);
   }
 
-  /** handleQuantityChange: increment/decrement the quantity */
+  /** +/- button. */
   function handleQuantityChange(serviceId: string, increment: boolean, unit: string) {
     const found = ALL_SERVICES.find((x) => x.id === serviceId);
     if (!found) return;
@@ -346,23 +257,23 @@ export default function Details() {
     const maxQ = found.max_quantity ?? 999999;
 
     setSelectedServicesState((old) => {
-      const curVal = old[serviceId] || minQ;
-      let nextVal = increment ? curVal + 1 : curVal - 1;
-      if (nextVal < minQ) nextVal = minQ;
-      if (nextVal > maxQ) {
-        nextVal = maxQ;
+      const curVal = old[serviceId] ?? minQ;
+      let newVal = increment ? curVal + 1 : curVal - 1;
+      if (newVal < minQ) newVal = minQ;
+      if (newVal > maxQ) {
+        newVal = maxQ;
         setWarningMessage(`Maximum quantity for "${found.title}" is ${maxQ}.`);
       }
       return {
         ...old,
-        [serviceId]: unit === "each" ? Math.round(nextVal) : nextVal,
+        [serviceId]: unit === "each" ? Math.round(newVal) : newVal,
       };
     });
 
     setManualInputValue((old) => ({ ...old, [serviceId]: null }));
   }
 
-  /** handleManualQuantityChange: user typed a quantity directly */
+  /** typed quantity => parse, clamp, store in state. */
   function handleManualQuantityChange(serviceId: string, value: string, unit: string) {
     const found = ALL_SERVICES.find((x) => x.id === serviceId);
     if (!found) return;
@@ -370,10 +281,9 @@ export default function Details() {
     const maxQ = found.max_quantity ?? 999999;
 
     setManualInputValue((old) => ({ ...old, [serviceId]: value }));
+
     let numericVal = parseFloat(value.replace(/,/g, "")) || 0;
-    if (numericVal < minQ) {
-      numericVal = minQ;
-    }
+    if (numericVal < minQ) numericVal = minQ;
     if (numericVal > maxQ) {
       numericVal = maxQ;
       setWarningMessage(`Maximum quantity for "${found.title}" is ${maxQ}.`);
@@ -385,22 +295,21 @@ export default function Details() {
     }));
   }
 
-  /** handleBlurInput: if user left the input empty, revert to null */
+  /** if user leaves input empty => revert to null. */
   function handleBlurInput(serviceId: string) {
     if (!manualInputValue[serviceId]) {
       setManualInputValue((old) => ({ ...old, [serviceId]: null }));
     }
   }
 
-  /** clearAllSelections: reset everything */
+  /** Clear everything. */
   function clearAllSelections() {
-    const c = window.confirm(
-      "Are you sure you want to clear all selected services? This will also collapse all expanded categories."
-    );
-    if (!c) return;
+    const ok = window.confirm("Are you sure you want to clear all services?");
+    if (!ok) return;
 
     setSelectedServicesState({});
     setExpandedCategories(new Set());
+    setFinishingMaterialsMapAll({});
     setFinishingMaterialSelections({});
     setManualInputValue({});
     setCalculationResultsMap({});
@@ -408,57 +317,135 @@ export default function Details() {
     setClientOwnedMaterials({});
   }
 
-  /** Recalculate price whenever services or location changes */
-  useEffect(() => {
-    const serviceIds = Object.keys(selectedServicesState);
-    if (serviceIds.length === 0) {
-      setServiceCosts({});
-      setCalculationResultsMap({});
-      return;
-    }
-
-    const { zip, country } = location;
-    if (country !== "United States" || !/^\d{5}$/.test(zip)) {
-      setWarningMessage("Currently, our service is only available for US ZIP codes (5 digits).");
-      return;
-    }
-
-    serviceIds.forEach(async (serviceId) => {
-      try {
-        const quantity = selectedServicesState[serviceId];
-        const finishingIds = finishingMaterialSelections[serviceId] || [];
-        const foundS = ALL_SERVICES.find((x) => x.id === serviceId);
-        const unit = foundS?.unit_of_measurement || "each";
+  /** fetch finishing materials for a single service if missing. Then pick defaults. */
+  async function ensureFinishingMaterialsLoaded(serviceId: string) {
+    try {
+      if (!finishingMaterialsMapAll[serviceId]) {
         const dot = convertServiceIdToApiFormat(serviceId);
+        const data = await fetchFinishingMaterials(dot);
 
-        await ensureFinishingMaterialsLoaded(serviceId);
-
-        const resp = await calculatePrice({
-          work_code: dot,
-          zipcode: zip,
-          unit_of_measurement: unit,
-          square: quantity,
-          finishing_materials: finishingIds,
-        });
-
-        const labor = parseFloat(resp.work_cost) || 0;
-        const mat = parseFloat(resp.material_cost) || 0;
-        const tot = labor + mat;
-
-        setServiceCosts((old) => ({ ...old, [serviceId]: tot }));
-        setCalculationResultsMap((old) => ({ ...old, [serviceId]: resp }));
-      } catch (err) {
-        console.error("Error calculating price:", err);
+        finishingMaterialsMapAll[serviceId] = data;
+        setFinishingMaterialsMapAll({ ...finishingMaterialsMapAll });
       }
-    });
-  }, [selectedServicesState, finishingMaterialSelections, location]);
 
-  /** calculateTotal: sum the final cost of all selected services */
+      // pick defaults
+      if (!finishingMaterialSelections[serviceId]) {
+        const data = finishingMaterialsMapAll[serviceId];
+        if (data?.sections) {
+          const picks: string[] = [];
+          for (const arr of Object.values(data.sections)) {
+            if (Array.isArray(arr) && arr.length > 0) {
+              picks.push(arr[0].external_id);
+            }
+          }
+          finishingMaterialSelections[serviceId] = picks;
+          setFinishingMaterialSelections({ ...finishingMaterialSelections });
+        }
+      }
+    } catch (err) {
+      console.error("Error ensuring finishing materials for service:", err);
+    }
+  }
+
+  /** For an entire category => load finishing materials for each service if missing. */
+  async function fetchFinishingMaterialsForCategory(services: (typeof ALL_SERVICES)[number][]) {
+    try {
+      await Promise.all(
+        services.map(async (svc) => {
+          if (!finishingMaterialsMapAll[svc.id]) {
+            const dot = convertServiceIdToApiFormat(svc.id);
+            const data = await fetchFinishingMaterials(dot);
+
+            finishingMaterialsMapAll[svc.id] = data;
+            // pick defaults
+            if (!finishingMaterialSelections[svc.id]) {
+              const picks: string[] = [];
+              for (const arr of Object.values(data.sections || {})) {
+                if (Array.isArray(arr) && arr.length > 0) {
+                  picks.push(arr[0].external_id);
+                }
+              }
+              finishingMaterialSelections[svc.id] = picks;
+            }
+          }
+        })
+      );
+      setFinishingMaterialsMapAll({ ...finishingMaterialsMapAll });
+      setFinishingMaterialSelections({ ...finishingMaterialSelections });
+    } catch (err) {
+      console.error("Error in fetchFinishingMaterialsForCategory:", err);
+    }
+  }
+
+  /** Recompute cost each time user changes any service or finishing materials or location. */
+  useEffect(() => {
+    async function recalcAll() {
+      const serviceIds = Object.keys(selectedServicesState);
+      // If none => reset
+      if (serviceIds.length === 0) {
+        setServiceCosts({});
+        setCalculationResultsMap({});
+        return;
+      }
+
+      const { zip, country } = location;
+      if (country !== "United States" || !/^\d{5}$/.test(zip)) {
+        setWarningMessage("Currently, our service is only available for US ZIP codes (5 digits).");
+        return;
+      }
+
+      // We'll build local objects, then do a single setState at the end
+      const nextServiceCosts: Record<string, number> = {};
+      const nextCalcResults: Record<string, any> = {};
+
+      // Fetch cost for each service in parallel
+      await Promise.all(
+        serviceIds.map(async (svcId) => {
+          try {
+            // ensure finishing materials
+            await ensureFinishingMaterialsLoaded(svcId);
+
+            const quantity = selectedServicesState[svcId];
+            const finishingIds = finishingMaterialSelections[svcId] || [];
+            const foundS = ALL_SERVICES.find((x) => x.id === svcId);
+            if (!foundS) return;
+
+            const dot = convertServiceIdToApiFormat(svcId);
+            const resp = await calculatePrice({
+              work_code: dot,
+              zipcode: zip,
+              unit_of_measurement: foundS.unit_of_measurement || "each",
+              square: quantity,
+              finishing_materials: finishingIds,
+            });
+
+            const labor = parseFloat(resp.work_cost) || 0;
+            const mat = parseFloat(resp.material_cost) || 0;
+            nextServiceCosts[svcId] = labor + mat;
+            nextCalcResults[svcId] = resp;
+          } catch (err) {
+            console.error("Error computing cost for service:", svcId, err);
+          }
+        })
+      );
+
+      // Now update states
+      setServiceCosts(nextServiceCosts);
+      setCalculationResultsMap(nextCalcResults);
+    }
+
+    recalcAll();
+  }, [
+    selectedServicesState,
+    finishingMaterialSelections,
+    location, // triggers re-fetch if user changes location
+  ]);
+
   function calculateTotal() {
     return Object.values(serviceCosts).reduce((acc, val) => acc + val, 0);
   }
 
-  /** handleNext: proceed to /calculate/estimate */
+  /** On "Next" => check we have some service, also address. */
   function handleNext() {
     if (Object.keys(selectedServicesState).length === 0) {
       setWarningMessage("Please select at least one service before proceeding.");
@@ -471,51 +458,39 @@ export default function Details() {
     router.push("/calculate/estimate");
   }
 
-  /** getCategoryNameById: returns category.title from ALL_CATEGORIES */
-  function getCategoryNameById(catId: string): string {
+  function getCategoryNameById(catId: string) {
     const c = ALL_CATEGORIES.find((x) => x.id === catId);
     return c ? c.title : catId;
   }
 
-  /** toggleServiceDetails: expand/collapse the cost breakdown for a single service */
   function toggleServiceDetails(serviceId: string) {
     setExpandedServiceDetails((old) => {
       const next = new Set(old);
-      if (next.has(serviceId)) {
-        next.delete(serviceId);
-      } else {
-        next.add(serviceId);
-      }
+      if (next.has(serviceId)) next.delete(serviceId);
+      else next.add(serviceId);
       return next;
     });
   }
 
-  /** findFinishingMaterialObj: get FinishingMaterial by external_id */
   function findFinishingMaterialObj(serviceId: string, externalId: string): FinishingMaterial | null {
     const data = finishingMaterialsMapAll[serviceId];
     if (!data) return null;
     for (const arr of Object.values(data.sections || {})) {
       if (Array.isArray(arr)) {
-        const f = arr.find((m) => m.external_id === externalId);
-        if (f) return f;
+        const found = arr.find((fm) => fm.external_id === externalId);
+        if (found) return found;
       }
     }
     return null;
   }
 
-  /** pickMaterial: choose a new finishing material => finishingMaterialSelections[serviceId] = [newExtId] */
+  // user picks a new finishing material
   function pickMaterial(serviceId: string, newExtId: string) {
     finishingMaterialSelections[serviceId] = [newExtId];
     setFinishingMaterialSelections({ ...finishingMaterialSelections });
   }
 
-  /** closeModal: hide the modal */
-  function closeModal() {
-    setShowModalServiceId(null);
-    setShowModalSectionName(null);
-  }
-
-  /** userHasOwnMaterial: highlight the finishing material in red, but don't remove it from calc */
+  // user has own material => highlight in red
   function userHasOwnMaterial(serviceId: string, externalId: string) {
     if (!clientOwnedMaterials[serviceId]) {
       clientOwnedMaterials[serviceId] = new Set();
@@ -524,16 +499,18 @@ export default function Details() {
     setClientOwnedMaterials({ ...clientOwnedMaterials });
   }
 
-  // Save choice of services and materials to session
-  useEffect(() => {
-    setSessionItem("calculationResultsMap", calculationResultsMap);
-  }, [calculationResultsMap]);
+  function closeModal() {
+    setShowModalServiceId(null);
+    setShowModalSectionName(null);
+  }
 
   return (
     <main className="min-h-screen pt-24 pb-16">
       <div className="container mx-auto">
         <BreadCrumb items={CALCULATE_STEPS} />
+      </div>
 
+      <div className="container mx-auto">
         {/* Top row */}
         <div className="flex justify-between items-start mt-8">
           <SectionBoxTitle>Choose a Service and Quantity</SectionBoxTitle>
@@ -553,31 +530,29 @@ export default function Details() {
           </button>
         </div>
 
-        {/* Warning */}
+        {/* Warnings */}
         <div className="h-6 mt-4 text-left">
           {warningMessage && <p className="text-red-500">{warningMessage}</p>}
         </div>
 
         <div className="container mx-auto relative flex mt-8">
-          {/* LEFT COLUMN: categories & services */}
+          {/* LEFT column => categories + services */}
           <div className="flex-1">
             {Object.entries(categoriesBySection).map(([sectionName, catIds]) => (
               <div key={sectionName} className="mb-8">
                 <SectionBoxSubtitle>{sectionName}</SectionBoxSubtitle>
                 <div className="flex flex-col gap-4 mt-4 w-full max-w-[600px]">
                   {catIds.map((catId) => {
-                    const servicesForCategory = categoryServicesMap[catId] || [];
-                    const selectedInThisCat = servicesForCategory.filter((svc) =>
-                      Object.keys(selectedServicesState).includes(svc.id)
-                    ).length;
-
-                    const categoryName = getCategoryNameById(catId);
+                    const servicesArr = categoryServicesMap[catId] || [];
+                    const selectedInCat = servicesArr.filter((x) => selectedServicesState[x.id] != null)
+                      .length;
+                    const catName = getCategoryNameById(catId);
 
                     return (
                       <div
                         key={catId}
                         className={`p-4 border rounded-xl bg-white ${
-                          selectedInThisCat > 0 ? "border-blue-500" : "border-gray-300"
+                          selectedInCat > 0 ? "border-blue-500" : "border-gray-300"
                         }`}
                       >
                         {/* Category toggler */}
@@ -587,13 +562,13 @@ export default function Details() {
                         >
                           <h3
                             className={`font-medium text-2xl ${
-                              selectedInThisCat > 0 ? "text-blue-600" : "text-black"
+                              selectedInCat > 0 ? "text-blue-600" : "text-black"
                             }`}
                           >
-                            {categoryName}
-                            {selectedInThisCat > 0 && (
+                            {catName}
+                            {selectedInCat > 0 && (
                               <span className="text-sm text-gray-500 ml-2">
-                                ({selectedInThisCat} selected)
+                                ({selectedInCat} selected)
                               </span>
                             )}
                           </h3>
@@ -606,14 +581,13 @@ export default function Details() {
 
                         {expandedCategories.has(catId) && (
                           <div className="mt-4 flex flex-col gap-3">
-                            {servicesForCategory.map((svc) => {
+                            {servicesArr.map((svc) => {
                               const isSelected = selectedServicesState[svc.id] != null;
-                              const foundService = ALL_SERVICES.find((x) => x.id === svc.id);
-                              const minQ = foundService?.min_quantity ?? 1;
+                              const foundSvc = ALL_SERVICES.find((x) => x.id === svc.id);
+                              const minQ = foundSvc?.min_quantity ?? 1;
                               const quantity = selectedServicesState[svc.id] ?? minQ;
-                              const rawManual = manualInputValue[svc.id];
-                              const manualValue =
-                                rawManual != null ? rawManual : quantity.toString();
+                              const rawVal = manualInputValue[svc.id];
+                              const manualVal = rawVal != null ? rawVal : quantity.toString();
 
                               const finalCost = serviceCosts[svc.id] || 0;
                               const calcResult = calculationResultsMap[svc.id];
@@ -621,12 +595,11 @@ export default function Details() {
 
                               return (
                                 <div key={svc.id} className="space-y-2">
-                                  {/* Service row */}
                                   <div className="flex justify-between items-center">
                                     <span
-                                      className={`text-lg transition-colors duration-300 ${
+                                      className={`text-lg ${
                                         isSelected ? "text-blue-600" : "text-gray-800"
-                                      }`}
+                                      } transition-colors duration-300`}
                                     >
                                       {svc.title}
                                     </span>
@@ -645,30 +618,21 @@ export default function Details() {
                                   {isSelected && (
                                     <>
                                       {svc.description && (
-                                        <p className="text-sm text-gray-500 pr-16">
-                                          {svc.description}
-                                        </p>
+                                        <p className="text-sm text-gray-500 pr-16">{svc.description}</p>
                                       )}
-
                                       <div className="flex justify-between items-center">
                                         <div className="flex items-center gap-1">
-                                          {/* Decrement */}
                                           <button
                                             onClick={() =>
-                                              handleQuantityChange(
-                                                svc.id,
-                                                false,
-                                                svc.unit_of_measurement
-                                              )
+                                              handleQuantityChange(svc.id, false, svc.unit_of_measurement)
                                             }
                                             className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
                                           >
                                             −
                                           </button>
-                                          {/* Manual input */}
                                           <input
                                             type="text"
-                                            value={manualValue}
+                                            value={manualVal}
                                             onClick={() =>
                                               setManualInputValue((old) => ({
                                                 ...old,
@@ -685,14 +649,9 @@ export default function Details() {
                                             }
                                             className="w-20 text-center px-2 py-1 border rounded"
                                           />
-                                          {/* Increment */}
                                           <button
                                             onClick={() =>
-                                              handleQuantityChange(
-                                                svc.id,
-                                                true,
-                                                svc.unit_of_measurement
-                                              )
+                                              handleQuantityChange(svc.id, true, svc.unit_of_measurement)
                                             }
                                             className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
                                           >
@@ -702,8 +661,6 @@ export default function Details() {
                                             {svc.unit_of_measurement}
                                           </span>
                                         </div>
-
-                                        {/* Show cost + "Details" */}
                                         <div className="flex items-center gap-2">
                                           <span className="text-lg text-blue-600 font-medium text-right">
                                             ${formatWithSeparator(finalCost)}
@@ -719,7 +676,7 @@ export default function Details() {
                                         </div>
                                       </div>
 
-                                      {/* Cost Breakdown */}
+                                      {/* Cost breakdown */}
                                       {calcResult && detailsExpanded && (
                                         <div className="mt-4 p-4 bg-gray-50 border rounded">
                                           <h4 className="text-lg font-semibold text-gray-800 mb-3">
@@ -728,9 +685,7 @@ export default function Details() {
 
                                           <div className="flex flex-col gap-2 mb-4">
                                             <div className="flex justify-between">
-                                              <span className="text-md font-medium text-gray-700">
-                                                Labor
-                                              </span>
+                                              <span className="text-md font-medium text-gray-700">Labor</span>
                                               <span className="text-md font-medium text-gray-700">
                                                 {calcResult.work_cost
                                                   ? `$${calcResult.work_cost}`
@@ -765,16 +720,15 @@ export default function Details() {
                                                     {calcResult.materials.map((m: any, i: number) => {
                                                       const fmObj = findFinishingMaterialObj(svc.id, m.external_id);
                                                       const hasImage = fmObj?.image?.length ? true : false;
-
-                                                      const isClientOwned = clientOwnedMaterials[svc.id]?.has(
-                                                        m.external_id
-                                                      );
+                                                      const isClientOwned =
+                                                        clientOwnedMaterials[svc.id]?.has(m.external_id);
 
                                                       let rowClass = "";
                                                       if (isClientOwned) {
                                                         rowClass = "border border-red-500 bg-red-50";
                                                       } else if (hasImage) {
-                                                        rowClass = "border border-blue-300 bg-white cursor-pointer";
+                                                        rowClass =
+                                                          "border border-blue-300 bg-white cursor-pointer";
                                                       }
 
                                                       return (
@@ -783,6 +737,7 @@ export default function Details() {
                                                           className={`last:border-0 ${rowClass}`}
                                                           onClick={() => {
                                                             if (!isClientOwned && hasImage) {
+                                                              // open modal
                                                               let foundSection: string | null = null;
                                                               const fmData = finishingMaterialsMapAll[svc.id];
                                                               if (fmData?.sections) {
@@ -792,7 +747,7 @@ export default function Details() {
                                                                   if (
                                                                     Array.isArray(list) &&
                                                                     list.some(
-                                                                      (mm) => mm.external_id === m.external_id
+                                                                      (xx) => xx.external_id === m.external_id
                                                                     )
                                                                   ) {
                                                                     foundSection = secName;
@@ -819,7 +774,9 @@ export default function Details() {
                                                               m.name
                                                             )}
                                                           </td>
-                                                          <td className="py-3 px-1">${m.cost_per_unit}</td>
+                                                          <td className="py-3 px-1">
+                                                            ${m.cost_per_unit}
+                                                          </td>
                                                           <td className="py-3 px-3">{m.quantity}</td>
                                                           <td className="py-3 px-3">${m.cost}</td>
                                                         </tr>
@@ -846,8 +803,9 @@ export default function Details() {
             ))}
           </div>
 
-          {/* RIGHT COLUMN: summary, address, photos, details */}
+          {/* RIGHT column => summary */}
           <div className="w-1/2 ml-auto mt-14 pt-1">
+            {/* Summary */}
             <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden">
               <SectionBoxSubtitle>Summary</SectionBoxSubtitle>
               {Object.keys(selectedServicesState).length === 0 ? (
@@ -857,18 +815,19 @@ export default function Details() {
               ) : (
                 <>
                   {Object.entries(categoriesBySection).map(([secName, catIds]) => {
-                    const relevantCatIds = catIds.filter((catId) => {
+                    // find which catIds actually have selected services
+                    const relevantCats = catIds.filter((catId) => {
                       const arr = categoryServicesMap[catId] || [];
                       return arr.some((svc) => selectedServicesState[svc.id] != null);
                     });
-                    if (relevantCatIds.length === 0) return null;
+                    if (relevantCats.length === 0) return null;
 
                     return (
                       <div key={secName} className="mb-6">
                         <h3 className="text-xl font-semibold text-gray-800 mb-2">
                           {secName}
                         </h3>
-                        {relevantCatIds.map((catId) => {
+                        {relevantCats.map((catId) => {
                           const catObj = ALL_CATEGORIES.find((c) => c.id === catId);
                           const catName = catObj ? catObj.title : catId;
                           const arr = categoryServicesMap[catId] || [];
@@ -920,9 +879,7 @@ export default function Details() {
             {/* Address */}
             <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
               <h2 className="text-2xl font-medium text-gray-800 mb-4">Address</h2>
-              <p className="text-gray-500 text-medium">
-                {address || "No address provided"}
-              </p>
+              <p className="text-gray-500 text-medium">{address || "No address provided"}</p>
             </div>
 
             {/* Photos */}
@@ -955,7 +912,7 @@ export default function Details() {
         </div>
       </div>
 
-      {/* Modal for finishing materials selection if user clicks a row with an image */}
+      {/* Modal for finishing materials if user clicks a row with an image */}
       {showModalServiceId &&
         showModalSectionName &&
         finishingMaterialsMapAll[showModalServiceId] &&
@@ -992,7 +949,7 @@ export default function Details() {
                       {curMat.name} (${formatWithSeparator(curCost)})
                     </strong>
                     <button
-                      onClick={() => userHasOwnMaterial(showModalServiceId as string, currentExtId)}
+                      onClick={() => userHasOwnMaterial(showModalServiceId!, currentExtId)}
                       className="ml-4 text-xs text-red-500 border border-red-500 px-2 py-1 rounded"
                     >
                       I have my own (Remove later)
@@ -1020,8 +977,8 @@ export default function Details() {
                   const currentExtId = curSel[0] || null;
                   let currentCost = 0;
                   if (currentExtId) {
-                    const curMat = findFinishingMaterialObj(showModalServiceId, currentExtId);
-                    if (curMat) currentCost = parseFloat(curMat.cost || "0") || 0;
+                    const matObj = findFinishingMaterialObj(showModalServiceId, currentExtId);
+                    if (matObj) currentCost = parseFloat(matObj.cost || "0") || 0;
                   }
 
                   return (
@@ -1048,10 +1005,12 @@ export default function Details() {
                               isSelected ? "border-blue-500" : "border-gray-300"
                             }`}
                             onClick={() => {
-                              finishingMaterialSelections[showModalServiceId] = [
+                              finishingMaterialSelections[showModalServiceId!] = [
                                 material.external_id,
                               ];
-                              setFinishingMaterialSelections({ ...finishingMaterialSelections });
+                              setFinishingMaterialSelections({
+                                ...finishingMaterialSelections,
+                              });
                             }}
                           >
                             <img

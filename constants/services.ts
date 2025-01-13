@@ -219,7 +219,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Battery-Operated Smoke Detector Installation",
         description: "Installation of a battery-operated smoke detector to enhance home fire safety. This service includes comprehensive labor, rough materials, equipment usage, and the smoke detector (client’s choice). Provides a straightforward solution for reliable fire detection in any room.",
-        price: 100,
         category: SERVICE_CATEGORIES.SMOKE_DETECTOR,
     },
     {
@@ -229,7 +228,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Hardwired Smoke Detector Installation",
         description: "Installation of a hardwired smoke detector, seamlessly connected to the home's electrical system for continuous protection. This service includes comprehensive labor, rough materials, equipment usage, and the smoke detector (client’s choice). Ensures continuous and dependable fire detection throughout the home.",
-        price: 100,
         category: SERVICE_CATEGORIES.SMOKE_DETECTOR,
     },
     {
@@ -239,7 +237,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Smoke Detector Detach and Reset",
         description: "Detachment and reset of a smoke detector to maintain or enhance the fire safety system. This service includes comprehensive labor, rough materials, and equipment usage. Ensures smoke detectors are properly functioning and ready to protect the home after any maintenance or upgrades.",
-        price: 100,
         category: SERVICE_CATEGORIES.SMOKE_DETECTOR,
     },
     {
@@ -249,7 +246,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Ceiling Fan Replacement",
         description: "Replacement of an existing ceiling fan to improve air circulation and energy efficiency. This service includes comprehensive labor, rough materials, equipment usage, and the ceiling fan (client’s choice). Ensures the new fan is properly installed and functioning optimally.",
-        price: 100,
         category: SERVICE_CATEGORIES.CEILING_FAN,
     },
     {
@@ -259,7 +255,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Ceiling Fan Removal",
         description: "Safe removal of an existing ceiling fan, whether for replacement or other purposes. This service includes comprehensive labor, rough materials, and equipment usage. Guarantees the area is prepared for any subsequent installations or renovations.",
-        price: 100,
         category: SERVICE_CATEGORIES.CEILING_FAN,
     },
     {
@@ -269,7 +264,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Light Fixture Removal",
         description: "Safe removal of an existing light fixture, whether for replacement or other purposes. This service includes comprehensive labor, rough materials, and equipment usage. Ensures the area is prepared for any subsequent installations or renovations.",
-        price: 100,
         category: SERVICE_CATEGORIES.LIGHT_FIXTURE,
     },
     {
@@ -279,7 +273,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Light Fixture Installation",
         description: "Professional installation of a new light fixture to enhance the lighting and aesthetics of a room. This service includes comprehensive labor, rough materials, equipment usage, finishes, and the light fixture (client’s choice). Ensures proper installation and functionality of the new light fixture.",
-        price: 100,
         category: SERVICE_CATEGORIES.LIGHT_FIXTURE,
     },
     {
@@ -289,7 +282,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Wall Sconce Installation",
         description: "Installation of a wall sconce to add both illumination and decorative appeal to a space. This service includes comprehensive labor, rough materials, equipment usage, finishes, and the wall sconce (client’s choice). Guarantees proper placement and secure installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.LIGHT_FIXTURE,
     },
     {
@@ -299,7 +291,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Recessed Light Installation",
         description: "Installation of recessed lighting to provide subtle and efficient illumination. This service includes comprehensive labor, rough materials, equipment usage, finishes, and the recessed light fixtures (client’s choice). Ensures a clean and professional look with optimal lighting performance.",
-        price: 100,
         category: SERVICE_CATEGORIES.LIGHT_FIXTURE,
     },
     {
@@ -309,7 +300,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Switch Replacement",
         description: "Replacement of an existing switch to ensure optimal functionality and safety. This service includes comprehensive labor, rough materials, and equipment usage. Ensures the new switch is properly installed and operational.",
-        price: 100,
         category: SERVICE_CATEGORIES.SWITCH,
     },
     {
@@ -319,7 +309,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "1-Gang Switch Installation",
         description: "Installation of a single-gang switch to control lighting or other electrical fixtures. This service includes comprehensive labor, rough materials, equipment usage, finishes, and the switch (client’s choice). Ensures secure and efficient installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.SWITCH,
     },
     {
@@ -329,7 +318,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "2-Gang Switch Installation",
         description: "Installation of a double-gang switch to control multiple lighting or electrical fixtures. This service includes comprehensive labor, rough materials, equipment usage, finishes, and the switch (client’s choice). Provides effective control of multiple fixtures from one location.",
-        price: 100,
         category: SERVICE_CATEGORIES.SWITCH,
     },
     {
@@ -339,7 +327,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "3-Gang Switch Installation",
         description: "Installation of a triple-gang switch for controlling multiple lighting or electrical fixtures. This service includes comprehensive labor, rough materials, equipment usage, finishes, and the switch (client’s choice). Offers convenient control of several fixtures.",
-        price: 100,
         category: SERVICE_CATEGORIES.SWITCH,
     },
     {
@@ -349,7 +336,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "1-Gang Toggle Switch Installation",
         description: "Installation of a single-gang toggle switch to control lighting or other electrical fixtures. This service includes comprehensive labor, rough materials, equipment usage, finishes, and the toggle switch (client’s choice). Ensures proper and secure installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.SWITCH,
     },
     {
@@ -359,7 +345,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "2-Gang Toggle Switch Installation",
         description: "Installation of a double-gang toggle switch to manage multiple lighting or electrical fixtures. This service includes comprehensive labor, rough materials, equipment usage, finishes, and the toggle switch (client’s choice). Provides convenient and efficient control of fixtures.",
-        price: 100,
         category: SERVICE_CATEGORIES.SWITCH,
     },
     {
@@ -369,7 +354,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "3-Gang Toggle Switch Installation",
         description: "Installation of a triple-gang toggle switch for controlling multiple lighting or electrical fixtures. This service includes comprehensive labor, rough materials, equipment usage, finishes, and the toggle switch (client’s choice). Ensures easy management of several fixtures.",
-        price: 100,
         category: SERVICE_CATEGORIES.SWITCH,
     },
     {
@@ -379,7 +363,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Humidity Sensor Installation",
         description: "Installation of a humidity sensor to monitor and control moisture levels in your home. This service includes comprehensive labor, rough materials, equipment usage, and the humidity sensor (client’s choice). Enhances comfort and prevents moisture-related issues.",
-        price: 100,
         category: SERVICE_CATEGORIES.SWITCH,
     },
     {
@@ -389,7 +372,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Motion Sensor Installation",
         description: "Installation of a motion sensor to automate lighting and enhance home security. This service includes comprehensive labor, rough materials, equipment usage, and the motion sensor (client’s choice). Provides energy savings and added security.",
-        price: 100,
         category: SERVICE_CATEGORIES.SWITCH,
     },
     {
@@ -399,7 +381,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "15 Amp Outlet Installation",
         description: "Installation of a 15-amp outlet to provide standard electrical access in your home. This service includes comprehensive labor, rough materials, equipment usage, and the outlet (client’s choice). Ensures safe and reliable power supply.",
-        price: 100,
         category: SERVICE_CATEGORIES.OUTLET,
     },
     {
@@ -409,7 +390,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "30 Amp Outlet Installation",
         description: "Installation of a 30-amp outlet for appliances requiring higher power. This service includes comprehensive labor, rough materials, equipment usage, and the outlet (client’s choice). Provides the necessary power for heavy-duty appliances.",
-        price: 100,
         category: SERVICE_CATEGORIES.OUTLET,
     },
     {
@@ -419,7 +399,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "50 Amp Outlet Installation",
         description: "Installation of a 50-amp outlet to support high-power appliances and equipment. This service includes comprehensive labor, rough materials, equipment usage, and the outlet (client’s choice). Ensures robust and safe power supply for demanding electrical needs.",
-        price: 100,
         category: SERVICE_CATEGORIES.OUTLET,
     },
     {
@@ -429,7 +408,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Phone, TV, or Speaker Outlet Installation",
         description: "Installation of outlets for phone, TV, or speakers to enhance connectivity and entertainment options. This service includes comprehensive labor, rough materials, equipment usage, and the outlets (client’s choice). Provides seamless integration of communication and entertainment devices.",
-        price: 100,
         category: SERVICE_CATEGORIES.OUTLET,
     },
     {
@@ -439,7 +417,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Floor Outlet Installation",
         description: "Installation of floor outlets to provide convenient electrical access in any room. This service includes comprehensive labor, rough materials, equipment usage, and the outlet (client’s choice). Ensures easy access to power without disrupting room layout.",
-        price: 100,
         category: SERVICE_CATEGORIES.OUTLET,
     },
     {
@@ -449,7 +426,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Dimmer Switch Installation",
         description: "Installation of a dimmer switch to provide adjustable lighting control. This service includes comprehensive labor, rough materials, equipment usage, finishes, and the dimmer switch (client’s choice). Enhances the ambiance and energy efficiency of any room.",
-        price: 100,
         category: SERVICE_CATEGORIES.DIMMER_SWITCH,
     },
     {
@@ -459,7 +435,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Wi-Fi Dimmer Installation (Google, Alexa, HomeKit)",
         description: "Installation of a Wi-Fi-enabled dimmer switch compatible with Google, Alexa, and HomeKit for smart home integration. This service includes comprehensive labor, rough materials, equipment usage, and the dimmer switch (client’s choice). Provides convenient and smart control over lighting.",
-        price: 100,
         category: SERVICE_CATEGORIES.DIMMER_SWITCH,
     },
     {
@@ -469,7 +444,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Wi-Fi Motion Sensor Dimmer Installation",
         description: "Installation of a Wi-Fi-enabled motion sensor dimmer switch for automated lighting control. This service includes comprehensive labor, rough materials, equipment usage, and the dimmer switch (client’s choice). Ensures energy savings and enhanced convenience with motion-activated lighting.",
-        price: 100,
         category: SERVICE_CATEGORIES.DIMMER_SWITCH,
     },
     {
@@ -479,7 +453,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Countdown Timer Installation",
         description: "Installation of a countdown timer switch to automate the operation of lights or appliances. This service includes comprehensive labor, rough materials, equipment usage, and the timer switch (client’s choice). Provides an efficient way to manage energy usage and appliance control.",
-        price: 100,
         category: SERVICE_CATEGORIES.DIMMER_SWITCH,
     },
     {
@@ -489,7 +462,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Chandelier Installation",
         description: "Installation of a chandelier to enhance the lighting and elegance of a room. This service includes comprehensive labor, rough materials, equipment usage, and the chandelier (client’s choice). Ensures secure and optimal placement for maximum visual impact.",
-        price: 100,
         category: SERVICE_CATEGORIES.CHANDELIER,
     },
     {
@@ -499,7 +471,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Crystal Chandelier Installation",
         description: "Installation of a crystal chandelier to add a touch of luxury and sophistication to any space. This service includes comprehensive labor, rough materials, equipment usage, and the chandelier (client’s choice). Guarantees meticulous installation to showcase the chandelier’s beauty.",
-        price: 100,
         category: SERVICE_CATEGORIES.CHANDELIER,
     },
     {
@@ -509,7 +480,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Chandelier Detach and Reset (up to 6 lights)",
         description: "Detachment and reset of a chandelier with up to 6 lights to maintain or modify its position. This service includes comprehensive labor, rough materials, and equipment usage. Ensures the chandelier is safely handled and properly repositioned.",
-        price: 100,
         category: SERVICE_CATEGORIES.CHANDELIER,
     },
     {
@@ -519,7 +489,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Chandelier Detach and Reset (more than 6 lights)",
         description: "Detachment and reset of a chandelier with more than 6 lights for maintenance or repositioning. This service includes comprehensive labor, rough materials, and equipment usage. Provides careful handling and precise adjustment of larger chandeliers.",
-        price: 100,
         category: SERVICE_CATEGORIES.CHANDELIER,
     },
     {
@@ -529,7 +498,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Wiring with PVC Conduit Installation",
         description: "Installation of wiring with PVC conduit to protect electrical cables and provide a durable solution. This service includes laying the wiring, installing the PVC conduits, and securing all connections. Includes comprehensive labor, rough materials, equipment usage, and finish materials (client’s choice). Ensures a safe and organized wiring system.",
-        price: 100,
         category: SERVICE_CATEGORIES.WIRING,
     },
     {
@@ -539,7 +507,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Wiring Installation (no conduits)",
         description: "Direct installation of electrical wiring without conduits, suitable for applications where conduit protection is not required. This service includes laying the wiring, securing connections, and ensuring proper insulation. Includes comprehensive labor, rough materials, and equipment usage. Provides a cost-effective wiring solution.",
-        price: 100,
         category: SERVICE_CATEGORIES.WIRING,
     },
     {
@@ -549,7 +516,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Wiring with Metal Conduit Installation",
         description: "Installation of wiring with metal conduit for enhanced protection and durability, often used in industrial or outdoor settings. This service includes laying the wiring, installing the metal conduit, and securing all connections. Includes comprehensive labor, rough materials, equipment usage, and finish materials (client's choice). Ensures a robust and reliable wiring system.",
-        price: 100,
         category: SERVICE_CATEGORIES.WIRING,
     },
     {
@@ -559,7 +525,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Circuit Breaker and Fuse Troubleshooting",
         description: "Identification and resolution of electrical issues within a building to ensure safety and functionality. This service includes comprehensive labor, diagnostic equipment usage, and troubleshooting efforts. Ideal for addressing problems with power outlets, light fixtures, switches, breakers, and fuses. Ensures that electrical systems are operating correctly and safely.",
-        price: 100,
         category: SERVICE_CATEGORIES.TROUBLESHOOTING,
     },
     {
@@ -569,7 +534,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Faulty Wiring and Connection Troubleshooting",
         description: "Identification and resolution of electrical connection issues within a building to ensure proper functionality and safety. This service includes comprehensive labor, diagnostic equipment usage, and troubleshooting efforts. Ideal for addressing problems with electrical connections, wiring, and other related issues. Ensures that all electrical connections are secure and functioning correctly.",
-        price: 100,
         category: SERVICE_CATEGORIES.TROUBLESHOOTING,
     },
     {
@@ -579,7 +543,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Lighting and Fixture Troubleshooting",
         description: "Diagnosis and resolution of issues related to lighting and fixtures to ensure they are operating correctly and efficiently. This service includes comprehensive labor, diagnostic equipment usage, and troubleshooting efforts. Ideal for addressing problems with light fixtures, bulbs, switches, and related electrical components. Ensures optimal performance and safety of lighting systems.",
-        price: 100,
         category: SERVICE_CATEGORIES.TROUBLESHOOTING,
     },
     {
@@ -589,7 +552,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Outlet and Switch Malfunction Troubleshooting",
         description: "Identification and resolution of malfunctions in outlets and switches to restore proper electrical function. This service includes comprehensive labor, diagnostic equipment usage, and troubleshooting efforts. Ideal for addressing issues such as non-functioning outlets, faulty switches, and intermittent power. Ensures all outlets and switches are safe and fully operational.",
-        price: 100,
         category: SERVICE_CATEGORIES.TROUBLESHOOTING,
     },
     {
@@ -599,7 +561,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Track Lighting Kit Installation",
         description: "Installation of a track lighting kit to enhance the illumination and aesthetics of a room. This service includes comprehensive labor, rough materials, equipment usage, finishes, and the track lighting kit (client’s choice). Ensures precise and secure installation for optimal lighting and design flexibility.",
-        price: 100,
         category: SERVICE_CATEGORIES.TRACK_LIGHTING,
     },
     {
@@ -609,7 +570,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Fixed Track Lighting Installation",
         description: "Installation of fixed track lighting to provide focused and versatile illumination in a room. This service includes comprehensive labor, rough materials, equipment usage, finishes, and the track lighting (client’s choice). Ensures secure installation and optimal lighting performance.",
-        price: 100,
         category: SERVICE_CATEGORIES.TRACK_LIGHTING,
     },
     {
@@ -619,7 +579,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Toilet Supply and Installation",
         description: "Supply and installation of a toilet to enhance the functionality and comfort of a bathroom. This service includes comprehensive labor, rough materials, equipment usage, finishes, and the toilet (client’s choice). Ensures proper installation and reliable performance of a new toilet.",
-        price: 100,
         category: SERVICE_CATEGORIES.TOILET,
     },
     {
@@ -629,7 +588,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Flange and Wax Ring Replacement",
         description: "Replacement of the toilet flange and wax ring to ensure a secure and leak-free connection between the toilet and the waste pipe. This service includes comprehensive labor, rough materials, equipment usage, and the new flange and wax ring (client’s choice). Ensures proper sealing and stability of the toilet installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.TOILET,
     },
     {
@@ -639,7 +597,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Tank Flapper Replacement",
         description: "Replacement of the toilet tank flapper to ensure efficient water flow and prevent leaks. This service includes comprehensive labor, rough materials, equipment usage, and the flapper (client’s choice). Ensures proper functioning of the toilet flushing mechanism.",
-        price: 100,
         category: SERVICE_CATEGORIES.TOILET,
     },
     {
@@ -649,7 +606,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Flush Mechanism Repair",
         description: "Repair of the toilet flush mechanism to restore proper flushing functionality and efficiency. This service includes comprehensive labor, rough materials, and equipment usage. Ensures the toilet flush mechanism operates smoothly and reliably.",
-        price: 100,
         category: SERVICE_CATEGORIES.TOILET,
     },
     {
@@ -659,7 +615,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Manual Diaphragm Flush Valve Replacement",
         description: "Replacement of a manual diaphragm flush valve to ensure efficient and reliable flushing performance. This service includes comprehensive labor, rough materials, equipment usage, and the flush valve (client’s choice). Ensures proper operation and water efficiency of the toilet flush system.",
-        price: 100,
         category: SERVICE_CATEGORIES.TOILET,
     },
     {
@@ -669,7 +624,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Urinal Installation",
         description: "Installing a urinal involves setting up a urinal fixture in a bathroom, typically in commercial or public settings. This process includes mounting the urinal to the wall, connecting it to the water supply, and ensuring proper drainage and flushing mechanism. This service includes comprehensive labor, rough materials, equipment usage, finishes, and the urinal (client’s choice). Ensures proper installation and functionality.",
-        price: 100,
         category: SERVICE_CATEGORIES.TOILET,
     },
     {
@@ -679,7 +633,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Smart Toilet Bidet Installation",
         description: "Installing a smart toilet bidet involves setting up an advanced toilet that combines the functions of a traditional toilet and a bidet, often with additional features like heated seats, automatic flushing, and self-cleaning mechanisms. This service includes comprehensive labor, rough materials, equipment usage, finishes, and the smart toilet bidet (client’s choice). Ensures proper installation and optimal functionality of the smart toilet bidet.",
-        price: 100,
         category: SERVICE_CATEGORIES.TOILET,
     },
     {
@@ -689,7 +642,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Electric Bidet Seat Installation",
         description: "Installing an electric bidet seat involves replacing your traditional toilet seat with an advanced bidet seat that offers features like warm water washing, heated seating, and sometimes even air drying and deodorizing functions. This service requires both a connection to the toilet’s water supply and an electrical outlet. Includes comprehensive labor, rough materials, equipment usage, and the bidet seat (client’s choice).",
-        price: 100,
         category: SERVICE_CATEGORIES.TOILET,
     },
     {
@@ -699,7 +651,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Faucet Replacement",
         description: "Replacing a shower faucet involves removing the old faucet or shower valve and installing a new one. This task can improve the functionality and aesthetics of the shower and is often necessary when dealing with leaks, outdated hardware, or during bathroom renovations. This service includes comprehensive labor, rough materials, equipment usage, and the new shower faucet (client’s choice).",
-        price: 100,
         category: SERVICE_CATEGORIES.SHOWER,
     },
     {
@@ -709,7 +660,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Rectangular Tub/Shower Combo Installation",
         description: "Installation of a shower or tub/shower combination to enhance bathroom functionality and aesthetics. This process includes mounting the unit, connecting to the water supply, and ensuring proper drainage. This service includes comprehensive labor, rough materials, equipment usage, and the unit (client's choice). Ensures proper installation and reliable operation.",
-        price: 100,
         category: SERVICE_CATEGORIES.SHOWER,
     },
     {
@@ -719,7 +669,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Shower Base Replacement",
         description: "Replacement of a shower base to improve the functionality and aesthetics of your shower area. This service includes removing the old base, installing the new one, and ensuring proper sealing and drainage. Includes comprehensive labor, rough materials, equipment usage, and the shower base (client's choice). Ensures a secure and leak-free installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.SHOWER,
     },
     {
@@ -729,7 +678,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Shower Walls Replacement",
         description: "Replacement of shower walls to enhance the appearance and functionality of the shower area. This service includes removing the old walls, installing new ones, and ensuring proper sealing. Includes comprehensive labor, rough materials, equipment usage, and the new shower walls (client’s choice). Ensures a watertight and aesthetically pleasing installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.SHOWER,
     },
     {
@@ -739,7 +687,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Sliding Shower Door Installation",
         description: "Installation of a sliding shower door to enhance the functionality and aesthetics of the shower area. This service includes mounting the door, ensuring smooth operation, and sealing for water tightness. Includes comprehensive labor, rough materials, equipment usage, and the sliding shower door (client’s choice). Ensures a secure and stylish addition to the shower space.",
-        price: 100,
         category: SERVICE_CATEGORIES.SHOWER,
     },
     {
@@ -749,7 +696,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Freestanding Bathtub and Faucet Installation",
         description: "Installation of a freestanding bathtub and faucet to enhance the luxury and functionality of the bathroom. This service includes positioning and securing the bathtub, connecting the faucet to the water supply, and ensuring proper drainage. Includes comprehensive labor, rough materials, equipment usage, and the bathtub and faucet (client’s choice). Ensures a stylish and fully functional installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.BATHTUB,
     },
     {
@@ -759,7 +705,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Alcove Bathtub Installation",
         description: "Installation of an alcove bathtub to enhance the functionality and aesthetics of a bathroom. This service includes fitting the bathtub into a three-wall enclosure, connecting it to the water supply and drainage, and ensuring proper sealing. Includes comprehensive labor, rough materials, equipment usage, and the alcove bathtub (client’s choice). Ensures a secure and watertight installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.BATHTUB,
     },
     {
@@ -769,7 +714,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Tub Surrounds Installation",
         description: "Installation of tub surrounds to improve the appearance and functionality of the bathtub area. This service includes fitting the surround panels to the walls around the tub, securing them in place, and ensuring proper sealing to prevent water damage. Includes comprehensive labor, rough materials, equipment usage, and the tub surrounds (client’s choice). Ensures a watertight and aesthetically pleasing installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.BATHTUB,
     },
     {
@@ -779,7 +723,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Sliding Bathtub Door Installation",
         description: "Installation of a sliding bathtub door to enhance the functionality and aesthetics of the bathtub area. This service includes mounting the door, ensuring smooth operation, and sealing for water tightness. Includes comprehensive labor, rough materials, equipment usage, and the sliding bathtub door (client’s choice). Ensures a secure and stylish addition to the bathtub space.",
-        price: 100,
         category: SERVICE_CATEGORIES.BATHTUB,
     },
     {
@@ -789,7 +732,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Vessel Sink Installation",
         description: "Installation of a vessel sink to add a modern and stylish touch to the bathroom. This service includes mounting the sink on the countertop, connecting it to the water supply and drainage, and ensuring proper sealing. Includes comprehensive labor, rough materials, equipment usage, and the vessel sink (client’s choice). Ensures a secure and functional installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.SINK,
     },
     {
@@ -799,7 +741,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Undermount Sink Installation",
         description: "Installation of an undermount sink to provide a sleek and seamless look to the countertop. This service includes securing the sink beneath the countertop, connecting it to the water supply and drainage, and ensuring proper sealing. Includes comprehensive labor, rough materials, equipment usage, and the undermount sink (client’s choice). Ensures a secure and watertight installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.SINK,
     },
     {
@@ -809,7 +750,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Pedestal Sink Installation",
         description: "Installation of a pedestal sink to enhance the elegance and functionality of the bathroom. This service includes mounting the sink on its pedestal, connecting it to the water supply and drainage, and ensuring proper sealing. Includes comprehensive labor, rough materials, equipment usage, and the pedestal sink (client’s choice). Ensures a stable and attractive installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.SINK,
     },
     {
@@ -819,7 +759,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Wall Mount Sink Installation",
         description: "Installation of a wall-mounted sink to save space and provide a modern look. This service includes securing the sink to the wall, connecting it to the water supply and drainage, and ensuring proper sealing. Includes comprehensive labor, rough materials, equipment usage, and the wall-mounted sink (client’s choice). Ensures a secure and space-efficient installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.SINK,
     },
     {
@@ -829,7 +768,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Old Sink Removal",
         description: "Safe removal of an old sink to prepare the area for a new installation or renovation. This service includes disconnecting the sink from the water supply and drainage, and removing it from its mounting. Includes comprehensive labor, rough materials, and equipment usage. Ensures the area is ready for the next steps in the renovation process.",
-        price: 100,
         category: SERVICE_CATEGORIES.SINK,
     },
     {
@@ -839,7 +777,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Install Undermount Kitchen Sink",
         description: "Installation of an undermount kitchen sink to provide a clean and seamless look to the kitchen countertop. This service includes securing the sink beneath the countertop, connecting it to the water supply and drainage, and ensuring proper sealing. Includes comprehensive labor, rough materials, equipment usage, and the undermount sink (client’s choice). Ensures a secure and watertight installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.SINK,
     },
     {
@@ -849,7 +786,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Double Basin Sink Installation",
         description: "Installation of a double basin sink to enhance the functionality and convenience of the kitchen or bathroom. This service includes securing the sink, connecting it to the water supply and drainage, and ensuring proper sealing. Includes comprehensive labor, rough materials, equipment usage, and the double basin sink (client’s choice). Ensures a secure and functional installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.SINK,
     },
     {
@@ -859,7 +795,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Vessel Sink Faucet Installation",
         description: "Installation of a faucet for a vessel sink to enhance both functionality and style. This service includes securing the faucet, connecting it to the water supply, and ensuring proper sealing. Includes comprehensive labor, rough materials, equipment usage, and the faucet (client’s choice). Ensures a secure and efficient installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.FAUCET,
     },
     {
@@ -869,7 +804,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Undermount Sink Faucet Installation",
         description: "Installation of a faucet for an undermount sink to provide a seamless and functional setup. This service includes securing the faucet, connecting it to the water supply, and ensuring proper sealing. Includes comprehensive labor, rough materials, equipment usage, and the faucet (client’s choice). Ensures a reliable and watertight installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.FAUCET,
     },
     {
@@ -879,7 +813,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Pedestal Sink Faucet Installation",
         description: "Installation of a faucet for a pedestal sink to enhance its functionality and appearance. This service includes securing the faucet, connecting it to the water supply, and ensuring proper sealing. Includes comprehensive labor, rough materials, equipment usage, and the faucet (client’s choice). Ensures a stable and attractive installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.FAUCET,
     },
     {
@@ -889,7 +822,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Single Hole Faucet Installation",
         description: "Installation of a single hole faucet for a clean and modern look. This service includes securing the faucet, connecting it to the water supply, and ensuring proper sealing. Includes comprehensive labor, rough materials, equipment usage, and the faucet (client’s choice). Ensures a secure and functional installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.FAUCET,
     },
     {
@@ -899,7 +831,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Kitchen Faucet Installation",
         description: "Installation of a kitchen faucet to improve the functionality and style of the kitchen sink area. This service includes securing the faucet, connecting it to the water supply, and ensuring proper sealing. Includes comprehensive labor, rough materials, equipment usage, and the faucet (client’s choice). Ensures a reliable and efficient installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.FAUCET,
     },
     {
@@ -909,7 +840,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Wall Mounted Potfiller Installation",
         description: "Installation of a wall-mounted potfiller to provide convenient access to water for cooking. This service includes mounting the potfiller, connecting it to the water supply, and ensuring proper sealing. Includes comprehensive labor, rough materials, equipment usage, and the potfiller (client’s choice). Ensures a functional and space-saving addition to the kitchen.",
-        price: 100,
         category: SERVICE_CATEGORIES.FAUCET,
     },
     {
@@ -919,7 +849,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Bidet Sprayer Installation",
         description: "Installation of a bidet sprayer to enhance bathroom hygiene and convenience. This service includes securing the sprayer, connecting it to the water supply, and ensuring proper operation. Includes comprehensive labor, rough materials, equipment usage, and the bidet sprayer (client's choice). Ensures a hygienic and functional installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.FAUCET,
     },
     {
@@ -929,7 +858,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Gas Water Heater Installation",
         description: "Installation of a gas water heater to provide reliable hot water supply. This service includes securing the water heater, connecting it to the gas line and water supply, and ensuring proper venting and operation. Includes comprehensive labor, rough materials, equipment usage, and the gas water heater (client's choice). Ensures efficient and safe installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.WATER_HEATER,
     },
     {
@@ -939,7 +867,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Electric Water Heater Installation",
         description: "Installation of an electric water heater to ensure a consistent hot water supply. This service includes securing the water heater, connecting it to the electrical and water supply, and ensuring proper operation. Includes comprehensive labor, rough materials, equipment usage, and the electric water heater (client's choice). Ensures safe and efficient installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.WATER_HEATER,
     },
     {
@@ -949,7 +876,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Old Water Heater Removal",
         description: "Safe removal of an old water heater to prepare the area for a new installation or disposal. This service includes disconnecting the water heater from the water and power/gas supply, and removing it from the premises. Includes comprehensive labor, rough materials, and equipment usage. Ensures the area is ready for a new installation or other use.",
-        price: 100,
         category: SERVICE_CATEGORIES.WATER_HEATER,
     },
     {
@@ -959,7 +885,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Electric Tankless Water Heater Installation",
         description: "Installation of an electric tankless water heater to provide on-demand hot water and energy savings. This service includes securing the water heater, connecting it to the electrical and water supply, and ensuring proper operation. Includes comprehensive labor, rough materials, equipment usage, and the electric tankless water heater (client’s choice). Ensures efficient and reliable installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.WATER_HEATER,
     },
     {
@@ -969,7 +894,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Garbage Disposal Installation",
         description: "Installation of a garbage disposal unit to enhance kitchen waste management and convenience. This service includes securing the disposal unit, connecting it to the sink drain and electrical supply, and ensuring proper operation. Includes comprehensive labor, rough materials, equipment usage, and the garbage disposal unit (client’s choice). Ensures efficient and reliable installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.GARBAGE_DISPOSAL,
     },
     {
@@ -979,7 +903,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Garbage Disposal Removal",
         description: "Safe removal of an existing garbage disposal unit to prepare the sink for a new installation or other use. This service includes disconnecting the unit from the sink drain and electrical supply, and removing it from the premises. Includes comprehensive labor, rough materials, and equipment usage. Ensures the area is ready for the next steps.",
-        price: 100,
         category: SERVICE_CATEGORIES.GARBAGE_DISPOSAL,
     },
     {
@@ -989,7 +912,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Drain Line Camera Inspection",
         description: "Inspection of drain lines using a camera to identify blockages and issues within the plumbing system. This service includes the use of specialized camera equipment and comprehensive labor to conduct a thorough inspection. Ensures accurate diagnosis of drain problems and helps determine the appropriate solution.",
-        price: 100,
         category: SERVICE_CATEGORIES.CLOGGED_DRAIN,
     },
     {
@@ -999,7 +921,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Clog Clearing",
         description: "Clearing of blockages in drains to restore proper water flow and prevent backups. This service includes the use of professional tools and techniques to remove clogs from sinks, toilets, showers, and other drains. Includes comprehensive labor, rough materials, and equipment usage. Ensures efficient and effective removal of drain clogs.",
-        price: 100,
         category: SERVICE_CATEGORIES.CLOGGED_DRAIN,
     },
     {
@@ -1009,7 +930,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "PEX Rough-In Plumbing per Fixture",
         description: "Installation of PEX piping for rough-in plumbing to prepare for future installations. This service includes running PEX pipes to the location of each fixture, connecting to the water supply, and ensuring proper layout. Includes comprehensive labor, rough materials, and equipment usage. Ensures a reliable and efficient plumbing setup for future fixtures.",
-        price: 100,
         category: SERVICE_CATEGORIES.PIPES,
     },
     {
@@ -1019,7 +939,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Floor/Laundry Pan Drain Rough-In Plumbing",
         description: "Installation of rough-in plumbing for floor or laundry pan drains to prepare for proper drainage systems. This service includes running drain pipes to the specified locations, connecting to the main drainage system, and ensuring proper slope and sealing. Includes comprehensive labor, rough materials, and equipment usage. Ensures effective drainage for floor or laundry areas.",
-        price: 100,
         category: SERVICE_CATEGORIES.PIPES,
     },
     {
@@ -1029,7 +948,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "3/4” Pipe Emergency Repair",
         description: "Emergency repair of 3/4” pipes to address leaks or damage and restore proper water flow. This service includes identifying the issue, repairing or replacing the damaged section, and ensuring the integrity of the plumbing system. Includes comprehensive labor, rough materials, and equipment usage. Ensures quick and effective resolution of plumbing emergencies.",
-        price: 100,
         category: SERVICE_CATEGORIES.PIPES,
     },
     {
@@ -1039,7 +957,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "1/2” Pipe Emergency Repair",
         description: "Emergency repair of 1/2” pipes to fix leaks or damage and restore water supply. This service includes diagnosing the problem, repairing or replacing the damaged pipe section, and verifying the plumbing system’s functionality. Includes comprehensive labor, rough materials, and equipment usage. Ensures prompt and reliable repair of plumbing issues.",
-        price: 100,
         category: SERVICE_CATEGORIES.PIPES,
     },
     {
@@ -1049,7 +966,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "White Wall Painting (Two Coats)",
         description: "Application of two coats of white paint to walls for a fresh and clean appearance. This service includes surface preparation, application of primer if necessary, and two coats of white paint. Includes comprehensive labor, rough materials, equipment usage, and white paint (client's choice of texture, brand). Ensures a uniform and high-quality finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.WALLS,
     },
     {
@@ -1059,7 +975,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Wall Painting Refresh (One Coat)",
         description: "Refreshing the appearance of walls with a single coat of paint. This service includes surface preparation and the application of one coat of paint. Includes comprehensive labor, rough materials, equipment usage, and paint (client's choice of color, texture, brand). Provides a quick and effective update to the wall's appearance.",
-        price: 100,
         category: SERVICE_CATEGORIES.WALLS,
     },
     {
@@ -1069,7 +984,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Color Wall Painting (Two Coats)",
         description: "Application of two coats of colored paint to walls for a vibrant and updated look. This service includes surface preparation, application of primer if necessary, and two coats of the chosen color. Includes comprehensive labor, rough materials, equipment usage, and paint (client's choice of color, texture, brand). Ensures a consistent and high-quality finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.WALLS,
     },
     {
@@ -1079,7 +993,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Bathroom Wall Painting (White)",
         description: "Application of white paint to bathroom walls for a clean and fresh look. This service includes surface preparation, application of primer if necessary, and painting with white bathroom paint. Includes comprehensive labor, rough materials, equipment usage, and white paint (client's choice of texture, brand). Ensures a moisture-resistant and durable finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.WALLS,
     },
     {
@@ -1089,7 +1002,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Bathroom Wall Painting (Color)",
         description: "Application of colored paint to bathroom walls for a personalized and vibrant appearance. This service includes surface preparation, application of primer if necessary, and painting with the chosen color of bathroom paint. Includes comprehensive labor, rough materials, equipment usage, and paint (client's choice of color, texture, brand). Ensures a moisture-resistant and long-lasting finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.WALLS,
     },
     {
@@ -1099,7 +1011,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Concrete and Masonry Wall Painting",
         description: "Painting concrete and masonry walls to protect and enhance their appearance. This service includes surface preparation, application of appropriate primer, and painting with specialized concrete and masonry paint. Includes comprehensive labor, rough materials, equipment usage, and paint (client's choice of color, texture, brand). Ensures a durable and attractive finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.WALLS,
     },
     {
@@ -1109,7 +1020,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Wall Staining and Finishing",
         description: "Application of stain and finish to walls to enhance the natural beauty of wood or other materials. This service includes surface preparation, staining, and application of a protective finish. Includes comprehensive labor, rough materials, equipment usage, and stain/finish (client's choice of color, texture, brand). Ensures a rich and durable finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.WALLS,
     },
     {
@@ -1119,7 +1029,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Ceiling Painting: Seal, Prime, and Paint",
         description: "Comprehensive ceiling painting service including sealing, priming, and applying paint for a flawless finish. This service includes surface preparation, sealing to cover any stains or imperfections, applying primer, and painting. Includes comprehensive labor, rough materials, equipment usage, and paint (client’s choice of color, texture, brand). Ensures a durable and high-quality ceiling finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.CEILINGS,
     },
     {
@@ -1129,7 +1038,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "One Coat Refresh Ceiling Painting",
         description: "Refreshing the appearance of the ceiling with a single coat of paint. This service includes surface preparation and the application of one coat of paint. Includes comprehensive labor, rough materials, equipment usage, and paint (client’s choice of color, texture, brand). Provides a quick and effective update to the ceiling’s appearance.",
-        price: 100,
         category: SERVICE_CATEGORIES.CEILINGS,
     },
     {
@@ -1139,7 +1047,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Popcorn Ceiling Removal",
         description: "Removal of popcorn ceiling texture to modernize and smooth the ceiling surface. This service includes safely removing the popcorn texture, surface preparation, and clean-up. Includes comprehensive labor, rough materials, and equipment usage. Ensures a smooth and updated ceiling finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.ACOUSTIC_CEILING,
     },
     {
@@ -1149,7 +1056,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Popcorn Ceiling Installation",
         description: "Installation of popcorn ceiling texture to enhance acoustic properties and provide a classic look. This service includes surface preparation, application of the popcorn texture, and clean-up. Includes comprehensive labor, rough materials, and equipment usage. Ensures an even and effective application of the popcorn ceiling texture.",
-        price: 100,
         category: SERVICE_CATEGORIES.ACOUSTIC_CEILING,
     },
     {
@@ -1159,7 +1065,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "White Trim and Molding Painting (One Coat Refresh)",
         description: "Refreshing the appearance of trim and molding with a single coat of white paint. This service includes surface preparation and the application of one coat of white paint. Includes comprehensive labor, rough materials, equipment usage, and white paint (client's choice of texture, brand). Ensures a clean and updated look for trim and molding.",
-        price: 100,
         category: SERVICE_CATEGORIES.TRIM_AND_MOLDING,
     },
     {
@@ -1169,7 +1074,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Color Trim and Molding Painting (Two Coats)",
         description: "Application of two coats of colored paint to trim and molding for a vibrant and polished look. This service includes surface preparation, application of primer if necessary, and two coats of the chosen color. Includes comprehensive labor, rough materials, equipment usage, and paint (client's choice of color, texture, brand). Ensures a high-quality and durable finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.TRIM_AND_MOLDING,
     },
     {
@@ -1179,7 +1083,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Trim and Molding Staining and Finishing",
         description: "Application of stain and finish to trim and molding to enhance their natural beauty. This service includes surface preparation, staining, and application of a protective finish. Includes comprehensive labor, rough materials, equipment usage, and stain/finish (client's choice of color, texture, brand). Ensures a rich and long-lasting finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.TRIM_AND_MOLDING,
     },
     {
@@ -1189,7 +1092,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "White Door Painting (One Side)",
         description: "Painting one side of a door with white paint to refresh its appearance. This service includes surface preparation and the application of one coat of white paint. Includes comprehensive labor, rough materials, equipment usage, and white paint (client's choice of texture, brand). Ensures a clean and updated look for the door.",
-        price: 100,
         category: SERVICE_CATEGORIES.DOORS,
     },
     {
@@ -1199,7 +1101,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "White Door Painting (Two Sides, Jamb, and Trim)",
         description: "Painting both sides of a door, including the jamb and trim, with white paint. This service includes surface preparation and the application of two coats of white paint. Includes comprehensive labor, rough materials, equipment usage, and white paint (client’s choice of texture, brand). Ensures a uniform and high-quality finish for the entire door assembly.",
-        price: 100,
         category: SERVICE_CATEGORIES.DOORS,
     },
     {
@@ -1209,7 +1110,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Color Door Painting (One Side)",
         description: "Painting one side of a door with the client’s choice of color to enhance its appearance. This service includes surface preparation and the application of two coats of paint. Includes comprehensive labor, rough materials, equipment usage, and paint (client’s choice of color, texture, brand). Ensures a vibrant and polished look for the door.",
-        price: 100,
         category: SERVICE_CATEGORIES.DOORS,
     },
     {
@@ -1219,7 +1119,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Color Door Painting (Two Sides, Jamb, and Trim)",
         description: "Painting both sides of a door, including the jamb and trim, with the client’s choice of color. This service includes surface preparation and the application of two coats of paint. Includes comprehensive labor, rough materials, equipment usage, and paint (client’s choice of color, texture, brand). Ensures a consistent and high-quality finish for the entire door assembly.",
-        price: 100,
         category: SERVICE_CATEGORIES.DOORS,
     },
     {
@@ -1229,7 +1128,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Door Staining and Finishing (One Side, Jamb, and Trim)",
         description: "Staining and finishing one side of a door, including the jamb and trim, to enhance its natural beauty. This service includes surface preparation, staining, and the application of a protective finish. Includes comprehensive labor, rough materials, equipment usage, and stain/finish (client’s choice of color, texture, brand). Ensures a high-quality and durable finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.DOORS,
     },
     {
@@ -1239,7 +1137,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Door Staining and Finishing (Two Sides, Jamb, and Trim)",
         description: "Staining and finishing both sides of a door, including the jamb and trim, to highlight its natural beauty. This service includes surface preparation, staining, and the application of a protective finish. Includes comprehensive labor, rough materials, equipment usage, and stain/finish (client’s choice of color, texture, brand). Ensures a luxurious and long-lasting finish for the entire door assembly.",
-        price: 100,
         category: SERVICE_CATEGORIES.DOORS,
     },
     {
@@ -1249,7 +1146,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "White Window Painting (One Side)",
         description: "Painting one side of a window with white paint to refresh its appearance. This service includes surface preparation and the application of one coat of white paint. Includes comprehensive labor, rough materials, equipment usage, and white paint (client’s choice of texture, brand). Ensures a clean and updated look for the window.",
-        price: 100,
         category: SERVICE_CATEGORIES.WINDOWS,
     },
     {
@@ -1259,7 +1155,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "White Window Painting (Two Sides, Jamb, and Trim)",
         description: "Painting both sides of a window, including the jamb and trim, with white paint. This service includes surface preparation and the application of two coats of white paint. Includes comprehensive labor, rough materials, equipment usage, and white paint (client’s choice of texture, brand). Ensures a uniform and high-quality finish for the entire window assembly.",
-        price: 100,
         category: SERVICE_CATEGORIES.WINDOWS,
     },
     {
@@ -1269,7 +1164,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Color Window Painting (One Side)",
         description: "Painting one side of a window with the client’s choice of color to enhance its appearance. This service includes surface preparation and the application of two coats of paint. Includes comprehensive labor, rough materials, equipment usage, and paint (client’s choice of color, texture, brand). Ensures a vibrant and polished look for the window.",
-        price: 100,
         category: SERVICE_CATEGORIES.WINDOWS,
     },
     {
@@ -1279,7 +1173,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Color Window Painting (Two Sides, Jamb, and Trim)",
         description: "Painting both sides of a window, including the jamb and trim, with the client’s choice of color. This service includes surface preparation and the application of two coats of paint. Includes comprehensive labor, rough materials, equipment usage, and paint (client’s choice of color, texture, brand). Ensures a consistent and high-quality finish for the entire window assembly.",
-        price: 100,
         category: SERVICE_CATEGORIES.WINDOWS,
     },
     {
@@ -1289,7 +1182,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Window Staining and Finishing (One Side, Jamb, and Trim)",
         description: "Staining and finishing one side of a window, including the jamb and trim, to enhance its natural beauty. This service includes surface preparation, staining, and the application of a protective finish. Includes comprehensive labor, rough materials, equipment usage, and stain/finish (client’s choice of color, texture, brand). Ensures a rich and durable finish for the window.",
-        price: 100,
         category: SERVICE_CATEGORIES.WINDOWS,
     },
     {
@@ -1299,7 +1191,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Window Staining and Finishing (Two Sides, Jamb, and Trim)",
         description: "Staining and finishing both sides of a window, including the jamb and trim, to highlight its natural beauty. This service includes surface preparation, staining, and the application of a protective finish. Includes comprehensive labor, rough materials, equipment usage, and stain/finish (client’s choice of color, texture, brand). Ensures a luxurious and long-lasting finish for the entire window assembly.",
-        price: 100,
         category: SERVICE_CATEGORIES.WINDOWS,
     },
     {
@@ -1309,7 +1200,6 @@ export const ALL_SERVICES = [
         max_quantity: 500,
         title: "Full Height Cabinet Strip and Refinish (Faces Only)",
         description: "Stripping and refinishing the faces of full-height cabinets to restore their appearance. This service includes removing the existing finish, surface preparation, and applying a new finish. Includes comprehensive labor, rough materials, equipment usage, and finish (client’s choice of color, texture, brand). Ensures a refreshed and attractive look for cabinet faces.",
-        price: 100,
         category: SERVICE_CATEGORIES.CABINETRY,
     },
     {
@@ -1319,7 +1209,6 @@ export const ALL_SERVICES = [
         max_quantity: 500,
         title: "Lower/Upper Cabinet Strip and Refinish (Faces Only)",
         description: "Stripping and refinishing the faces of lower or upper cabinets to enhance their appearance. This service includes removing the existing finish, surface preparation, and applying a new finish. Includes comprehensive labor, rough materials, equipment usage, and finish (client’s choice of color, texture, brand). Ensures a renewed and appealing look for cabinet faces.",
-        price: 100,
         category: SERVICE_CATEGORIES.CABINETRY,
     },
     {
@@ -1329,7 +1218,6 @@ export const ALL_SERVICES = [
         max_quantity: 500,
         title: "Full Height Cabinet Seal and Paint",
         description: "Sealing and painting full-height cabinets to provide a durable and updated look. This service includes surface preparation, application of sealant, and painting. Includes comprehensive labor, rough materials, equipment usage, and paint (client’s choice of color, texture, brand). Ensures a smooth and high-quality finish for the entire cabinet.",
-        price: 100,
         category: SERVICE_CATEGORIES.CABINETRY,
     },
     {
@@ -1339,7 +1227,6 @@ export const ALL_SERVICES = [
         max_quantity: 500,
         title: "Lower/Upper Cabinet Seal and Paint",
         description: "Sealing and painting lower or upper cabinets to refresh their appearance and protect them. This service includes surface preparation, application of sealant, and painting. Includes comprehensive labor, rough materials, equipment usage, and paint (client’s choice of color, texture, brand). Ensures a durable and attractive finish for the cabinets.",
-        price: 100,
         category: SERVICE_CATEGORIES.CABINETRY,
     },
     {
@@ -1349,7 +1236,6 @@ export const ALL_SERVICES = [
         max_quantity: 500,
         title: "Full-height Cabinet Painting",
         description: "Painting full-height cabinets to update their look and complement the room's decor. This service includes surface preparation and application of paint. Includes comprehensive labor, rough materials, equipment usage, and paint (client’s choice of color, texture, brand). Ensures a consistent and polished finish for the cabinets.",
-        price: 100,
         category: SERVICE_CATEGORIES.CABINETRY,
     },
     {
@@ -1359,7 +1245,6 @@ export const ALL_SERVICES = [
         max_quantity: 500,
         title: "Lower/Upper Cabinet Painting",
         description: "Painting lower or upper cabinets to improve their appearance and match the room's style. This service includes surface preparation and application of paint. Includes comprehensive labor, rough materials, equipment usage, and paint (client’s choice of color, texture, brand). Ensures a clean and updated look for the cabinets.",
-        price: 100,
         category: SERVICE_CATEGORIES.CABINETRY,
     },
     {
@@ -1367,7 +1252,6 @@ export const ALL_SERVICES = [
         unit_of_measurement: "sq ft",
         title: "Wallpaper Removal",
         description: "Removal of existing wallpaper to prepare walls for new finishes or paint. This service includes carefully stripping the wallpaper, surface preparation, and clean-up. Includes comprehensive labor, rough materials, and equipment usage. Ensures walls are clean and ready for the next step in renovation.",
-        price: 100,
         category: SERVICE_CATEGORIES.WALLPAPER,
     },
     {
@@ -1375,7 +1259,6 @@ export const ALL_SERVICES = [
         unit_of_measurement: "sq ft",
         title: "Wallpaper Installation",
         description: "Installation of new wallpaper to enhance the aesthetics of a room. This service includes surface preparation, measuring and cutting the wallpaper, and applying it to the walls. Includes comprehensive labor, rough materials, equipment usage, and wallpaper (client's choice of pattern and brand). Ensures a smooth and professional finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.WALLPAPER,
     },
     {
@@ -1385,7 +1268,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Fabric Wallpaper Installation",
         description: "Installation of fabric wallpaper to add texture and elegance to a room. This service includes surface preparation, measuring and cutting the fabric wallpaper, and applying it to the walls. Includes comprehensive labor, rough materials, equipment usage, and fabric wallpaper (client's choice of pattern and brand). Ensures a seamless and luxurious finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.WALLPAPER,
     },
     {
@@ -1395,7 +1277,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Sisal Wallpaper Installation",
         description: "Installation of sisal wallpaper to provide a natural and sophisticated look. This service includes surface preparation, measuring and cutting the sisal wallpaper, and applying it to the walls. Includes comprehensive labor, rough materials, equipment usage, and sisal wallpaper (client's choice of pattern and brand). Ensures a durable and attractive finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.WALLPAPER,
     },
     {
@@ -1405,7 +1286,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Border Installation",
         description: "Installation of wallpaper borders to add decorative accents to walls. This service includes surface preparation, measuring and cutting the border, and applying it to the walls. Includes comprehensive labor, rough materials, equipment usage, and wallpaper border (client's choice of pattern and brand). Ensures precise and stylish decoration.",
-        price: 100,
         category: SERVICE_CATEGORIES.WALLPAPER,
     },
     {
@@ -1415,7 +1295,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Paintable Wallpaper Installation",
         description: "Installation of paintable wallpaper to allow for customization with paint. This service includes surface preparation, measuring and cutting the paintable wallpaper, and applying it to the walls. Includes comprehensive labor, rough materials, equipment usage, and paintable wallpaper (client's choice of pattern and brand). Ensures a smooth surface ready for painting.",
-        price: 100,
         category: SERVICE_CATEGORIES.WALLPAPER,
     },
     {
@@ -1425,7 +1304,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Concrete and Masonry Painting (Two Coats)",
         description: "Painting concrete and masonry surfaces with two coats of paint to protect and enhance their appearance. This service includes surface preparation, application of appropriate primer, and two coats of paint. Includes comprehensive labor, rough materials, equipment usage, and paint (client's choice of color, texture, brand). Ensures a durable and attractive finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.CONCRETE_AND_MASONRY,
     },
     {
@@ -1435,7 +1313,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Block Sealing",
         description: "Sealing concrete blocks to protect against moisture and environmental damage. This service includes surface cleaning, application of block sealer, and ensuring proper coverage. Includes comprehensive labor, rough materials, and equipment usage. Ensures long-lasting protection and enhanced durability of block surfaces.",
-        price: 100,
         category: SERVICE_CATEGORIES.CONCRETE_AND_MASONRY,
     },
     {
@@ -1445,7 +1322,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Mold Removal and Wall Protection",
         description: "Removal of mold from walls and application of protective measures to prevent future mold growth. This service includes surface cleaning, mold removal, and application of anti-mold treatments. Includes comprehensive labor, rough materials, and equipment usage. Ensures a safe and healthy environment with protected wall surfaces.",
-        price: 100,
         category: SERVICE_CATEGORIES.CONCRETE_AND_MASONRY,
     },
     {
@@ -1455,7 +1331,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Baseboard Painting",
         description: "Painting baseboards to enhance their appearance and protect them from wear. This service includes surface preparation and the application of paint. Includes comprehensive labor, rough materials, equipment usage, and paint (client's choice of color, texture, brand). Ensures a clean and polished look for baseboards.",
-        price: 100,
         category: SERVICE_CATEGORIES.BASEBOARD,
     },
     {
@@ -1465,7 +1340,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Baseboard Staining and Finishing",
         description: "Staining and finishing baseboards to highlight their natural beauty and provide protection. This service includes surface preparation, staining, and the application of a protective finish. Includes comprehensive labor, rough materials, equipment usage, and stain/finish (client's choice of color, texture, brand). Ensures a rich and durable finish for baseboards.",
-        price: 100,
         category: SERVICE_CATEGORIES.BASEBOARD,
     },
     {
@@ -1475,7 +1349,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Ceramic Tile Removal",
         description: "Safe and efficient removal of ceramic tiles to prepare surfaces for new installations or finishes. This service includes carefully lifting and disposing of old tiles, surface preparation, and clean-up. Includes comprehensive labor, rough materials, and equipment usage. Ensures surfaces are clean and ready for the next step.",
-        price: 100,
         category: SERVICE_CATEGORIES.CERAMIC,
     },
     {
@@ -1485,7 +1358,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Ceramic Tile Installation",
         description: "Installation of ceramic tiles to enhance the aesthetics and functionality of floors or walls. This service includes surface preparation, measuring and cutting tiles, and applying them with adhesive and grout. Includes comprehensive labor, rough materials, equipment usage, and tiles (client's choice of color, texture, brand). Ensures a durable and visually appealing finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.CERAMIC,
     },
     {
@@ -1495,7 +1367,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Ceramic Tile Repair",
         description: "Repair of damaged or broken ceramic tiles to restore the appearance and integrity of the tiled surface. This service includes removing damaged tiles, surface preparation, and installing new tiles. Includes comprehensive labor, rough materials, equipment usage, and tiles (client's choice of color, texture, brand). Ensures a seamless and durable repair.",
-        price: 100,
         category: SERVICE_CATEGORIES.CERAMIC,
     },
     {
@@ -1505,7 +1376,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Ceramic Tile Customization",
         description: "Customization of ceramic tiles to create unique designs or patterns. This service includes cutting, arranging, and installing tiles according to the client's specifications. Includes comprehensive labor, rough materials, equipment usage, and tiles (client's choice of color, texture, brand). Ensures a personalized and high-quality finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.CERAMIC,
     },
     {
@@ -1515,7 +1385,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Ceramic Tile Regrouting",
         description: "Regrouting ceramic tiles to refresh their appearance and ensure secure adhesion. This service includes removing old grout, cleaning the tile surface, and applying new grout. Includes comprehensive labor, rough materials, and equipment usage. Ensures a clean and renewed look for tiled surfaces.",
-        price: 100,
         category: SERVICE_CATEGORIES.CERAMIC,
     },
     {
@@ -1525,7 +1394,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Porcelain Tile Removal",
         description: "Safe and efficient removal of porcelain tiles to prepare surfaces for new installations or finishes. This service includes carefully lifting and disposing of old tiles, surface preparation, and clean-up. Includes comprehensive labor, rough materials, and equipment usage. Ensures surfaces are clean and ready for the next step.",
-        price: 100,
         category: SERVICE_CATEGORIES.PORCELAIN,
     },
     {
@@ -1535,7 +1403,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Porcelain Tile Installation",
         description: "Installation of porcelain tiles to enhance the aesthetics and functionality of floors or walls. This service includes surface preparation, measuring and cutting tiles, and applying them with adhesive and grout. Includes comprehensive labor, rough materials, equipment usage, and tiles (client's choice of color, texture, brand). Ensures a durable and visually appealing finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.PORCELAIN,
     },
     {
@@ -1545,7 +1412,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Porcelain Tile Repair",
         description: "Repair of damaged or broken porcelain tiles to restore the appearance and integrity of the tiled surface. This service includes removing damaged tiles, surface preparation, and installing new tiles. Includes comprehensive labor, rough materials, equipment usage, and tiles (client's choice of color, texture, brand). Ensures a seamless and durable repair.",
-        price: 100,
         category: SERVICE_CATEGORIES.PORCELAIN,
     },
     {
@@ -1555,7 +1421,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Porcelain Tile Customization",
         description: "Customization of porcelain tiles to create unique designs or patterns. This service includes cutting, arranging, and installing tiles according to the client’s specifications. Includes comprehensive labor, rough materials, equipment usage, and tiles (client’s choice of color, texture, brand). Ensures a personalized and high-quality finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.PORCELAIN,
     },
     {
@@ -1565,7 +1430,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Porcelain Tile Regrouting",
         description: "Regrouting porcelain tiles to refresh their appearance and ensure secure adhesion. This service includes removing old grout, cleaning the tile surface, and applying new grout. Includes comprehensive labor, rough materials, and equipment usage. Ensures a clean and renewed look for tiled surfaces.",
-        price: 100,
         category: SERVICE_CATEGORIES.PORCELAIN,
     },
     {
@@ -1575,7 +1439,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Natural Stone Removal",
         description: "Safe and efficient removal of natural stone surfaces to prepare for new installations or finishes. This service includes carefully lifting and disposing of old stone, surface preparation, and clean-up. Includes comprehensive labor, rough materials, and equipment usage. Ensures surfaces are clean and ready for the next step.",
-        price: 100,
         category: SERVICE_CATEGORIES.NATURAL_STONE,
     },
     {
@@ -1585,7 +1448,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "WallVeneer Panels Installation",
         description: "Installation of wall veneer panels to enhance the aesthetics and protection of walls. This service includes surface preparation, measuring and cutting panels, and securing them to the walls. Includes comprehensive labor, rough materials, equipment usage, and wall veneer panels (client's choice of color, texture, brand). Ensures a durable and visually appealing finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.NATURAL_STONE,
     },
     {
@@ -1595,7 +1457,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Natural Stone Tile Installation",
         description: "Installation of natural stone tiles to enhance the aesthetics and durability of floors or walls. This service includes surface preparation, measuring and cutting tiles, and applying them with adhesive and grout. Includes comprehensive labor, rough materials, equipment usage, and tiles (client's choice of color, texture, brand). Ensures a durable and visually appealing finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.NATURAL_STONE,
     },
     {
@@ -1605,7 +1466,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Natural Stone Sill Installation",
         description: "Installation of natural stone sills to enhance the functionality and appearance of windows. This service includes measuring, cutting, and securing the stone sills in place. Includes comprehensive labor, rough materials, equipment usage, and stone sills (client's choice of color, texture, brand). Ensures a precise and attractive finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.NATURAL_STONE,
     },
     {
@@ -1615,7 +1475,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Stone Threshold Installation",
         description: "Installation of natural stone thresholds to provide a durable and elegant transition between rooms. This service includes measuring, cutting, and securing the stone thresholds in place. Includes comprehensive labor, rough materials, equipment usage, and stone thresholds (client's choice of color, texture, brand). Ensures a seamless and polished finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.NATURAL_STONE,
     },
     {
@@ -1625,7 +1484,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Stone Countertop Installation",
         description: "Installation of natural stone countertops to enhance the functionality and beauty of kitchens or bathrooms. This service includes measuring, cutting, and securing the countertops in place, as well as connecting them to the necessary plumbing if applicable. Includes comprehensive labor, rough materials, equipment usage, and countertops (client's choice of color, texture, brand). Ensures a precise and luxurious finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.NATURAL_STONE,
     },
     {
@@ -1635,7 +1493,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Sink Opening in Natural Stone",
         description: "Cutting an opening in natural marble for sink installation to ensure a perfect fit. This service includes precise measurement and cutting of the marble slab to accommodate the sink. Includes comprehensive labor, rough materials, and equipment usage. Ensures a precise and clean finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.NATURAL_STONE,
     },
     {
@@ -1645,7 +1502,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Natural Stone Mosaic Installation",
         description: "Installation of natural stone mosaics to create intricate and beautiful designs on floors or walls. This service includes surface preparation, measuring and cutting mosaic pieces, and securing them in place with adhesive and grout. Includes comprehensive labor, rough materials, equipment usage, and mosaic tiles (client's choice of color, texture, brand). Ensures a unique and artistic finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.NATURAL_STONE,
     },
     {
@@ -1655,7 +1511,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Marble Mosaic Installation",
         description: "Installation of marble mosaics to create elegant and intricate designs on floors or walls. This service includes surface preparation, measuring and cutting mosaic pieces, and securing them with adhesive and grout. Includes comprehensive labor, rough materials, equipment usage, and marble mosaic tiles (client's choice). Ensures a luxurious and detailed finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.MOSAIC,
     },
     {
@@ -1665,7 +1520,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Glass Mosaic Installation",
         description: "Installation of glass mosaics to add a vibrant and reflective design element to floors or walls. This service includes surface preparation, measuring and cutting mosaic pieces, and securing them with adhesive and grout. Includes comprehensive labor, rough materials, equipment usage, and glass mosaic tiles (client's choice of color, brand). Ensures a bright and artistic finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.MOSAIC,
     },
     {
@@ -1675,7 +1529,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Porcelain Mosaic Installation",
         description: "Installation of porcelain mosaics to enhance the durability and aesthetics of floors or walls. This service includes surface preparation, measuring and cutting mosaic pieces, and securing them with adhesive and grout. Includes comprehensive labor, rough materials, equipment usage, and porcelain mosaic tiles (client's choice of color, texture, brand). Ensures a strong and visually appealing finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.MOSAIC,
     },
     {
@@ -1685,7 +1538,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Mosaic Removal",
         description: "Safe and efficient removal of existing mosaic tiles to prepare surfaces for new installations or finishes. This service includes carefully lifting and disposing of old mosaic tiles, surface preparation, and clean-up. Includes comprehensive labor, rough materials, and equipment usage. Ensures surfaces are clean and ready for the next step.",
-        price: 100,
         category: SERVICE_CATEGORIES.MOSAIC,
     },
     {
@@ -1695,7 +1547,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Bathroom Demolition and Removal",
         description: "Complete demolition and removal of existing bathroom fixtures, tiles, and structures to prepare for renovation. This service includes careful demolition, debris removal, and surface preparation. Includes comprehensive labor, rough materials, and equipment usage. Ensures the bathroom is cleared and ready for new installations.",
-        price: 100,
         category: SERVICE_CATEGORIES.BATHROOM,
     },
     {
@@ -1705,7 +1556,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Waterproofing and Tile Shower Installation (up to 60 SF)",
         description: "Installation of waterproofing and tiles in a shower area up to 60 square feet. This service includes surface preparation, application of waterproofing membrane, and installation of tiles. Includes comprehensive labor, rough materials, equipment usage, and tiles (client’s choice of color, texture, brand). Ensures a durable and watertight shower finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.BATHROOM,
     },
     {
@@ -1715,7 +1565,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Tile Shower Installation (61 to 100 sq ft)",
         description: "Installation of waterproofing and tiles in a shower area between 61 to 100 square feet. This service includes surface preparation, application of waterproofing membrane, and installation of tiles. Includes comprehensive labor, rough materials, equipment usage, and tiles (client’s choice of color, texture, brand). Ensures a durable and watertight shower finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.BATHROOM,
     },
     {
@@ -1725,7 +1574,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Tile Shower Installation (101 to 120 sq ft)",
         description: "Installation of waterproofing and tiles in a shower area between 101 to 120 square feet. This service includes surface preparation, application of waterproofing membrane, and installation of tiles. Includes comprehensive labor, rough materials, equipment usage, and tiles (client’s choice of color, texture, brand). Ensures a durable and watertight shower finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.BATHROOM,
     },
     {
@@ -1735,7 +1583,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Waterproofing and Tile Shower Installation (121 to 150 SF)",
         description: "Installation of waterproofing and tiles in a shower area between 121 to 150 square feet. This service includes surface preparation, application of waterproofing membrane, and installation of tiles. Includes comprehensive labor, rough materials, equipment usage, and tiles (client’s choice of color, texture, brand). Ensures a durable and watertight shower finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.BATHROOM,
     },
     {
@@ -1745,7 +1592,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Bathroom Mirror Installation",
         description: "Installation of bathroom mirrors to enhance functionality and aesthetics. This service includes measuring, securing the mirror to the wall, and ensuring proper alignment. Includes comprehensive labor, rough materials, equipment usage, and mirror (client’s choice of size, style, brand). Ensures a secure and visually pleasing installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.BATHROOM,
     },
     {
@@ -1755,7 +1601,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Bathroom Accessories Installation",
         description: "Installation of bathroom accessories such as towel racks, soap dispensers, and shelves to enhance convenience and organization. This service includes measuring, securing accessories to the walls, and ensuring proper placement. Includes comprehensive labor, rough materials, equipment usage, and accessories (client’s choice of style, brand). Ensures a functional and organized bathroom space.",
-        price: 100,
         category: SERVICE_CATEGORIES.BATHROOM,
     },
     {
@@ -1765,7 +1610,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Countertop Tile Installation",
         description: "Installation of tiles on kitchen countertops to enhance durability and aesthetics. This service includes surface preparation, measuring and cutting tiles, and applying them with adhesive and grout. Includes comprehensive labor, rough materials, equipment usage, and tiles (client’s choice of color, texture, brand). Ensures a durable and visually appealing finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.KITCHEN,
     },
     {
@@ -1775,7 +1619,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Tile Backsplash Installation",
         description: "Installation of a tile backsplash to protect kitchen walls and add a decorative element. This service includes surface preparation, measuring and cutting tiles, and applying them with adhesive and grout. Includes comprehensive labor, rough materials, equipment usage, and tiles (client’s choice of color, texture, brand). Ensures a functional and attractive backsplash.",
-        price: 100,
         category: SERVICE_CATEGORIES.KITCHEN,
     },
     {
@@ -1785,7 +1628,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Natural Stone Countertop Installation",
         description: "Installation of natural stone countertops to enhance the functionality and beauty of kitchen surfaces. This service includes measuring, cutting, and securing the countertops in place, as well as connecting them to the necessary plumbing if applicable. Includes comprehensive labor, rough materials, equipment usage, and countertops (client’s choice of color, texture, brand). Ensures a precise and luxurious finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.KITCHEN,
     },
     {
@@ -1795,7 +1637,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Solid Surface Countertop Installation",
         description: "Installation of solid surface countertops to provide a seamless and modern look. This service includes measuring, cutting, and securing the countertops in place. Includes comprehensive labor, rough materials, equipment usage, and solid surface countertops (client’s choice of color, texture, brand). Ensures a smooth and high-quality finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.KITCHEN,
     },
     {
@@ -1805,7 +1646,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Floor Tile Installation",
         description: "Installation of floor tiles in the kitchen to enhance durability and aesthetics. This service includes surface preparation, measuring and cutting tiles, and applying them with adhesive and grout. Includes comprehensive labor, rough materials, equipment usage, and tiles (client’s choice of color, texture, brand). Ensures a durable and visually appealing finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.KITCHEN,
     },
     {
@@ -1815,7 +1655,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Tile Floor Regrouting",
         description: "Regrouting kitchen floor tiles to refresh their appearance and ensure secure adhesion. This service includes removing old grout, cleaning the tile surface, and applying new grout. Includes comprehensive labor, rough materials, and equipment usage. Ensures a clean and renewed look for tile floors.",
-        price: 100,
         category: SERVICE_CATEGORIES.KITCHEN,
     },
     {
@@ -1825,7 +1664,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Tile and Stone Repair",
         description: "Repair of damaged or broken tiles and stone surfaces to restore their appearance and integrity. This service includes removing damaged sections, surface preparation, and installing new tiles or stone. Includes comprehensive labor, rough materials, equipment usage, and tiles/stone (client’s choice of color, texture, brand). Ensures a seamless and durable repair.",
-        price: 100,
         category: SERVICE_CATEGORIES.KITCHEN,
     },
     {
@@ -1835,7 +1673,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Fireplace Hearth Tile Installation",
         description: "Installation of tiles on the fireplace hearth to enhance its appearance and protect the surface. This service includes surface preparation, measuring and cutting tiles, and applying them with adhesive and grout. Includes comprehensive labor, rough materials, equipment usage, and tiles (client’s choice of color, texture, and brand). Ensures a durable and visually appealing finish for the hearth.",
-        price: 100,
         category: SERVICE_CATEGORIES.FIREPLACE,
     },
     {
@@ -1845,7 +1682,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Masonry Fireplace & Chimney Removal",
         description: "Complete removal of a masonry fireplace and chimney to prepare for new installations or renovations. This service includes careful demolition, debris removal, and surface preparation. Includes comprehensive labor, rough materials, and equipment usage. Ensures the area is cleared and ready for new construction or renovation.",
-        price: 100,
         category: SERVICE_CATEGORIES.FIREPLACE,
     },
     {
@@ -1855,7 +1691,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Chimney Veneer Installation",
         description: "Installation of veneer on the chimney to improve its aesthetics and protection. This service includes surface preparation, measuring and cutting veneer panels, and securing them to the chimney. Includes comprehensive labor, rough materials, equipment usage, and veneer (client’s choice of material, color, and brand). Ensures a durable and attractive finish for the chimney.",
-        price: 100,
         category: SERVICE_CATEGORIES.FIREPLACE,
     },
     {
@@ -1865,7 +1700,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Chimney Veneer Removal",
         description: "Safe removal of existing veneer from the chimney to prepare for new installations or finishes. This service includes carefully lifting and disposing of old veneer, surface preparation, and clean-up. Includes comprehensive labor, rough materials, and equipment usage. Ensures the chimney is ready for new veneer or other treatments.",
-        price: 100,
         category: SERVICE_CATEGORIES.FIREPLACE,
     },
     {
@@ -1875,7 +1709,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Veneer and Chimney Cleaning",
         description: "Cleaning of veneer and chimney surfaces to remove dirt, soot, and other residues. This service includes surface cleaning, application of appropriate cleaning solutions, and ensuring thorough removal of all residues. Includes comprehensive labor, rough materials, and equipment usage. Ensures a clean and well-maintained appearance for the veneer and chimney.",
-        price: 100,
         category: SERVICE_CATEGORIES.FIREPLACE,
     },
     {
@@ -1885,7 +1718,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Leveling with Cement",
         description: "Leveling uneven subfloors with cement to create a smooth and stable surface for flooring installation. This service includes surface preparation, application of leveling cement, and ensuring a flat finish. Includes comprehensive labor, rough materials, and equipment usage. Ensures a level and durable subfloor ready for new flooring.",
-        price: 100,
         category: SERVICE_CATEGORIES.SUBFLOOR,
     },
     {
@@ -1895,7 +1727,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Mortar Bed Preparation for Tile Floors",
         description: "Preparation of a mortar bed for installing tile floors to provide a solid and level base. This service includes surface preparation, mixing and spreading mortar, and ensuring proper thickness and level. Includes comprehensive labor, rough materials, and equipment usage. Ensures a stable and even surface for tile installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.SUBFLOOR,
     },
     {
@@ -1905,7 +1736,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Mortar Bed Removal",
         description: "Safe and efficient removal of existing mortar beds to prepare for new flooring installations. This service includes carefully lifting and disposing of old mortar, surface preparation, and clean-up. Includes comprehensive labor, rough materials, and equipment usage. Ensures the subfloor is clean and ready for new installations.",
-        price: 100,
         category: SERVICE_CATEGORIES.SUBFLOOR,
     },
     {
@@ -1915,7 +1745,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Mortar Bed Preparation for Tile Walls",
         description: "Preparation of a mortar bed for installing tile walls to provide a solid and level base. This service includes surface preparation, mixing and applying mortar, and ensuring proper thickness and level. Includes comprehensive labor, rough materials, and equipment usage. Ensures a stable and even surface for tile installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.SUBFLOOR,
     },
     {
@@ -1925,7 +1754,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Uncoupling Mat for Tile Installation",
         description: "Installation of an uncoupling mat to prevent cracks in tile flooring by allowing for independent movement between the subfloor and tiles. This service includes surface preparation, cutting and laying the mat, and securing it in place. Includes comprehensive labor, rough materials, and equipment usage. Ensures a durable and crack-resistant tile installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.SUBFLOOR,
     },
     {
@@ -1935,7 +1763,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Cement Board Installation",
         description: "Installation of cement board to provide a stable and moisture-resistant base for tile installations. This service includes measuring, cutting, and securing cement boards to the subfloor or walls. Includes comprehensive labor, rough materials, and equipment usage. Ensures a solid and reliable foundation for tile installations.",
-        price: 100,
         category: SERVICE_CATEGORIES.SUBFLOOR,
     },
     {
@@ -1945,7 +1772,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Vanity Top Removal",
         description: "Safe removal of existing vanity tops to prepare for new installations. This service includes carefully detaching and disposing of old vanity tops, surface preparation, and clean-up. Includes comprehensive labor, rough materials, and equipment usage. Ensures the area is ready for new vanity top installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.VANITY_TOP,
     },
     {
@@ -1955,7 +1781,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Single Sink Installation",
         description: "Installation of a single sink in a vanity top to enhance bathroom functionality. This service includes measuring, cutting openings in the vanity top, securing the sink, and connecting plumbing. Includes comprehensive labor, rough materials, equipment usage, and sink (client’s choice of style and brand). Ensures a secure and functional sink installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.VANITY_TOP,
     },
     {
@@ -1965,7 +1790,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Double Sink Installation",
         description: "Installation of double sinks in a vanity top to improve bathroom functionality and convenience. This service includes measuring, cutting openings in the vanity top, securing the sinks, and connecting plumbing. Includes comprehensive labor, rough materials, equipment usage, and sinks (client’s choice of style and brand). Ensures a secure and functional double sink installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.VANITY_TOP,
     },
     {
@@ -1975,7 +1799,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Floor Heating Mat Installation",
         description: "Installation of floor heating mats to provide radiant heat and comfort underfoot. This service includes surface preparation, laying heating mats, connecting electrical components, and testing the system. Includes comprehensive labor, rough materials, equipment usage, and heating mats (client’s choice of brand). Ensures efficient and even underfloor heating.",
-        price: 100,
         category: SERVICE_CATEGORIES.UNDERFLOOR_HEATING,
     },
     {
@@ -1985,7 +1808,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Ditra-Heat Heating Cables Installation",
         description: "Installation of Ditra-Heat heating cables to provide customizable radiant floor heating. This service includes surface preparation, laying Ditra-Heat membrane, installing heating cables, connecting electrical components, and testing the system. Includes comprehensive labor, rough materials, equipment usage, and heating cables (client’s choice of brand). Ensures efficient and even underfloor heating.",
-        price: 100,
         category: SERVICE_CATEGORIES.UNDERFLOOR_HEATING,
     },
     {
@@ -1995,7 +1817,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Carpet Removal",
         description: "Safe removal of existing carpet to prepare for new flooring installations. This service includes carefully detaching and disposing of old carpet, surface preparation, and clean-up. Includes comprehensive labor, rough materials, and equipment usage. Ensures the area is ready for new flooring installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.CARPET,
     },
     {
@@ -2005,7 +1826,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Carpet Installation",
         description: "Installation of new carpet to enhance the comfort and aesthetics of a room. This service includes surface preparation, cutting and laying the carpet, and securing it in place. Includes comprehensive labor, rough materials, equipment usage, and carpet (client’s choice of color, texture, and brand). Ensures a professional and durable carpet installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.CARPET,
     },
     {
@@ -2015,7 +1835,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Carpet Tile Installation",
         description: "Installation of carpet tiles to provide a flexible and customizable flooring solution. This service includes surface preparation, cutting and laying carpet tiles, and securing them in place. Includes comprehensive labor, rough materials, equipment usage, and carpet tiles (client’s choice of color, texture, and brand). Ensures a precise and attractive carpet tile installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.CARPET,
     },
     {
@@ -2025,7 +1844,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Stairs Carpet Installation",
         description: "Installation of carpet on stairs to enhance safety and comfort. This service includes surface preparation, cutting and fitting the carpet to each step, and securing it in place. Includes comprehensive labor, rough materials, equipment usage, and carpet (client’s choice of color, texture, and brand). Ensures a secure and aesthetically pleasing stair carpet installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.CARPET,
     },
     {
@@ -2035,7 +1853,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Carpet Pad Removal",
         description: "Safe removal of existing carpet pad to prepare for new installations. This service includes carefully detaching and disposing of old carpet pad, surface preparation, and clean-up. Includes comprehensive labor, rough materials, and equipment usage. Ensures the area is ready for new carpet pad installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.CARPET_PAD,
     },
     {
@@ -2045,7 +1862,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Carpet Pad Installation",
         description: "Installation of a new carpet pad to enhance the comfort and durability of the carpet. This service includes surface preparation, cutting and laying the carpet pad, and securing it in place. Includes comprehensive labor, rough materials, equipment usage, and carpet pad (client’s choice of type and brand). Ensures a comfortable and long-lasting carpet pad installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.CARPET_PAD,
     },
     {
@@ -2055,7 +1871,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Vinyl Tile Removal",
         description: "Safe removal of existing vinyl tiles to prepare for new flooring installations. This service includes carefully detaching and disposing of old vinyl tiles, surface preparation, and clean-up. Includes comprehensive labor, rough materials, and equipment usage. Ensures the area is ready for new flooring installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.VINYL_TILE,
     },
     {
@@ -2065,7 +1880,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Vinyl Tile Installation",
         description: "Installation of new vinyl tiles to enhance the durability and aesthetics of a room. This service includes surface preparation, measuring and cutting the tiles, and applying them with adhesive. Includes comprehensive labor, rough materials, equipment usage, and vinyl tiles (client’s choice of color, texture, and brand). Ensures a professional and durable vinyl tile installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.VINYL_TILE,
     },
     {
@@ -2075,7 +1889,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Self-Adhesive Vinyl Tile Installation",
         description: "Installation of self-adhesive vinyl tiles for a quick and easy flooring solution. This service includes surface preparation, measuring and cutting tiles, and applying them with their adhesive backing. Includes comprehensive labor, rough materials, equipment usage, and self-adhesive vinyl tiles (client’s choice of color, texture, and brand). Ensures a precise and attractive self-adhesive vinyl tile installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.VINYL_TILE,
     },
     {
@@ -2085,7 +1898,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Vinyl Covering Removal",
         description: "Safe removal of existing vinyl covering to prepare for new installations. This service includes carefully detaching and disposing of old vinyl covering, surface preparation, and clean-up. Includes comprehensive labor, rough materials, and equipment usage. Ensures the area is ready for new flooring installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.VINYL_COVERING,
     },
     {
@@ -2095,7 +1907,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Vinyl Covering Installation",
         description: "Installation of vinyl covering to enhance the appearance and protection of floors. This service includes surface preparation, measuring and cutting vinyl covering, and securing it in place. Includes comprehensive labor, rough materials, equipment usage, and vinyl covering (client’s choice of color, texture, and brand). Ensures a durable and visually appealing finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.VINYL_COVERING,
     },
     {
@@ -2105,7 +1916,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Vinyl Plank Installation",
         description: "Installation of vinyl planks to provide a modern and durable flooring solution. This service includes surface preparation, measuring and cutting planks, and securing them in place. Includes comprehensive labor, rough materials, equipment usage, and vinyl planks (client’s choice of color, texture, and brand). Ensures a precise and attractive vinyl plank installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.VINYL_COVERING,
     },
     {
@@ -2115,7 +1925,6 @@ export const ALL_SERVICES = [
         max_quantity: 400,
         title: "Vinyl Stair Tread Installation",
         description: "Installation of vinyl stair treads to enhance safety and aesthetics of stairs. This service includes surface preparation, measuring and cutting stair treads, and securing them in place. Includes comprehensive labor, rough materials, equipment usage, and vinyl stair treads (client’s choice of color, texture, and brand). Ensures a secure and visually pleasing stair tread installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.VINYL_COVERING,
     },
     {
@@ -2125,7 +1934,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Laminate Flooring Removal",
         description: "Safe removal of existing laminate flooring to prepare for new installations. This service includes carefully detaching and disposing of old laminate flooring, surface preparation, and clean-up. Includes comprehensive labor, rough materials, and equipment usage. Ensures the area is ready for new flooring installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.LAMINATE,
     },
     {
@@ -2135,7 +1943,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Laminate Flooring Installation",
         description: "Installation of new laminate flooring to enhance the durability and aesthetics of a room. This service includes surface preparation, measuring and cutting laminate planks, and securing them in place. Includes comprehensive labor, rough materials, equipment usage, and laminate flooring (client’s choice of color, texture, and brand). Ensures a professional and durable laminate flooring installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.LAMINATE,
     },
     {
@@ -2145,7 +1952,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Bamboo Flooring Removal",
         description: "Safe removal of existing bamboo flooring to prepare for new installations. This service includes carefully detaching and disposing of old bamboo flooring, surface preparation, and clean-up. Includes comprehensive labor, rough materials, and equipment usage. Ensures the area is ready for new flooring installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.BAMBOO_FLOORING,
     },
     {
@@ -2155,7 +1961,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Bamboo Flooring Installation",
         description: "Installation of new bamboo flooring to enhance the aesthetics and sustainability of a room. This service includes surface preparation, measuring and cutting bamboo planks, and securing them in place. Includes comprehensive labor, rough materials, equipment usage, and bamboo flooring (client’s choice of color, texture, and brand). Ensures a precise and attractive bamboo flooring installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.BAMBOO_FLOORING,
     },
     {
@@ -2165,7 +1970,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Sanding, Staining, and Finishing",
         description: "Sanding, staining, and finishing of wood floors to restore their natural beauty and durability. This service includes surface preparation, sanding to remove old finish, applying stain, and finishing with protective coats. Includes comprehensive labor, rough materials, equipment usage, and stain/finish (client’s choice of color and brand). Ensures a smooth, rich, and long-lasting finish for wood floors.",
-        price: 100,
         category: SERVICE_CATEGORIES.WOOD_FLOOR,
     },
     {
@@ -2175,7 +1979,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Parquet Flooring Removal",
         description: "Safe removal of existing parquet flooring to prepare for new installations. This service includes carefully detaching and disposing of old parquet flooring, surface preparation, and clean-up. Includes comprehensive labor, rough materials, and equipment usage. Ensures the area is ready for new flooring installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.WOOD_FLOOR,
     },
     {
@@ -2185,7 +1988,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Pre-Finished Solid Wood Flooring Removal",
         description: "Safe removal of existing pre-finished solid wood flooring to prepare for new installations. This service includes carefully detaching and disposing of old flooring, surface preparation, and clean-up. Includes comprehensive labor, rough materials, and equipment usage. Ensures the area is ready for new flooring installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.SOLID_WOOD,
     },
     {
@@ -2195,7 +1997,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Pre-Finished Solid Wood Installation",
         description: "Installation of pre-finished solid wood flooring to enhance the beauty and durability of a room. This service includes surface preparation, measuring and cutting wood planks, and securing them in place. Includes comprehensive labor, rough materials, equipment usage, and pre-finished wood (client’s choice of color, texture, and brand). Ensures a professional and long-lasting wood flooring installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.SOLID_WOOD,
     },
     {
@@ -2205,7 +2006,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Pre-Finished Solid Wood Floor Repair",
         description: "Repair of damaged or worn pre-finished solid wood floors to restore their appearance and functionality. This service includes removing damaged sections, surface preparation, and installing new wood planks. Includes comprehensive labor, rough materials, equipment usage, and wood planks (client’s choice of color, texture, and brand). Ensures a seamless and durable repair.",
-        price: 100,
         category: SERVICE_CATEGORIES.SOLID_WOOD,
     },
     {
@@ -2215,7 +2015,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Engineered Wood Removal",
         description: "Safe removal of existing engineered wood flooring to prepare for new installations. This service includes carefully detaching and disposing of old flooring, surface preparation, and clean-up. Includes comprehensive labor, rough materials, and equipment usage. Ensures the area is ready for new flooring installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.ENGINEERED_WOOD,
     },
     {
@@ -2225,7 +2024,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Engineered Wood Floating Floor Installation",
         description: "Installation of engineered wood as a floating floor to enhance the aesthetics and stability of a room. This service includes surface preparation, measuring and cutting wood planks, and securing them in place without adhesives. Includes comprehensive labor, rough materials, equipment usage, and engineered wood (client’s choice of color, texture, and brand). Ensures a professional and durable floating floor installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.ENGINEERED_WOOD,
     },
     {
@@ -2235,7 +2033,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Engineered Wood Glue-Down Floor Installation",
         description: "Installation of engineered wood flooring using the glue-down method for a secure and stable finish. This service includes surface preparation, measuring and cutting wood planks, and applying adhesive to secure the planks. Includes comprehensive labor, rough materials, equipment usage, and engineered wood (client’s choice of color, texture, and brand). Ensures a professional and long-lasting glue-down floor installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.ENGINEERED_WOOD,
     },
     {
@@ -2245,7 +2042,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Plywood Underlayment Removal",
         description: "Safe removal of existing plywood underlayment to prepare for new flooring installations. This service includes carefully detaching and disposing of old underlayment, surface preparation, and clean-up. Includes comprehensive labor, rough materials, and equipment usage. Ensures the area is ready for new underlayment or flooring installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.UNDERLAYMENT,
     },
     {
@@ -2255,7 +2051,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Plywood Underlayment Installation",
         description: "Installation of plywood underlayment to provide a stable and smooth base for flooring. This service includes surface preparation, measuring and cutting plywood sheets, and securing them in place. Includes comprehensive labor, rough materials, equipment usage, and plywood (client’s choice of thickness and grade). Ensures a solid and even base for flooring installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.UNDERLAYMENT,
     },
     {
@@ -2265,7 +2060,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Baseboard Removal",
         description: "Safe removal of existing baseboards to prepare for new installations or renovations. This service includes carefully detaching and disposing of old baseboards, surface preparation, and clean-up. Includes comprehensive labor, rough materials, and equipment usage. Ensures the area is ready for new baseboard installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.BASEBOARD,
     },
     {
@@ -2275,7 +2069,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Baseboard Installation",
         description: "Installation of new baseboards to enhance the aesthetics and protection of walls. This service includes measuring, cutting, and securing the baseboards in place. Includes comprehensive labor, rough materials, equipment usage, and baseboards (client’s choice of style, material, and finish). Ensures a professional and visually appealing baseboard installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.BASEBOARD,
     },
     {
@@ -2285,7 +2078,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Full Height Cabinet Detachment and Resetting",
         description: "Safe detachment and resetting of full-height cabinets to allow for adjustments or renovations. This service includes carefully detaching the cabinets, making necessary adjustments, and securely resetting them in place. Includes comprehensive labor, rough materials, and equipment usage. Ensures cabinets are properly aligned and secure.",
-        price: 100,
         category: SERVICE_CATEGORIES.CABINET,
     },
     {
@@ -2295,7 +2087,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Full-Height Cabinet Removal",
         description: "Complete removal of full-height cabinets to prepare for new installations or renovations. This service includes carefully detaching and disposing of old cabinets, surface preparation, and clean-up. Includes comprehensive labor, rough materials, and equipment usage. Ensures the area is ready for new cabinet installations or other projects.",
-        price: 100,
         category: SERVICE_CATEGORIES.CABINET,
     },
     {
@@ -2305,7 +2096,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Upper (Wall) or Lower (Base) Cabinet Installation",
         description: "Installation of upper (wall) or lower (base) cabinets to enhance storage and functionality. This service includes measuring, leveling, and securely mounting the cabinets in place. Includes comprehensive labor, rough materials, equipment usage, and cabinets (client’s choice of style, material, and finish). Ensures a professional and functional cabinet installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.CABINET,
     },
     {
@@ -2315,7 +2105,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Cabinet Drawer Front Installation",
         description: "Installation of new drawer fronts on existing cabinets to update their appearance. This service includes measuring, aligning, and securely attaching the new drawer fronts. Includes comprehensive labor, rough materials, equipment usage, and drawer fronts (client’s choice of style, material, and finish). Ensures a fresh and cohesive look for cabinets.",
-        price: 100,
         category: SERVICE_CATEGORIES.CABINET,
     },
     {
@@ -2325,7 +2114,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Cabinetry Restoration and Repair",
         description: "Restoration and repair of existing cabinetry to improve its appearance and functionality. This service includes repairing damaged areas, refinishing surfaces, and making adjustments as needed. Includes comprehensive labor, rough materials, equipment usage, and materials (client’s choice of finish and repair materials). Ensures cabinets are restored to their optimal condition.",
-        price: 100,
         category: SERVICE_CATEGORIES.CABINET,
     },
     {
@@ -2335,7 +2123,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Baseboard Installation",
         description: "Installation of new baseboards to enhance the aesthetics and protection of walls. This service includes measuring, cutting, and securing the baseboards in place. Includes comprehensive labor, rough materials, equipment usage, and baseboards (client’s choice of style, material, and finish). Ensures a professional and visually appealing baseboard installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.TRIM_AND_MOLDING,
     },
     {
@@ -2345,7 +2132,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Casing Installation",
         description: "Installation of casings around doors and windows to provide a finished look and protection. This service includes measuring, cutting, and securing the casings in place. Includes comprehensive labor, rough materials, equipment usage, and casings (client’s choice of style, material, and finish). Ensures a polished and cohesive appearance.",
-        price: 100,
         category: SERVICE_CATEGORIES.TRIM_AND_MOLDING,
     },
     {
@@ -2355,7 +2141,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Brick Mold Installation",
         description: "Installation of brick mold around exterior doors and windows to enhance aesthetics and provide weather protection. This service includes measuring, cutting, and securing the brick mold in place. Includes comprehensive labor, rough materials, equipment usage, and brick mold (client’s choice of material and finish). Ensures a durable and attractive installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.TRIM_AND_MOLDING,
     },
     {
@@ -2365,7 +2150,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Crown Molding Installation",
         description: "Installation of crown molding at the junction of walls and ceilings to enhance room aesthetics. This service includes measuring, cutting, and securing the crown molding in place. Includes comprehensive labor, rough materials, equipment usage, and crown molding (client’s choice of style, material, and finish). Ensures an elegant and seamless installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.TRIM_AND_MOLDING,
     },
     {
@@ -2375,7 +2159,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "6-Inch Load-Bearing Wall Installation",
         description: "Construction of a 6-inch load-bearing wall to provide structural support. This service includes measuring, cutting, and securing framing materials, and ensuring compliance with building codes. Includes comprehensive labor, rough materials, and equipment usage. Ensures a strong and compliant load-bearing wall.",
-        price: 100,
         category: SERVICE_CATEGORIES.FRAMING,
     },
     {
@@ -2385,7 +2168,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "4-Inch Non-Bearing Wall Installation",
         description: "Construction of a 4-inch non-bearing wall to divide spaces without carrying structural loads. This service includes measuring, cutting, and securing framing materials. Includes comprehensive labor, rough materials, and equipment usage. Ensures a functional and properly constructed non-bearing wall.",
-        price: 100,
         category: SERVICE_CATEGORIES.FRAMING,
     },
     {
@@ -2395,7 +2177,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Curved Wall (Radius) Installation",
         description: "Construction of a curved (radius) wall to add architectural interest and functionality. This service includes measuring, cutting, and securing framing materials to achieve the desired curve. Includes comprehensive labor, rough materials, and equipment usage. Ensures a precise and visually appealing curved wall.",
-        price: 100,
         category: SERVICE_CATEGORIES.FRAMING,
     },
     {
@@ -2405,7 +2186,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Ceiling Structure Installation",
         description: "Construction of ceiling structures to provide support and define spaces. This service includes measuring, cutting, and securing framing materials, and ensuring compliance with building codes. Includes comprehensive labor, rough materials, and equipment usage. Ensures a sturdy and properly framed ceiling structure.",
-        price: 100,
         category: SERVICE_CATEGORIES.FRAMING,
     },
     {
@@ -2415,7 +2195,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Rafter Structure Installation",
         description: "Installation of rafter structures to provide roof support and shape. This service includes measuring, cutting, and securing rafter materials and ensuring compliance with building codes. Includes comprehensive labor, rough materials, and equipment usage. Ensures a strong and properly constructed rafter structure.",
-        price: 100,
         category: SERVICE_CATEGORIES.FRAMING,
     },
     {
@@ -2425,7 +2204,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Framing Removal from Structure",
         description: "Safe removal of existing framing elements to prepare for renovations or new installations. This service includes carefully detaching and disposing of framing materials, surface preparation, and clean-up. Includes comprehensive labor, rough materials, and equipment usage. Ensures the area is ready for new construction or renovations.",
-        price: 100,
         category: SERVICE_CATEGORIES.FRAMING,
     },
     {
@@ -2435,7 +2213,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Column Installation",
         description: "Installation of columns to provide structural support. This service includes measuring, cutting, and securing the columns in place, and ensuring compliance with building codes. Includes comprehensive labor, rough materials, equipment usage, and columns (client’s choice of material and finish). Ensures a stable and compliant column installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.BEAM_AND_COLUMN,
     },
     {
@@ -2445,7 +2222,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Engineered Strand Lumber Installation",
         description: "Installation of engineered strand lumber for structural applications. This service includes measuring, cutting, and securing the lumber, and ensuring compliance with building codes. Includes comprehensive labor, rough materials, equipment usage, and engineered strand lumber (client’s choice of specifications). Ensures a strong and compliant structural installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.BEAM_AND_COLUMN,
     },
     {
@@ -2455,7 +2231,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Beam Installation",
         description: "Installation of beams to provide structural support for various applications. This service includes measuring, cutting, and securing the beams in place, and ensuring compliance with building codes. Includes comprehensive labor, rough materials, equipment usage, and beams (client’s choice of material and specifications). Ensures a stable and compliant beam installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.BEAM_AND_COLUMN,
     },
     {
@@ -2465,7 +2240,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Building Foundation Excavation",
         description: "Excavation for building foundations to prepare for construction. This service includes site preparation, digging, and removal of soil and debris. Includes comprehensive labor, rough materials, and equipment usage. Ensures the site is ready for foundation installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.FOUNDATION,
     },
     {
@@ -2475,7 +2249,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Foundation Backfill",
         description: "Backfilling around foundations to provide stability and support. This service includes placing and compacting fill material around the foundation. Includes comprehensive labor, rough materials, and equipment usage. Ensures proper support and stability for the foundation.",
-        price: 100,
         category: SERVICE_CATEGORIES.FOUNDATION,
     },
     {
@@ -2485,7 +2258,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Concrete Wall Installation",
         description: "Installation of concrete walls for structural and architectural applications. This service includes forming, pouring, and finishing concrete walls. Includes comprehensive labor, rough materials, equipment usage, and concrete (client’s choice of specifications). Ensures durable and structurally sound concrete walls.",
-        price: 100,
         category: SERVICE_CATEGORIES.FOUNDATION,
     },
     {
@@ -2495,7 +2267,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Concrete Column Installation",
         description: "Installation of concrete columns to provide structural support. This service includes forming, pouring, and finishing concrete columns. Includes comprehensive labor, rough materials, equipment usage, and concrete (client’s choice of specifications). Ensures durable and structurally sound concrete columns.",
-        price: 100,
         category: SERVICE_CATEGORIES.FOUNDATION,
     },
     {
@@ -2505,7 +2276,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "12-Inch Concrete Pile Installation",
         description: "Installation of 12-inch concrete piles for deep foundation support. This service includes drilling, placing reinforcement, pouring concrete, and ensuring compliance with building codes. Includes comprehensive labor, rough materials, equipment usage, and concrete (client’s choice of specifications). Ensures strong and stable deep foundation support.",
-        price: 100,
         category: SERVICE_CATEGORIES.FOUNDATION,
     },
     {
@@ -2515,7 +2285,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Concrete Patching (up to 14 sq. ft.)",
         description: "Patching of small areas of concrete to repair damage and restore integrity. This service includes surface preparation, application of patching material, and finishing. Includes comprehensive labor, rough materials, finishing materials, and equipment usage. Ensures a durable and seamless repair.",
-        price: 100,
         category: SERVICE_CATEGORIES.FOUNDATION,
     },
     {
@@ -2525,7 +2294,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Concrete Step Installation",
         description: "Installation of concrete steps to provide safe and durable access. This service includes forming, pouring, and finishing concrete steps. Includes comprehensive labor, rough materials, equipment usage, and concrete (client’s choice of specifications). Ensures stable and visually appealing concrete steps.",
-        price: 100,
         category: SERVICE_CATEGORIES.FOUNDATION,
     },
     {
@@ -2535,7 +2303,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "6-Inch Suspended Concrete Slab Installation",
         description: "Installation of 6-inch suspended concrete slabs for structural floors or roofs. This service includes forming, placing reinforcement, pouring, and finishing concrete slabs. Includes comprehensive labor, rough materials, equipment usage, and concrete (client’s choice of specifications). Ensures a strong and durable suspended slab.",
-        price: 100,
         category: SERVICE_CATEGORIES.FOUNDATION,
     },
     {
@@ -2545,7 +2312,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Helical Post Installation",
         description: "Installation of helical posts for foundation support and stabilization. This service includes site preparation, drilling, and securing helical posts in place. Includes comprehensive labor, rough materials, equipment usage, and helical posts (client’s choice of specifications). Ensures a stable and reliable foundation support.",
-        price: 100,
         category: SERVICE_CATEGORIES.FOUNDATION,
     },
     {
@@ -2555,7 +2321,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Interior Door Removal",
         description: "Safe removal of existing interior doors to prepare for new installations or renovations. This service includes carefully detaching and disposing of old doors, surface preparation, and clean-up. Includes comprehensive labor, rough materials, and equipment usage. Ensures the area is ready for new door installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.DOORS,
     },
     {
@@ -2565,7 +2330,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Interior Door Installation",
         description: "Installation of new interior doors to enhance the aesthetics and functionality of indoor spaces. This service includes measuring, cutting, and securing the door in place. Includes comprehensive labor, rough materials, equipment usage, and door (client’s choice of style, material, and finish). Ensures a professional and seamless door installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.DOORS,
     },
     {
@@ -2575,7 +2339,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Exterior Door Installation",
         description: "Installation of new exterior doors to improve security, energy efficiency, and curb appeal. This service includes measuring, cutting, and securing the door in place, along with weatherproofing. Includes comprehensive labor, rough materials, equipment usage, and door (client’s choice of style, material, and finish). Ensures a secure and energy-efficient door installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.DOORS,
     },
     {
@@ -2585,7 +2348,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Patio Door Installation",
         description: "Installation of patio doors to enhance access and views to outdoor spaces. This service includes measuring, cutting, and securing the door in place, along with weatherproofing. Includes comprehensive labor, rough materials, equipment usage, and patio door (client’s choice of style, material, and finish). Ensures a smooth and secure patio door installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.DOORS,
     },
     {
@@ -2595,7 +2357,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Barn Door Installation",
         description: "Installation of barn doors to add a rustic and functional element to indoor or outdoor spaces. This service includes measuring, cutting, and securing the door and track in place. Includes comprehensive labor, rough materials, equipment usage, and barn door (client’s choice of style, material, and finish). Ensures a smooth and visually appealing barn door installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.DOORS,
     },
     {
@@ -2605,7 +2366,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Pocket Door Installation",
         description: "Installation of pocket doors to save space and enhance the functionality of rooms. This service includes measuring, cutting, and securing the door and track in place. Includes comprehensive labor, rough materials, equipment usage, and pocket door (client’s choice of style, material, and finish). Ensures a seamless and space-saving door installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.DOORS,
     },
     {
@@ -2615,7 +2375,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Sliding Closet Door Installation",
         description: "Installation of sliding closet doors to improve accessibility and aesthetics. This service includes measuring, cutting, and securing the doors and tracks in place. Includes comprehensive labor, rough materials, equipment usage, and sliding closet doors (client’s choice of style, material, and finish). Ensures a smooth and functional closet door installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.DOORS,
     },
     {
@@ -2625,7 +2384,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "8-9 Foot Garage Door Installation",
         description: "Installation of 8-9 foot garage doors to enhance security and accessibility for smaller garages. This service includes measuring, cutting, and securing the door in place, along with weatherproofing and balancing. Includes comprehensive labor, rough materials, equipment usage, and garage door (client’s choice of style, material, and finish). Ensures a secure and functional garage door installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.DOORS,
     },
     {
@@ -2635,7 +2393,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "16 Foot Garage Door Installation",
         description: "Installation of 16-foot garage doors to enhance security and accessibility for larger garages. This service includes measuring, cutting, and securing the door in place, along with weatherproofing and balancing. Includes comprehensive labor, rough materials, equipment usage, and garage door (client’s choice of style, material, and finish). Ensures a secure and functional garage door installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.DOORS,
     },
     {
@@ -2645,7 +2402,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Garage Door Repair",
         description: "Repair of garage doors to restore their functionality and security. This service includes diagnosing issues, replacing damaged parts, and adjusting mechanisms. Includes comprehensive labor, rough materials, and equipment usage. Ensures a fully operational and secure garage door.",
-        price: 100,
         category: SERVICE_CATEGORIES.DOORS,
     },
     {
@@ -2655,7 +2411,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Cat Door Installation",
         description: "Installation of cat doors to provide easy access for pets. This service includes measuring, cutting, and securing the cat door in place. Includes comprehensive labor, rough materials, equipment usage, and cat door (client’s choice of style and size). Ensures a safe and convenient entry for cats.",
-        price: 100,
         category: SERVICE_CATEGORIES.DOORS,
     },
     {
@@ -2665,7 +2420,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Dog Door Installation",
         description: "Installation of dog doors to provide easy access for pets. This service includes measuring, cutting, and securing the dog door in place. Includes comprehensive labor, rough materials, equipment usage, and dog door (client’s choice of style and size). Ensures a safe and convenient entry for dogs.",
-        price: 100,
         category: SERVICE_CATEGORIES.DOORS,
     },
     {
@@ -2675,7 +2429,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Pet and Dog Patio Door Installation",
         description: "Installation of patio doors with built-in pet doors to provide easy access for pets while maintaining security and energy efficiency. This service includes measuring, cutting, and securing the door in place, along with weatherproofing. Includes comprehensive labor, rough materials, equipment usage, and pet-friendly patio door (client’s choice of style and size). Ensures a functional and pet-friendly patio door installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.DOORS,
     },
     {
@@ -2685,7 +2438,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Window Reglazing (up to 24x36 inches)",
         description: "Reglazing of windows up to 24x36 inches to restore clarity and energy efficiency. This service includes removing old glazing, cleaning the window frame, and applying new glazing compound. Includes comprehensive labor, rough materials, and equipment usage. Ensures a durable and aesthetically pleasing window reglazing.",
-        price: 100,
         category: SERVICE_CATEGORIES.WINDOWS,
     },
     {
@@ -2695,7 +2447,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Aluminum Window Installation (up to 40 square feet)",
         description: "Installation of aluminum windows up to 40 square feet to enhance durability and energy efficiency. This service includes measuring, cutting, and securing the window in place, along with weatherproofing. Includes comprehensive labor, rough materials, equipment usage, and aluminum windows (client’s choice of style and specifications). Ensures a professional and energy-efficient window installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.WINDOWS,
     },
     {
@@ -2705,7 +2456,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Vinyl Window Installation (up to 40 square feet)",
         description: "Installation of vinyl windows up to 40 square feet to improve energy efficiency and aesthetics. This service includes measuring, cutting, and securing the window in place, along with weatherproofing. Includes comprehensive labor, rough materials, equipment usage, and vinyl windows (client’s choice of style and specifications). Ensures a secure and energy-efficient window installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.WINDOWS,
     },
     {
@@ -2715,7 +2465,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Wood Window Installation (up to 40 square feet)",
         description: "Installation of wood windows up to 40 square feet to enhance traditional aesthetics and insulation. This service includes measuring, cutting, and securing the window in place, along with weatherproofing. Includes comprehensive labor, rough materials, equipment usage, and wood windows (client’s choice of style and specifications). Ensures a durable and visually appealing window installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.WINDOWS,
     },
     {
@@ -2725,7 +2474,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Glass Block Window Installation",
         description: "Installation of glass block windows to provide privacy and natural light. This service includes measuring, cutting, and securing the glass blocks in place with mortar. Includes comprehensive labor, rough materials, equipment usage, and glass blocks (client’s choice of size and design). Ensures a sturdy and attractive glass block window installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.WINDOWS,
     },
     {
@@ -2735,7 +2483,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Window Removal",
         description: "Safe removal of existing windows to prepare for new installations or renovations. This service includes carefully detaching and disposing of old windows, surface preparation, and clean-up. Includes comprehensive labor, rough materials, and equipment usage. Ensures the area is ready for new window installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.WINDOWS,
     },
     {
@@ -2745,7 +2492,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Skylight Installation",
         description: "Installation of skylights to bring natural light into interior spaces. This service includes measuring, cutting roof openings, securing the skylight in place, and weatherproofing. Includes comprehensive labor, rough materials, equipment usage, and skylights (client’s choice of style and specifications). Ensures a secure and leak-proof skylight installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.WINDOWS,
     },
     {
@@ -2755,7 +2501,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Raised Panel Shutters Installation",
         description: "Installation of raised panel shutters to enhance window aesthetics and protection. This service includes measuring, cutting, and securing the shutters in place. Includes comprehensive labor, rough materials, equipment usage, and shutters (client’s choice of style, material, and finish). Ensures a stylish and functional shutter installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.WINDOWS,
     },
     {
@@ -2765,7 +2510,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Unfinished Stringers, Treads & Risers Installation",
         description: "Installation of unfinished stringers, treads, and risers for new staircases. This service includes measuring, cutting, and securing the components in place, ready for finishing. Includes comprehensive labor, rough materials, equipment usage, and unfinished stair components. Ensures a solid foundation for custom stair finishing.",
-        price: 100,
         category: SERVICE_CATEGORIES.STAIRS,
     },
     {
@@ -2775,7 +2519,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Prefinished Treads & Steel Stringers Installation",
         description: "Installation of prefinished treads and steel stringers for a modern and durable staircase. This service includes measuring, cutting, and securing the treads and stringers in place. Includes comprehensive labor, rough materials, equipment usage, and prefinished treads and steel stringers (client’s choice of specifications). Ensures a professional and stylish staircase installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.STAIRS,
     },
     {
@@ -2785,7 +2528,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Staircase Removal",
         description: "Safe removal of existing staircases to prepare for new installations or renovations. This service includes carefully detaching and disposing of old staircase components, surface preparation, and clean-up. Includes comprehensive labor, rough materials, and equipment usage. Ensures the area is ready for new staircase installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.STAIRS,
     },
     {
@@ -2795,7 +2537,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Stair Treads and Risers Replacement",
         description: "Replacement of stair treads and risers to restore or update a staircase. This service includes removing old components, measuring, cutting, and securing new treads and risers. Includes comprehensive labor, rough materials, equipment usage, and stair components (client's choice of style and finish). Ensures a refreshed and durable staircase.",
-        price: 100,
         category: SERVICE_CATEGORIES.STAIRS,
     },
     {
@@ -2805,7 +2546,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Spiral Staircase Installation",
         description: "Installation of spiral staircases to save space and add architectural interest. This service includes measuring, cutting, and securing the spiral staircase components. Includes comprehensive labor, rough materials, equipment usage, and spiral staircase kit (client's choice of style and finish). Ensures a functional and visually appealing spiral staircase installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.STAIRS,
     },
     {
@@ -2815,7 +2555,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Handrail Installation",
         description: "Installation of handrails to enhance safety and accessibility on staircases. This service includes measuring, cutting, and securing the handrails in place. Includes comprehensive labor, rough materials, equipment usage, and handrails (client’s choice of style, material, and finish). Ensures a secure and aesthetically pleasing handrail installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.STAIRS,
     },
     {
@@ -2825,7 +2564,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Overlapping Wainscot Installation",
         description: "Installation of overlapping wainscot panels to add a classic and protective element to walls. This service includes measuring, cutting, and securing the wainscot panels in place. Includes comprehensive labor, rough materials, equipment usage, and wainscot panels (client’s choice of style, material, and finish). Ensures a durable and aesthetically pleasing wainscot installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.WOOD_PANELING,
     },
     {
@@ -2835,7 +2573,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Beadboard Panel Installation",
         description: "Installation of beadboard panels to enhance wall aesthetics with a traditional touch. This service includes measuring, cutting, and securing the beadboard panels in place. Includes comprehensive labor, rough materials, equipment usage, and beadboard panels (client’s choice of style, material, and finish). Ensures a professional and visually appealing beadboard installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.WOOD_PANELING,
     },
     {
@@ -2845,7 +2582,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Shiplap Board Installation",
         description: "Installation of shiplap boards to create a rustic and textured wall finish. This service includes measuring, cutting, and securing the shiplap boards in place. Includes comprehensive labor, rough materials, equipment usage, and shiplap boards (client’s choice of style, material, and finish). Ensures a seamless and attractive shiplap installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.WOOD_PANELING,
     },
     {
@@ -2855,7 +2591,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Decorative Panels Installation",
         description: "Installation of decorative panels to enhance wall aesthetics with unique designs. This service includes measuring, cutting, and securing the decorative panels in place. Includes comprehensive labor, rough materials, equipment usage, and decorative panels (client’s choice of style, material, and finish). Ensures a customized and visually striking panel installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.WOOD_PANELING,
     },
     {
@@ -2865,7 +2600,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Wood Panel Removal",
         description: "Safe removal of existing wood panels to prepare for new installations or renovations. This service includes carefully detaching and disposing of old panels, surface preparation, and clean-up. Includes comprehensive labor, rough materials, and equipment usage. Ensures the area is ready for new paneling or other wall treatments.",
-        price: 100,
         category: SERVICE_CATEGORIES.WOOD_PANELING,
     },
     {
@@ -2875,7 +2609,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Butcher Block Countertop Installation",
         description: "Installation of butcher block countertops to enhance kitchen aesthetics and functionality. This service includes measuring, cutting, and securely fastening the countertop. Includes comprehensive labor, rough materials, equipment usage, and butcher block countertop (client’s choice of wood type and finish). Ensures a durable and visually appealing butcher block countertop.",
-        price: 100,
         category: SERVICE_CATEGORIES.COUNTERTOP,
     },
     {
@@ -2885,7 +2618,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Butcher Block Countertop Restoration",
         description: "Restoration of butcher block countertops to renew their appearance and functionality. This service includes sanding, refinishing, and applying protective coatings. Includes comprehensive labor, rough materials, equipment usage, and finishing products (client's choice of finish). Ensures a refreshed and protected butcher block countertop.",
-        price: 100,
         category: SERVICE_CATEGORIES.COUNTERTOP,
     },
     {
@@ -2895,7 +2627,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Natural Stone Countertop Restoration",
         description: "Restoration of natural stone countertops to bring back their original beauty and strength. This service includes cleaning, polishing, and sealing the stone surface. Includes comprehensive labor, rough materials, equipment usage, and sealing products (client's choice of sealant). Ensures a renewed and well-protected natural stone countertop.",
-        price: 100,
         category: SERVICE_CATEGORIES.COUNTERTOP,
     },
     {
@@ -2905,7 +2636,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Laminate Countertop Installation",
         description: "Installation of laminate countertops to provide an affordable and versatile kitchen surface. This service includes measuring, cutting, and securely fastening the countertop. Includes comprehensive labor, rough materials, equipment usage, and laminate countertop (client's choice of style and color). Ensures a functional and stylish laminate countertop installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.COUNTERTOP,
     },
     {
@@ -2915,7 +2645,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Countertop Subdeck Installation",
         description: "Installation of a subdeck to provide a solid foundation for countertops. This service includes measuring, cutting, and securing the subdeck materials. Includes comprehensive labor, rough materials, and equipment usage. Ensures a sturdy and level base for countertop installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.COUNTERTOP,
     },
     {
@@ -2925,7 +2654,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Countertop Removal",
         description: "Safe removal of existing countertops to prepare for new installations. This service includes carefully detaching and disposing of old countertops, surface preparation, and clean-up. Includes comprehensive labor, rough materials, and equipment usage. Ensures the area is ready for new countertop installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.COUNTERTOP,
     },
     {
@@ -2935,7 +2663,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Furnace Removal",
         description: "Safe removal of an existing furnace to prepare for new installations or system upgrades. This service includes disconnecting the furnace, removing it from the premises, and proper disposal. Includes comprehensive labor, rough materials, and equipment usage. Ensures a clean and safe removal process, ready for new installations.",
-        price: 100,
         category: SERVICE_CATEGORIES.FURNACE,
     },
     {
@@ -2945,7 +2672,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Furnace Installation",
         description: "Installation of a new furnace to enhance home heating efficiency and comfort. This service includes placing the furnace, connecting to ductwork, and setting up the electrical and gas lines. Includes comprehensive labor, rough materials, equipment usage, and furnace (client’s choice of model and specifications). Ensures a professional and efficient furnace installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.FURNACE,
     },
     {
@@ -2955,7 +2681,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Furnace Servicing and Filter Replacement",
         description: "Comprehensive cleaning, servicing, and filter replacement to maintain furnace efficiency and extend its lifespan. This service includes cleaning internal components, checking system performance, and replacing filters. Includes comprehensive labor, rough materials, equipment usage, and filters (client’s choice of type). Ensures a well-maintained and efficient furnace system.",
-        price: 100,
         category: SERVICE_CATEGORIES.FURNACE,
     },
     {
@@ -2965,7 +2690,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Furnace Ignitor Replacement",
         description: "Replacement of the furnace ignitor to restore proper ignition and heating functionality. This service includes diagnosing the issue, removing the old ignitor, and installing a new one. Includes comprehensive labor, rough materials, equipment usage, and ignitor (client’s choice of specifications). Ensures reliable furnace ignition and operation.",
-        price: 100,
         category: SERVICE_CATEGORIES.FURNACE,
     },
     {
@@ -2975,7 +2699,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Heat Exchanger Replacement",
         description: "Replacement of the heat exchanger to ensure safe and efficient heat transfer within the furnace. This service includes diagnosing the issue, removing the old heat exchanger, and installing a new one. Includes comprehensive labor, rough materials, equipment usage, and heat exchanger (client’s choice of specifications). Ensures safe and efficient furnace operation.",
-        price: 100,
         category: SERVICE_CATEGORIES.FURNACE,
     },
     {
@@ -2985,7 +2708,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Burner Replacement",
         description: "Replacement of the furnace burner to restore efficient fuel combustion and heating. This service includes diagnosing the issue, removing the old burner, and installing a new one. Includes comprehensive labor, rough materials, equipment usage, and burner (client’s choice of specifications). Ensures efficient and effective furnace heating.",
-        price: 100,
         category: SERVICE_CATEGORIES.FURNACE,
     },
     {
@@ -2995,7 +2717,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Control Board Replacement",
         description: "Replacement of the furnace control board to restore proper system control and operation. This service includes diagnosing the issue, removing the old control board, and installing a new one. Includes comprehensive labor, rough materials, equipment usage, and control board (client’s choice of specifications). Ensures reliable and precise furnace control.",
-        price: 100,
         category: SERVICE_CATEGORIES.FURNACE,
     },
     {
@@ -3005,7 +2726,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Routine Furnace Maintenance",
         description: "Routine maintenance of the furnace to ensure optimal performance and longevity. This service includes inspecting components, cleaning, tuning, and making necessary adjustments. Includes comprehensive labor, rough materials, and equipment usage. Ensures a well-maintained and efficient furnace system.",
-        price: 100,
         category: SERVICE_CATEGORIES.FURNACE,
     },
     {
@@ -3015,7 +2735,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Boiler Removal",
         description: "Safe removal of an existing boiler to prepare for new installations or system upgrades. This service includes disconnecting the boiler, removing it from the premises, and proper disposal. Includes comprehensive labor, rough materials, and equipment usage. Ensures a clean and safe removal process, ready for new installations.",
-        price: 100,
         category: SERVICE_CATEGORIES.BOILER,
     },
     {
@@ -3025,7 +2744,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Gas Boiler Installation",
         description: "Installation of a new gas boiler to enhance home heating efficiency and comfort. This service includes placing the boiler, connecting to gas lines and heating systems, and setting up the electrical connections. Includes comprehensive labor, rough materials, equipment usage, and gas boiler (client’s choice of model and specifications). Ensures a professional and efficient gas boiler installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.BOILER,
     },
     {
@@ -3035,7 +2753,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Electric Boiler Installation",
         description: "Installation of a new electric boiler to provide reliable and efficient heating. This service includes placing the boiler, connecting to electrical and heating systems, and ensuring proper setup. Includes comprehensive labor, rough materials, equipment usage, and electric boiler (client’s choice of model and specifications). Ensures a professional and efficient electric boiler installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.BOILER,
     },
     {
@@ -3045,7 +2762,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Boiler Regular Maintenance",
         description: "Routine maintenance of the boiler to ensure optimal performance and longevity. This service includes inspecting components, cleaning, tuning, and making necessary adjustments. Includes comprehensive labor, rough materials, and equipment usage. Ensures a well-maintained and efficient boiler system.",
-        price: 100,
         category: SERVICE_CATEGORIES.BOILER,
     },
     {
@@ -3055,7 +2771,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Heat Pump Removal",
         description: "Safe removal of an existing heat pump to prepare for new installations or system upgrades. This service includes disconnecting the heat pump, removing it from the premises, and proper disposal. Includes comprehensive labor, rough materials, and equipment usage. Ensures a clean and safe removal process, ready for new installations.",
-        price: 100,
         category: SERVICE_CATEGORIES.HEAT_PUMP,
     },
     {
@@ -3065,7 +2780,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Heat Pump Installation",
         description: "Installation of a new heat pump to enhance home heating and cooling efficiency. This service includes placing the heat pump, connecting to electrical and HVAC systems, and ensuring proper setup. Includes comprehensive labor, rough materials, equipment usage, and heat pump (client’s choice of model and specifications). Ensures a professional and efficient heat pump installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.HEAT_PUMP,
     },
     {
@@ -3075,7 +2789,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Heat Pump Diagnostic and Troubleshooting",
         description: "Diagnostic and troubleshooting services to identify and resolve issues with heat pump performance. This service includes inspecting the system, identifying problems, and providing solutions. Includes comprehensive labor, rough materials, and equipment usage. Ensures the heat pump operates efficiently and reliably.",
-        price: 100,
         category: SERVICE_CATEGORIES.HEAT_PUMP,
     },
     {
@@ -3085,7 +2798,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Heat Pump Regular Maintenance",
         description: "Routine maintenance of the heat pump to ensure optimal performance and longevity. This service includes inspecting components, cleaning, tuning, and making necessary adjustments. Includes comprehensive labor, rough materials, and equipment usage. Ensures a well-maintained and efficient heat pump system.",
-        price: 100,
         category: SERVICE_CATEGORIES.HEAT_PUMP,
     },
     {
@@ -3095,7 +2807,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Heat Pump Refrigerant Recharge",
         description: "Recharge of refrigerant and repair of leaks in the heat pump to restore cooling efficiency. This service includes inspecting the system for leaks, repairing any found, and recharging the refrigerant. Includes comprehensive labor, rough materials, equipment usage, and refrigerant (client’s choice of type). Ensures efficient and effective cooling performance.",
-        price: 100,
         category: SERVICE_CATEGORIES.HEAT_PUMP,
     },
     {
@@ -3105,7 +2816,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Heat Pump Component Replacement",
         description: "Replacement and repair of heat pump components to restore functionality and efficiency. This service includes diagnosing issues, replacing or repairing faulty components, and testing the system. Includes comprehensive labor, rough materials, equipment usage, and replacement parts (client’s choice of specifications). Ensures reliable and efficient heat pump operation.",
-        price: 100,
         category: SERVICE_CATEGORIES.HEAT_PUMP,
     },
     {
@@ -3115,7 +2825,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Mini Split Air Conditioner Removal",
         description: "Safe removal of an existing mini split air conditioner to prepare for new installations or system upgrades. This service includes disconnecting the unit, removing it from the premises, and proper disposal. Includes comprehensive labor, rough materials, and equipment usage. Ensures a clean and safe removal process, ready for new installations.",
-        price: 100,
         category: SERVICE_CATEGORIES.MINI_SPLIT_AIR_CONDITIONER,
     },
     {
@@ -3125,7 +2834,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Mini Split Air Conditioner Installation",
         description: "Installation of a mini split air conditioner to enhance home cooling efficiency and comfort. This service includes placing the indoor and outdoor units, connecting refrigerant lines, and setting up the electrical connections. Includes comprehensive labor, rough materials, equipment usage, and mini split air conditioner (client’s choice of model and specifications). Ensures a professional and efficient mini split air conditioner installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.MINI_SPLIT_AIR_CONDITIONER,
     },
     {
@@ -3135,7 +2843,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "2 Zone Mini Split Air Conditioner Installation",
         description: "Installation of a 2-zone mini split air conditioner system to provide efficient cooling for multiple areas. This service includes placing the indoor and outdoor units, connecting refrigerant lines, and setting up the electrical connections. Includes comprehensive labor, rough materials, equipment usage, and 2-zone mini split air conditioner (client’s choice of model and specifications). Ensures a professional and efficient multi-zone cooling solution.",
-        price: 100,
         category: SERVICE_CATEGORIES.MINI_SPLIT_AIR_CONDITIONER,
     },
     {
@@ -3145,7 +2852,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "3 Zone Mini Split Air Conditioner Installation",
         description: "Installation of a 3-zone mini split air conditioner system to provide efficient cooling for multiple areas. This service includes placing the indoor and outdoor units, connecting refrigerant lines, and setting up the electrical connections. Includes comprehensive labor, rough materials, equipment usage, and 3-zone mini split air conditioner (client’s choice of model and specifications). Ensures a professional and efficient multi-zone cooling solution.",
-        price: 100,
         category: SERVICE_CATEGORIES.MINI_SPLIT_AIR_CONDITIONER,
     },
     {
@@ -3155,7 +2861,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Mini Split Air Conditioner Diagnostics and Troubleshooting",
         description: "Diagnostic and troubleshooting services to identify and resolve issues with mini split air conditioner performance. This service includes inspecting the system, identifying problems, and providing solutions. Includes comprehensive labor, rough materials, and equipment usage. Ensures the mini split air conditioner operates efficiently and reliably.",
-        price: 100,
         category: SERVICE_CATEGORIES.MINI_SPLIT_AIR_CONDITIONER,
     },
     {
@@ -3165,7 +2870,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Mini Split Air Conditioner Routine Maintenance",
         description: "Routine maintenance of the mini split air conditioner to ensure optimal performance and longevity. This service includes inspecting components, cleaning, tuning, and making necessary adjustments. Includes comprehensive labor, rough materials, and equipment usage. Ensures a well-maintained and efficient mini split air conditioner system.",
-        price: 100,
         category: SERVICE_CATEGORIES.MINI_SPLIT_AIR_CONDITIONER,
     },
     {
@@ -3175,7 +2879,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Mini Split Air Conditioner Refrigerant Management",
         description: "Management of refrigerant levels and leak repair in mini split air conditioners to maintain cooling efficiency. This service includes inspecting the system for leaks, repairing any found, and recharging the refrigerant. Includes comprehensive labor, rough materials, equipment usage, and refrigerant (client’s choice of type). Ensures efficient and effective cooling performance.",
-        price: 100,
         category: SERVICE_CATEGORIES.MINI_SPLIT_AIR_CONDITIONER,
     },
     {
@@ -3185,7 +2888,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Window AC Removal",
         description: "Safe removal of an existing window air conditioner to prepare for new installations or system upgrades. This service includes disconnecting the unit, removing it from the premises, and proper disposal. Includes comprehensive labor, rough materials, and equipment usage. Ensures a clean and safe removal process, ready for new installations.",
-        price: 100,
         category: SERVICE_CATEGORIES.WINDOW_AC,
     },
     {
@@ -3195,7 +2897,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Window AC Installation",
         description: "Installation of a window air conditioner to enhance home cooling efficiency and comfort. This service includes placing the unit, securing it in the window, and setting up the electrical connections. Includes comprehensive labor, rough materials, equipment usage, and window air conditioner (client's choice of model and specifications). Ensures a professional and efficient window air conditioner installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.WINDOW_AC,
     },
     {
@@ -3205,7 +2906,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Window AC Routine Maintenance",
         description: "Routine maintenance of the window air conditioner to ensure optimal performance and longevity. This service includes inspecting components, cleaning, tuning, and making necessary adjustments. Includes comprehensive labor, rough materials, and equipment usage. Ensures a well-maintained and efficient window air conditioner system.",
-        price: 100,
         category: SERVICE_CATEGORIES.WINDOW_AC,
     },
     {
@@ -3215,7 +2915,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Window AC Diagnostic and Troubleshooting",
         description: "Diagnostic and troubleshooting services to identify and resolve issues with window air conditioner performance. This service includes inspecting the system, identifying problems, and providing solutions. Includes comprehensive labor, rough materials, and equipment usage. Ensures the window air conditioner operates efficiently and reliably.",
-        price: 100,
         category: SERVICE_CATEGORIES.WINDOW_AC,
     },
     {
@@ -3225,7 +2924,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Bathroom Ventilation Fan Removal",
         description: "Safe removal of an existing bathroom ventilation fan to prepare for new installations or system upgrades. This service includes disconnecting the fan, removing it from the premises, and proper disposal. Includes comprehensive labor, rough materials, and equipment usage. Ensures a clean and safe removal process, ready for new installations.",
-        price: 100,
         category: SERVICE_CATEGORIES.VENTILATION_SYSTEM,
     },
     {
@@ -3235,7 +2933,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Bathroom Ventilation Fan Installation",
         description: "Installation of a new bathroom ventilation fan to enhance air quality and moisture control. This service includes mounting the fan, connecting to electrical wiring, and ensuring proper ventilation. Includes comprehensive labor, rough materials, equipment usage, and bathroom ventilation fan (client’s choice of model and specifications). Ensures a professional and efficient ventilation fan installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.VENTILATION_SYSTEM,
     },
     {
@@ -3245,7 +2942,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Bathroom Ventilation Fan Replacement",
         description: "Replacement of an old bathroom ventilation fan with a new one to improve ventilation efficiency. This service includes removing the old fan, installing the new fan, and connecting to existing electrical wiring. Includes comprehensive labor, rough materials, equipment usage, and bathroom ventilation fan (client’s choice of model and specifications). Ensures a smooth and effective fan replacement process.",
-        price: 100,
         category: SERVICE_CATEGORIES.VENTILATION_SYSTEM,
     },
     {
@@ -3255,7 +2951,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Ventilation System Duct Cleaning and Maintenance",
         description: "Comprehensive cleaning and maintenance of ventilation system ducts to ensure optimal air flow and quality. This service includes inspecting ducts, removing debris, and cleaning internal surfaces. Includes comprehensive labor, rough materials, and equipment usage. Ensures a clean and efficient ventilation system.",
-        price: 100,
         category: SERVICE_CATEGORIES.VENTILATION_SYSTEM,
     },
     {
@@ -3265,7 +2960,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Ventilation System Motor and Belt Replacement",
         description: "Replacement of motors and belts in the ventilation system to restore functionality and efficiency. This service includes diagnosing issues, removing old components, and installing new ones. Includes comprehensive labor, rough materials, equipment usage, and replacement parts (client’s choice of specifications). Ensures reliable and efficient ventilation system operation.",
-        price: 100,
         category: SERVICE_CATEGORIES.VENTILATION_SYSTEM,
     },
     {
@@ -3275,7 +2969,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Ventilation System Balancing",
         description: "Balancing the ventilation system to ensure even air distribution and optimal performance. This service includes inspecting the system, adjusting air flow, and ensuring proper balance. Includes comprehensive labor, rough materials, and equipment usage. Ensures an evenly balanced and efficient ventilation system.",
-        price: 100,
         category: SERVICE_CATEGORIES.VENTILATION_SYSTEM,
     },
     {
@@ -3285,7 +2978,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Ventilation System Vibration and Noise Reduction",
         description: "Reducing vibration and noise in the ventilation system to improve comfort and functionality. This service includes diagnosing sources of noise and vibration, and implementing solutions to minimize them. Includes comprehensive labor, rough materials, and equipment usage. Ensures a quieter and smoother running ventilation system.",
-        price: 100,
         category: SERVICE_CATEGORIES.VENTILATION_SYSTEM,
     },
     {
@@ -3295,7 +2987,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Hot or Cold Air System Installation",
         description: "Installation of ductwork for hot or cold air systems to ensure efficient air distribution. This service includes measuring, cutting, and installing ducts, and connecting to HVAC systems. Includes comprehensive labor, rough materials, equipment usage, and ductwork (client's choice of material and specifications). Ensures efficient air distribution and system functionality.",
-        price: 100,
         category: SERVICE_CATEGORIES.DUCTWORK,
     },
     {
@@ -3305,7 +2996,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Ductwork Removal",
         description: "Safe removal of existing ductwork to prepare for new installations or system upgrades. This service includes disconnecting ducts, removing them from the premises, and proper disposal. Includes comprehensive labor, rough materials, and equipment usage. Ensures a clean and safe removal process, ready for new installations.",
-        price: 100,
         category: SERVICE_CATEGORIES.DUCTWORK,
     },
     {
@@ -3315,7 +3005,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Thermostat Replacement",
         description: "Replacement of an old thermostat with a new one to improve temperature control and energy efficiency. This service includes removing the old thermostat, installing the new one, and connecting it to the HVAC system. Includes comprehensive labor, rough materials, equipment usage, and thermostat (client’s choice of model and specifications). Ensures precise and efficient temperature regulation.",
-        price: 100,
         category: SERVICE_CATEGORIES.THERMOSTAT,
     },
     {
@@ -3325,7 +3014,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Smart Thermostat Installation",
         description: "Installation of a smart thermostat to enhance home automation and energy savings. This service includes mounting the smart thermostat, connecting it to the HVAC system, and configuring settings. Includes comprehensive labor, rough materials, equipment usage, and smart thermostat (client’s choice of model and specifications). Ensures advanced and efficient temperature control.",
-        price: 100,
         category: SERVICE_CATEGORIES.THERMOSTAT,
     },
     {
@@ -3335,7 +3023,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Baseboard Electric Heater Installation",
         description: "Installation of a baseboard electric heater to provide efficient and consistent heating. This service includes mounting the heater, connecting it to the electrical system, and ensuring proper operation. Includes comprehensive labor, rough materials, equipment usage, and baseboard electric heater (client’s choice of model and specifications). Ensures effective and reliable heating.",
-        price: 100,
         category: SERVICE_CATEGORIES.HEATER,
     },
     {
@@ -3345,7 +3032,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Baseboard Hydronic Heater Installation",
         description: "Installation of a baseboard hydronic heater to provide efficient heating using hot water. This service includes mounting the heater, connecting it to the water heating system, and ensuring proper operation. Includes comprehensive labor, rough materials, equipment usage, and baseboard hydronic heater (client's choice of model and specifications). Ensures effective and reliable heating.",
-        price: 100,
         category: SERVICE_CATEGORIES.HEATER,
     },
     {
@@ -3355,7 +3041,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Electric Wall Heater Installation",
         description: "Installation of an electric wall heater to provide efficient and space-saving heating. This service includes mounting the heater, connecting it to the electrical system, and ensuring proper operation. Includes comprehensive labor, rough materials, equipment usage, and electric wall heater (client's choice of model and specifications). Ensures effective and reliable heating.",
-        price: 100,
         category: SERVICE_CATEGORIES.HEATER,
     },
     {
@@ -3365,7 +3050,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Garage Air Heater Installation",
         description: "Installation of a garage air heater to provide efficient heating in garage spaces. This service includes mounting the heater, connecting it to the electrical or gas system, and ensuring proper operation. Includes comprehensive labor, rough materials, equipment usage, and garage air heater (client's choice of model and specifications). Ensures a warm and comfortable garage environment.",
-        price: 100,
         category: SERVICE_CATEGORIES.HEATER,
     },
     {
@@ -3375,7 +3059,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Dehumidifier Installation",
         description: "Installation of a dehumidifier to control humidity levels and improve air quality. This service includes placing the dehumidifier, connecting it to the electrical system, and ensuring proper operation. Includes comprehensive labor, rough materials, equipment usage, and dehumidifier (client's choice of model and specifications). Ensures effective humidity control and improved air quality.",
-        price: 100,
         category: SERVICE_CATEGORIES.AIR_QUALITY,
     },
     {
@@ -3385,7 +3068,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Humidifier Installation",
         description: "Humidifier installation is the process of integrating a device that adds moisture in the air to prevent dryness that can cause irritation in many parts of the body. Humidifiers can be particularly effective for treating dryness of the skin, nose, throat, and lips. They can also ease some of the symptoms caused by the flu or common cold.",
-        price: 100,
         category: SERVICE_CATEGORIES.AIR_QUALITY,
     },
     {
@@ -3395,7 +3077,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Air Purifier Installation",
         description: "Installation of an air purifier to improve indoor air quality by removing pollutants and allergens. This service includes placing the air purifier, connecting it to the electrical system, and ensuring proper operation. Includes comprehensive labor, rough materials, equipment usage, and air purifier (client's choice of model and specifications). Ensures cleaner and healthier indoor air.",
-        price: 100,
         category: SERVICE_CATEGORIES.AIR_QUALITY,
     },
     {
@@ -3405,7 +3086,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Humidifier/Dehumidifier Maintenance",
         description: "Routine maintenance of humidifiers and dehumidifiers to ensure optimal performance and longevity. This service includes inspecting components, cleaning, tuning, and making necessary adjustments. Includes comprehensive labor, rough materials, and equipment usage. Ensures well-maintained and efficient humidity control systems.",
-        price: 100,
         category: SERVICE_CATEGORIES.AIR_QUALITY,
     },
     {
@@ -3415,7 +3095,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Electric Stove Installation",
         description: "Installation of an electric stove to provide efficient and reliable heating. This service includes placing the stove, connecting it to the electrical system, and ensuring proper operation. Includes comprehensive labor, rough materials, equipment usage, and electric stove (client's choice of model and specifications). Ensures a safe and effective heating solution.",
-        price: 100,
         category: SERVICE_CATEGORIES.FREESTANDING_STOVES,
     },
     {
@@ -3425,7 +3104,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Gas Stove Installation",
         description: "Installation of a gas stove to provide efficient and reliable heating. This service includes placing the stove, connecting it to the gas line, and ensuring proper operation. Includes comprehensive labor, rough materials, equipment usage, and gas stove (client's choice of model and specifications). Ensures a safe and effective heating solution.",
-        price: 100,
         category: SERVICE_CATEGORIES.FREESTANDING_STOVES,
     },
     {
@@ -3435,7 +3113,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Wood Burning Stove Installation",
         description: "Installation of a wood burning stove to provide traditional and efficient heating. This service includes placing the stove, connecting it to the chimney or vent system, and ensuring proper operation. Includes comprehensive labor, rough materials, equipment usage, and wood burning stove (client's choice of model and specifications). Ensures a safe and effective heating solution.",
-        price: 100,
         category: SERVICE_CATEGORIES.FREESTANDING_STOVES,
     },
     {
@@ -3445,7 +3122,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Pellet Stove Installation",
         description: "Installation of a pellet stove to provide efficient and environmentally friendly heating. This service includes placing the stove, connecting it to the chimney or vent system, and ensuring proper operation. Includes comprehensive labor, rough materials, equipment usage, and pellet stove (client’s choice of model and specifications). Ensures a safe and effective heating solution.",
-        price: 100,
         category: SERVICE_CATEGORIES.FREESTANDING_STOVES,
     },
     {
@@ -3455,7 +3131,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Chimney Sweeping for Stoves",
         description: "Professional sweeping of chimneys for stoves to ensure safe and efficient operation. This service includes inspecting the chimney, removing soot and debris, and ensuring proper ventilation. Includes comprehensive labor, rough materials, and equipment usage. Ensures a clean and safe chimney for optimal stove performance.",
-        price: 100,
         category: SERVICE_CATEGORIES.FREESTANDING_STOVES,
     },
     {
@@ -3465,7 +3140,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Electric Fireplace Installation",
         description: "Installation of an electric fireplace to provide efficient and convenient heating. This service includes placing the fireplace, connecting it to the electrical system, and ensuring proper operation. Includes comprehensive labor, rough materials, equipment usage, and electric fireplace (client's choice of model and specifications). Ensures a safe and effective heating solution.",
-        price: 100,
         category: SERVICE_CATEGORIES.FIREPLACES,
     },
     {
@@ -3475,7 +3149,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Gas Fireplace (Ventless) Installation",
         description: "Installation of a ventless gas fireplace to provide efficient and reliable heating. This service includes placing the fireplace, connecting it to the gas line, and ensuring proper operation. Includes comprehensive labor, rough materials, equipment usage, and gas fireplace (client's choice of model and specifications). Ensures a safe and effective heating solution.",
-        price: 100,
         category: SERVICE_CATEGORIES.FIREPLACES,
     },
     {
@@ -3485,7 +3158,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Fireplace Removal",
         description: "Safe removal of an existing fireplace to prepare for new installations or system upgrades. This service includes disconnecting the fireplace, removing it from the premises, and proper disposal. Includes comprehensive labor, rough materials, and equipment usage. Ensures a clean and safe removal process, ready for new installations.",
-        price: 100,
         category: SERVICE_CATEGORIES.FIREPLACES,
     },
     {
@@ -3495,7 +3167,6 @@ export const ALL_SERVICES = [
         max_quantity: 50,
         title: "1BED/1BATH Regular Cleaning",
         description: "Comprehensive regular cleaning service for a one-bedroom, one-bathroom home. This service includes dusting, vacuuming, mopping, bathroom cleaning, kitchen cleaning, and surface sanitization. Ensures a clean and healthy living environment.",
-        price: 100,
         category: SERVICE_CATEGORIES.REGULAR_CLEANING,
     },
     {
@@ -3505,7 +3176,6 @@ export const ALL_SERVICES = [
         max_quantity: 50,
         title: "2BED/1BATH Regular Cleaning",
         description: "Comprehensive regular cleaning service for a two-bedroom, one-bathroom home. This service includes dusting, vacuuming, mopping, bathroom cleaning, kitchen cleaning, and surface sanitization. Ensures a clean and healthy living environment.",
-        price: 100,
         category: SERVICE_CATEGORIES.REGULAR_CLEANING,
     },
     {
@@ -3515,7 +3185,6 @@ export const ALL_SERVICES = [
         max_quantity: 50,
         title: "2BED/2BATH Regular Cleaning",
         description: "Comprehensive regular cleaning service for a two-bedroom, two-bathroom home. This service includes dusting, vacuuming, mopping, bathroom cleaning, kitchen cleaning, and surface sanitization. Ensures a clean and healthy living environment.",
-        price: 100,
         category: SERVICE_CATEGORIES.REGULAR_CLEANING,
     },
     {
@@ -3525,7 +3194,6 @@ export const ALL_SERVICES = [
         max_quantity: 50,
         title: "3BED/2BATH Regular Cleaning",
         description: "Comprehensive regular cleaning service for a three-bedroom, two-bathroom home. This service includes dusting, vacuuming, mopping, bathroom cleaning, kitchen cleaning, and surface sanitization. Ensures a clean and healthy living environment.",
-        price: 100,
         category: SERVICE_CATEGORIES.REGULAR_CLEANING,
     },
     {
@@ -3535,7 +3203,6 @@ export const ALL_SERVICES = [
         max_quantity: 50,
         title: "3BED/3BATH Regular Cleaning",
         description: "Comprehensive regular cleaning service for a three-bedroom, three-bathroom home. This service includes dusting, vacuuming, mopping, bathroom cleaning, kitchen cleaning, and surface sanitization. Ensures a clean and healthy living environment.",
-        price: 100,
         category: SERVICE_CATEGORIES.REGULAR_CLEANING,
     },
     {
@@ -3545,7 +3212,6 @@ export const ALL_SERVICES = [
         max_quantity: 50,
         title: "4BED/3BATH Regular Cleaning",
         description: "Comprehensive regular cleaning service for a four-bedroom, three-bathroom home. This service includes dusting, vacuuming, mopping, bathroom cleaning, kitchen cleaning, and surface sanitization. Ensures a clean and healthy living environment.",
-        price: 100,
         category: SERVICE_CATEGORIES.REGULAR_CLEANING,
     },
     {
@@ -3555,7 +3221,6 @@ export const ALL_SERVICES = [
         max_quantity: 50,
         title: "4BED/4BATH Regular Cleaning",
         description: "Comprehensive regular cleaning service for a four-bedroom, four-bathroom home. This service includes dusting, vacuuming, mopping, bathroom cleaning, kitchen cleaning, and surface sanitization. Ensures a clean and healthy living environment.",
-        price: 100,
         category: SERVICE_CATEGORIES.REGULAR_CLEANING,
     },
     {
@@ -3565,7 +3230,6 @@ export const ALL_SERVICES = [
         max_quantity: 50,
         title: "4BED/5BATH Regular Cleaning",
         description: "Comprehensive regular cleaning service for a four-bedroom, five-bathroom home. This service includes dusting, vacuuming, mopping, bathroom cleaning, kitchen cleaning, and surface sanitization. Ensures a clean and healthy living environment.",
-        price: 100,
         category: SERVICE_CATEGORIES.REGULAR_CLEANING,
     },
     {
@@ -3575,7 +3239,6 @@ export const ALL_SERVICES = [
         max_quantity: 50,
         title: "5BED/5BATH Regular Cleaning",
         description: "Comprehensive regular cleaning service for a five-bedroom, five-bathroom home. This service includes dusting, vacuuming, mopping, bathroom cleaning, kitchen cleaning, and surface sanitization. Ensures a clean and healthy living environment.",
-        price: 100,
         category: SERVICE_CATEGORIES.REGULAR_CLEANING,
     },
     {
@@ -3585,7 +3248,6 @@ export const ALL_SERVICES = [
         max_quantity: 50,
         title: "1BED/1BATH General Cleaning",
         description: "A comprehensive general cleaning service for a one-bedroom, one-bathroom home goes beyond regular maintenance to include deep cleaning tasks such as window washing (inside and out, where possible), interior cabinet cleaning, deep carpet cleaning, furniture, blinds, curtains, and light fixtures. This extensive cleaning is recommended every three to six months to maintain a high level of cleanliness, hygiene, and comfort in the home.",
-        price: 100,
         category: SERVICE_CATEGORIES.GENERAL_CLEANING,
     },
     {
@@ -3595,7 +3257,6 @@ export const ALL_SERVICES = [
         max_quantity: 50,
         title: "2BED/1BATH General Cleaning",
         description: "A comprehensive general cleaning service for a two-bedroom, one-bathroom home goes beyond regular maintenance to include deep cleaning tasks such as window washing (inside and out, where possible), interior cabinet cleaning, deep carpet cleaning, furniture, blinds, curtains, and light fixtures. This extensive cleaning is recommended every three to six months to maintain a high level of cleanliness, hygiene, and comfort in the home.",
-        price: 100,
         category: SERVICE_CATEGORIES.GENERAL_CLEANING,
     },
     {
@@ -3605,7 +3266,6 @@ export const ALL_SERVICES = [
         max_quantity: 50,
         title: "2BED/2BATH General Cleaning",
         description: "A comprehensive general cleaning service for a two-bedroom, two-bathroom home goes beyond regular maintenance to include deep cleaning tasks such as window washing (inside and out, where possible), interior cabinet cleaning, deep carpet cleaning, furniture, blinds, curtains, and light fixtures. This extensive cleaning is recommended every three to six months to maintain a high level of cleanliness, hygiene, and comfort in the home.",
-        price: 100,
         category: SERVICE_CATEGORIES.GENERAL_CLEANING,
     },
     {
@@ -3615,7 +3275,6 @@ export const ALL_SERVICES = [
         max_quantity: 50,
         title: "3BED/2BATH General Cleaning",
         description: "A comprehensive general cleaning service for a three-bedroom, two-bathroom home goes beyond regular maintenance to include deep cleaning tasks such as window washing (inside and out, where possible), interior cabinet cleaning, deep carpet cleaning, furniture, blinds, curtains, and light fixtures. This extensive cleaning is recommended every three to six months to maintain a high level of cleanliness, hygiene, and comfort in the home.",
-        price: 100,
         category: SERVICE_CATEGORIES.GENERAL_CLEANING,
     },
     {
@@ -3625,7 +3284,6 @@ export const ALL_SERVICES = [
         max_quantity: 50,
         title: "3BED/3BATH General Cleaning",
         description: "A comprehensive general cleaning service for a three-bedroom, three-bathroom home goes beyond regular maintenance to include deep cleaning tasks such as window washing (inside and out, where possible), interior cabinet cleaning, deep carpet cleaning, furniture, blinds, curtains, and light fixtures. This extensive cleaning is recommended every three to six months to maintain a high level of cleanliness, hygiene, and comfort in the home.",
-        price: 100,
         category: SERVICE_CATEGORIES.GENERAL_CLEANING,
     },
     {
@@ -3635,7 +3293,6 @@ export const ALL_SERVICES = [
         max_quantity: 50,
         title: "4BED/3BATH General Cleaning",
         description: "A comprehensive general cleaning service for a four-bedroom, three-bathroom home goes beyond regular maintenance to include deep cleaning tasks such as window washing (inside and out, where possible), interior cabinet cleaning, deep carpet cleaning, furniture, blinds, curtains, and light fixtures. This extensive cleaning is recommended every three to six months to maintain a high level of cleanliness, hygiene, and comfort in the home.",
-        price: 100,
         category: SERVICE_CATEGORIES.GENERAL_CLEANING,
     },
     {
@@ -3645,7 +3302,6 @@ export const ALL_SERVICES = [
         max_quantity: 50,
         title: "4BED/4BATH General Cleaning",
         description: "A comprehensive general cleaning service for a four-bedroom, four-bathroom home goes beyond regular maintenance to include deep cleaning tasks such as window washing (inside and out, where possible), interior cabinet cleaning, deep carpet cleaning, furniture, blinds, curtains, and light fixtures. This extensive cleaning is recommended every three to six months to maintain a high level of cleanliness, hygiene, and comfort in the home.",
-        price: 100,
         category: SERVICE_CATEGORIES.GENERAL_CLEANING,
     },
     {
@@ -3655,7 +3311,6 @@ export const ALL_SERVICES = [
         max_quantity: 50,
         title: "4BED/5BATH General Cleaning",
         description: "A comprehensive general cleaning service for a four-bedroom, five-bathroom home goes beyond regular maintenance to include deep cleaning tasks such as window washing (inside and out, where possible), interior cabinet cleaning, deep carpet cleaning, furniture, blinds, curtains, and light fixtures. This extensive cleaning is recommended every three to six months to maintain a high level of cleanliness, hygiene, and comfort in the home.",
-        price: 100,
         category: SERVICE_CATEGORIES.GENERAL_CLEANING,
     },
     {
@@ -3665,7 +3320,6 @@ export const ALL_SERVICES = [
         max_quantity: 50,
         title: "5BED/5BATH General Cleaning",
         description: "A comprehensive general cleaning service for a five-bedroom, five-bathroom home goes beyond regular maintenance to include deep cleaning tasks such as window washing (inside and out, where possible), interior cabinet cleaning, deep carpet cleaning, furniture, blinds, curtains, and light fixtures. This extensive cleaning is recommended every three to six months to maintain a high level of cleanliness, hygiene, and comfort in the home.",
-        price: 100,
         category: SERVICE_CATEGORIES.GENERAL_CLEANING,
     },
     {
@@ -3675,7 +3329,6 @@ export const ALL_SERVICES = [
         max_quantity: 50,
         title: "Fireplace Chimney Sweep Cleaning and Maintenance",
         description: "A chimney sweep service involves the professional cleaning and maintenance of a fireplace and its chimney to ensure safe operation, prevent chimney fires, and improve indoor air quality. This specialized service includes removing soot, blockages, and built-up creosote from the chimney liner, firebox, smoke chamber, and damper. It may also involve inspecting the chimney structure and flue for damage, obstructions, or wear that could impair safe operation.",
-        price: 100,
         category: SERVICE_CATEGORIES.SPECIALIZED,
     },
     {
@@ -3685,7 +3338,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Stain Carpet Cleaning and Deodorizing",
         description: "This specialized cleaning service focuses on treating carpets with heavy staining, restoring them to a cleaner state while also tackling odors. The process involves a deep cleaning technique that penetrates the carpet fibers to remove stubborn stains and odors, using advanced cleaning solutions and equipment. It’s suitable for carpets that have been subjected to significant wear, spills, pet accidents, or smoking and require more than standard cleaning methods.",
-        price: 100,
         category: SERVICE_CATEGORIES.SPECIALIZED,
     },
     {
@@ -3695,7 +3347,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Carpet Stairs Cleaning",
         description: "Cleaning carpeted stairs is a specialized service aimed at removing dirt, stains, and wear marks from the high-traffic area of staircases. This service focuses on deep cleaning the carpet fibers on each step, utilizing specific techniques and equipment designed to effectively clean and refresh carpeted stairs without causing damage. The process involves a thorough assessment, vacuuming, spot treatment, deep cleaning, and drying, ensuring the stairs are not only clean but also maintain their appearance and longevity.",
-        price: 100,
         category: SERVICE_CATEGORIES.SPECIALIZED,
     },
     {
@@ -3705,7 +3356,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Tile - Heavy Cleaning",
         description: "Heavy cleaning of tile surfaces involves a thorough and detailed process aimed at removing built-up grime, stains, and mildew from tile floors, walls, and other tiled areas. This service is particularly beneficial for tiles in high-traffic areas, bathrooms, kitchens, and outdoor spaces that have become discolored or stained over time. The process includes deep cleaning of the tile and grout, restoring the appearance of the surfaces, and protecting them against future dirt accumulation.",
-        price: 100,
         category: SERVICE_CATEGORIES.SPECIALIZED,
     },
     {
@@ -3715,7 +3365,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Natural Marble - Heavy Cleaning",
         description: "Heavy cleaning of natural marble surfaces addresses the unique challenges posed by porous stone materials, such as marble, granite, limestone, and slate, which can accumulate grime, stains, and etching over time. This specialized service aims to restore the beauty and integrity of natural stone surfaces in areas like floors, countertops, bathrooms, and outdoor spaces. It involves the use of specific cleaners and techniques to safely and effectively remove built-up dirt and stains without damaging the stone.",
-        price: 100,
         category: SERVICE_CATEGORIES.SPECIALIZED,
     },
     {
@@ -3725,7 +3374,6 @@ export const ALL_SERVICES = [
         max_quantity: 50,
         title: "Window Cleaning (Per Side) 10-40 sq ft",
         description: "Professional window cleaning service for windows measuring between 10-40 square feet per side. This includes thorough cleaning of both interior and exterior surfaces (where accessible), removing dirt, smudges, and streaks for a clear, spotless finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.WINDOWS,
     },
     {
@@ -3735,7 +3383,6 @@ export const ALL_SERVICES = [
         max_quantity: 50,
         title: "Window Cleaning (Per Side) 41 - 60 sq ft",
         description: "Comprehensive window cleaning service for windows measuring between 41 to 60 square feet per side. This service covers the cleaning of both interior and exterior glass surfaces (where accessible), ensuring a streak-free and clear view.",
-        price: 100,
         category: SERVICE_CATEGORIES.WINDOWS,
     },
     {
@@ -3745,7 +3392,6 @@ export const ALL_SERVICES = [
         max_quantity: 50,
         title: "Window Screen Cleaning",
         description: "Detailed cleaning service for window screens, removing accumulated dust, pollen, and debris. This service restores the cleanliness and appearance of window screens, enhancing overall window performance and appearance.",
-        price: 100,
         category: SERVICE_CATEGORIES.WINDOWS,
     },
     {
@@ -3755,7 +3401,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Office Cleaning",
         description: "Regular office cleaning service that includes dusting, vacuuming, trash removal, bathroom sanitation, and surface cleaning. This service is designed to maintain a clean and healthy workspace environment, promoting productivity and well-being.",
-        price: 100,
         category: SERVICE_CATEGORIES.JANITORIAL,
     },
     {
@@ -3765,7 +3410,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Retail Store Cleaning",
         description: "Routine cleaning service for retail stores, including dusting, floor cleaning, trash removal, and surface sanitization. This service ensures a clean and inviting shopping environment, enhancing customer experience and satisfaction.",
-        price: 100,
         category: SERVICE_CATEGORIES.JANITORIAL,
     },
     {
@@ -3775,7 +3419,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Post Corporate Event Cleaning",
         description: "Thorough cleaning service following a corporate event. This service includes trash removal, floor cleaning, restroom sanitization, and surface cleaning, ensuring the venue is restored to its pre-event condition.",
-        price: 100,
         category: SERVICE_CATEGORIES.POST_EVENT,
     },
     {
@@ -3785,7 +3428,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Post-Wedding Cleaning",
         description: "Comprehensive cleaning service after a wedding event, covering trash removal, floor cleaning, restroom sanitization, and surface cleaning. This service ensures the venue is left spotless and ready for the next event.",
-        price: 100,
         category: SERVICE_CATEGORIES.POST_EVENT,
     },
     {
@@ -3795,7 +3437,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Final Cleaning after Construction",
         description: "Detailed post-construction cleaning service that includes dust removal, floor cleaning, window cleaning, and surface sanitization. This service ensures the newly constructed or renovated space is clean, safe, and ready for use.",
-        price: 100,
         category: SERVICE_CATEGORIES.POST_EVENT,
     },
     {
@@ -3805,7 +3446,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Flood Damage Cleanup",
         description: "Emergency cleanup service for areas affected by flooding. This service includes water extraction, drying, mold prevention, and sanitization to restore the affected area to a safe and habitable condition.",
-        price: 100,
         category: SERVICE_CATEGORIES.EMERGENCY,
     },
     {
@@ -3815,7 +3455,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Fire and Smoke Damage Cleanup",
         description: "Comprehensive cleanup service following fire and smoke damage. This service includes soot removal, odor elimination, and surface cleaning to restore the affected area to its pre-damage condition.",
-        price: 100,
         category: SERVICE_CATEGORIES.EMERGENCY,
     },
     {
@@ -3825,7 +3464,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Chemical Spill Cleanup",
         description: "Specialized cleanup service for areas affected by chemical spills. This service includes the safe removal and disposal of hazardous materials, decontamination, and sanitization of the affected area.",
-        price: 100,
         category: SERVICE_CATEGORIES.BIOHAZARD,
     },
     {
@@ -3835,7 +3473,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Crime Scene Cleanup",
         description: "Professional cleanup service for crime scenes, including the removal of biohazardous materials, decontamination, and thorough cleaning to restore the area to a safe and sanitary condition.",
-        price: 100,
         category: SERVICE_CATEGORIES.BIOHAZARD,
     },
     {
@@ -3845,7 +3482,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Drywall Repair (Up to 4 Square Feet)",
         description: "Repair of small drywall sections up to 4 square feet to restore wall integrity. This service includes comprehensive labor, rough materials, equipment usage, and drywall patching. Ensures seamless and professional drywall repair.",
-        price: 100,
         category: SERVICE_CATEGORIES.DRYWALL_REPAIR,
     },
     {
@@ -3855,7 +3491,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Drywall Repair (Holes & Cracks Up to 3 Inches)",
         description: "Repair of holes and cracks up to 3 inches in drywall to maintain structural soundness and aesthetic appeal. This service includes comprehensive labor, rough materials, equipment usage, and patching. Provides effective and professional drywall repair.",
-        price: 100,
         category: SERVICE_CATEGORIES.DRYWALL_REPAIR,
     },
     {
@@ -3865,7 +3500,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Corner Bead Repair",
         description: "Repair of damaged corner beads on drywall to ensure smooth and sharp edges. This service includes comprehensive labor, rough materials, equipment usage, and corner bead replacement. Ensures professional and precise corner bead repair.",
-        price: 100,
         category: SERVICE_CATEGORIES.DRYWALL_REPAIR,
     },
     {
@@ -3875,7 +3509,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Drywall Cracks Repair",
         description: "Repair of cracks in drywall to restore wall integrity and appearance. This service includes comprehensive labor, rough materials, equipment usage, and crack filling. Provides effective and professional drywall crack repair.",
-        price: 100,
         category: SERVICE_CATEGORIES.DRYWALL_REPAIR,
     },
     {
@@ -3885,7 +3518,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Machine Texturing for Drywall",
         description: "Application of machine texturing to drywall for a consistent and decorative finish. This service includes comprehensive labor, rough materials, equipment usage, and texturing application. Ensures a professional and uniform drywall texture.",
-        price: 100,
         category: SERVICE_CATEGORIES.TEXTURE_DRYWALL,
     },
     {
@@ -3895,7 +3527,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Heavy Hand Texturing for Drywall",
         description: "Application of heavy hand texturing to drywall for a unique and detailed finish. This service includes comprehensive labor, rough materials, equipment usage, and hand texturing. Provides a professional and artistic drywall texture.",
-        price: 100,
         category: SERVICE_CATEGORIES.TEXTURE_DRYWALL,
     },
     {
@@ -3905,7 +3536,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Skim Coat for Drywall",
         description: "Application of a skim coat to drywall for a smooth and flawless surface. This service includes comprehensive labor, rough materials, equipment usage, and skim coating. Ensures a professional and even drywall finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.TEXTURE_DRYWALL,
     },
     {
@@ -3915,7 +3545,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Acoustic Drywall Installation",
         description: "Installation of acoustic drywall to enhance soundproofing and reduce noise transmission. This service includes comprehensive labor, rough materials, equipment usage, and acoustic drywall. Provides professional and effective acoustic drywall installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.ACOUSTIC_DRYWALL,
     },
     {
@@ -3925,7 +3554,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Ceiling Tiles Installation (Acoustic Improvement)",
         description: "Installation of drop ceiling tiles to improve acoustic properties and aesthetic appeal. This service includes comprehensive labor, rough materials, equipment usage, and ceiling tiles. Ensures professional and efficient drop ceiling tile installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.ACOUSTIC_DRYWALL,
     },
     {
@@ -3935,7 +3563,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Drop Ceiling Tiles Repair and Painting",
         description: "Repair and painting of drop ceiling tiles to restore their appearance and functionality. This service includes comprehensive labor, rough materials, equipment usage, painting, and finishes (client’s choice of paint). Provides professional and seamless ceiling tile repair and painting.",
-        price: 100,
         category: SERVICE_CATEGORIES.ACOUSTIC_DRYWALL,
     },
     {
@@ -3945,7 +3572,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Acoustical/Fire-Safing 4-Inch Insulation",
         description: "Installation of 4-inch acoustical/fire-safing insulation for enhanced soundproofing and fire safety. This service includes comprehensive labor, rough materials, equipment usage, and insulation. Ensures professional and effective insulation installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.ACOUSTIC_DRYWALL,
     },
     {
@@ -3955,7 +3581,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Drywall Installation with Metal Studs (Up to 10 ft)",
         description: "Installation of double-sided drywall with metal studs up to 10 feet height to create strong and durable walls. This service includes comprehensive labor, rough materials, equipment usage, and drywall installation. Ensures a professional and sturdy wall installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.DRYWALL_INSTALLATION,
     },
     {
@@ -3965,7 +3590,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Drywall Installation (Hung, Taped, Floated, Ready for Paint)",
         description: "Complete drywall installation including hanging, taping, floating, and preparation for painting. This service includes comprehensive labor, rough materials, equipment usage, and drywall installation. Provides a professional finish ready for painting.",
-        price: 100,
         category: SERVICE_CATEGORIES.DRYWALL_INSTALLATION,
     },
     {
@@ -3975,7 +3599,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Venetian Plaster Application - Two Coats",
         description: "Application of two coats of Venetian plaster for a smooth and luxurious wall finish. This service includes comprehensive labor, rough materials, equipment usage, finishes (client's choice of color and texture), and Venetian plaster application. Ensures a professional and elegant wall finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.VENETIAN_PLASTER,
     },
     {
@@ -3985,7 +3608,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Venetian Plaster Application - Three Coats",
         description: "Application of three coats of Venetian plaster for a deeper and more refined wall texture. This service includes comprehensive labor, rough materials, equipment usage, finishes (client’s choice of color and texture), and Venetian plaster application. Provides a professional and high-quality finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.VENETIAN_PLASTER,
     },
     {
@@ -3995,7 +3617,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Venetian Plaster Application - Four Coats",
         description: "Application of four coats of Venetian plaster for the ultimate luxurious wall finish. This service includes comprehensive labor, rough materials, equipment usage, finishes (client’s choice of color and texture), and Venetian plaster application. Ensures a professional and premium finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.VENETIAN_PLASTER,
     },
     {
@@ -4005,7 +3626,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Curved Ceiling Installation",
         description: "Installation of curved ceiling drywall to add architectural interest and elegance. This service includes comprehensive labor, rough materials, equipment usage, and drywall installation. Provides a professional and aesthetically pleasing ceiling.",
-        price: 100,
         category: SERVICE_CATEGORIES.CEILING_DRYWALL,
     },
     {
@@ -4015,7 +3635,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Drywall Ceiling Installation (Ready to Paint)",
         description: "Complete drywall ceiling installation ready for painting. This service includes comprehensive labor, rough materials, equipment usage, and drywall installation. Ensures a professional and smooth ceiling finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.CEILING_DRYWALL,
     },
     {
@@ -4025,7 +3644,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Water-resistant Drywall Ceiling Installation",
         description: "Installation of water-resistant drywall for ceilings in moisture-prone areas. This service includes comprehensive labor, rough materials, equipment usage, and water-resistant drywall. Provides a professional and durable ceiling solution.",
-        price: 100,
         category: SERVICE_CATEGORIES.CEILING_DRYWALL,
     },
     {
@@ -4035,7 +3653,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Drywall Bulkhead Installation",
         description: "Installation of drywall bulkheads to create architectural features or conceal structural elements. This service includes comprehensive labor, rough materials, equipment usage, and drywall installation. Ensures a professional and seamless bulkhead construction.",
-        price: 100,
         category: SERVICE_CATEGORIES.CEILING_DRYWALL,
     },
     {
@@ -4045,7 +3662,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Smooth Drywall Finishing",
         description: "Achieve a seamless, smooth finish on drywall surfaces. This service includes comprehensive labor, rough materials, equipment usage, and smooth drywall finishing. Ensures a professional, ready-to-paint surface.",
-        price: 100,
         category: SERVICE_CATEGORIES.DRYWALL_FINISHING,
     },
     {
@@ -4055,7 +3671,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Orange Peel Texture Finishing",
         description: "Application of orange peel texture for a subtle, textured finish on drywall. This service includes comprehensive labor, rough materials, equipment usage, and texture application (client’s choice of intensity). Provides a professional, textured wall finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.DRYWALL_FINISHING,
     },
     {
@@ -4065,7 +3680,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Skim Coat Drywall Finishing",
         description: "Application of a skim coat to drywall for a smooth and even surface. This service includes comprehensive labor, rough materials, equipment usage, and skim coat finishing. Ensures a professional, high-quality wall finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.DRYWALL_FINISHING,
     },
     {
@@ -4075,7 +3689,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Level 5 Drywall Finishing",
         description: "Top-tier drywall finishing with a level 5 finish for a flawless surface. This service includes comprehensive labor, rough materials, equipment usage, and level 5 finishing. Provides a premium, smooth wall surface.",
-        price: 100,
         category: SERVICE_CATEGORIES.DRYWALL_FINISHING,
     },
     {
@@ -4085,7 +3698,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Fire-Rated Drywall Installation",
         description: "Installation of fire-rated drywall to enhance fire resistance. This service includes comprehensive labor, rough materials, equipment usage, and fire-rated drywall installation. Ensures improved fire safety for residential or commercial spaces.",
-        price: 100,
         category: SERVICE_CATEGORIES.SPECIALTY_DRYWALL,
     },
     {
@@ -4095,7 +3707,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Fiberglass-Faced Drywall Installation",
         description: "Installation of fiberglass-faced drywall for enhanced durability and mold resistance. This service includes comprehensive labor, rough materials, equipment usage, and fiberglass-faced drywall. Provides a robust and moisture-resistant wall solution.",
-        price: 100,
         category: SERVICE_CATEGORIES.SPECIALTY_DRYWALL,
     },
     {
@@ -4105,7 +3716,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Impact-Resistant Drywall Installation",
         description: "Installation of impact-resistant drywall to protect against physical damage. This service includes comprehensive labor, rough materials, equipment usage, and impact-resistant drywall. Ensures durable and long-lasting wall protection.",
-        price: 100,
         category: SERVICE_CATEGORIES.SPECIALTY_DRYWALL,
     },
     {
@@ -4115,7 +3725,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Full Scale Drywall Removal",
         description: "Complete removal of drywall in preparation for renovation or new installation. This service includes comprehensive labor, rough materials, equipment usage, and debris removal. Ensures a clean slate for further construction.",
-        price: 100,
         category: SERVICE_CATEGORIES.DRYWALL_DEMOLITION,
     },
     {
@@ -4125,7 +3734,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Selective Drywall Demolition",
         description: "Targeted removal of specific drywall sections while preserving surrounding areas. This service includes comprehensive labor, rough materials, equipment usage, and debris removal. Provides precise demolition with minimal disruption.",
-        price: 100,
         category: SERVICE_CATEGORIES.DRYWALL_DEMOLITION,
     },
     {
@@ -4135,7 +3743,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Debris Management and Disposal",
         description: "Management and disposal of drywall debris during construction or renovation projects. This service includes comprehensive labor, rough materials, equipment usage, and responsible disposal. Ensures a clean and safe worksite.",
-        price: 100,
         category: SERVICE_CATEGORIES.DRYWALL_DEMOLITION,
     },
     {
@@ -4145,7 +3752,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Historical Preservation and Renovation",
         description: "Specialized drywall work focused on preserving and renovating historic properties. This service includes comprehensive labor, rough materials, equipment usage, and adherence to historical standards. Ensures respectful and accurate renovation.",
-        price: 100,
         category: SERVICE_CATEGORIES.DRYWALL_DEMOLITION,
     },
     {
@@ -4155,7 +3761,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Preparation for Reinstallation",
         description: "Preparation of spaces for drywall reinstallation, including cleaning and surface preparation. This service includes comprehensive labor, rough materials, equipment usage, and surface readiness. Provides a clean and prepared area for new drywall.",
-        price: 100,
         category: SERVICE_CATEGORIES.DRYWALL_DEMOLITION,
     },
     {
@@ -4165,7 +3770,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Structural Brick Removal",
         description: "Removal of structural bricks in preparation for new construction or renovation. This service includes comprehensive labor, rough materials, equipment usage, and debris removal. Ensures safe and efficient brick removal.",
-        price: 100,
         category: SERVICE_CATEGORIES.BRICKS,
     },
     {
@@ -4175,7 +3779,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Concrete Block Installation",
         description: "Installation of concrete blocks for strong and durable wall construction. This service includes comprehensive labor, rough materials, equipment usage, and concrete blocks. Provides a robust and long-lasting wall construction.",
-        price: 100,
         category: SERVICE_CATEGORIES.BRICKS,
     },
     {
@@ -4185,7 +3788,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Brick Veneer Installation",
         description: "Installation of brick veneer for an aesthetically pleasing brick finish. This service includes comprehensive labor, rough materials, equipment usage, finishes (client’s choice of color, texture), and brick veneer. Ensures a professional and attractive brick appearance.",
-        price: 100,
         category: SERVICE_CATEGORIES.BRICKS,
     },
     {
@@ -4195,7 +3797,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Brick Veneer Sandblasting",
         description: "Sandblasting of brick veneer to clean and restore its appearance. This service includes comprehensive labor, rough materials, equipment usage, and sandblasting. Provides a refreshed and clean brick finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.BRICKS,
     },
     {
@@ -4205,7 +3806,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Refrigerator Removal",
         description: "Safe and efficient removal of an old refrigerator. This service includes comprehensive labor, rough materials, equipment usage, and proper disposal of the refrigerator. Ensures a hassle-free removal process.",
-        price: 100,
         category: SERVICE_CATEGORIES.REFRIGERATOR,
     },
     {
@@ -4215,7 +3815,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Top or Bottom Freezer Installation",
         description: "Installation of a top or bottom freezer refrigerator. This service includes comprehensive labor, rough materials, equipment usage, and top or bottom freezer refrigerator (client’s choice of model and specifications). Ensures proper installation and functionality of the freezer.",
-        price: 100,
         category: SERVICE_CATEGORIES.REFRIGERATOR,
     },
     {
@@ -4225,7 +3824,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Side by Side Installation",
         description: "Installation of a side-by-side refrigerator. This service includes comprehensive labor, rough materials, equipment usage, and side by side refrigerator (client’s choice of model and specifications). Ensures proper installation and functionality of the refrigerator.",
-        price: 100,
         category: SERVICE_CATEGORIES.REFRIGERATOR,
     },
     {
@@ -4235,7 +3833,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Custom Refrigerator Installation",
         description: "Installation of a custom-built refrigerator to fit specific space and design requirements. This service includes comprehensive labor, rough materials, equipment usage, and custom refrigerator (client’s choice of model and specifications). Ensures a tailored and seamless installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.REFRIGERATOR,
     },
     {
@@ -4245,7 +3842,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Wine Cooler Installation",
         description: "Installation of a wine cooler to maintain optimal wine storage conditions. This service includes comprehensive labor, rough materials, equipment usage, and wine cooler (client’s choice of model and specifications). Ensures proper installation and functionality of the wine cooler.",
-        price: 100,
         category: SERVICE_CATEGORIES.REFRIGERATOR,
     },
     {
@@ -4255,7 +3851,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Refrigerator Not Cooling",
         description: "Diagnostic and repair service for a refrigerator that is not cooling. This service includes comprehensive labor, rough materials, equipment usage, and necessary repairs. Ensures the refrigerator returns to proper cooling functionality.",
-        price: 100,
         category: SERVICE_CATEGORIES.REFRIGERATOR,
     },
     {
@@ -4265,7 +3860,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Refrigerator Overcooling",
         description: "Diagnostic and repair service for a refrigerator that is overcooling. This service includes comprehensive labor, rough materials, equipment usage, and necessary repairs. Ensures the refrigerator maintains proper temperature levels.",
-        price: 100,
         category: SERVICE_CATEGORIES.REFRIGERATOR,
     },
     {
@@ -4275,7 +3869,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Water Leakage Inside or Outside",
         description: "Diagnostic and repair service for water leakage issues in a refrigerator. This service includes comprehensive labor, rough materials, equipment usage, and necessary repairs. Ensures the refrigerator operates without leaks.",
-        price: 100,
         category: SERVICE_CATEGORIES.REFRIGERATOR,
     },
     {
@@ -4285,7 +3878,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Buildup of Frost in the Freezer",
         description: "Diagnostic and repair service for frost buildup in the freezer. This service includes comprehensive labor, rough materials, equipment usage, and necessary repairs. Ensures the freezer maintains proper frost levels.",
-        price: 100,
         category: SERVICE_CATEGORIES.REFRIGERATOR,
     },
     {
@@ -4295,7 +3887,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Ice Maker Not Working",
         description: "Diagnostic and repair service for a non-functioning ice maker. This service includes comprehensive labor, rough materials, equipment usage, and necessary repairs. Ensures the ice maker produces ice efficiently.",
-        price: 100,
         category: SERVICE_CATEGORIES.REFRIGERATOR,
     },
     {
@@ -4305,7 +3896,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Fridge Making Strange Noises",
         description: "Diagnostic and repair service for a refrigerator making unusual noises. This service includes comprehensive labor, rough materials, equipment usage, and necessary repairs. Ensures quiet and smooth refrigerator operation.",
-        price: 100,
         category: SERVICE_CATEGORIES.REFRIGERATOR,
     },
     {
@@ -4315,7 +3905,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Malfunctioning Water Dispenser",
         description: "Diagnostic and repair service for a malfunctioning water dispenser. This service includes comprehensive labor, rough materials, equipment usage, and necessary repairs. Ensures the water dispenser operates correctly.",
-        price: 100,
         category: SERVICE_CATEGORIES.REFRIGERATOR,
     },
     {
@@ -4325,7 +3914,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Refrigerator Light Not Working",
         description: "Diagnostic and repair service for a refrigerator light that is not working. This service includes comprehensive labor, rough materials, equipment usage, and necessary repairs. Ensures proper lighting inside the refrigerator.",
-        price: 100,
         category: SERVICE_CATEGORIES.REFRIGERATOR,
     },
     {
@@ -4335,7 +3923,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Refrigerator Door Not Sealing Properly",
         description: "Diagnostic and repair service for a refrigerator door that is not sealing properly. This service includes comprehensive labor, rough materials, equipment usage, and necessary repairs. Ensures the refrigerator door seals effectively.",
-        price: 100,
         category: SERVICE_CATEGORIES.REFRIGERATOR,
     },
     {
@@ -4345,7 +3932,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Temperature Inconsistencies in Fridge or Freezer Section",
         description: "Diagnostic and repair service for temperature inconsistencies in the fridge or freezer sections. This service includes comprehensive labor, rough materials, equipment usage, and necessary repairs. Ensures consistent and proper temperature levels.",
-        price: 100,
         category: SERVICE_CATEGORIES.REFRIGERATOR,
     },
     {
@@ -4355,7 +3941,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Compressor Issues",
         description: "Diagnostic and repair service for compressor issues in a refrigerator. This service includes comprehensive labor, rough materials, equipment usage, and necessary repairs. Ensures the refrigerator compressor functions efficiently.",
-        price: 100,
         category: SERVICE_CATEGORIES.REFRIGERATOR,
     },
     {
@@ -4365,7 +3950,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Refrigerant Leak",
         description: "Diagnostic and repair service for refrigerant leaks in a refrigerator. This service includes comprehensive labor, rough materials, equipment usage, and necessary repairs. Ensures the refrigerator maintains proper refrigerant levels.",
-        price: 100,
         category: SERVICE_CATEGORIES.REFRIGERATOR,
     },
     {
@@ -4375,7 +3959,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Control Board Defect",
         description: "Diagnostic and repair service for control board defects in a refrigerator. This service includes comprehensive labor, rough materials, equipment usage, and necessary repairs. Ensures the refrigerator control board operates correctly.",
-        price: 100,
         category: SERVICE_CATEGORIES.REFRIGERATOR,
     },
     {
@@ -4385,7 +3968,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Non-Operating Fans",
         description: "Diagnostic and repair service for non-operating fans in a refrigerator. This service includes comprehensive labor, rough materials, equipment usage, and necessary repairs. Ensures the refrigerator fans function properly.",
-        price: 100,
         category: SERVICE_CATEGORIES.REFRIGERATOR,
     },
     {
@@ -4395,7 +3977,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Oven Removal",
         description: "Safe and efficient removal of an old oven. This service includes comprehensive labor, rough materials, equipment usage, and proper disposal of the oven. Ensures a hassle-free removal process.",
-        price: 100,
         category: SERVICE_CATEGORIES.OVEN,
     },
     {
@@ -4405,7 +3986,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Freestanding Gas Range Installation",
         description: "Installation of a freestanding gas range. This service includes comprehensive labor, rough materials, equipment usage, and freestanding gas range (client’s choice of model and specifications). Ensures proper installation and functionality of the gas range.",
-        price: 100,
         category: SERVICE_CATEGORIES.OVEN,
     },
     {
@@ -4415,7 +3995,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Freestanding Electric Range Installation",
         description: "Installation of a freestanding electric range. This service includes comprehensive labor, rough materials, equipment usage, and freestanding electric range (client’s choice of model and specifications). Ensures proper installation and functionality of the electric range.",
-        price: 100,
         category: SERVICE_CATEGORIES.OVEN,
     },
     {
@@ -4425,7 +4004,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Gas Cooktop Installation",
         description: "Installation of a gas cooktop. This service includes comprehensive labor, rough materials, equipment usage, and gas cooktop (client’s choice of model and specifications). Ensures proper installation and functionality of the gas cooktop.",
-        price: 100,
         category: SERVICE_CATEGORIES.OVEN,
     },
     {
@@ -4435,7 +4013,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Electric Cooktop Installation",
         description: "Installation of an electric cooktop. This service includes comprehensive labor, rough materials, equipment usage, and electric cooktop (client’s choice of model and specifications). Ensures proper installation and functionality of the electric cooktop.",
-        price: 100,
         category: SERVICE_CATEGORIES.OVEN,
     },
     {
@@ -4445,7 +4022,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Wall Oven Installation",
         description: "Installation of a wall oven. This service includes comprehensive labor, rough materials, equipment usage, and wall oven (client’s choice of model and specifications). Ensures proper installation and functionality of the wall oven.",
-        price: 100,
         category: SERVICE_CATEGORIES.OVEN,
     },
     {
@@ -4455,7 +4031,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Oven Electrical Repair",
         description: "Diagnostic and repair service for electrical issues in an oven. This service includes comprehensive labor, rough materials, equipment usage, and necessary repairs. Ensures the oven’s electrical components function correctly.",
-        price: 100,
         category: SERVICE_CATEGORIES.OVEN,
     },
     {
@@ -4465,7 +4040,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Oven Mechanical Repair",
         description: "Diagnostic and repair service for mechanical issues in an oven. This service includes comprehensive labor, rough materials, equipment usage, and necessary repairs. Ensures the oven’s mechanical components function correctly.",
-        price: 100,
         category: SERVICE_CATEGORIES.OVEN,
     },
     {
@@ -4475,7 +4049,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Oven Gas Repair",
         description: "Diagnostic and repair service for gas-related issues in an oven. This service includes comprehensive labor, rough materials, equipment usage, and necessary repairs. Ensures the oven’s gas components function correctly.",
-        price: 100,
         category: SERVICE_CATEGORIES.OVEN,
     },
     {
@@ -4485,7 +4058,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Oven Calibration and Maintenance",
         description: "Comprehensive calibration and maintenance service for an oven. This service includes comprehensive labor, rough materials, equipment usage, and necessary adjustments. Ensures the oven operates efficiently and accurately.",
-        price: 100,
         category: SERVICE_CATEGORIES.OVEN,
     },
     {
@@ -4495,7 +4067,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Dishwasher Removal",
         description: "Safe and efficient removal of an old dishwasher. This service includes comprehensive labor, rough materials, equipment usage, and proper disposal of the dishwasher. Ensures a hassle-free removal process.",
-        price: 100,
         category: SERVICE_CATEGORIES.DISHWASHER,
     },
     {
@@ -4505,7 +4076,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Dishwasher Installation",
         description: "Installation of a dishwasher, including setup, connection to water and drainage systems, and testing for proper operation. This service includes comprehensive labor, rough materials, equipment usage, and dishwasher (client’s choice of model and specifications). Ensures proper installation and functionality of the dishwasher.",
-        price: 100,
         category: SERVICE_CATEGORIES.DISHWASHER,
     },
     {
@@ -4515,7 +4085,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Water Flow and Drainage Repair",
         description: "Diagnostic and repair service for water flow and drainage issues in a dishwasher. This service includes comprehensive labor, rough materials, equipment usage, and necessary repairs. Ensures efficient water flow and drainage.",
-        price: 100,
         category: SERVICE_CATEGORIES.DISHWASHER,
     },
     {
@@ -4525,7 +4094,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Electrical and Control Repair",
         description: "Diagnostic and repair service for electrical and control issues in a dishwasher. This service includes comprehensive labor, rough materials, equipment usage, and necessary repairs. Ensures the dishwasher's electrical and control components function correctly.",
-        price: 100,
         category: SERVICE_CATEGORIES.DISHWASHER,
     },
     {
@@ -4535,7 +4103,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Heating and Drying Repair",
         description: "Diagnostic and repair service for heating and drying issues in a dishwasher. This service includes comprehensive labor, rough materials, equipment usage, and necessary repairs. Ensures the dishwasher's heating and drying components function correctly.",
-        price: 100,
         category: SERVICE_CATEGORIES.DISHWASHER,
     },
     {
@@ -4545,7 +4112,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Mechanical and Interior Repair",
         description: "Diagnostic and repair service for mechanical and interior issues in a dishwasher. This service includes comprehensive labor, rough materials, equipment usage, and necessary repairs. Ensures the dishwasher's mechanical and interior components function correctly.",
-        price: 100,
         category: SERVICE_CATEGORIES.DISHWASHER,
     },
     {
@@ -4555,7 +4121,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Washer Removal",
         description: "Safe and efficient removal of an old washing machine. This service includes comprehensive labor, rough materials, equipment usage, and proper disposal of the washer. Ensures a hassle-free removal process.",
-        price: 100,
         category: SERVICE_CATEGORIES.WASHER,
     },
     {
@@ -4565,7 +4130,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Smart Washer Installation",
         description: "Installation of a smart washing machine, including setup, connection to water and electrical systems, and testing for proper operation. This service includes comprehensive labor, rough materials, equipment usage, and smart washer (client’s choice of model and specifications). Ensures proper installation and functionality of the smart washer.",
-        price: 100,
         category: SERVICE_CATEGORIES.WASHER,
     },
     {
@@ -4575,7 +4139,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Laundry Center Installation",
         description: "Installation of a laundry center unit, including setup, connection to water and electrical systems, and testing for proper operation. This service includes comprehensive labor, rough materials, equipment usage, and laundry center (client’s choice of model and specifications). Ensures proper installation and functionality of the laundry center.",
-        price: 100,
         category: SERVICE_CATEGORIES.WASHER,
     },
     {
@@ -4585,7 +4148,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Washer Water-Related Repair",
         description: "Diagnostic and repair service for water-related issues in a washing machine. This service includes comprehensive labor, rough materials, equipment usage, and necessary repairs. Ensures efficient water flow and drainage.",
-        price: 100,
         category: SERVICE_CATEGORIES.WASHER,
     },
     {
@@ -4595,7 +4157,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Washer Mechanical Repair",
         description: "Diagnostic and repair service for mechanical issues in a washing machine. This service includes comprehensive labor, rough materials, equipment usage, and necessary repairs. Ensures the washer's mechanical components function correctly.",
-        price: 100,
         category: SERVICE_CATEGORIES.WASHER,
     },
     {
@@ -4605,7 +4166,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Washer Electrical and Control Repair",
         description: "Diagnostic and repair service for electrical and control issues in a washing machine. This service includes comprehensive labor, rough materials, equipment usage, and necessary repairs. Ensures the washer’s electrical and control components function correctly.",
-        price: 100,
         category: SERVICE_CATEGORIES.WASHER,
     },
     {
@@ -4615,7 +4175,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Washer Vibration and Noise Repair",
         description: "Diagnostic and repair service for vibration and noise issues in a washing machine. This service includes comprehensive labor, rough materials, equipment usage, and necessary repairs. Ensures smooth and quiet operation of the washer.",
-        price: 100,
         category: SERVICE_CATEGORIES.WASHER,
     },
     {
@@ -4625,7 +4184,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Dryer Removal",
         description: "Safe and efficient removal of an old dryer. This service includes comprehensive labor, rough materials, equipment usage, and proper disposal of the dryer. Ensures a hassle-free removal process.",
-        price: 100,
         category: SERVICE_CATEGORIES.DRYER,
     },
     {
@@ -4635,7 +4193,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Electric Dryer Installation",
         description: "Installation of an electric dryer, including setup, connection to electrical and venting systems, and testing for proper operation. This service includes comprehensive labor, rough materials, equipment usage, and electric dryer (client’s choice of model and specifications). Ensures proper installation and functionality of the electric dryer.",
-        price: 100,
         category: SERVICE_CATEGORIES.DRYER,
     },
     {
@@ -4645,7 +4202,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Gas Dryer Installation",
         description: "Installation of a gas dryer, including setup, connection to gas, electrical, and venting systems, and testing for proper operation. This service includes comprehensive labor, rough materials, equipment usage, and gas dryer (client’s choice of model and specifications). Ensures proper installation and functionality of the gas dryer.",
-        price: 100,
         category: SERVICE_CATEGORIES.DRYER,
     },
     {
@@ -4655,7 +4211,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Dryer Vent Cleaning",
         description: "Thorough cleaning of the dryer vent to remove lint and debris, ensuring safe and efficient operation. This service includes comprehensive labor, rough materials, equipment usage, and proper disposal of collected debris. Enhances dryer performance and reduces fire risk.",
-        price: 100,
         category: SERVICE_CATEGORIES.DRYER,
     },
     {
@@ -4665,7 +4220,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Dryer Thermal and Airflow Repair",
         description: "Diagnostic and repair service for thermal and airflow issues in a dryer. This service includes comprehensive labor, rough materials, equipment usage, and necessary repairs. Ensures optimal drying performance and safety.",
-        price: 100,
         category: SERVICE_CATEGORIES.DRYER,
     },
     {
@@ -4675,7 +4229,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Dryer Mechanical Repair",
         description: "Diagnostic and repair service for mechanical issues in a dryer. This service includes comprehensive labor, rough materials, equipment usage, and necessary repairs. Ensures the dryer’s mechanical components function correctly.",
-        price: 100,
         category: SERVICE_CATEGORIES.DRYER,
     },
     {
@@ -4685,7 +4238,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Dryer Electrical Repair",
         description: "Diagnostic and repair service for electrical issues in a dryer. This service includes comprehensive labor, rough materials, equipment usage, and necessary repairs. Ensures the dryer’s electrical components function correctly.",
-        price: 100,
         category: SERVICE_CATEGORIES.DRYER,
     },
     {
@@ -4695,7 +4247,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Dryer Noise and Vibration Repair",
         description: "Diagnostic and repair service for noise and vibration issues in a dryer. This service includes comprehensive labor, rough materials, equipment usage, and necessary repairs. Ensures smooth and quiet operation of the dryer.",
-        price: 100,
         category: SERVICE_CATEGORIES.DRYER,
     },
     {
@@ -4705,7 +4256,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Microwave Removal",
         description: "Safe and efficient removal of an old microwave. This service includes comprehensive labor, rough materials, equipment usage, and proper disposal of the microwave. Ensures a hassle-free removal process.",
-        price: 100,
         category: SERVICE_CATEGORIES.MICROWAVE,
     },
     {
@@ -4715,7 +4265,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Built-In Microwave Installation",
         description: "Installation of a built-in microwave, including setup, connection to electrical systems, and securing the unit in place. This service includes comprehensive labor, rough materials, equipment usage, and built-in microwave (client’s choice of model and specifications). Ensures proper installation and functionality of the built-in microwave.",
-        price: 100,
         category: SERVICE_CATEGORIES.MICROWAVE,
     },
     {
@@ -4725,7 +4274,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Over-the-Range Microwave Installation",
         description: "Installation of an over-the-range microwave, including setup, connection to electrical systems, venting, and securing the unit above the range. This service includes comprehensive labor, rough materials, equipment usage, and over-the-range microwave (client’s choice of model and specifications). Ensures proper installation and functionality of the over-the-range microwave.",
-        price: 100,
         category: SERVICE_CATEGORIES.MICROWAVE,
     },
     {
@@ -4735,7 +4283,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Microwave Electrical and Electronic Repair",
         description: "Diagnostic and repair service for electrical and electronic issues in a microwave. This service includes comprehensive labor, rough materials, equipment usage, and necessary repairs. Ensures the microwave’s electrical and electronic components function correctly.",
-        price: 100,
         category: SERVICE_CATEGORIES.MICROWAVE,
     },
     {
@@ -4745,7 +4292,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Microwave Mechanical Repair",
         description: "Diagnostic and repair service for mechanical issues in a microwave. This service includes comprehensive labor, rough materials, equipment usage, and necessary repairs. Ensures the microwave’s mechanical components function correctly.",
-        price: 100,
         category: SERVICE_CATEGORIES.MICROWAVE,
     },
     {
@@ -4755,7 +4301,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Range Hood Removal",
         description: "Safe and efficient removal of an old range hood. This service includes comprehensive labor, rough materials, equipment usage, and proper disposal of the range hood. Ensures a hassle-free removal process.",
-        price: 100,
         category: SERVICE_CATEGORIES.RANGE_HOOD,
     },
     {
@@ -4765,7 +4310,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Wall-Mount Range Hood Installation",
         description: "Installation of a wall-mounted range hood, including setup, connection to electrical and venting systems, and securing the unit in place. This service includes comprehensive labor, rough materials, equipment usage, and wall-mounted range hood (client’s choice of model and specifications). Ensures proper installation and functionality of the range hood.",
-        price: 100,
         category: SERVICE_CATEGORIES.RANGE_HOOD,
     },
     {
@@ -4775,7 +4319,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Under Cabinet Range Hood Installation",
         description: "Installation of an under-cabinet range hood, including setup, connection to electrical and venting systems, and securing the unit under the cabinet. This service includes comprehensive labor, rough materials, equipment usage, and under-cabinet range hood (client’s choice of model and specifications). Ensures proper installation and functionality of the range hood.",
-        price: 100,
         category: SERVICE_CATEGORIES.RANGE_HOOD,
     },
     {
@@ -4785,7 +4328,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Range Hood Cleaning and Maintenance",
         description: "Thorough cleaning and maintenance of a range hood to ensure optimal performance and longevity. This service includes comprehensive labor, rough materials, equipment usage, and necessary cleaning agents. Enhances range hood efficiency and hygiene.",
-        price: 100,
         category: SERVICE_CATEGORIES.RANGE_HOOD,
     },
     {
@@ -4795,7 +4337,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Appliance Electrical Testing",
         description: "Comprehensive electrical testing of appliances to ensure proper operation and safety. This service includes labor, rough materials, equipment usage, and detailed testing of electrical components. Identifies and addresses electrical issues in appliances.",
-        price: 100,
         category: SERVICE_CATEGORIES.DIAGNOSTIC,
     },
     {
@@ -4805,7 +4346,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Appliance Mechanical Testing",
         description: "Comprehensive mechanical testing of appliances to ensure proper operation and functionality. This service includes labor, rough materials, equipment usage, and detailed testing of mechanical components. Identifies and addresses mechanical issues in appliances.",
-        price: 100,
         category: SERVICE_CATEGORIES.DIAGNOSTIC,
     },
     {
@@ -4815,7 +4355,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Appliance Error Code Analysis",
         description: "Analysis and interpretation of appliance error codes to diagnose underlying issues. This service includes labor, rough materials, equipment usage, and detailed error code analysis. Provides clear insights and solutions for error codes displayed by appliances.",
-        price: 100,
         category: SERVICE_CATEGORIES.DIAGNOSTIC,
     },
     {
@@ -4825,7 +4364,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Performance Tests",
         description: "Comprehensive performance testing of appliances to ensure optimal operation and efficiency. This service includes labor, rough materials, equipment usage, and detailed performance evaluation. Ensures appliances operate at peak performance levels.",
-        price: 100,
         category: SERVICE_CATEGORIES.DIAGNOSTIC,
     },
     {
@@ -4835,7 +4373,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Appliance Gas System Diagnostic",
         description: "Diagnostic testing of the gas system in appliances to ensure safety and proper operation. This service includes labor, rough materials, equipment usage, and detailed gas system analysis. Identifies and addresses gas system issues in appliances.",
-        price: 100,
         category: SERVICE_CATEGORIES.DIAGNOSTIC,
     },
     {
@@ -4845,7 +4382,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Appliance Water System Diagnostic",
         description: "Diagnostic testing of the water system in appliances to ensure proper operation and efficiency. This service includes labor, rough materials, equipment usage, and detailed water system analysis. Identifies and addresses water system issues in appliances.",
-        price: 100,
         category: SERVICE_CATEGORIES.DIAGNOSTIC,
     },
     {
@@ -4855,7 +4391,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Appliance Thermal Diagnostic",
         description: "Thermal diagnostic testing of appliances to ensure proper heating and cooling functions. This service includes labor, rough materials, equipment usage, and detailed thermal analysis. Identifies and addresses thermal issues in appliances.",
-        price: 100,
         category: SERVICE_CATEGORIES.DIAGNOSTIC,
     },
     {
@@ -4865,7 +4400,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Appliance Noise and Vibration Diagnostic",
         description: "Diagnostic testing for noise and vibration issues in appliances to ensure quiet and smooth operation. This service includes labor, rough materials, equipment usage, and detailed noise and vibration analysis. Identifies and addresses noise and vibration issues in appliances.",
-        price: 100,
         category: SERVICE_CATEGORIES.DIAGNOSTIC,
     },
     {
@@ -4875,7 +4409,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Appliance Connectivity Diagnostic",
         description: "Diagnostic testing of appliance connectivity features to ensure proper operation and integration with smart systems. This service includes labor, rough materials, equipment usage, and detailed connectivity analysis. Identifies and addresses connectivity issues in appliances.",
-        price: 100,
         category: SERVICE_CATEGORIES.DIAGNOSTIC,
     },
     {
@@ -4885,7 +4418,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Appliance Energy Efficiency Diagnostic",
         description: "Diagnostic testing of appliance energy efficiency to ensure optimal energy usage and cost savings. This service includes labor, rough materials, equipment usage, and detailed energy efficiency analysis. Identifies and addresses energy efficiency issues in appliances.",
-        price: 100,
         category: SERVICE_CATEGORIES.DIAGNOSTIC,
     },
     {
@@ -4895,7 +4427,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Fire Alarm Detector Installation",
         description: "Installation of a fire alarm detector to enhance home fire safety. This service includes mounting the detector, connecting it to the power supply, and testing for proper operation. Includes comprehensive labor, rough materials, equipment usage, and fire alarm detector (client’s choice of model and specifications).",
-        price: 100,
         category: SERVICE_CATEGORIES.ALARM_SYSTEM,
     },
     {
@@ -4905,7 +4436,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Carbon Monoxide Detector Installation",
         description: "Installation of a carbon monoxide detector to improve home safety. This service includes mounting the detector, connecting it to the power supply, and testing for proper operation. Includes comprehensive labor, rough materials, equipment usage, and carbon monoxide detector (client’s choice of model and specifications).",
-        price: 100,
         category: SERVICE_CATEGORIES.ALARM_SYSTEM,
     },
     {
@@ -4915,7 +4445,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Wired Security Camera System Installation",
         description: "Installation of a wired security camera system to enhance home security. This service includes mounting the cameras, running cables, connecting to the monitoring system, and testing for proper operation. Includes comprehensive labor, rough materials, equipment usage, and security camera system (client’s choice of model and specifications).",
-        price: 100,
         category: SERVICE_CATEGORIES.CCTV,
     },
     {
@@ -4925,7 +4454,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Wireless Indoor/Outdoor Security Camera Installation",
         description: "Installation of wireless security cameras for indoor or outdoor use. This service includes mounting the cameras, connecting them to the wireless network, and testing for proper operation. Includes comprehensive labor, rough materials, equipment usage, and wireless security cameras (client’s choice of model and specifications).",
-        price: 100,
         category: SERVICE_CATEGORIES.CCTV,
     },
     {
@@ -4935,7 +4463,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Floodlight Wired Camera Installation",
         description: "Installation of a floodlight wired camera to improve outdoor security and lighting. This service includes mounting the floodlight camera, connecting it to the power supply and monitoring system, and testing for proper operation. Includes comprehensive labor, rough materials, equipment usage, and floodlight wired camera (client’s choice of model and specifications).",
-        price: 100,
         category: SERVICE_CATEGORIES.CCTV,
     },
     {
@@ -4945,7 +4472,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Smart WiFi Lock Installation",
         description: "Installation of a smart WiFi lock to enhance home security and convenience. This service includes mounting the lock, connecting it to the WiFi network, and testing for proper operation. Includes comprehensive labor, rough materials, equipment usage, and smart WiFi lock (client’s choice of model and specifications).",
-        price: 100,
         category: SERVICE_CATEGORIES.SMART_LOCK,
     },
     {
@@ -4955,7 +4481,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Smart Lock Maintenance and Troubleshooting",
         description: "Maintenance and troubleshooting of existing smart locks to ensure proper operation and security. This service includes comprehensive labor, rough materials, equipment usage, and necessary repairs or adjustments. Ensures smart locks are functioning correctly.",
-        price: 100,
         category: SERVICE_CATEGORIES.SMART_LOCK,
     },
     {
@@ -4965,7 +4490,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Wireless Video Doorbell Installation",
         description: "Installation of a wireless video doorbell to improve home security and convenience. This service includes mounting the doorbell, connecting it to the wireless network, and testing for proper operation. Includes comprehensive labor, rough materials, equipment usage, and wireless video doorbell (client's choice of model and specifications).",
-        price: 100,
         category: SERVICE_CATEGORIES.INTERCOM_SYSTEM,
     },
     {
@@ -4975,7 +4499,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Wired Doorbell Installation",
         description: "Installation of a wired doorbell for reliable and clear communication at the door. This service includes mounting the doorbell, running necessary wiring, connecting to the power supply, and testing for proper operation. Includes comprehensive labor, rough materials, equipment usage, and wired doorbell (client's choice of model and specifications).",
-        price: 100,
         category: SERVICE_CATEGORIES.INTERCOM_SYSTEM,
     },
     {
@@ -4985,7 +4508,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Wireless Security System Kit Installation",
         description: "Installation of a wireless security system kit to enhance home security. This service includes setting up and configuring the system components, connecting them to the network, and testing for proper operation. Includes comprehensive labor, rough materials, equipment usage, and wireless security system kit (client’s choice of model and specifications).",
-        price: 100,
         category: SERVICE_CATEGORIES.ACCESS_CONTROL,
     },
     {
@@ -4995,7 +4517,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Pedestrian Gate Lock Installation",
         description: "Installation of a pedestrian gate lock to improve access control and security. This service includes mounting the lock, connecting it to the power supply if necessary, and testing for proper operation. Includes comprehensive labor, rough materials, equipment usage, and pedestrian gate lock (client’s choice of model and specifications).",
-        price: 100,
         category: SERVICE_CATEGORIES.ACCESS_CONTROL,
     },
     {
@@ -5005,7 +4526,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Motion Sensor for Light Fixture Installation",
         description: "Installation of a motion sensor for a light fixture to enhance lighting control and security. This service includes mounting the sensor, connecting it to the light fixture, and testing for proper operation. Includes comprehensive labor, rough materials, equipment usage, and motion sensor (client’s choice of model and specifications).",
-        price: 100,
         category: SERVICE_CATEGORIES.MOTION_SENSOR,
     },
     {
@@ -5015,7 +4535,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Outdoor Motion Sensor Installation",
         description: "Installation of an outdoor motion sensor to improve security and outdoor lighting control. This service includes mounting the sensor, connecting it to the power supply, and testing for proper operation. Includes comprehensive labor, rough materials, equipment usage, and outdoor motion sensor (client’s choice of model and specifications).",
-        price: 100,
         category: SERVICE_CATEGORIES.MOTION_SENSOR,
     },
     {
@@ -5025,7 +4544,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Home Security Door/Window Installation",
         description: "Installation of door/window sensors to enhance home security. This service includes mounting the sensors, connecting them to the security system, and testing for proper operation. Includes comprehensive labor, rough materials, equipment usage, and door/window sensors (client’s choice of model and specifications).",
-        price: 100,
         category: SERVICE_CATEGORIES.DOOR_SENSOR,
     },
     {
@@ -5035,7 +4553,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Garage Door Safety Sensors Installation",
         description: "Installation of safety sensors for garage doors to improve safety and security. This service includes mounting the sensors, connecting them to the garage door system, and testing for proper operation. Includes comprehensive labor, rough materials, equipment usage, and garage door safety sensors (client’s choice of model and specifications).",
-        price: 100,
         category: SERVICE_CATEGORIES.DOOR_SENSOR,
     },
     {
@@ -5045,7 +4562,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Smart Leak Detectors Installation",
         description: "Installation of smart leak detectors to monitor and alert for water leaks. This service includes placing the detectors in strategic locations, connecting them to the network, and testing for proper operation. Includes comprehensive labor, rough materials, equipment usage, and smart leak detectors (client’s choice of model and specifications).",
-        price: 100,
         category: SERVICE_CATEGORIES.WATER_DETECTOR,
     },
     {
@@ -5055,7 +4571,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Smart Water Detector and Automatic Water Shutoff Installation",
         description: "Installation of a smart water detector and automatic water shutoff system to prevent water damage. This service includes placing the detectors in strategic locations, installing the shutoff valve, connecting them to the network, and testing for proper operation. Includes comprehensive labor, rough materials, equipment usage, and smart water detector and shutoff system (client’s choice of model and specifications).",
-        price: 100,
         category: SERVICE_CATEGORIES.WATER_DETECTOR,
     },
     {
@@ -5065,7 +4580,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Built-in Theater Projector Installation",
         description: "Installation of a built-in theater projector for a high-quality home theater experience. This service includes mounting the projector, connecting it to the power supply and AV system, and testing for proper operation. Includes comprehensive labor, rough materials, equipment usage, and projector (client’s choice of model and specifications).",
-        price: 100,
         category: SERVICE_CATEGORIES.PROJECTOR,
     },
     {
@@ -5075,7 +4589,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Built-in Theater Projector Repair",
         description: "Repair of an existing built-in theater projector to restore optimal performance. This service includes diagnosing issues, replacing faulty components, and testing for proper operation. Includes comprehensive labor, rough materials, and equipment usage.",
-        price: 100,
         category: SERVICE_CATEGORIES.PROJECTOR,
     },
     {
@@ -5085,7 +4598,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Projection Screen Installation",
         description: "Installation of a projection screen for a high-quality home theater experience. This service includes mounting the screen, ensuring proper alignment and tension, and testing for optimal performance. Includes comprehensive labor, rough materials, equipment usage, and projection screen (client’s choice of model and specifications).",
-        price: 100,
         category: SERVICE_CATEGORIES.SCREEN,
     },
     {
@@ -5095,7 +4607,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Theater Sound System Installation",
         description: "Installation of a theater sound system for immersive audio experiences. This service includes mounting speakers, connecting them to the AV receiver, and testing for proper operation. Includes comprehensive labor, rough materials, equipment usage, and sound system components (client’s choice of model and specifications).",
-        price: 100,
         category: SERVICE_CATEGORIES.SOUND_SYSTEM,
     },
     {
@@ -5105,7 +4616,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "In-wall / In-ceiling Speaker Installation",
         description: "Installation of in-wall or in-ceiling speakers for a clean and discreet audio setup. This service includes cutting openings, mounting speakers, connecting to the AV system, and testing for proper operation. Includes comprehensive labor, rough materials, equipment usage, and speakers (client’s choice of model and specifications).",
-        price: 100,
         category: SERVICE_CATEGORIES.SPEAKER,
     },
     {
@@ -5115,7 +4625,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Public Address Speaker Installation",
         description: "Installation of public address speakers for clear and effective sound distribution. This service includes mounting speakers, connecting them to the PA system, and testing for proper operation. Includes comprehensive labor, rough materials, equipment usage, and public address speakers (client’s choice of model and specifications).",
-        price: 100,
         category: SERVICE_CATEGORIES.SPEAKER,
     },
     {
@@ -5125,7 +4634,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Home Stereo Receiver Installation",
         description: "Installation of a home stereo receiver to manage and distribute audio signals. This service includes connecting the receiver to speakers, sources, and power, and testing for proper operation. Includes comprehensive labor, rough materials, equipment usage, and stereo receiver (client’s choice of model and specifications).",
-        price: 100,
         category: SERVICE_CATEGORIES.AV_RECEIVER,
     },
     {
@@ -5135,7 +4643,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Rough-in for Audio/Visual (Per Room)",
         description: "Rough-in wiring for audio and visual components in a single room, preparing for future equipment installation. This service includes running cables, installing conduit if necessary, and ensuring proper connections. Includes comprehensive labor, rough materials, and equipment usage.",
-        price: 100,
         category: SERVICE_CATEGORIES.CABLE_AND_WIRE,
     },
     {
@@ -5145,7 +4652,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "TV Panel Installation (Up to 64”)",
         description: "Installation of a TV panel up to 64 inches for optimal viewing experience. This service includes mounting the TV, connecting it to power and sources, and testing for proper operation. Includes comprehensive labor, rough materials, equipment usage, and TV mount (client’s choice of model and specifications).",
-        price: 100,
         category: SERVICE_CATEGORIES.TV_WALL,
     },
     {
@@ -5155,7 +4661,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "TV Panel Installation (Up to 90”)",
         description: "Installation of a TV panel up to 90 inches for a premium viewing experience. This service includes mounting the TV, connecting it to power and sources, and testing for proper operation. Includes comprehensive labor, rough materials, equipment usage, and TV mount (client’s choice of model and specifications).",
-        price: 100,
         category: SERVICE_CATEGORIES.TV_WALL,
     },
     {
@@ -5165,7 +4670,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Wireless Router Installation",
         description: "Installation of a wireless router to provide Wi-Fi connectivity throughout the home. This service includes setting up the router, connecting it to the internet, and configuring settings for optimal performance. Includes comprehensive labor, rough materials, equipment usage, and wireless router (client’s choice of model and specifications).",
-        price: 100,
         category: SERVICE_CATEGORIES.WI_FI,
     },
     {
@@ -5175,7 +4679,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Wi-Fi Range Extender Installation",
         description: "Installation of a Wi-Fi range extender to improve wireless coverage in the home. This service includes setting up the extender, connecting it to the existing network, and configuring settings for optimal performance. Includes comprehensive labor, rough materials, equipment usage, and Wi-Fi range extender (client’s choice of model and specifications).",
-        price: 100,
         category: SERVICE_CATEGORIES.WI_FI,
     },
     {
@@ -5185,7 +4688,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Wi-Fi Troubleshooting",
         description: "Troubleshooting of Wi-Fi network issues to restore connectivity and performance. This service includes diagnosing problems, adjusting settings, and testing for proper operation. Includes comprehensive labor, rough materials, and equipment usage.",
-        price: 100,
         category: SERVICE_CATEGORIES.WI_FI,
     },
     {
@@ -5195,7 +4697,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Sound Absorbing Wedges Installation",
         description: "Installation of studiofoam wedges to improve sound quality by reducing echoes and reflections. This service includes mounting the foam panels on walls and ceilings as needed. Includes comprehensive labor, rough materials, equipment usage, and studiofoam wedges (client’s choice of model and specifications).",
-        price: 100,
         category: SERVICE_CATEGORIES.SOUND_ABSORBING,
     },
     {
@@ -5205,7 +4706,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Paintable Sound Absorbing Acoustic Panels Installation",
         description: "Installation of paintable sound absorbing acoustic panels for improved sound quality and aesthetic appeal. This service includes mounting the panels, ensuring proper placement, and painting if required. Includes comprehensive labor, rough materials, equipment usage, and acoustic panels (client’s choice of model and specifications).",
-        price: 100,
         category: SERVICE_CATEGORIES.SOUND_ABSORBING,
     },
     {
@@ -5215,7 +4715,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Home Theater Troubleshooting",
         description: "Troubleshooting of home theater system issues to restore optimal performance. This service includes diagnosing problems, adjusting settings, and replacing faulty components if necessary. Includes comprehensive labor, rough materials, and equipment usage.",
-        price: 100,
         category: SERVICE_CATEGORIES.TROUBLESHOOTING,
     },
     {
@@ -5225,7 +4724,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Flat-Pack Furniture Assembly (Small and Medium Items)",
         description: "Flat-Pack Furniture Assembly (Small and Medium Items) specializes in constructing ready-to-assemble furniture from popular retailers like IKEA, Wayfair, Home Depot, and others. This service includes unpacking, parts verification, and the complete assembly of small to medium items according to the manufacturer’s instructions. It’s designed for customers seeking a hassle-free setup of their new furniture, ensuring correct, secure, and ready-to-use assembly.",
-        price: 100,
         category: SERVICE_CATEGORIES.ASSEMBLY,
     },
     {
@@ -5235,7 +4733,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Flat-Pack Furniture Assembly (Large Items)",
         description: "Flat-Pack Furniture Assembly (Large Items) specializes in constructing large ready-to-assemble furniture from popular retailers like IKEA, Wayfair, Home Depot, and others. This service includes unpacking, parts verification, and the complete assembly of large items according to the manufacturer’s instructions. Ensures a hassle-free setup, with furniture assembled correctly, securely, and ready to use.",
-        price: 100,
         category: SERVICE_CATEGORIES.ASSEMBLY,
     },
     {
@@ -5245,7 +4742,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Office Furniture Assembly",
         description: "Office Furniture Assembly provides assembly services for a wide range of office furniture including desks, chairs, cabinets, and shelving units. This service includes unpacking, parts verification, and complete assembly according to the manufacturer’s instructions. Ensures your office furniture is assembled correctly and securely, ready for immediate use.",
-        price: 100,
         category: SERVICE_CATEGORIES.ASSEMBLY,
     },
     {
@@ -5255,7 +4751,6 @@ export const ALL_SERVICES = [
         unit_of_measurement: "patio set",
         title: "Outdoor Furniture Assembly",
         description: "Outdoor Furniture Assembly specializes in the assembly of outdoor furniture sets, including tables, chairs, benches, and loungers. This service includes unpacking, parts verification, and complete assembly according to the manufacturer’s instructions. Ensures your outdoor furniture is assembled correctly and securely, ready for outdoor use.",
-        price: 100,
         category: SERVICE_CATEGORIES.ASSEMBLY,
     },
     {
@@ -5265,7 +4760,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Children’s Simple Furniture Assembly",
         description: "Children’s Simple Furniture Assembly specializes in the assembly of simple children’s furniture such as small beds, tables, chairs, and storage units. This service includes unpacking, parts verification, and complete assembly according to the manufacturer’s instructions. Ensures children’s furniture is assembled correctly, securely, and safely for immediate use.",
-        price: 100,
         category: SERVICE_CATEGORIES.ASSEMBLY,
     },
     {
@@ -5275,7 +4769,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Children’s Playsets Assembly",
         description: "Children’s Playsets Assembly provides assembly services for a variety of children’s playsets, including indoor and outdoor playhouses, swing sets, and climbing frames. This service includes unpacking, parts verification, and complete assembly according to the manufacturer’s instructions. Ensures playsets are assembled correctly, securely, and safely, ready for play.",
-        price: 100,
         category: SERVICE_CATEGORIES.ASSEMBLY,
     },
     {
@@ -5285,7 +4778,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Entertainment Centers and TV Stand Assembly",
         description: "Entertainment Centers and TV Stand Assembly specializes in the assembly of entertainment centers and TV stands. This service includes unpacking, parts verification, and complete assembly according to the manufacturer’s instructions. Ensures entertainment units are assembled correctly, securely, and ready for use.",
-        price: 100,
         category: SERVICE_CATEGORIES.ASSEMBLY,
     },
     {
@@ -5295,7 +4787,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Exercise Equipment Assembly",
         description: "Exercise Equipment Assembly provides assembly services for a wide range of exercise equipment including treadmills, elliptical machines, and stationary bikes. This service includes unpacking, parts verification, and complete assembly according to the manufacturer’s instructions. Ensures exercise equipment is assembled correctly, securely, and ready for use.",
-        price: 100,
         category: SERVICE_CATEGORIES.ASSEMBLY,
     },
     {
@@ -5305,7 +4796,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Bedroom Furniture Assembly",
         description: "Bedroom Furniture Assembly specializes in the assembly of bedroom furniture including beds, dressers, nightstands, and wardrobes. This service includes unpacking, parts verification, and complete assembly according to the manufacturer’s instructions. Ensures bedroom furniture is assembled correctly, securely, and ready for use.",
-        price: 100,
         category: SERVICE_CATEGORIES.ASSEMBLY,
     },
     {
@@ -5315,7 +4805,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Shelf Mounting",
         description: "Shelf Mounting service includes the installation of shelves on various types of walls. This service includes mounting brackets, securing shelves, and ensuring proper alignment and stability. Includes comprehensive labor, rough materials, equipment usage, and finishes (client’s choice of shelf type, color, and material). Ensures shelves are mounted correctly and securely.",
-        price: 100,
         category: SERVICE_CATEGORIES.INSTALLATION,
     },
     {
@@ -5325,7 +4814,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Small and Medium Picture Hanging Installation",
         description: "Small and Medium Picture Hanging Installation service includes the hanging of small to medium-sized pictures, artworks, or mirrors. This service includes measuring, securing hangers, and ensuring proper alignment. Includes comprehensive labor, rough materials, and equipment usage. Ensures pictures are hung correctly and securely.",
-        price: 100,
         category: SERVICE_CATEGORIES.INSTALLATION,
     },
     {
@@ -5335,7 +4823,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Large Picture Hanging Installation",
         description: "Large Picture Hanging Installation service includes the hanging of large pictures, artworks, or mirrors. This service includes measuring, securing hangers, and ensuring proper alignment. Includes comprehensive labor, rough materials, and equipment usage. Ensures large pictures are hung correctly and securely.",
-        price: 100,
         category: SERVICE_CATEGORIES.INSTALLATION,
     },
     {
@@ -5345,7 +4832,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Frameless Mirror Hanging Installation",
         description: "Frameless Mirror Hanging Installation service includes the hanging of frameless mirrors on walls. This service includes securing mounts, aligning the mirror, and ensuring stability. Includes comprehensive labor, rough materials, equipment usage, and finishes (client’s choice of mounting hardware and mirror style). Ensures frameless mirrors are hung correctly and securely.",
-        price: 100,
         category: SERVICE_CATEGORIES.INSTALLATION,
     },
     {
@@ -5355,7 +4841,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Framed Mirror Hanging",
         description: "Framed Mirror Hanging service includes the hanging of framed mirrors on walls. This service includes securing mounts, aligning the mirror, and ensuring stability. Includes comprehensive labor, rough materials, equipment usage, and finishes (client’s choice of mounting hardware and frame style). Ensures framed mirrors are hung correctly and securely.",
-        price: 100,
         category: SERVICE_CATEGORIES.INSTALLATION,
     },
     {
@@ -5365,7 +4850,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Minor Surface and Structural Repair",
         description: "Minor Surface and Structural Repair service includes the restoration of small surface damages and minor structural issues in furniture. This service includes sanding, filling, and reinforcing materials. Includes comprehensive labor, rough materials, equipment usage, and finishes (client’s choice of paint, stain, or coating). Ensures furniture is restored to its original condition.",
-        price: 100,
         category: SERVICE_CATEGORIES.REPAIR,
     },
     {
@@ -5375,7 +4859,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Cabinet Mechanism Repairs",
         description: "Cabinet Mechanism Repairs service includes fixing issues with cabinet doors, drawers, and other moving parts. This service includes adjusting hinges, replacing tracks, and ensuring smooth operation. Includes comprehensive labor, rough materials, and equipment usage. Ensures cabinets function correctly and smoothly.",
-        price: 100,
         category: SERVICE_CATEGORIES.REPAIR,
     },
     {
@@ -5385,7 +4868,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Structural Repairs",
         description: "Structural Repairs service includes addressing major structural damages in furniture, such as broken legs or frames. This service includes reinforcing or replacing damaged parts. Includes comprehensive labor, rough materials, equipment usage, and finishes (client’s choice of material and color). Ensures furniture stability and durability.",
-        price: 100,
         category: SERVICE_CATEGORIES.REPAIR,
     },
     {
@@ -5395,7 +4877,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Hardware Replacement",
         description: "Cabinet Hardware Replacement service includes replacing old or damaged cabinet hardware, such as handles, knobs, and hinges. This service ensures the new hardware is installed securely and properly, enhancing both the functionality and appearance of your cabinets. Includes comprehensive labor, rough materials, equipment usage, and hardware (client’s choice of style and finish).",
-        price: 100,
         category: SERVICE_CATEGORIES.REPAIR,
     },
     {
@@ -5405,7 +4886,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Wood Furniture Cleaning",
         description: "Wood Furniture Cleaning service includes the thorough cleaning and polishing of wooden furniture to remove dirt, stains, and build-up. This service includes using specialized cleaners and polishes suitable for wood surfaces. Includes comprehensive labor and equipment usage. Ensures wooden furniture is clean, polished, and well-maintained.",
-        price: 100,
         category: SERVICE_CATEGORIES.CLEANING,
     },
     {
@@ -5415,7 +4895,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Stainless Steel Furniture Cleaning",
         description: "Stainless Steel Furniture Cleaning service includes the cleaning and polishing of stainless steel surfaces to remove fingerprints, stains, and tarnish. This service includes using specialized cleaners and polishes suitable for stainless steel. Includes comprehensive labor and equipment usage. Ensures stainless steel furniture is clean and shiny.",
-        price: 100,
         category: SERVICE_CATEGORIES.CLEANING,
     },
     {
@@ -5425,7 +4904,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Copper and Brass Furniture Cleaning",
         description: "Copper and Brass Furniture Cleaning service includes the cleaning and polishing of copper and brass surfaces to remove tarnish, stains, and oxidation. This service includes using specialized cleaners and polishes suitable for copper and brass. Includes comprehensive labor and equipment usage. Ensures copper and brass furniture is clean and restored to its original luster.",
-        price: 100,
         category: SERVICE_CATEGORIES.CLEANING,
     },
     {
@@ -5435,7 +4913,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Metal and Cast Iron Furniture Cleaning",
         description: "Metal and Cast Iron Furniture Cleaning service includes the cleaning and maintenance of metal and cast iron furniture to remove rust, dirt, and build-up. This service includes using specialized cleaners and rust inhibitors. Includes comprehensive labor and equipment usage. Ensures metal and cast iron furniture is clean and protected from further corrosion.",
-        price: 100,
         category: SERVICE_CATEGORIES.CLEANING,
     },
     {
@@ -5445,7 +4922,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Garage Storage Installation",
         description: "Garage Storage Installation service includes setting up storage solutions such as shelves, cabinets, and racks in a garage. This service includes assembling and mounting storage units, ensuring they are secure and properly installed. Includes comprehensive labor, rough materials, equipment usage, and storage units (client’s choice of type, material, and brand). Ensures an organized and efficient garage storage system.",
-        price: 100,
         category: SERVICE_CATEGORIES.STORAGE,
     },
     {
@@ -5455,7 +4931,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Closet Organizer Installation",
         description: "Closet Organizer Installation service includes installing customizable closet organizing systems to maximize storage space. This service includes assembling and mounting shelves, drawers, and rods according to the client’s needs. Includes comprehensive labor, rough materials, equipment usage, and closet organizer (client’s choice of design and specifications). Ensures a well-organized and functional closet.",
-        price: 100,
         category: SERVICE_CATEGORIES.STORAGE,
     },
     {
@@ -5465,7 +4940,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Wire Closet Organizer Installation",
         description: "Wire Closet Organizer Installation service includes setting up wire shelving and organizing systems in closets. This service includes assembling and mounting wire shelves, drawers, and hanging rods. Includes comprehensive labor, rough materials, equipment usage, and wire closet organizer (client’s choice of size and configuration). Ensures a versatile and efficient closet organization.",
-        price: 100,
         category: SERVICE_CATEGORIES.STORAGE,
     },
     {
@@ -5475,7 +4949,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Shelving Installation",
         description: "Shelving Installation service includes installing various types of shelves in different rooms of a home. This service includes assembling and mounting shelves securely on walls. Includes comprehensive labor, rough materials, equipment usage, and shelves (client’s choice of type, material, and brand). Ensures additional storage and display space in any room.",
-        price: 100,
         category: SERVICE_CATEGORIES.STORAGE,
     },
     {
@@ -5485,7 +4958,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Leather Upholstery Cleaning",
         description: "Leather Upholstery Cleaning service includes deep cleaning and conditioning of leather furniture to remove dirt, stains, and oils. This service includes using specialized leather cleaners and conditioners. Includes comprehensive labor and equipment usage. Ensures leather furniture is clean, nourished, and protected.",
-        price: 100,
         category: SERVICE_CATEGORIES.UPHOLSTERY,
     },
     {
@@ -5495,7 +4967,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Fabric Upholstery Cleaning",
         description: "Fabric Upholstery Cleaning service includes deep cleaning of fabric-covered furniture to remove dirt, stains, and allergens. This service includes using specialized upholstery cleaners and stain removers. Includes comprehensive labor and equipment usage. Ensures fabric furniture is clean, fresh, and well-maintained.",
-        price: 100,
         category: SERVICE_CATEGORIES.UPHOLSTERY,
     },
     {
@@ -5505,7 +4976,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Upholstery Repair",
         description: "Upholstery Repair service includes repairing damages to upholstered furniture, such as tears, holes, and sagging cushions. This service includes sewing, patching, and re-stuffing cushions. Includes comprehensive labor, rough materials, equipment usage, and upholstery materials (client’s choice of fabric or leather for repairs). Ensures upholstered furniture is restored to its original condition.",
-        price: 100,
         category: SERVICE_CATEGORIES.UPHOLSTERY,
     },
     {
@@ -5515,7 +4985,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Large Furniture Removal",
         description: "Large Furniture Removal service includes the removal of bulky and heavy furniture items from any room in the house. This service includes disassembling (if necessary), moving, and disposing of the furniture. Includes comprehensive labor, rough materials, and equipment usage. Ensures safe and efficient removal of large furniture items.",
-        price: 100,
         category: SERVICE_CATEGORIES.REMOVAL,
     },
     {
@@ -5525,7 +4994,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Cabinet Removal",
         description: "Cabinet Removal service includes the removal of built-in or standalone cabinets from kitchens, bathrooms, or other rooms. This service includes detaching cabinets from walls, moving, and disposing of them. Includes comprehensive labor, rough materials, and equipment usage. Ensures the cabinets are removed safely and the area is prepared for new installations.",
-        price: 100,
         category: SERVICE_CATEGORIES.REMOVAL,
     },
     {
@@ -5535,7 +5003,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Estate Cleanout",
         description: "Estate Cleanout service includes clearing out furniture, personal belongings, and debris from an entire estate property. This service includes sorting items for donation, disposal, or keeping, and ensuring the property is left clean and empty. Includes comprehensive labor, rough materials, and equipment usage. Ensures a thorough and respectful cleanout of estate properties.",
-        price: 100,
         category: SERVICE_CATEGORIES.REMOVAL,
     },
     {
@@ -5545,7 +5012,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Reception Desk Installation",
         description: "Reception Desk Installation service includes assembling and installing a reception desk in commercial spaces such as offices or clinics. This service includes setting up the desk, securing it in place, and ensuring it is ready for use. Includes comprehensive labor, rough materials, equipment usage, and reception desk (client’s choice of design and specifications). Ensures a professional and functional reception area.",
-        price: 100,
         category: SERVICE_CATEGORIES.COMMERCIAL,
     },
     {
@@ -5555,7 +5021,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Executive Desk Installation",
         description: "Executive Desk Installation service includes assembling and installing an executive desk in offices or home workspaces. This service includes setting up the desk, securing it in place, and ensuring it is ready for use. Includes comprehensive labor, rough materials, equipment usage, and executive desk (client’s choice of design and specifications). Ensures a high-quality and functional workspace.",
-        price: 100,
         category: SERVICE_CATEGORIES.COMMERCIAL,
     },
     {
@@ -5565,7 +5030,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Computer Desks Installation",
         description: "Computer Desks Installation service includes assembling and installing computer desks in offices or home workspaces. This service includes setting up the desks, securing them in place, and ensuring they are ready for use. Includes comprehensive labor, rough materials, equipment usage, and computer desks (client’s choice of design and specifications). Ensures a practical and organized workspace for computer use.",
-        price: 100,
         category: SERVICE_CATEGORIES.COMMERCIAL,
     },
     {
@@ -5575,7 +5039,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Room Divider Installation",
         description: "Room Divider Installation service includes assembling and installing room dividers in commercial or residential spaces. This service includes setting up the dividers, securing them in place, and ensuring they are ready for use. Includes comprehensive labor, rough materials, equipment usage, and room dividers (client’s choice of design and specifications). Ensures effective and aesthetically pleasing room separation.",
-        price: 100,
         category: SERVICE_CATEGORIES.COMMERCIAL,
     },
     {
@@ -5585,7 +5048,6 @@ export const ALL_SERVICES = [
         max_quantity: 20,
         title: "Entire Apartment Move",
         description: "Entire Apartment Move service includes packing, loading, transporting, and unpacking all items from an apartment. This service ensures all belongings are safely moved to the new location. Includes comprehensive labor, rough materials, and equipment usage. Provides a hassle-free and efficient apartment move.",
-        price: 100,
         category: SERVICE_CATEGORIES.RESIDENTIAL_LOCAL,
     },
     {
@@ -5595,7 +5057,6 @@ export const ALL_SERVICES = [
         max_quantity: 20,
         title: "Kitchen Move",
         description: "Kitchen Move service includes packing, loading, transporting, and unpacking all kitchen items, including appliances, dishes, and pantry contents. This service ensures kitchen items are safely moved to the new location. Includes comprehensive labor, rough materials, and equipment usage. Ensures a smooth and organized kitchen move.",
-        price: 100,
         category: SERVICE_CATEGORIES.RESIDENTIAL_LOCAL,
     },
     {
@@ -5605,7 +5066,6 @@ export const ALL_SERVICES = [
         max_quantity: 20,
         title: "Living Room Move",
         description: "Living Room Move service includes packing, loading, transporting, and unpacking all living room items, including furniture, electronics, and decor. This service ensures living room items are safely moved to the new location. Includes comprehensive labor, rough materials, and equipment usage. Provides a seamless and efficient living room move.",
-        price: 100,
         category: SERVICE_CATEGORIES.RESIDENTIAL_LOCAL,
     },
     {
@@ -5615,7 +5075,6 @@ export const ALL_SERVICES = [
         max_quantity: 20,
         title: "Master Bedroom Move",
         description: "Master Bedroom Move service includes packing, loading, transporting, and unpacking all master bedroom items, including furniture, clothing, and personal items. This service ensures bedroom items are safely moved to the new location. Includes comprehensive labor, rough materials, and equipment usage. Ensures a stress-free and organized master bedroom move.",
-        price: 100,
         category: SERVICE_CATEGORIES.RESIDENTIAL_LOCAL,
     },
     {
@@ -5625,7 +5084,6 @@ export const ALL_SERVICES = [
         max_quantity: 20,
         title: "Bathroom Move",
         description: "Bathroom Move service includes packing, loading, transporting, and unpacking all bathroom items, including toiletries, towels, and small appliances. This service ensures bathroom items are safely moved to the new location. Includes comprehensive labor, rough materials, and equipment usage. Provides a smooth and organized bathroom move.",
-        price: 100,
         category: SERVICE_CATEGORIES.RESIDENTIAL_LOCAL,
     },
     {
@@ -5635,7 +5093,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Garage Move",
         description: "Garage Move service includes packing, loading, transporting, and unpacking all garage items, including tools, equipment, and storage items. This service ensures garage items are safely moved to the new location. Includes comprehensive labor, rough materials, and equipment usage. Ensures an efficient and organized garage move.",
-        price: 100,
         category: SERVICE_CATEGORIES.RESIDENTIAL_LOCAL,
     },
     {
@@ -5645,7 +5102,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Office Move",
         description: "Office Move service includes packing, loading, transporting, and unpacking all office items, including furniture, electronics, and supplies. This service ensures office items are safely moved to the new location. Includes comprehensive labor, rough materials, and equipment usage. Provides a seamless and efficient office move.",
-        price: 100,
         category: SERVICE_CATEGORIES.COMMERCIAL_LOCAL,
     },
     {
@@ -5655,7 +5111,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Clothing Store Move",
         description: "Clothing Store Move service includes packing, loading, transporting, and unpacking all store items, including clothing, displays, and fixtures. This service ensures store items are safely moved to the new location. Includes comprehensive labor, rough materials, and equipment usage. Ensures a smooth and organized clothing store move.",
-        price: 100,
         category: SERVICE_CATEGORIES.COMMERCIAL_LOCAL,
     },
     {
@@ -5665,7 +5120,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Coffee Shop/Restaurant Move",
         description: "Coffee Shop/Restaurant Move service includes packing, loading, transporting, and unpacking all shop/restaurant items, including furniture, kitchen equipment, and supplies. This service ensures shop/restaurant items are safely moved to the new location. Includes comprehensive labor, rough materials, and equipment usage. Provides a hassle-free and efficient move for coffee shops and restaurants.",
-        price: 100,
         category: SERVICE_CATEGORIES.COMMERCIAL_LOCAL,
     },
     {
@@ -5675,7 +5129,6 @@ export const ALL_SERVICES = [
         max_quantity: 20,
         title: "Entire Apartment Packing and Unpacking",
         description: "Entire Apartment Packing and Unpacking service includes the careful packing of all items in an apartment, transportation, and subsequent unpacking at the new location. This service ensures all belongings are safely packed, moved, and organized. Includes comprehensive labor, packing materials, and equipment usage. Provides a hassle-free and efficient apartment move.",
-        price: 100,
         category: SERVICE_CATEGORIES.PACKING_UNPACKING,
     },
     {
@@ -5685,7 +5138,6 @@ export const ALL_SERVICES = [
         max_quantity: 20,
         title: "Kitchen Packing and Unpacking",
         description: "Kitchen Packing and Unpacking service includes the careful packing of all kitchen items, including appliances, dishes, and pantry contents, transportation, and subsequent unpacking at the new location. This service ensures kitchen items are safely packed, moved, and organized. Includes comprehensive labor, packing materials, and equipment usage. Ensures a smooth and organized kitchen move.",
-        price: 100,
         category: SERVICE_CATEGORIES.PACKING_UNPACKING,
     },
     {
@@ -5695,7 +5147,6 @@ export const ALL_SERVICES = [
         max_quantity: 20,
         title: "Living Room Packing and Unpacking",
         description: "Living Room Packing and Unpacking service includes the careful packing of all living room items, including furniture, electronics, and decor, transportation, and subsequent unpacking at the new location. This service ensures living room items are safely packed, moved, and organized. Includes comprehensive labor, packing materials, and equipment usage. Provides a seamless and efficient living room move.",
-        price: 100,
         category: SERVICE_CATEGORIES.PACKING_UNPACKING,
     },
     {
@@ -5705,7 +5156,6 @@ export const ALL_SERVICES = [
         max_quantity: 20,
         title: "Bedroom Packing and Unpacking",
         description: "Bedroom Packing and Unpacking service includes the careful packing of all bedroom items, including furniture, clothing, and personal items, transportation, and subsequent unpacking at the new location. This service ensures bedroom items are safely packed, moved, and organized. Includes comprehensive labor, packing materials, and equipment usage. Ensures a stress-free and organized bedroom move.",
-        price: 100,
         category: SERVICE_CATEGORIES.PACKING_UNPACKING,
     },
     {
@@ -5715,7 +5165,6 @@ export const ALL_SERVICES = [
         max_quantity: 20,
         title: "Bathroom Packing and Unpacking",
         description: "Bathroom Packing and Unpacking service includes the careful packing of all bathroom items, including toiletries, towels, and small appliances, transportation, and subsequent unpacking at the new location. This service ensures bathroom items are safely packed, moved, and organized. Includes comprehensive labor, packing materials, and equipment usage. Provides a smooth and organized bathroom move.",
-        price: 100,
         category: SERVICE_CATEGORIES.PACKING_UNPACKING,
     },
     {
@@ -5725,7 +5174,6 @@ export const ALL_SERVICES = [
         max_quantity: 20,
         title: "Garage Packing and Unpacking",
         description: "Garage Packing and Unpacking service includes the careful packing of all garage items, including tools, equipment, and storage items, transportation, and subsequent unpacking at the new location. This service ensures garage items are safely packed, moved, and organized. Includes comprehensive labor, packing materials, and equipment usage. Ensures an efficient and organized garage move.",
-        price: 100,
         category: SERVICE_CATEGORIES.PACKING_UNPACKING,
     },
     {
@@ -5735,7 +5183,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Office Packing and Unpacking",
         description: "Office Packing and Unpacking service includes the careful packing of all office items, including furniture, electronics, and supplies, transportation, and subsequent unpacking at the new location. This service ensures office items are safely packed, moved, and organized. Includes comprehensive labor, packing materials, and equipment usage. Provides a seamless and efficient office move.",
-        price: 100,
         category: SERVICE_CATEGORIES.PACKING_UNPACKING,
     },
     {
@@ -5745,7 +5192,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Store Packing and Unpacking",
         description: "Store Packing and Unpacking service includes the careful packing of all store items, including merchandise, displays, and fixtures, transportation, and subsequent unpacking at the new location. This service ensures store items are safely packed, moved, and organized. Includes comprehensive labor, packing materials, and equipment usage. Ensures a smooth and organized store move.",
-        price: 100,
         category: SERVICE_CATEGORIES.PACKING_UNPACKING,
     },
     {
@@ -5755,7 +5201,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Coffee Shop/Restaurant Packing and Unpacking",
         description: "Coffee Shop/Restaurant Packing and Unpacking service includes the careful packing of all shop/restaurant items, including furniture, kitchen equipment, and supplies, transportation, and subsequent unpacking at the new location. This service ensures shop/restaurant items are safely packed, moved, and organized. Includes comprehensive labor, packing materials, and equipment usage. Provides a hassle-free and efficient move for coffee shops and restaurants.",
-        price: 100,
         category: SERVICE_CATEGORIES.PACKING_UNPACKING,
     },
     {
@@ -5765,7 +5210,6 @@ export const ALL_SERVICES = [
         max_quantity: 20,
         title: "Piano Move",
         description: "Piano Move service includes the careful packing, loading, transportation, and unpacking of pianos. This service ensures the safe handling and transport of pianos to the new location. Includes comprehensive labor, packing materials, and equipment usage. Ensures a smooth and safe piano move.",
-        price: 100,
         category: SERVICE_CATEGORIES.SPECIALTY,
     },
     {
@@ -5775,7 +5219,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Art and Antiques Move",
         description: "Art and Antiques Move service includes the careful packing, loading, transportation, and unpacking of valuable art and antique items. This service ensures the safe handling and transport of delicate and valuable items to the new location. Includes comprehensive labor, packing materials, and equipment usage. Provides a secure and professional art and antiques move.",
-        price: 100,
         category: SERVICE_CATEGORIES.SPECIALTY,
     },
     {
@@ -5785,7 +5228,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Chandelier Move",
         description: "Chandelier Move service includes the careful packing, loading, transportation, and unpacking of chandeliers. This service ensures the safe handling and transport of chandeliers to the new location. Includes comprehensive labor, packing materials, and equipment usage. Ensures a safe and secure chandelier move.",
-        price: 100,
         category: SERVICE_CATEGORIES.SPECIALTY,
     },
     {
@@ -5795,7 +5237,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Vehicle Transport Move",
         description: "Vehicle Transport Move service includes the careful loading, transportation, and unloading of vehicles. This service ensures the safe handling and transport of vehicles to the new location. Includes comprehensive labor, equipment usage, and vehicle transport equipment (client’s choice of transport method). Ensures a smooth and secure vehicle move.",
-        price: 100,
         category: SERVICE_CATEGORIES.SPECIALTY,
     },
     {
@@ -5805,7 +5246,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Miscellaneous Indoor Storage",
         description: "Miscellaneous Indoor Storage service provides secure indoor storage for various items. This service includes the transportation of items to the storage facility and organization within the storage unit. Ensures a safe and accessible storage solution for miscellaneous items.",
-        price: 100,
         category: SERVICE_CATEGORIES.STORAGE_SOLUTIONS,
     },
     {
@@ -5815,7 +5255,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "1-2 Bedroom Home Indoor Storage",
         description: "1-2 Bedroom Home Indoor Storage service provides secure indoor storage for the contents of a 1-2 bedroom home. This service includes the transportation of items to the storage facility and organization within the storage unit. Ensures a safe and accessible storage solution for smaller homes.",
-        price: 100,
         category: SERVICE_CATEGORIES.STORAGE_SOLUTIONS,
     },
     {
@@ -5825,7 +5264,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "2-3 Bedroom Home Indoor Storage",
         description: "2-3 Bedroom Home Indoor Storage service provides secure indoor storage for the contents of a 2-3 bedroom home. This service includes the transportation of items to the storage facility and organization within the storage unit. Ensures a safe and accessible storage solution for medium-sized homes.",
-        price: 100,
         category: SERVICE_CATEGORIES.STORAGE_SOLUTIONS,
     },
     {
@@ -5835,7 +5273,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "4 Bedroom Home or Larger Indoor Storage",
         description: "4 Bedroom Home or Larger Indoor Storage service provides secure indoor storage for the contents of a 4 bedroom home or larger. This service includes the transportation of items to the storage facility and organization within the storage unit. Ensures a safe and accessible storage solution for larger homes.",
-        price: 100,
         category: SERVICE_CATEGORIES.STORAGE_SOLUTIONS,
     },
     {
@@ -5845,7 +5282,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Office or Warehouse Indoor Storage",
         description: "Office or Warehouse Indoor Storage service provides secure indoor storage for office or warehouse contents. This service includes the transportation of items to the storage facility and organization within the storage unit. Ensures a safe and accessible storage solution for business needs.",
-        price: 100,
         category: SERVICE_CATEGORIES.STORAGE_SOLUTIONS,
     },
     {
@@ -5855,7 +5291,6 @@ export const ALL_SERVICES = [
         max_quantity: 100000,
         title: "Pre-Move Cleaning",
         description: "Pre-Move Cleaning service includes a thorough cleaning of the entire home or office space before moving out. This service ensures the space is clean and presentable for the next occupants. Includes comprehensive labor, cleaning materials, and equipment usage. Ensures a spotless and well-maintained space before moving.",
-        price: 100,
         category: SERVICE_CATEGORIES.CLEANING_SERVICES,
     },
     {
@@ -5865,7 +5300,6 @@ export const ALL_SERVICES = [
         max_quantity: 100000,
         title: "Post-Move Cleaning",
         description: "Post-Move Cleaning service includes a thorough cleaning of the entire home or office space after moving in. This service ensures the space is clean and ready for occupancy. Includes comprehensive labor, cleaning materials, and equipment usage. Ensures a fresh and welcoming environment after moving in.",
-        price: 100,
         category: SERVICE_CATEGORIES.CLEANING_SERVICES,
     },
     {
@@ -5875,7 +5309,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Masonry Painting (Two Coats on a Single-Story Building)",
         description: "Application of two coats of paint on masonry surfaces of a single-story building. This service includes surface preparation, application of primer, and two coats of paint. Includes comprehensive labor, rough materials, equipment usage, and finishes (client's choice of color and type of paint). Ensures a durable and aesthetically pleasing finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.EXTERIOR_WALL,
     },
     {
@@ -5885,7 +5318,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Exterior Wood Stain Painting (Single-Story Building)",
         description: "Staining of exterior wood surfaces on a single-story building. This service includes surface preparation, application of wood stain, and sealing. Includes comprehensive labor, rough materials, equipment usage, and finishes (client's choice of stain color and type). Enhances the natural beauty of wood while providing protection.",
-        price: 100,
         category: SERVICE_CATEGORIES.EXTERIOR_WALL,
     },
     {
@@ -5895,7 +5327,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Masonry Painting (One Coat on a Single-Story Building)",
         description: "Application of one coat of paint on masonry surfaces of a single-story building. This service includes surface preparation and application of primer and paint. Includes comprehensive labor, rough materials, equipment usage, and finishes (client's choice of color and type of paint). Provides a protective and visually appealing finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.EXTERIOR_WALL,
     },
     {
@@ -5905,7 +5336,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Exterior Wood Painting (Two Coats on a Single-Story Building)",
         description: "Application of two coats of paint on exterior wood surfaces of a single-story building. This service includes surface preparation, application of primer, and two coats of paint. Includes comprehensive labor, rough materials, equipment usage, and finishes (client's choice of color and type of paint). Ensures a long-lasting and attractive finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.EXTERIOR_WALL,
     },
     {
@@ -5915,7 +5345,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Wood Shingle Staining (Two Coats on a Single-Story Building)",
         description: "Staining of wood shingles on a single-story building with two coats. This service includes surface preparation, application of wood stain, and sealing. Includes comprehensive labor, rough materials, equipment usage, and finishes (client's choice of stain color and type). Protects and beautifies wood shingles.",
-        price: 100,
         category: SERVICE_CATEGORIES.EXTERIOR_WALL,
     },
     {
@@ -5925,7 +5354,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Masonry Painting (Two Coats on a 2-3 Story Building)",
         description: "Application of two coats of paint on masonry surfaces of a 2-3 story building. This service includes surface preparation, application of primer, and two coats of paint. Includes comprehensive labor, rough materials, equipment usage, and finishes (client's choice of color and type of paint). Ensures a durable and visually appealing finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.EXTERIOR_WALL,
     },
     {
@@ -5935,7 +5363,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Exterior Wood Stain Painting (2-3 Story Building)",
         description: "Staining of exterior wood surfaces on a 2-3 story building. This service includes surface preparation, application of wood stain, and sealing. Includes comprehensive labor, rough materials, equipment usage, and finishes (client's choice of stain color and type). Enhances the natural beauty of wood and provides protection on taller buildings.",
-        price: 100,
         category: SERVICE_CATEGORIES.EXTERIOR_WALL,
     },
     {
@@ -5945,7 +5372,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Masonry Painting (One Coat on a 2-3 Story Building)",
         description: "Application of one coat of paint on masonry surfaces of a 2-3 story building. This service includes surface preparation and application of primer and paint. Includes comprehensive labor, rough materials, equipment usage, and finishes (client's choice of color and type of paint). Provides a protective and visually appealing finish on taller buildings.",
-        price: 100,
         category: SERVICE_CATEGORIES.EXTERIOR_WALL,
     },
     {
@@ -5955,7 +5381,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Exterior Wood Painting (Two Coats on a 2-3 Story Building)",
         description: "Application of two coats of paint on exterior wood surfaces of a 2-3 story building. This service includes surface preparation, application of primer, and two coats of paint. Includes comprehensive labor, rough materials, equipment usage, and finishes (client's choice of color and type of paint). Ensures a long-lasting and attractive finish on taller buildings.",
-        price: 100,
         category: SERVICE_CATEGORIES.EXTERIOR_WALL,
     },
     {
@@ -5965,7 +5390,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Wood Shingle Painting (Two Coats on a 2-3 Story Building)",
         description: "Painting of wood shingles on a 2-3 story building with two coats. This service includes surface preparation, application of primer, and two coats of paint. Includes comprehensive labor, rough materials, equipment usage, and finishes (client's choice of color and type of paint). Protects and beautifies wood shingles on taller buildings.",
-        price: 100,
         category: SERVICE_CATEGORIES.EXTERIOR_WALL,
     },
     {
@@ -5975,7 +5399,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "High-Rise Painting (Up to 60 Feet or Difficult-to-Reach Areas of the Building)",
         description: "Painting of high-rise buildings or difficult-to-reach areas up to 60 feet. This service includes surface preparation, application of primer, and paint. Includes comprehensive labor, rough materials, equipment usage, and finishes (client's choice of color and type of paint). Ensures a professional and durable finish on challenging areas.",
-        price: 100,
         category: SERVICE_CATEGORIES.EXTERIOR_WALL,
     },
     {
@@ -5985,7 +5408,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Ornamental Fence Priming and Painting",
         description: "Priming and painting of ornamental fences to enhance durability and appearance. This service includes surface preparation, application of primer, and painting. Includes comprehensive labor, rough materials, equipment usage, and finishes (client's choice of color and type of paint). Provides a protective and aesthetic finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.FENCE,
     },
     {
@@ -5995,7 +5417,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Wood Fence or Gate Staining",
         description: "Staining of wood fences or gates to protect and beautify the wood. This service includes surface preparation and application of wood stain. Includes comprehensive labor, rough materials, equipment usage, and finishes (client's choice of stain color and type). Enhances the natural look of wood and provides protection.",
-        price: 100,
         category: SERVICE_CATEGORIES.FENCE,
     },
     {
@@ -6005,7 +5426,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Wood Fence or Gate Sealing and Painting",
         description: "Sealing and painting of wood fences or gates to ensure longevity and visual appeal. This service includes surface preparation, application of sealer, and painting. Includes comprehensive labor, rough materials, equipment usage, and finishes (client's choice of color and type of paint). Ensures a durable and attractive finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.FENCE,
     },
     {
@@ -6015,7 +5435,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Wood Fence Post Painting and Finishing",
         description: "Painting and finishing of wood fence posts to protect and enhance their appearance. This service includes surface preparation, priming, painting, and sealing. Includes comprehensive labor, rough materials, equipment usage, and finishes (client's choice of color and type of paint). Provides a long-lasting and appealing finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.FENCE,
     },
     {
@@ -6025,7 +5444,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Deck Staining and Finishing",
         description: "Staining and finishing of decks to protect and enhance their appearance. This service includes surface preparation, application of wood stain, and sealing. Includes comprehensive labor, rough materials, equipment usage, and finishes (client's choice of stain color and type). Ensures a durable and attractive deck finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.DECK,
     },
     {
@@ -6035,7 +5453,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Deck Coating (Acrylic Polymer)",
         description: "Application of an acrylic polymer coating to decks for protection and improved appearance. This service includes surface preparation and application of the coating. Includes comprehensive labor, rough materials, equipment usage, and finishes (client's choice of coating type). Provides a protective and visually appealing deck surface.",
-        price: 100,
         category: SERVICE_CATEGORIES.DECK,
     },
     {
@@ -6045,7 +5462,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Deck Painting (One Coat)",
         description: "Painting of decks with one coat of paint to refresh and protect the surface. This service includes surface preparation, priming, and painting. Includes comprehensive labor, rough materials, equipment usage, and finishes (client's choice of color and type of paint). Ensures a renewed and attractive deck finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.DECK,
     },
     {
@@ -6055,7 +5471,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Deck Priming and Painting",
         description: "Priming and painting of decks to ensure a durable and visually pleasing finish. This service includes surface preparation, application of primer, and painting. Includes comprehensive labor, rough materials, equipment usage, and finishes (client's choice of color and type of paint). Provides long-lasting protection and an appealing look.",
-        price: 100,
         category: SERVICE_CATEGORIES.DECK,
     },
     {
@@ -6065,7 +5480,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Window Trim & Jamb Painting",
         description: "Painting of window trim and jamb to enhance appearance and protect the surfaces. This service includes surface preparation, priming, and painting. Includes comprehensive labor, rough materials, equipment usage, and finishes (client's choice of color and type of paint). Ensures a durable and attractive finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.WINDOW_TRIM,
     },
     {
@@ -6075,7 +5489,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Window Trim and Jamb Staining and Finishing",
         description: "Staining and finishing of window trim and jamb to enhance the natural beauty of the wood. This service includes surface preparation, application of wood stain, and sealing. Includes comprehensive labor, materials, equipment usage, and finishes (client's choice of stain color and type). Provides a protective and aesthetically pleasing finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.WINDOW_TRIM,
     },
     {
@@ -6085,7 +5498,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Window Trim Painting: One Coat",
         description: "Painting of window trim with one coat to refresh and protect the surface. This service includes surface preparation, priming, and painting. Includes comprehensive labor, rough materials, equipment usage, and finishes (client's choice of color and type of paint). Ensures a renewed and attractive window trim finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.WINDOW_TRIM,
     },
     {
@@ -6095,7 +5507,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Door Slab Priming and Painting",
         description: "Priming and painting of door slabs to enhance appearance and protect the surface. This service includes surface preparation, application of primer, and painting. Includes comprehensive labor, rough materials, equipment usage, and finishes (client's choice of color and type of paint). Ensures a durable and attractive finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.DOORS,
     },
     {
@@ -6105,7 +5516,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "French Door Slab Priming and Painting",
         description: "Priming and painting of French door slabs for improved aesthetics and protection. This service includes surface preparation, application of primer, and painting. Includes comprehensive labor, rough materials, equipment usage, and finishes (client's choice of color and type of paint). Provides a stylish and protective finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.DOORS,
     },
     {
@@ -6115,7 +5525,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Door Slab Staining and Finishing",
         description: "Staining and finishing of door slabs to highlight the natural beauty of the wood. This service includes surface preparation, application of wood stain, and sealing. Includes comprehensive labor, rough materials, equipment usage, and finishes (client's choice of stain color and type). Enhances the wood's natural look and provides protection.",
-        price: 100,
         category: SERVICE_CATEGORIES.DOORS,
     },
     {
@@ -6125,7 +5534,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "French Door Staining and Finishing",
         description: "Staining and finishing of French doors to enhance their natural beauty and durability. This service includes surface preparation, application of wood stain, and sealing. Includes comprehensive labor, rough materials, equipment usage, and finishes (client's choice of stain color and type). Ensures a durable and appealing finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.DOORS,
     },
     {
@@ -6135,7 +5543,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Single Garage Door Opening and Trim Sealing and Painting",
         description: "Sealing and painting of single garage door openings and trims for protection and improved appearance. This service includes surface preparation, application of sealer, and painting. Includes comprehensive labor, rough materials, equipment usage, and finishes (client's choice of color and type of paint). Ensures a protective and attractive finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.DOORS,
     },
     {
@@ -6145,7 +5552,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Single Garage Door Painting (One Coat)",
         description: "Painting of single garage doors with one coat to refresh and protect the surface. This service includes surface preparation, priming, and painting. Includes comprehensive labor, rough materials, equipment usage, and finishes (client's choice of color and type of paint). Ensures a renewed and appealing garage door finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.DOORS,
     },
     {
@@ -6155,7 +5561,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Window Shutter Finishing",
         description: "Finishing of window shutters to enhance appearance and protect the surface. This service includes surface preparation, application of finishes, and sealing. Includes comprehensive labor, rough materials, equipment usage, and finishes (client's choice of finish type). Ensures a durable and attractive shutter finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.SHUTTER,
     },
     {
@@ -6165,7 +5570,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Window Shutter Painting",
         description: "Painting of window shutters to refresh and protect the surface. This service includes surface preparation, priming, and painting. Includes comprehensive labor, rough materials, equipment usage, and finishes (client's choice of color and type of paint). Provides a renewed and appealing shutter finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.SHUTTER,
     },
     {
@@ -6175,7 +5579,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Window Shutter Staining and Finishing",
         description: "Staining and finishing of window shutters to enhance the natural beauty and durability of the wood. This service includes surface preparation, application of wood stain, and sealing. Includes comprehensive labor, rough materials, equipment usage, and finishes (client's choice of stain color and type). Ensures a protective and attractive shutter finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.SHUTTER,
     },
     {
@@ -6185,7 +5588,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Trim Painting with One Coat",
         description: "Painting of trims with one coat to refresh and protect the surface. This service includes surface preparation, priming, and painting. Includes comprehensive labor, rough materials, equipment usage, and finishes (client's choice of color and type of paint). Ensures a renewed and appealing trim finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.TRIM,
     },
     {
@@ -6195,7 +5597,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Trim Staining and Finishing",
         description: "Staining and finishing of trims to highlight the natural beauty of the wood. This service includes surface preparation, application of wood stain, and sealing. Includes comprehensive labor, rough materials, equipment usage, and finishes (client's choice of stain color and type). Enhances the wood's natural look and provides protection.",
-        price: 100,
         category: SERVICE_CATEGORIES.TRIM,
     },
     {
@@ -6205,7 +5606,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Stucco Acrylic Latex Painting",
         description: "Painting of stucco surfaces using acrylic latex paint to enhance appearance and protection. This service includes surface preparation, application of primer, and painting with acrylic latex paint. Includes comprehensive labor, rough materials, equipment usage, and finishes (client's choice of paint color and type). Ensures a durable and attractive stucco finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.STUCCO,
     },
     {
@@ -6215,7 +5615,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Stucco Elastomeric Painting",
         description: "Painting of stucco surfaces using elastomeric paint for enhanced durability and flexibility. This service includes surface preparation, application of primer, and painting with elastomeric paint. Includes comprehensive labor, rough materials, equipment usage, and finishes (client's choice of paint color and type). Provides a flexible and long-lasting finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.STUCCO,
     },
     {
@@ -6225,7 +5624,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Stucco Masonry Painting",
         description: "Painting of stucco surfaces with masonry paint for improved protection and appearance. This service includes surface preparation, application of primer, and painting with masonry paint. Includes comprehensive labor, rough materials, equipment usage, and finishes (client's choice of paint color and type). Ensures a strong and appealing stucco finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.STUCCO,
     },
     {
@@ -6235,7 +5633,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Stucco Lime Washing",
         description: "Lime washing of stucco surfaces to create a traditional, breathable finish. This service includes surface preparation and application of lime wash. Includes comprehensive labor, rough materials, equipment usage, and finishes (client's choice of lime wash color and type). Provides a natural and breathable stucco finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.STUCCO,
     },
     {
@@ -6245,7 +5642,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Brick Acrylic Latex Painting",
         description: "Painting of brick surfaces using acrylic latex paint to enhance appearance and protection. This service includes surface preparation, application of primer, and painting with acrylic latex paint. Includes comprehensive labor, rough materials, equipment usage, and finishes (client's choice of paint color and type). Ensures a durable and attractive brick finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.BRICK,
     },
     {
@@ -6255,7 +5651,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Brick Elastomeric Painting",
         description: "Painting of brick surfaces using elastomeric paint for enhanced durability and flexibility. This service includes surface preparation, application of primer, and painting with elastomeric paint. Includes comprehensive labor, rough materials, equipment usage, and finishes (client's choice of paint color and type). Provides a flexible and long-lasting finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.BRICK,
     },
     {
@@ -6265,7 +5660,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Brick Masonry Painting",
         description: "Painting of brick surfaces with masonry paint for improved protection and appearance. This service includes surface preparation, application of primer, and painting with masonry paint. Includes comprehensive labor, rough materials, equipment usage, and finishes (client's choice of paint color and type). Ensures a strong and appealing brick finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.BRICK,
     },
     {
@@ -6275,7 +5669,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Brick Lime Washing",
         description: "Lime washing of brick surfaces to create a traditional, breathable finish. This service includes surface preparation and application of lime wash. Includes comprehensive labor, rough materials, equipment usage, and finishes (client's choice of lime wash color and type). Provides a natural and breathable brick finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.BRICK,
     },
     {
@@ -6285,7 +5678,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Concrete Epoxy Painting",
         description: "Painting of concrete surfaces using epoxy paint for enhanced durability and resistance. This service includes surface preparation, application of primer, and painting with epoxy paint. Includes comprehensive labor, rough materials, equipment usage, and finishes (client's choice of paint color and type). Ensures a strong and durable concrete finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.CONCRETE,
     },
     {
@@ -6295,7 +5687,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Concrete Acrylic Latex Painting",
         description: "Painting of concrete surfaces using acrylic latex paint to enhance appearance and protection. This service includes surface preparation, application of primer, and painting with acrylic latex paint. Includes comprehensive labor, rough materials, equipment usage, and finishes (client's choice of paint color and type). Provides a durable and attractive concrete finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.CONCRETE,
     },
     {
@@ -6305,7 +5696,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Concrete Masonry Painting",
         description: "Painting of concrete surfaces with masonry paint for improved protection and appearance. This service includes surface preparation, application of primer, and painting with masonry paint. Includes comprehensive labor, rough materials, equipment usage, and finishes (client's choice of paint color and type). Ensures a strong and appealing concrete finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.CONCRETE,
     },
     {
@@ -6315,7 +5705,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Concrete Staining",
         description: "Staining of concrete surfaces to enhance appearance and provide a natural finish. This service includes surface preparation and application of concrete stain. Includes comprehensive labor, rough materials, equipment usage, and finishes (client's choice of stain color and type). Provides a beautiful and long-lasting concrete finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.CONCRETE,
     },
     {
@@ -6325,7 +5714,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Adjustable Helical Post Foundation Installation",
         description: "Installation of adjustable helical posts for deck foundation to provide strong and adjustable support. This service includes site preparation, installation of helical posts, and adjustment to the required height. Includes comprehensive labor, rough materials, equipment usage, and helical posts (client's choice of specifications). Ensures a stable and adjustable foundation for deck construction.",
-        price: 100,
         category: SERVICE_CATEGORIES.DECK,
     },
     {
@@ -6335,7 +5723,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Plastic Adjustable Pedestal and Framing Installation",
         description: "Installation of plastic adjustable pedestals and framing for decking. This service includes site preparation, installation of adjustable pedestals, and framing setup. Includes comprehensive labor, rough materials, equipment usage, and pedestals (client's choice of specifications). Provides a flexible and durable decking foundation.",
-        price: 100,
         category: SERVICE_CATEGORIES.DECK,
     },
     {
@@ -6345,7 +5732,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Concrete Blocks and Lumber Foundation Installation",
         description: "Installation of concrete blocks and lumber foundation for decking. This service includes site preparation, placement of concrete blocks, and installation of lumber framing. Includes comprehensive labor, rough materials, equipment usage, and concrete blocks (client's choice of specifications). Ensures a solid and durable foundation for decking.",
-        price: 100,
         category: SERVICE_CATEGORIES.DECK,
     },
     {
@@ -6355,7 +5741,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Pressure-Treated Wood Decking Installation",
         description: "Installation of pressure-treated wood decking for a durable and resistant outdoor deck. This service includes deck design, site preparation, installation of pressure-treated wood planks, and finishing touches. Includes comprehensive labor, rough materials, equipment usage, and pressure-treated wood (client's choice of specifications). Ensures a long-lasting and attractive deck.",
-        price: 100,
         category: SERVICE_CATEGORIES.DECK,
     },
     {
@@ -6365,7 +5750,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Composite Decking Installation",
         description: "Installation of composite decking for a low-maintenance and eco-friendly deck. This service includes deck design, site preparation, installation of composite decking boards, and finishing touches. Includes comprehensive labor, rough materials, equipment usage, and composite decking (client's choice of specifications). Provides a durable and maintenance-free decking solution.",
-        price: 100,
         category: SERVICE_CATEGORIES.DECK,
     },
     {
@@ -6375,7 +5759,6 @@ export const ALL_SERVICES = [
         max_quantity: 50,
         title: "Deck Stairs Installation (Up to 4 Feet)",
         description: "Installation of deck stairs up to 4 feet in height for safe and convenient access. This service includes design, site preparation, installation of stair stringers, treads, and risers, and finishing touches. Includes comprehensive labor, rough materials, equipment usage, and stair components (client's choice of specifications). Ensures safe and sturdy deck stairs.",
-        price: 100,
         category: SERVICE_CATEGORIES.DECK,
     },
     {
@@ -6385,7 +5768,6 @@ export const ALL_SERVICES = [
         max_quantity: 500,
         title: "Deck Stair Balusters Installation",
         description: "Installation of balusters for deck stairs to enhance safety and aesthetics. This service includes site preparation, installation of balusters, and finishing touches. Includes comprehensive labor, rough materials, equipment usage, and balusters (client's choice of specifications). Provides an attractive and secure deck stair railing.",
-        price: 100,
         category: SERVICE_CATEGORIES.DECK,
     },
     {
@@ -6395,7 +5777,6 @@ export const ALL_SERVICES = [
         max_quantity: 500,
         title: "Deck Railing Installation",
         description: "Installation of deck railing for enhanced safety and aesthetics. This service includes site preparation, installation of railing posts, rails, and balusters, and finishing touches. Includes comprehensive labor, rough materials, equipment usage, and railing components (client's choice of specifications). Ensures a secure and stylish deck railing.",
-        price: 100,
         category: SERVICE_CATEGORIES.DECK,
     },
     {
@@ -6405,7 +5786,6 @@ export const ALL_SERVICES = [
         max_quantity: 50,
         title: "Glass Railing Installation",
         description: "Installation of glass railing for a modern and unobstructed view. This service includes site preparation, installation of glass panels, railing posts, and hardware, and finishing touches. Includes comprehensive labor, rough materials, equipment usage, and glass railing components (client's choice of specifications). Provides a sleek and safe deck railing solution.",
-        price: 100,
         category: SERVICE_CATEGORIES.DECK,
     },
     {
@@ -6415,7 +5795,6 @@ export const ALL_SERVICES = [
         max_quantity: 50,
         title: "Glass Deck Gate Installation",
         description: "Installation of a glass deck gate for a modern and secure access point. This service includes site preparation, installation of glass panels, gate hardware, and finishing touches. Includes comprehensive labor, rough materials, equipment usage, and glass gate components (client's choice of specifications). Ensures a stylish and secure deck gate.",
-        price: 100,
         category: SERVICE_CATEGORIES.DECK,
     },
     {
@@ -6425,7 +5804,6 @@ export const ALL_SERVICES = [
         max_quantity: 50,
         title: "Aluminum Deck Gate Installation",
         description: "Installation of an aluminum deck gate for a durable and low-maintenance access point. This service includes site preparation, installation of aluminum panels, gate hardware, and finishing touches. Includes comprehensive labor, rough materials, equipment usage, and aluminum gate components (client's choice of specifications). Provides a sturdy and maintenance-free deck gate.",
-        price: 100,
         category: SERVICE_CATEGORIES.DECK,
     },
     {
@@ -6435,7 +5813,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Non-Slip Aluminum Nosing Installation",
         description: "Installation of non-slip aluminum nosing on deck stairs for enhanced safety. This service includes site preparation, installation of non-slip nosing, and finishing touches. Includes comprehensive labor, rough materials, equipment usage, and non-slip aluminum nosing (client's choice of specifications). Ensures safe and slip-resistant deck stairs.",
-        price: 100,
         category: SERVICE_CATEGORIES.DECK,
     },
     {
@@ -6445,7 +5822,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Deck Plank Removal",
         description: "Removal of existing deck planks for renovation or replacement. This service includes site preparation, removal of old deck planks, and disposal of debris. Includes comprehensive labor, rough materials, and equipment usage. Provides a clear deck surface ready for new installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.DECK,
     },
     {
@@ -6455,7 +5831,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Deck Sanding, Staining, and Finishing",
         description: "Sanding, staining, and finishing of deck surfaces for enhanced appearance and protection. This service includes surface preparation, sanding, application of stain, and finishing coats. Includes comprehensive labor, rough materials, equipment usage, and finishes (client's choice of stain color and type). Ensures a beautiful and well-protected deck surface.",
-        price: 100,
         category: SERVICE_CATEGORIES.DECK,
     },
     {
@@ -6463,7 +5838,6 @@ export const ALL_SERVICES = [
         unit_of_measurement: "lin ft",
         title: "Premium Cedar Fence Installation",
         description: "Installation of a premium cedar fence for durability and natural beauty. This service includes site preparation, installation of cedar fence panels and posts, and finishing touches. Includes comprehensive labor, rough materials, equipment usage, and cedar fence materials (client's choice of specifications). Ensures a high-quality and long-lasting fence.",
-        price: 100,
         category: SERVICE_CATEGORIES.FENCE,
     },
     {
@@ -6473,7 +5847,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Western Red Cedar Fence Installation",
         description: "Installation of a Western Red Cedar fence for natural aesthetics and durability. This service includes site preparation, installation of cedar fence panels and posts, and finishing touches. Includes comprehensive labor, rough materials, equipment usage, and Western Red Cedar materials (client's choice of specifications). Provides a beautiful and durable fencing solution.",
-        price: 100,
         category: SERVICE_CATEGORIES.FENCE,
     },
     {
@@ -6483,7 +5856,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Picket Fence Installation",
         description: "Installation of a picket fence for classic charm and boundary definition. This service includes site preparation, installation of picket fence panels and posts, and finishing touches. Includes comprehensive labor, rough materials, equipment usage, and picket fence materials (client's choice of specifications). Ensures an attractive and functional fence.",
-        price: 100,
         category: SERVICE_CATEGORIES.FENCE,
     },
     {
@@ -6493,7 +5865,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Vinyl Fence Installation",
         description: "Installation of a vinyl fence for low-maintenance and durable boundary definition. This service includes site preparation, installation of vinyl fence panels and posts, and finishing touches. Includes comprehensive labor, rough materials, equipment usage, and vinyl fence materials (client's choice of specifications). Provides a long-lasting and maintenance-free fencing solution.",
-        price: 100,
         category: SERVICE_CATEGORIES.FENCE,
     },
     {
@@ -6503,7 +5874,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Chain Link Fence Installation",
         description: "Installation of a chain link fence for security and boundary definition. This service includes site preparation, installation of chain link mesh and posts, and finishing touches. Includes comprehensive labor, rough materials, equipment usage, and chain link materials (client's choice of specifications). Ensures a secure and durable fence.",
-        price: 100,
         category: SERVICE_CATEGORIES.FENCE,
     },
     {
@@ -6513,7 +5883,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Metal Fence Installation",
         description: "Installation of a metal fence for enhanced security and durability. This service includes site preparation, installation of metal fence panels and posts, and finishing touches. Includes comprehensive labor, rough materials, equipment usage, and metal fence materials (client's choice of specifications). Provides a strong and secure fencing solution.",
-        price: 100,
         category: SERVICE_CATEGORIES.FENCE,
     },
     {
@@ -6523,7 +5892,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Composite Fence Installation",
         description: "Installation of a composite fence for low-maintenance and eco-friendly boundary definition. This service includes site preparation, installation of composite fence panels and posts, and finishing touches. Includes comprehensive labor, rough materials, equipment usage, and composite fence materials (client's choice of specifications). Ensures a durable and environmentally friendly fence.",
-        price: 100,
         category: SERVICE_CATEGORIES.FENCE,
     },
     {
@@ -6533,7 +5901,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Composite Fence on Concrete Installation",
         description: "Installation of a composite fence on a concrete base for added stability and durability. This service includes site preparation, installation of concrete base, composite fence panels, and posts, and finishing touches. Includes comprehensive labor, rough materials, equipment usage, and composite fence materials (client's choice of specifications). Provides a stable and long-lasting fencing solution.",
-        price: 100,
         category: SERVICE_CATEGORIES.FENCE,
     },
     {
@@ -6543,7 +5910,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Driveway Metal Gate Installation",
         description: "Installation of a metal gate for driveway access and security. This service includes site preparation, installation of metal gate and posts, and finishing touches. Includes comprehensive labor, rough materials, equipment usage, and metal gate materials (client's choice of specifications). Ensures a secure and functional driveway gate.",
-        price: 100,
         category: SERVICE_CATEGORIES.FENCE,
     },
     {
@@ -6553,7 +5919,6 @@ export const ALL_SERVICES = [
         min_quantity: 1,
         max_quantity: 100,
         description: "Installation of a single automatic gate opener for convenient and secure access. This service includes site preparation, installation of gate opener motor and controls, and testing for proper operation. Includes comprehensive labor, rough materials, equipment usage, and gate opener (client's choice of model and specifications). Provides easy and secure automatic gate operation.",
-        price: 100,
         category: SERVICE_CATEGORIES.FENCE,
     },
     {
@@ -6563,7 +5928,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Cedar Pergola Kit Installation",
         description: "Installation of a cedar pergola kit for outdoor shading and aesthetics. This service includes site preparation, assembly, and installation of the cedar pergola kit, and finishing touches. Includes comprehensive labor, rough materials, equipment usage, and cedar pergola kit (client's choice of specifications). Ensures a beautiful and functional outdoor structure.",
-        price: 100,
         category: SERVICE_CATEGORIES.PERGOLA,
     },
     {
@@ -6573,7 +5937,6 @@ export const ALL_SERVICES = [
         max_quantity: 40,
         title: "Concrete Column Pergola Installation",
         description: "Installation of a pergola with concrete columns for enhanced stability and durability. This service includes site preparation, installation of concrete columns, pergola beams, and roofing, and finishing touches. Includes comprehensive labor, rough materials, equipment usage, and pergola materials (client's choice of specifications). Provides a strong and stylish outdoor structure.",
-        price: 100,
         category: SERVICE_CATEGORIES.PERGOLA,
     },
     {
@@ -6583,7 +5946,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Polycarbonate Roof Installation",
         description: "Installation of a polycarbonate roof for a pergola to provide weather protection. This service includes site preparation, installation of polycarbonate panels, and securing the roof structure. Includes comprehensive labor, rough materials, equipment usage, and polycarbonate roofing (client's choice of specifications). Ensures a weather-resistant and durable pergola roof.",
-        price: 100,
         category: SERVICE_CATEGORIES.PERGOLA,
     },
     {
@@ -6593,7 +5955,6 @@ export const ALL_SERVICES = [
         unit_of_measurement: "sq ft",
         title: "Pergola Removal",
         description: "Removal of an existing pergola structure. This service includes site preparation, dismantling of the pergola, and disposal of materials. Includes comprehensive labor, rough materials, and equipment usage. Provides a clear space ready for new installations or landscaping.",
-        price: 100,
         category: SERVICE_CATEGORIES.PERGOLA,
     },
     {
@@ -6603,7 +5964,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Cedar Gazebo Kit Installation",
         description: "Installation of a cedar gazebo kit for outdoor shading and aesthetics. This service includes site preparation, assembly, and installation of the cedar gazebo kit, and finishing touches. Includes comprehensive labor, rough materials, equipment usage, and cedar gazebo kit (client's choice of specifications). Ensures a beautiful and functional outdoor structure.",
-        price: 100,
         category: SERVICE_CATEGORIES.GAZEBO,
     },
     {
@@ -6613,7 +5973,6 @@ export const ALL_SERVICES = [
         max_quantity: 40,
         title: "Concrete Column Gazebo Installation",
         description: "Installation of a gazebo with concrete columns for enhanced stability and durability. This service includes site preparation, installation of concrete columns, gazebo beams, and roofing, and finishing touches. Includes comprehensive labor, rough materials, equipment usage, and gazebo materials (client's choice of specifications). Provides a strong and stylish outdoor structure.",
-        price: 100,
         category: SERVICE_CATEGORIES.GAZEBO,
     },
     {
@@ -6623,7 +5982,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Gazebo Roof Installation",
         description: "Installation of a roof for a gazebo to provide weather protection. This service includes site preparation, installation of roofing materials, and securing the roof structure. Includes comprehensive labor, rough materials, equipment usage, and roofing materials (client's choice of specifications). Ensures a weather-resistant and durable gazebo roof.",
-        price: 100,
         category: SERVICE_CATEGORIES.GAZEBO,
     },
     {
@@ -6633,7 +5991,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Gazebo Removal",
         description: "Removal of an existing gazebo structure. This service includes site preparation, dismantling of the gazebo, and disposal of materials. Includes comprehensive labor, rough materials, and equipment usage. Provides a clear space ready for new installations or landscaping.",
-        price: 100,
         category: SERVICE_CATEGORIES.GAZEBO,
     },
     {
@@ -6643,7 +6000,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Outdoor Furniture Assembly",
         description: "Assembly of outdoor furniture for a ready-to-use setup. This service includes unpacking, verifying parts, and assembling outdoor furniture according to manufacturer instructions. Includes comprehensive labor, rough materials, and equipment usage. Ensures properly assembled and functional outdoor furniture.",
-        price: 100,
         category: SERVICE_CATEGORIES.OUTDOOR_FURNITURE,
     },
     {
@@ -6653,7 +6009,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Outdoor Storage Concrete Slab Foundation Installation",
         description: "Installation of a concrete slab foundation for outdoor storage buildings. This service includes site preparation, pouring concrete, and finishing the slab. Includes comprehensive labor, rough materials, equipment usage, and concrete materials. Provides a durable and stable foundation.",
-        price: 100,
         category: SERVICE_CATEGORIES.STORAGE,
     },
     {
@@ -6663,7 +6018,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Outdoor Storage Square Patio Skge Basement Installation",
         description: "Installation of a square patio skge basement for outdoor storage buildings. This service includes site preparation, laying patio skges, and securing the foundation. Includes comprehensive labor, rough materials, equipment usage, and patio skge materials (client's choice of specifications). Provides a stable and attractive foundation.",
-        price: 100,
         category: SERVICE_CATEGORIES.STORAGE,
     },
     {
@@ -6673,7 +6027,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Outdoor Storage Shed Installation",
         description: "Installation of an outdoor storage shed for additional storage space. This service includes site preparation, assembly, and installation of the shed, and finishing touches. Includes comprehensive labor, rough materials, equipment usage, and shed materials (client's choice of specifications). Ensures a functional and durable storage solution.",
-        price: 100,
         category: SERVICE_CATEGORIES.STORAGE,
     },
     {
@@ -6683,7 +6036,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Carport Installation",
         description: "Installation of a carport for vehicle protection. This service includes site preparation, assembly, and installation of the carport structure, and finishing touches. Includes comprehensive labor, rough materials, equipment usage, and carport materials (client's choice of specifications). Provides a durable and protective carport.",
-        price: 100,
         category: SERVICE_CATEGORIES.STORAGE,
     },
     {
@@ -6693,7 +6045,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Storage Building Kit Installation",
         description: "Installation of a storage building kit for additional storage space. This service includes site preparation, assembly, and installation of the storage building kit, and finishing touches. Includes comprehensive labor, rough materials, equipment usage, and storage building kit (client's choice of specifications). Ensures a functional and durable storage solution.",
-        price: 100,
         category: SERVICE_CATEGORIES.STORAGE,
     },
     {
@@ -6703,7 +6054,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Patio Cover Installation",
         description: "Installation of a patio cover for outdoor shading and protection. This service includes site preparation, assembly, and installation of the patio cover structure, and finishing touches. Includes comprehensive labor, rough materials, equipment usage, and patio cover materials (client's choice of specifications). Provides a stylish and functional patio cover.",
-        price: 100,
         category: SERVICE_CATEGORIES.STORAGE,
     },
     {
@@ -6713,7 +6063,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Outdoor Storage Removal",
         description: "Removal of an existing outdoor storage structure. This service includes site preparation, dismantling of the storage structure, and disposal of materials. Includes comprehensive labor, rough materials, and equipment usage. Provides a clear space ready for new installations or landscaping.",
-        price: 100,
         category: SERVICE_CATEGORIES.STORAGE,
     },
     {
@@ -6723,7 +6072,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Swing Sets Installation",
         description: "Installation of swing sets to create a fun and safe play area for children. This service includes site preparation, assembly, and installation of the swing set, and securing it for safety. Includes comprehensive labor, rough materials, equipment usage, and swing set (client's choice of specifications). Ensures a secure and enjoyable play structure.",
-        price: 100,
         category: SERVICE_CATEGORIES.PLAYGROUND,
     },
     {
@@ -6733,7 +6081,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Playhouse Installation",
         description: "Installation of a playhouse for an exciting outdoor play experience. This service includes site preparation, assembly, and installation of the playhouse, and securing it for safety. Includes comprehensive labor, rough materials, equipment usage, and playhouse (client's choice of specifications). Provides a safe and engaging play environment.",
-        price: 100,
         category: SERVICE_CATEGORIES.PLAYGROUND,
     },
     {
@@ -6743,7 +6090,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Sandbox Installation",
         description: "Installation of a sandbox for children's outdoor play. This service includes site preparation, assembly, and installation of the sandbox, and filling it with sand. Includes comprehensive labor, rough materials, equipment usage, and sandbox (client's choice of specifications). Ensures a fun and safe play area.",
-        price: 100,
         category: SERVICE_CATEGORIES.PLAYGROUND,
     },
     {
@@ -6753,7 +6099,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "4-Step Outdoor Stair Installation",
         description: "Installation of a 4-step outdoor stair for easy and safe access. This service includes site preparation, assembly, and installation of the stairs, and securing them for stability. Includes comprehensive labor, rough materials, equipment usage, and stair materials (client's choice of specifications). Ensures a stable and secure stairway.",
-        price: 100,
         category: SERVICE_CATEGORIES.STAIRCASES,
     },
     {
@@ -6763,7 +6108,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "5-Step Outdoor Stair Installation",
         description: "Installation of a 5-step outdoor stair for easy and safe access. This service includes site preparation, assembly, and installation of the stairs, and securing them for stability. Includes comprehensive labor, rough materials, equipment usage, and stair materials (client's choice of specifications). Ensures a stable and secure stairway.",
-        price: 100,
         category: SERVICE_CATEGORIES.STAIRCASES,
     },
     {
@@ -6773,7 +6117,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "6-Step Outdoor Stair Installation",
         description: "Installation of a 6-step outdoor stair for easy and safe access. This service includes site preparation, assembly, and installation of the stairs, and securing them for stability. Includes comprehensive labor, rough materials, equipment usage, and stair materials (client's choice of specifications). Ensures a stable and secure stairway.",
-        price: 100,
         category: SERVICE_CATEGORIES.STAIRCASES,
     },
     {
@@ -6783,7 +6126,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "8-Step Outdoor Stair Installation",
         description: "Installation of an 8-step outdoor stair for easy and safe access. This service includes site preparation, assembly, and installation of the stairs, and securing them for stability. Includes comprehensive labor, rough materials, equipment usage, and stair materials (client's choice of specifications). Ensures a stable and secure stairway.",
-        price: 100,
         category: SERVICE_CATEGORIES.STAIRCASES,
     },
     {
@@ -6793,7 +6135,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "6-Foot Staircase Landing Installation",
         description: "Installation of a 6-foot staircase landing for safe and convenient access. This service includes site preparation, assembly, and installation of the landing, and securing it for stability. Includes comprehensive labor, rough materials, equipment usage, and landing materials (client's choice of specifications). Ensures a stable and secure landing.",
-        price: 100,
         category: SERVICE_CATEGORIES.STAIRCASES,
     },
     {
@@ -6803,7 +6144,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "8-Foot Staircase Landing Installation",
         description: "Installation of an 8-foot staircase landing for safe and convenient access. This service includes site preparation, assembly, and installation of the landing, and securing it for stability. Includes comprehensive labor, rough materials, equipment usage, and landing materials (client's choice of specifications). Ensures a stable and secure landing.",
-        price: 100,
         category: SERVICE_CATEGORIES.STAIRCASES,
     },
     {
@@ -6813,7 +6153,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Staircase Concrete Foundation Pillar and Columns Installation",
         description: "Installation of concrete foundation pillars and columns for outdoor staircases. This service includes site preparation, pouring concrete, and securing the foundation pillars and columns. Includes comprehensive labor, rough materials, equipment usage, and concrete materials (client's choice of specifications). Provides a strong and stable foundation.",
-        price: 100,
         category: SERVICE_CATEGORIES.STAIRCASES,
     },
     {
@@ -6823,7 +6162,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Staircase Adjustable Ground Spike Foundation Installation",
         description: "Installation of adjustable ground spike foundations for outdoor staircases. This service includes site preparation, installation of ground spikes, and securing the foundation. Includes comprehensive labor, rough materials, equipment usage, and ground spike materials (client's choice of specifications). Provides a flexible and stable foundation.",
-        price: 100,
         category: SERVICE_CATEGORIES.STAIRCASES,
     },
     {
@@ -6833,7 +6171,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Outdoor Staircase Step Replacement",
         description: "Replacement of steps in outdoor staircases to ensure safety and durability. This service includes removal of old steps, installation of new steps, and securing them for stability. Includes comprehensive labor, rough materials, equipment usage, and step materials (client's choice of specifications). Ensures safe and stable stairs.",
-        price: 100,
         category: SERVICE_CATEGORIES.STAIRCASES,
     },
     {
@@ -6843,7 +6180,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Outdoor Staircase Hand Rail Replacement",
         description: "Replacement of handrails in outdoor staircases for improved safety and aesthetics. This service includes removal of old handrails, installation of new handrails, and securing them for stability. Includes comprehensive labor, rough materials, equipment usage, and handrail materials (client's choice of specifications). Ensures a safe and stable handrail.",
-        price: 100,
         category: SERVICE_CATEGORIES.STAIRCASES,
     },
     {
@@ -6853,7 +6189,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Outdoor Staircase Removal (Per Rise)",
         description: "Removal of outdoor staircase rises for renovation or replacement. This service includes site preparation, dismantling of staircase rises, and disposal of materials. Includes comprehensive labor, rough materials, equipment usage. Provides a clear space ready for new installations or landscaping.",
-        price: 100,
         category: SERVICE_CATEGORIES.STAIRCASES,
     },
     {
@@ -6863,7 +6198,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Wooden Walkway Installation",
         description: "Installation of a wooden walkway to create a durable and attractive pathway. This service includes site preparation, assembly, and installation of the walkway, and securing it for stability. Includes comprehensive labor, rough materials, equipment usage, and wooden walkway materials (client's choice of specifications). Ensures a sturdy and aesthetically pleasing pathway.",
-        price: 100,
         category: SERVICE_CATEGORIES.WALKWAY,
     },
     {
@@ -6873,7 +6207,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Wooden Walkway Sanding and Staining",
         description: "Sanding and staining of a wooden walkway to enhance its appearance and durability. This service includes site preparation, sanding, application of stain, and sealing for protection. Includes comprehensive labor, rough materials, equipment usage, and stain (client's choice of color and finish). Ensures a refreshed and protected wooden walkway.",
-        price: 100,
         category: SERVICE_CATEGORIES.WALKWAY,
     },
     {
@@ -6883,7 +6216,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Wooden Walkway Removal",
         description: "Removal of an existing wooden walkway for renovation or landscaping. This service includes site preparation, dismantling of the walkway, and disposal of materials. Includes comprehensive labor, rough materials, equipment usage. Provides a clear space ready for new installations or landscaping.",
-        price: 100,
         category: SERVICE_CATEGORIES.WALKWAY,
     },
     {
@@ -6893,7 +6225,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Boat Dock Installation",
         description: "Installation of a boat dock to provide convenient and secure docking for boats. This service includes site preparation, assembly, and installation of the dock, and securing it for stability. Includes comprehensive labor, rough materials, equipment usage, and boat dock materials (client's choice of specifications). Ensures a stable and functional boat dock.",
-        price: 100,
         category: SERVICE_CATEGORIES.DOCK,
     },
     {
@@ -6903,7 +6234,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Cedar Dock Decking Installation for Boat Dock Systems",
         description: "Installation of cedar dock decking for boat dock systems to create a durable and attractive surface. This service includes preparation, assembly, and installation of the decking, and securing it for stability. Includes comprehensive labor, rough materials, equipment usage, and cedar decking (client's choice of specifications). Ensures a sturdy and aesthetically pleasing dock surface.",
-        price: 100,
         category: SERVICE_CATEGORIES.DOCK,
     },
     {
@@ -6913,7 +6243,6 @@ export const ALL_SERVICES = [
         max_quantity: 20,
         title: "Gangway Installation",
         description: "Installation of a gangway for safe and convenient access to docks. This service includes site preparation, assembly, and installation of the gangway, and securing it for stability. Includes comprehensive labor, rough materials, equipment usage, and gangway materials (client's choice of specifications). Ensures a stable and functional access way.",
-        price: 100,
         category: SERVICE_CATEGORIES.DOCK,
     },
     {
@@ -6923,7 +6252,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "10 ft. x 10 ft. Medium Freeboard Floating Dock Installation",
         description: "Installation of a 10 ft. x 10 ft. medium freeboard floating dock for versatile water access. This service includes site preparation, assembly, and installation of the floating dock, and securing it for stability. Includes comprehensive labor, rough materials, equipment usage, and floating dock materials (client's choice of specifications). Ensures a stable and functional floating dock.",
-        price: 100,
         category: SERVICE_CATEGORIES.FLOATING_DOCK,
     },
     {
@@ -6933,7 +6261,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "4 ft. x 10 ft. Commercial Grade Floating Dock Installation",
         description: "Installation of a 4 ft. x 10 ft. commercial grade floating dock for durable water access. This service includes site preparation, assembly, and installation of the floating dock, and securing it for stability. Includes comprehensive labor, rough materials, equipment usage, and floating dock materials (client's choice of specifications). Ensures a durable and stable floating dock.",
-        price: 100,
         category: SERVICE_CATEGORIES.FLOATING_DOCK,
     },
     {
@@ -6943,7 +6270,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "8 ft. x 10 ft. Aluminum Floating Swim Raft with Resin Top and Resin Dock Ladder Installation",
         description: "Installation of an 8 ft. x 10 ft. aluminum floating swim raft with resin top and resin dock for recreational water access. This service includes site preparation, assembly, and installation of the swim raft and dock, and securing them for stability. Includes comprehensive labor, rough materials, equipment usage, and swim raft and dock materials (client's choice of specifications). Ensures a stable and enjoyable recreational platform.",
-        price: 100,
         category: SERVICE_CATEGORIES.FLOATING_DOCK,
     },
     {
@@ -6953,7 +6279,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "4 ft. x 10 ft. Aluminum Floating Dock with Resin Top Installation",
         description: "Installation of a 4 ft. x 10 ft. aluminum floating dock with resin top for durable water access. This service includes site preparation, assembly, and installation of the floating dock, and securing it for stability. Includes comprehensive labor, rough materials, equipment usage, and floating dock materials (client's choice of specifications). Ensures a durable and stable floating dock.",
-        price: 100,
         category: SERVICE_CATEGORIES.FLOATING_DOCK,
     },
     {
@@ -6963,7 +6288,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Outdoor Carpentry Inspection and Assessment",
         description: "Comprehensive inspection and assessment of outdoor carpentry structures to evaluate their condition and identify necessary maintenance or repairs. This service includes visual inspection, detailed assessment, and reporting on findings. Includes comprehensive labor and equipment usage. Ensures well-maintained and safe outdoor structures.",
-        price: 100,
         category: SERVICE_CATEGORIES.MAINTENANCE,
     },
     {
@@ -6973,7 +6297,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Outdoor Carpentry Pest Prevention",
         description: "Implementation of pest prevention measures for outdoor carpentry structures to protect them from damage. This service includes inspection, application of pest deterrents, and installation of physical barriers if needed. Includes comprehensive labor, rough materials, equipment usage, and pest prevention materials. Ensures protection from pests and prolongs the lifespan of outdoor carpentry.",
-        price: 100,
         category: SERVICE_CATEGORIES.MAINTENANCE,
     },
     {
@@ -6983,7 +6306,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Outdoor Carpentry Refinishing",
         description: "Refinishing of outdoor carpentry structures to restore their appearance and durability. This service includes cleaning, sanding, staining, and sealing. Includes comprehensive labor, rough materials, equipment usage, and finishing materials (client's choice of color and finish). Ensures a refreshed and well-protected outdoor carpentry structure.",
-        price: 100,
         category: SERVICE_CATEGORIES.MAINTENANCE,
     },
     {
@@ -6993,7 +6315,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Outdoor Carpentry Winter Prep",
         description: "Preparation of outdoor carpentry structures for winter to protect them from harsh weather conditions. This service includes inspection, application of protective coatings, and necessary repairs. Includes comprehensive labor, rough materials, equipment usage, and winter preparation materials. Ensures protection and longevity of outdoor carpentry during winter.",
-        price: 100,
         category: SERVICE_CATEGORIES.MAINTENANCE,
     },
     {
@@ -7003,7 +6324,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Outdoor Carpentry Summer Prep",
         description: "Preparation of outdoor carpentry structures for summer to ensure they are in optimal condition for use. This service includes inspection, cleaning, and necessary repairs. Includes comprehensive labor, rough materials, equipment usage, and summer preparation materials. Ensures readiness and enjoyment of outdoor carpentry during summer.",
-        price: 100,
         category: SERVICE_CATEGORIES.MAINTENANCE,
     },
     {
@@ -7013,7 +6333,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Outdoor Electrical Panel Installation",
         description: "Installation of an outdoor electrical panel to manage electrical circuits and provide safe power distribution. This service includes mounting the panel, connecting it to the main power supply, and ensuring proper operation. Includes comprehensive labor, rough materials, equipment usage, and outdoor electrical panel (client's choice of model and specifications). Ensures a safe and efficient electrical system.",
-        price: 100,
         category: SERVICE_CATEGORIES.ELECTRICAL_PANEL,
     },
     {
@@ -7023,7 +6342,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Circuit Breaker Replacement",
         description: "Replacement of circuit breakers to maintain electrical safety and functionality. This service includes identifying the faulty breaker, replacing it with a new one, and testing the electrical system. Includes comprehensive labor, rough materials, and equipment usage. Ensures reliable protection against electrical faults.",
-        price: 100,
         category: SERVICE_CATEGORIES.ELECTRICAL_PANEL,
     },
     {
@@ -7033,7 +6351,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Outdoor Electrical Panel Cleaning and Lubricating",
         description: "Cleaning and lubricating an outdoor electrical panel to ensure optimal performance and longevity. This service includes opening the panel, cleaning internal components, and applying lubricants as needed. Includes comprehensive labor, rough materials, and equipment usage. Ensures a well-maintained and efficient electrical panel.",
-        price: 100,
         category: SERVICE_CATEGORIES.ELECTRICAL_PANEL,
     },
     {
@@ -7043,7 +6360,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Outdoor Electrical Panel Emergency Repairs",
         description: "Emergency repairs of an outdoor electrical panel to restore electrical service quickly and safely. This service includes diagnosing the issue, performing necessary repairs, and testing the system. Includes comprehensive labor, rough materials, and equipment usage. Ensures rapid and reliable restoration of electrical service.",
-        price: 100,
         category: SERVICE_CATEGORIES.ELECTRICAL_PANEL,
     },
     {
@@ -7053,7 +6369,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Outdoor Electrical Panel Safety Inspection",
         description: "Safety inspection of an outdoor electrical panel to identify potential hazards and ensure compliance with electrical codes. This service includes a thorough examination of the panel, connections, and components. Includes comprehensive labor, rough materials, and equipment usage. Ensures a safe and code-compliant electrical panel.",
-        price: 100,
         category: SERVICE_CATEGORIES.ELECTRICAL_PANEL,
     },
     {
@@ -7063,7 +6378,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Backyard Outlet Installation",
         description: "Installation of an electrical outlet in the backyard for convenient access to power. This service includes site preparation, wiring, mounting the outlet, and testing for proper operation. Includes comprehensive labor, rough materials, equipment usage, and outdoor outlet (client's choice of model and specifications). Ensures reliable outdoor power access.",
-        price: 100,
         category: SERVICE_CATEGORIES.OUTLET_AND_SWITCH,
     },
     {
@@ -7073,7 +6387,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Weatherproof Outlet Installation",
         description: "Installation of a weatherproof electrical outlet to provide safe and durable outdoor power access. This service includes site preparation, wiring, mounting the outlet, and testing for proper operation. Includes comprehensive labor, rough materials, equipment usage, and weatherproof outlet (client's choice of model and specifications). Ensures a protected and reliable outdoor power source.",
-        price: 100,
         category: SERVICE_CATEGORIES.OUTLET_AND_SWITCH,
     },
     {
@@ -7083,7 +6396,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Backyard Outlet with Switch Installation",
         description: "Installation of an electrical outlet with a switch in the backyard for controlled power access. This service includes site preparation, wiring, mounting the outlet and switch, and testing for proper operation. Includes comprehensive labor, rough materials, equipment usage, and outlet with switch (client's choice of model and specifications). Ensures convenient and controlled outdoor power access.",
-        price: 100,
         category: SERVICE_CATEGORIES.OUTLET_AND_SWITCH,
     },
     {
@@ -7093,7 +6405,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Power Pedestal for RV Installation",
         description: "Installation of a power pedestal for RVs to provide reliable electrical hookups. This service includes site preparation, wiring, mounting the power pedestal, and testing for proper operation. Includes comprehensive labor, equipment usage, and power pedestal (client's choice of model and specifications). Ensures a safe and reliable power source for RVs.",
-        price: 100,
         category: SERVICE_CATEGORIES.OUTLET_AND_SWITCH,
     },
     {
@@ -7103,7 +6414,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Running Power Cable for Installing a Power Pedestal",
         description: "Running power cable for the installation of a power pedestal to ensure proper electrical connections. This service includes site preparation, trenching if necessary, laying the cable, and connecting it to the power source. Includes comprehensive labor, rough materials, and equipment usage. Ensures a reliable power supply for the power pedestal.",
-        price: 100,
         category: SERVICE_CATEGORIES.OUTLET_AND_SWITCH,
     },
     {
@@ -7113,7 +6423,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "EV Charger Installation",
         description: "Installation of an EV charger to provide convenient home charging for electric vehicles. This service includes site preparation, wiring, mounting the charger, and testing for proper operation. Includes comprehensive labor, rough materials, equipment usage, and EV charger (client's choice of model and specifications). Ensures a safe and efficient charging solution.",
-        price: 100,
         category: SERVICE_CATEGORIES.EV_CHARGERS,
     },
     {
@@ -7123,7 +6432,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Running Power Cable for Installing an EV Charger",
         description: "Running power cable for the installation of an EV charger to ensure proper electrical connections. This service includes site preparation, trenching if necessary, laying the cable, and connecting it to the power source. Includes comprehensive labor, rough materials, and equipment usage. Ensures a reliable power supply for the EV charger.",
-        price: 100,
         category: SERVICE_CATEGORIES.EV_CHARGERS,
     },
     {
@@ -7133,7 +6441,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Pool Heater Installation",
         description: "Installation of a pool heater to maintain a comfortable swimming temperature. This service includes mounting the heater, connecting it to the pool's plumbing and electrical systems, and testing for proper operation. Includes comprehensive labor, rough materials, equipment usage, and pool heater (client's choice of model and specifications). Ensures efficient pool heating for extended swimming seasons.",
-        price: 100,
         category: SERVICE_CATEGORIES.POOL_AND_SPA,
     },
     {
@@ -7143,7 +6450,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Pool Pump Motor Replacement",
         description: "Replacement of a pool pump motor to ensure proper water circulation and filtration. This service includes removing the old motor, installing the new one, and testing for proper operation. Includes comprehensive labor, materials, and equipment usage. Ensures a reliable and efficient pool pump system.",
-        price: 100,
         category: SERVICE_CATEGORIES.POOL_AND_SPA,
     },
     {
@@ -7153,7 +6459,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Sauna Heater Installation",
         description: "Installation of a sauna heater to provide consistent and controllable heat for the sauna. This service includes mounting the heater, connecting it to the electrical system, and testing for proper operation. Includes comprehensive labor, rough materials, equipment usage, and sauna heater (client's choice of model and specifications). Ensures a warm and relaxing sauna experience.",
-        price: 100,
         category: SERVICE_CATEGORIES.POOL_AND_SPA,
     },
     {
@@ -7163,7 +6468,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Hot Tub Pump Installation",
         description: "Installation of a hot tub pump to ensure proper water circulation and jet operation. This service includes mounting the pump, connecting it to the hot tub's plumbing and electrical systems, and testing for proper operation. Includes comprehensive labor, rough materials, equipment usage, and hot tub pump (client's choice of model and specifications). Ensures efficient hot tub performance.",
-        price: 100,
         category: SERVICE_CATEGORIES.POOL_AND_SPA,
     },
     {
@@ -7173,7 +6477,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Wet Rated Outdoor Ceiling Fan Installation",
         description: "Installation of a wet-rated outdoor ceiling fan to provide cooling and air circulation in outdoor areas. This service includes mounting the fan, connecting it to the electrical system, and testing for proper operation. Includes comprehensive labor, rough materials, equipment usage, and outdoor ceiling fan (client's choice of model and specifications). Ensures reliable and efficient outdoor cooling.",
-        price: 100,
         category: SERVICE_CATEGORIES.CEILING_FANS,
     },
     {
@@ -7183,7 +6486,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Mounting Bracket and Canopy Replacement",
         description: "Replacement of the mounting bracket and canopy for ceiling fans to ensure secure installation and proper operation. This service includes removing the old components, installing the new ones, and ensuring proper alignment and functionality. Includes comprehensive labor, rough materials, and equipment usage. Ensures a stable and properly functioning ceiling fan.",
-        price: 100,
         category: SERVICE_CATEGORIES.CEILING_FANS,
     },
     {
@@ -7193,7 +6495,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Attach and Rebalance Blades",
         description: "Attaching and rebalancing blades for ceiling fans to improve performance and reduce wobbling. This service includes securely attaching the blades, balancing them, and testing for smooth operation. Includes comprehensive labor, rough materials, and equipment usage. Ensures a well-balanced and efficient ceiling fan.",
-        price: 100,
         category: SERVICE_CATEGORIES.CEILING_FANS,
     },
     {
@@ -7203,7 +6504,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Outdoor Home Theater Installation",
         description: "Installation of an outdoor home theater system to provide high-quality entertainment in outdoor spaces. This service includes mounting the screen, setting up the audio system, and connecting all components. Includes comprehensive labor, rough materials, equipment usage, and outdoor home theater system (client's choice of model and specifications). Ensures an immersive outdoor entertainment experience.",
-        price: 100,
         category: SERVICE_CATEGORIES.AUDIO_VISUAL,
     },
     {
@@ -7213,7 +6513,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Rock Speakers Installation",
         description: "Installation of rock speakers to provide discreet and high-quality outdoor audio. This service includes placing the speakers in the desired locations, connecting them to the audio system, and testing for proper operation. Includes comprehensive labor, rough materials, equipment usage, and rock speakers (client's choice of model and specifications). Ensures high-quality outdoor sound.",
-        price: 100,
         category: SERVICE_CATEGORIES.AUDIO_VISUAL,
     },
     {
@@ -7223,7 +6522,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Whole House Propane/Natural Gas Generator Installation",
         description: "Installation of a whole house propane or natural gas generator to provide backup power during outages. This service includes mounting the generator, connecting it to the home's electrical and fuel systems, and testing for proper operation. Includes comprehensive labor, rough materials, equipment usage, and generator (client's choice of model and specifications). Ensures reliable backup power.",
-        price: 100,
         category: SERVICE_CATEGORIES.BACKUP_POWER,
     },
     {
@@ -7233,7 +6531,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Whole House Generator Maintenance",
         description: "Maintenance of a whole house generator to ensure reliable operation. This service includes inspecting the generator, performing routine maintenance tasks, and testing for proper operation. Includes comprehensive labor, rough materials, and equipment usage. Ensures the generator is ready to provide backup power when needed.",
-        price: 100,
         category: SERVICE_CATEGORIES.BACKUP_POWER,
     },
     {
@@ -7243,7 +6540,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Battery Terminal Installation",
         description: "Installation of battery terminals for backup power systems to ensure secure and efficient connections. This service includes preparing the battery terminals, connecting them to the power system, and testing for proper operation. Includes comprehensive labor, rough materials, equipment usage and battery terminal (client's choice of model and specifications). Ensures reliable connections for backup power systems.",
-        price: 100,
         category: SERVICE_CATEGORIES.BACKUP_POWER,
     },
     {
@@ -7253,7 +6549,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Wind Turbine Installation",
         description: "Installation of a wind turbine to generate renewable energy for the home. This service includes mounting the turbine, connecting it to the electrical system, and testing for proper operation. Includes comprehensive labor, rough materials, equipment usage, and wind turbine (client's choice of model and specifications). Ensures efficient wind energy generation.",
-        price: 100,
         category: SERVICE_CATEGORIES.BACKUP_POWER,
     },
     {
@@ -7263,7 +6558,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Wind Turbine Foundation Installation",
         description: "Installation of a foundation for a wind turbine to ensure stability and proper operation. This service includes site preparation, laying the foundation, and securing the turbine. Includes comprehensive labor, rough materials, and equipment usage. Ensures a stable and durable foundation for the wind turbine.",
-        price: 100,
         category: SERVICE_CATEGORIES.BACKUP_POWER,
     },
     {
@@ -7273,7 +6567,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Comprehensive System Evaluation",
         description: "Conduct a thorough evaluation of the entire outdoor electrical system to ensure safety and compliance with regulations. This service includes inspecting wiring, connections, and components for potential hazards. Includes comprehensive labor, rough materials, and equipment usage. Ensures a safe and reliable outdoor electrical system.",
-        price: 100,
         category: SERVICE_CATEGORIES.SAFETY_INSPECTIONS,
     },
     {
@@ -7283,7 +6576,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Electrical Panel and Circuit Breakers Inspection",
         description: "Inspection of the electrical panel and circuit breakers to ensure proper operation and safety. This service includes checking for signs of wear, overheating, and proper function of all breakers. Includes comprehensive labor, rough materials, and equipment usage. Ensures the electrical panel is functioning safely and efficiently.",
-        price: 100,
         category: SERVICE_CATEGORIES.SAFETY_INSPECTIONS,
     },
     {
@@ -7293,7 +6585,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Outdoor Electrical Seasonal Preparation",
         description: "Prepare the outdoor electrical system for seasonal changes to ensure optimal performance and safety. This service includes inspecting and adjusting components to handle weather variations. Includes comprehensive labor, rough materials, and equipment usage. Ensures the electrical system is ready for seasonal demands.",
-        price: 100,
         category: SERVICE_CATEGORIES.SAFETY_INSPECTIONS,
     },
     {
@@ -7303,7 +6594,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Off Grid Solar 2 kW System Installation",
         description: "Installation of an off-grid solar system to provide renewable energy for outdoor areas. This service includes mounting solar panels, connecting them to the battery storage system, and testing for proper operation. Includes comprehensive labor, rough materials, equipment usage, and solar panels (client's choice of model and specifications). Ensures reliable off-grid power generation.",
-        price: 100,
         category: SERVICE_CATEGORIES.SOLAR_PANELS,
     },
     {
@@ -7313,7 +6603,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Monocrystalline Solar Panels Installation",
         description: "Installation of monocrystalline solar panels to generate renewable energy. This service includes mounting the panels, connecting them to the electrical system, and testing for proper operation. Includes comprehensive labor, rough materials, equipment usage, and solar panels (client's choice of model and specifications). Ensures efficient and reliable solar power generation.",
-        price: 100,
         category: SERVICE_CATEGORIES.SOLAR_PANELS,
     },
     {
@@ -7323,7 +6612,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Outdoor Electrical Regular Inspections",
         description: "Perform regular inspections of the outdoor electrical system to ensure ongoing safety and performance. This service includes checking all components, identifying potential issues, and recommending necessary repairs. Includes comprehensive labor, rough materials, and equipment usage. Ensures the electrical system remains in good condition.",
-        price: 100,
         category: SERVICE_CATEGORIES.MAINTENANCE,
     },
     {
@@ -7333,7 +6621,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Outdoor Electrical Troubleshooting and Emergency Repair",
         description: "Provide troubleshooting and emergency repair services for outdoor electrical issues. This service includes diagnosing problems, performing necessary repairs, and ensuring the system is safe and functional. Includes comprehensive labor, rough materials, and equipment usage. Ensures prompt resolution of electrical issues.",
-        price: 100,
         category: SERVICE_CATEGORIES.MAINTENANCE,
     },
     {
@@ -7343,7 +6630,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Outdoor Electrical Wiring Maintenance",
         description: "Maintenance of outdoor electrical wiring to prevent issues and ensure safety. This service includes inspecting, repairing, or replacing wiring as needed. Includes comprehensive labor, rough materials, and equipment usage. Ensures reliable and safe electrical wiring.",
-        price: 100,
         category: SERVICE_CATEGORIES.MAINTENANCE,
     },
     {
@@ -7353,7 +6639,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Deck and Patio Pressure Washing",
         description: "Pressure washing of decks and patios to remove dirt, mold, and mildew. This service includes comprehensive labor, rough materials, and equipment usage. Ensures a clean and refreshed outdoor surface.",
-        price: 100,
         category: SERVICE_CATEGORIES.DECK_AND_PATIO,
     },
     {
@@ -7363,7 +6648,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Deck and Patio Soft Washing",
         description: "Soft washing of decks and patios using low-pressure cleaning solutions to remove dirt and stains without damaging surfaces. This service includes comprehensive labor, rough materials, and equipment usage. Ensures a gentle yet effective clean.",
-        price: 100,
         category: SERVICE_CATEGORIES.DECK_AND_PATIO,
     },
     {
@@ -7373,7 +6657,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Deck and Patio Deep Cleaning Solutions",
         description: "Application of deep cleaning solutions to decks and patios to remove stubborn stains and grime. This service includes comprehensive labor, rough materials, and equipment usage. Ensures thorough cleaning of outdoor areas.",
-        price: 100,
         category: SERVICE_CATEGORIES.DECK_AND_PATIO,
     },
     {
@@ -7383,7 +6666,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Driveway Pressure Washing",
         description: "Pressure washing of driveways to remove dirt, oil stains, and grime. This service includes comprehensive labor, rough materials, and equipment usage. Ensures a clean and safe driveway surface.",
-        price: 100,
         category: SERVICE_CATEGORIES.DRIVEWAY,
     },
     {
@@ -7393,7 +6675,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Driveway Soft Washing",
         description: "Soft washing of driveways using eco-friendly cleaning solutions to remove dirt and stains without damaging the surface. This service includes comprehensive labor, rough materials, and equipment usage. Ensures a clean and well-maintained driveway.",
-        price: 100,
         category: SERVICE_CATEGORIES.DRIVEWAY,
     },
     {
@@ -7403,7 +6684,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Driveway Deep Cleaning Solutions",
         description: "Application of deep cleaning solutions to driveways to tackle tough stains and buildup. This service includes comprehensive labor, rough materials, and equipment usage. Ensures a thoroughly clean driveway.",
-        price: 100,
         category: SERVICE_CATEGORIES.DRIVEWAY,
     },
     {
@@ -7413,7 +6693,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Hot Tub Regular Cleaning",
         description: "Regular cleaning of hot tubs to maintain hygiene and water quality. This service includes scrubbing, vacuuming, and rinsing the hot tub surfaces. Includes comprehensive labor, rough materials, and equipment usage. Ensures a clean and sanitary hot tub.",
-        price: 100,
         category: SERVICE_CATEGORIES.HOT_TUB,
     },
     {
@@ -7423,7 +6702,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Hot Tub Water Treatment and Cleaning",
         description: "Water treatment and cleaning of hot tubs to ensure balanced and safe water quality. This service includes chemical balancing, filter cleaning, and water testing. Includes comprehensive labor, rough materials, and equipment usage. Ensures safe and clear hot tub water.",
-        price: 100,
         category: SERVICE_CATEGORIES.HOT_TUB,
     },
     {
@@ -7433,7 +6711,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Vinyl Siding Cleaning",
         description: "Cleaning of vinyl siding to remove dirt, mildew, and algae. This service includes washing and scrubbing of the siding surfaces. Includes comprehensive labor, rough materials, and equipment usage. Ensures a clean and bright exterior.",
-        price: 100,
         category: SERVICE_CATEGORIES.HOUSE_WASHING,
     },
     {
@@ -7443,7 +6720,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Wood Siding Cleaning",
         description: "Cleaning of wood siding to remove dirt, mold, and mildew while preserving the wood's finish. This service includes gentle washing and scrubbing. Includes comprehensive labor, rough materials, and equipment usage. Ensures a clean and well-maintained wood exterior.",
-        price: 100,
         category: SERVICE_CATEGORIES.HOUSE_WASHING,
     },
     {
@@ -7453,7 +6729,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Brick and Stone Cleaning",
         description: "Cleaning of brick and stone surfaces to remove dirt, moss, and stains. This service includes pressure washing and scrubbing of the surfaces. Includes comprehensive labor, rough materials, and equipment usage. Ensures a clean and revitalized brick or stone exterior.",
-        price: 100,
         category: SERVICE_CATEGORIES.HOUSE_WASHING,
     },
     {
@@ -7463,7 +6738,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Fence Pressure Washing",
         description: "Pressure washing of fences to remove dirt, mold, and mildew. This service includes comprehensive labor, rough materials, and equipment usage. Ensures a clean and refreshed fence surface.",
-        price: 100,
         category: SERVICE_CATEGORIES.FENCE,
     },
     {
@@ -7473,7 +6747,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Fence Soft Washing",
         description: "Soft washing of fences using low-pressure cleaning solutions to remove dirt and stains without damaging surfaces. This service includes comprehensive labor, rough materials, and equipment usage. Ensures a gentle yet effective clean.",
-        price: 100,
         category: SERVICE_CATEGORIES.FENCE,
     },
     {
@@ -7483,7 +6756,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Fence Stain and Spot Removal",
         description: "Removal of stains and spots from fences using specialized cleaning solutions. This service includes comprehensive labor, rough materials, and equipment usage. Ensures a clean and spot-free fence.",
-        price: 100,
         category: SERVICE_CATEGORIES.FENCE,
     },
     {
@@ -7493,7 +6765,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Gutter Debris Removal and Pressure Washing",
         description: "Removal of debris from gutters followed by pressure washing to ensure clear and functional gutters. This service includes comprehensive labor, rough materials, and equipment usage. Ensures efficient water drainage and prevents gutter blockages.",
-        price: 100,
         category: SERVICE_CATEGORIES.GUTTER,
     },
     {
@@ -7503,7 +6774,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Gutter Cleaning Using Scaffold",
         description: "Safe and thorough cleaning of gutters using a scaffold to reach high and difficult areas. This service includes comprehensive labor, rough materials, and equipment usage. Ensures clean and debris-free gutters.",
-        price: 100,
         category: SERVICE_CATEGORIES.GUTTER,
     },
     {
@@ -7513,7 +6783,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Roof Soft Washing",
         description: "Gentle soft washing of roofs to remove dirt, algae, and moss without damaging roofing materials. This service includes comprehensive labor, rough materials, and equipment usage. Ensures a clean and well-maintained roof.",
-        price: 100,
         category: SERVICE_CATEGORIES.ROOF,
     },
     {
@@ -7523,7 +6792,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Roof, Gutter and Solar Panel Cleaning Combo",
         description: "Combined cleaning service for roofs, gutters, and solar panels to enhance efficiency and appearance. This service includes comprehensive labor, rough materials, and equipment usage. Ensures clean and efficient solar panels, gutters, and roof.",
-        price: 100,
         category: SERVICE_CATEGORIES.ROOF,
     },
     {
@@ -7533,7 +6801,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Outdoor Furniture Manual Cleaning",
         description: "Manual cleaning of outdoor furniture to remove dirt, grime, and stains. This service includes comprehensive labor, rough materials, and equipment usage. Ensures clean and well-maintained outdoor furniture.",
-        price: 100,
         category: SERVICE_CATEGORIES.EXTERIOR_FIXTURE,
     },
     {
@@ -7543,7 +6810,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Exterior Lighting Fixture Cleaning",
         description: "Cleaning of exterior lighting fixtures to remove dust, cobwebs, and dirt. This service includes comprehensive labor, rough materials, and equipment usage. Ensures bright and clean lighting fixtures.",
-        price: 100,
         category: SERVICE_CATEGORIES.EXTERIOR_FIXTURE,
     },
     {
@@ -7553,7 +6819,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Exterior Decorative Element Cleaning",
         description: "Cleaning of exterior decorative elements to restore their appearance and remove accumulated dirt. This service includes comprehensive labor, rough materials, and equipment usage. Ensures clean and attractive exterior decorations.",
-        price: 100,
         category: SERVICE_CATEGORIES.EXTERIOR_FIXTURE,
     },
     {
@@ -7563,7 +6828,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Regular Outdoor Pool Cleaning",
         description: "Routine cleaning of outdoor pools to maintain water clarity and hygiene. This service includes comprehensive labor, rough materials, and equipment usage. Ensures a clean and safe swimming environment.",
-        price: 100,
         category: SERVICE_CATEGORIES.POOL,
     },
     {
@@ -7573,7 +6837,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Pool Shock Treatment",
         description: "Shock treatment of pool water to eliminate bacteria, algae, and contaminants. This service includes comprehensive labor, rough materials, and equipment usage. Ensures a healthy and balanced pool water.",
-        price: 100,
         category: SERVICE_CATEGORIES.POOL,
     },
     {
@@ -7583,7 +6846,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Pool Filter and Equipment Maintenance",
         description: "Maintenance of pool filters and equipment to ensure optimal performance and longevity. This service includes comprehensive labor, rough materials, and equipment usage. Ensures efficient pool operation and clean water.",
-        price: 100,
         category: SERVICE_CATEGORIES.POOL,
     },
     {
@@ -7593,7 +6855,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Outdoor Glass Cleaning",
         description: "Cleaning of outdoor glass surfaces to remove dirt, smudges, and streaks. This service includes comprehensive labor, rough materials, and equipment usage. Ensures clear and sparkling glass.",
-        price: 100,
         category: SERVICE_CATEGORIES.DOORS_AND_WINDOW,
     },
     {
@@ -7603,7 +6864,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Glass Cleaning on a Single Story",
         description: "Comprehensive cleaning of floor-to-ceiling glass on single-storey buildings. This service includes comprehensive labor, rough materials, and equipment usage. Ensures spotless and clear glass surfaces.",
-        price: 100,
         category: SERVICE_CATEGORIES.DOORS_AND_WINDOW,
     },
     {
@@ -7613,7 +6873,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Floor-to-Ceiling Glass Cleaning on a 2-4 Storey Building",
         description: "Comprehensive cleaning of floor-to-ceiling glass on buildings with 2 to 4 storeys. This service includes comprehensive labor, rough materials, and equipment usage. Ensures spotless and clear glass surfaces.",
-        price: 100,
         category: SERVICE_CATEGORIES.DOORS_AND_WINDOW,
     },
     {
@@ -7623,7 +6882,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Outdoor High-Rise Window Cleaning",
         description: "Professional cleaning of high-rise windows to remove dirt and grime. This service includes comprehensive labor, rough materials, and equipment usage. Ensures clean and clear windows at high elevations.",
-        price: 100,
         category: SERVICE_CATEGORIES.DOORS_AND_WINDOW,
     },
     {
@@ -7633,7 +6891,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Garage Door Cleaning",
         description: "Cleaning of garage doors to remove dirt, dust, and stains. This service includes comprehensive labor, rough materials, and equipment usage. Ensures clean and well-maintained garage doors.",
-        price: 100,
         category: SERVICE_CATEGORIES.DOORS_AND_WINDOW,
     },
     {
@@ -7643,7 +6900,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Landscape Path Light Kit (6-10 lights) Installation",
         description: "Installation of a landscape path light kit, including 6-10 lights, to illuminate garden paths and walkways. This service includes placement, wiring, and connection to power. Includes comprehensive labor, rough materials, and path light kit (client's choice of model and specifications). Ensures well-lit and safe pathways.",
-        price: 100,
         category: SERVICE_CATEGORIES.PATH_LIGHTS,
     },
     {
@@ -7653,7 +6909,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Solar LED In-Ground Path Light Installation",
         description: "Installation of solar LED in-ground path lights to provide energy-efficient lighting for walkways. This service includes placement and secure installation in the ground. Includes comprehensive labor, rough materials, and solar path lights (client's choice of model and specifications). Ensures eco-friendly and reliable path lighting.",
-        price: 100,
         category: SERVICE_CATEGORIES.PATH_LIGHTS,
     },
     {
@@ -7663,7 +6918,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Deck Post Lighting Installation",
         description: "Installation of deck post lighting to enhance visibility and aesthetics. This service includes mounting lights on deck posts and connecting to power. Includes comprehensive labor, rough materials, and deck post lights (client's choice of model and specifications). Ensures attractive and functional deck lighting.",
-        price: 100,
         category: SERVICE_CATEGORIES.PATH_LIGHTS,
     },
     {
@@ -7673,7 +6927,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Hardwired Path Light Installation",
         description: "Installation of hardwired path lights to provide consistent illumination along pathways. This service includes wiring and secure installation. Includes comprehensive labor, rough materials, and hardwired path lights (client's choice of model and specifications). Ensures stable and continuous path lighting.",
-        price: 100,
         category: SERVICE_CATEGORIES.PATH_LIGHTS,
     },
     {
@@ -7683,7 +6936,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "String Light Kit Installation",
         description: "Installation of a string light kit to create an inviting ambiance on decks and patios. This service includes hanging and securing the string lights. Includes comprehensive labor, rough materials, and string light kit (client's choice of model and specifications). Ensures decorative and functional lighting.",
-        price: 100,
         category: SERVICE_CATEGORIES.DECK_AND_PATIO,
     },
     {
@@ -7693,7 +6945,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Deck/Step Light Installation",
         description: "Installation of deck or step lights to improve safety and visibility. This service includes mounting and wiring lights on deck steps. Includes comprehensive labor, rough materials, and deck/step lights (client's choice of model and specifications). Ensures safe and illuminated steps.",
-        price: 100,
         category: SERVICE_CATEGORIES.DECK_AND_PATIO,
     },
     {
@@ -7703,7 +6954,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Deck Post Light Installation",
         description: "Installation of lights on deck posts to enhance lighting and aesthetics. This service includes mounting and wiring the lights. Includes comprehensive labor, rough materials, and deck post lights (client's choice of model and specifications). Ensures attractive and effective deck lighting.",
-        price: 100,
         category: SERVICE_CATEGORIES.DECK_AND_PATIO,
     },
     {
@@ -7713,7 +6963,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Single-Story Wall Light Installation",
         description: "Installation of wall lights on single-story buildings to provide exterior illumination. This service includes mounting and wiring the lights. Includes comprehensive labor, rough materials, and wall lights (client's choice of model and specifications). Ensures well-lit exterior walls.",
-        price: 100,
         category: SERVICE_CATEGORIES.WALL_LIGHTS,
     },
     {
@@ -7723,7 +6972,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "2-3 Story Wall Light Installation",
         description: "Installation of wall lights on 2-3 story buildings to enhance exterior lighting. This service includes mounting and wiring the lights at higher elevations. Includes comprehensive labor, rough materials, and wall lights (client's choice of model and specifications). Ensures effective lighting for multi-story buildings.",
-        price: 100,
         category: SERVICE_CATEGORIES.WALL_LIGHTS,
     },
     {
@@ -7733,7 +6981,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Wall Pack Lights Installation",
         description: "Installation of wall pack lights to improve security and visibility around the property. This service includes mounting and wiring the lights. Includes comprehensive labor, rough materials, and wall pack lights (client's choice of model and specifications). Ensures enhanced security lighting.",
-        price: 100,
         category: SERVICE_CATEGORIES.SECURITY_LIGHTING,
     },
     {
@@ -7743,7 +6990,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Area Lights Installation",
         description: "Installation of area lights to provide broad illumination for large outdoor spaces. This service includes placement, wiring, and connection to power. Includes comprehensive labor, rough materials, and area lights (client's choice of model and specifications). Ensures well-lit and secure outdoor areas.",
-        price: 100,
         category: SERVICE_CATEGORIES.SECURITY_LIGHTING,
     },
     {
@@ -7753,7 +6999,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Underwater Light Installation",
         description: "Installation of underwater lights to illuminate swimming pools. This service includes placement and secure installation underwater. Includes comprehensive labor, rough materials, and underwater lights (client's choice of model and specifications). Ensures safe and attractive pool lighting.",
-        price: 100,
         category: SERVICE_CATEGORIES.POOL_LIGHTING,
     },
     {
@@ -7763,7 +7008,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Smart Outdoor Lighting System Installation (7 lights)",
         description: "Installation of a smart outdoor lighting system with 7 lights to provide customizable and efficient lighting. This service includes placement, wiring, and connection to the control system. Includes comprehensive labor, rough materials, and smart lighting system (client's choice of model and specifications). Ensures modern and convenient outdoor lighting.",
-        price: 100,
         category: SERVICE_CATEGORIES.SMART_LIGHTING,
     },
     {
@@ -7773,7 +7017,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Smart Outdoor Lighting System Installation (15 lights)",
         description: "Installation of a smart outdoor lighting system with 15 lights to provide extensive and customizable lighting. This service includes placement, wiring, and connection to the control system. Includes comprehensive labor, rough materials, and smart lighting system (client's choice of model and specifications). Ensures comprehensive and intelligent lighting coverage.",
-        price: 100,
         category: SERVICE_CATEGORIES.SMART_LIGHTING,
     },
     {
@@ -7783,7 +7026,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Roofline and Eaves Installation on a One-Story Building",
         description: "Installation of Christmas lights along the roofline and eaves of a one-story building. This service includes hanging and securing lights for festive decoration. Includes comprehensive labor and rough materials. Ensures beautiful and safe holiday lighting.",
-        price: 100,
         category: SERVICE_CATEGORIES.CHRISTMAS_LIGHTS,
     },
     {
@@ -7793,7 +7035,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Roofline and Eaves Installation on a 2-3 Story Building",
         description: "Installation of Christmas lights along the roofline and eaves of a 2-3 story building. This service includes hanging and securing lights for festive decoration. Includes comprehensive labor and rough materials. Ensures beautiful and safe holiday lighting.",
-        price: 100,
         category: SERVICE_CATEGORIES.CHRISTMAS_LIGHTS,
     },
     {
@@ -7803,7 +7044,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Medium Tree and Shrub Wrapping",
         description: "Wrapping Christmas lights around medium-sized trees and shrubs to create a festive atmosphere. This service includes wrapping and securing lights. Includes comprehensive labor and rough materials. Ensures well-decorated and illuminated trees and shrubs.",
-        price: 100,
         category: SERVICE_CATEGORIES.CHRISTMAS_LIGHTS,
     },
     {
@@ -7813,7 +7053,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Large Tree and Shrub Wrapping",
         description: "Wrapping Christmas lights around large trees and shrubs to create a festive atmosphere. This service includes wrapping and securing lights. Includes comprehensive labor and rough materials. Ensures well-decorated and illuminated trees and shrubs.",
-        price: 100,
         category: SERVICE_CATEGORIES.CHRISTMAS_LIGHTS,
     },
     {
@@ -7823,7 +7062,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Christmas Light Installation from Customer Materials (Labor)",
         description: "Installation of Christmas lights using materials provided by the customer. This service includes hanging and securing lights. Includes comprehensive labor only. Ensures safe and professional holiday lighting.",
-        price: 100,
         category: SERVICE_CATEGORIES.CHRISTMAS_LIGHTS,
     },
     {
@@ -7833,7 +7071,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Christmas Lights Removal",
         description: "Removal of Christmas lights after the holiday season. This service includes taking down and packing lights for storage. Includes comprehensive labor. Ensures a hassle-free post-holiday cleanup.",
-        price: 100,
         category: SERVICE_CATEGORIES.CHRISTMAS_LIGHTS,
     },
     {
@@ -7843,7 +7080,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Outdoor Fixture Cleaning",
         description: "Cleaning of outdoor lighting fixtures to ensure optimal performance and appearance. This service includes removing dirt and debris from fixtures. Includes comprehensive labor. Ensures clean and efficient lighting fixtures.",
-        price: 100,
         category: SERVICE_CATEGORIES.MAINTENANCE,
     },
     {
@@ -7853,7 +7089,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Outdoor Bulb Replacement",
         description: "Replacement of outdoor light bulbs to maintain proper lighting. This service includes removing old bulbs and installing new ones. Includes comprehensive labor and rough materials. Ensures consistent and reliable outdoor lighting.",
-        price: 100,
         category: SERVICE_CATEGORIES.MAINTENANCE,
     },
     {
@@ -7863,7 +7098,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Outdoor Electrical System Maintenance",
         description: "Maintenance of outdoor electrical systems to ensure safety and efficiency. This service includes inspecting, repairing, and maintaining electrical components. Includes comprehensive labor and rough materials. Ensures a well-functioning and safe electrical system.",
-        price: 100,
         category: SERVICE_CATEGORIES.MAINTENANCE,
     },
     {
@@ -7873,7 +7107,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Tile Roofing Repair",
         description: "Repair of tile roofing to address damage and prevent leaks. This service includes replacing damaged tiles, securing loose tiles, and ensuring proper sealing. Includes comprehensive labor and rough materials. Ensures durable and leak-free tile roof.",
-        price: 100,
         category: SERVICE_CATEGORIES.LEAK_REPAIR,
     },
     {
@@ -7883,7 +7116,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Flashing Repair",
         description: "Repair of roof flashing to prevent water infiltration. This service includes removing damaged flashing, installing new flashing, and sealing joints. Includes comprehensive labor and rough materials. Ensures durable protection against leaks.",
-        price: 100,
         category: SERVICE_CATEGORIES.LEAK_REPAIR,
     },
     {
@@ -7893,7 +7125,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Temporary Leak Repairs",
         description: "Temporary repair of roof leaks to provide immediate protection from water damage. This service includes identifying leak sources, applying temporary sealants, and securing the affected area. Includes comprehensive labor and rough materials. Provides short-term leak mitigation until permanent repairs can be made.",
-        price: 100,
         category: SERVICE_CATEGORIES.LEAK_REPAIR,
     },
     {
@@ -7903,7 +7134,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Sheathing Patch/Plug Repair (up to 8 inch x 8 inch)",
         description: "Patch or plug repair of roof sheathing for areas up to 8 inches by 8 inches. This service includes removing damaged sheathing, installing new sheathing, and sealing the area. Includes comprehensive labor and rough materials. Ensures structural integrity and leak prevention.",
-        price: 100,
         category: SERVICE_CATEGORIES.LEAK_REPAIR,
     },
     {
@@ -7913,7 +7143,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Shingle Roof Removal",
         description: "Removal of an existing shingle roof in preparation for new installation. This service includes stripping shingles, disposing of debris, and preparing the roof surface. Includes comprehensive labor and rough materials. Ensures a clean and ready surface for new roofing.",
-        price: 100,
         category: SERVICE_CATEGORIES.SHINGLE_ROOF,
     },
     {
@@ -7923,7 +7152,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Laminate Shingle Roof Installation",
         description: "Installation of a laminate shingle roof to provide durable and attractive roofing. This service includes placing shingles, nailing, and sealing. Includes comprehensive labor, rough materials, and laminate shingles (client's choice of model and specifications). Ensures a professionally installed and long-lasting shingle roof.",
-        price: 100,
         category: SERVICE_CATEGORIES.SHINGLE_ROOF,
     },
     {
@@ -7933,7 +7161,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Cedar Shingles Roof Installation",
         description: "Installation of cedar shingles for a natural and aesthetic roof finish. This service includes placing shingles, nailing, and sealing. Includes comprehensive labor, rough materials, and cedar shingles (client's choice of model and specifications). Ensures a beautiful and durable cedar shingle roof.",
-        price: 100,
         category: SERVICE_CATEGORIES.SHINGLE_ROOF,
     },
     {
@@ -7943,7 +7170,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Metal Roof Installation",
         description: "Installation of a metal roof for long-lasting and energy-efficient roofing. This service includes placing metal panels, fastening, and sealing. Includes comprehensive labor, rough materials, and metal roof panels (client's choice of model and specifications). Ensures a professionally installed and durable metal roof.",
-        price: 100,
         category: SERVICE_CATEGORIES.METAL_ROOF,
     },
     {
@@ -7953,7 +7179,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Metal Roof Painting",
         description: "Painting of a metal roof to enhance appearance and protect against corrosion. This service includes surface preparation, priming, and painting. Includes comprehensive labor, rough materials, and paint (client's choice of color and specifications). Ensures a well-protected and aesthetically pleasing metal roof.",
-        price: 100,
         category: SERVICE_CATEGORIES.METAL_ROOF,
     },
     {
@@ -7963,7 +7188,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Metal Roof Removal",
         description: "Removal of an existing metal roof in preparation for new installation or other projects. This service includes detaching metal panels, disposing of debris, and preparing the roof surface. Includes comprehensive labor and rough materials. Ensures a clean and ready surface for new roofing.",
-        price: 100,
         category: SERVICE_CATEGORIES.METAL_ROOF,
     },
     {
@@ -7973,7 +7197,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Tile Roof Repair",
         description: "Repair of a tile roof to address damage and prevent leaks. This service includes replacing damaged tiles, securing loose tiles, and ensuring proper sealing. Includes comprehensive labor and rough materials. Ensures a durable and leak-free tile roof.",
-        price: 100,
         category: SERVICE_CATEGORIES.TILE_ROOF,
     },
     {
@@ -7983,7 +7206,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Elastomeric Roof Coating",
         description: "Application of elastomeric roof coating to enhance waterproofing and durability of flat roofs. This service includes surface preparation, coating application, and finishing. Includes comprehensive labor and rough materials. Ensures a protective and long-lasting roof coating.",
-        price: 100,
         category: SERVICE_CATEGORIES.FLAT_ROOF,
     },
     {
@@ -7993,7 +7215,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Self-Adhering Modified Bitumen Roof Installation",
         description: "Installation of self-adhering modified bitumen roofing for enhanced protection. This service includes surface preparation, membrane installation, and sealing. Includes comprehensive labor, rough materials, and modified bitumen membrane (client's choice of specifications). Ensures a durable and waterproof flat roof.",
-        price: 100,
         category: SERVICE_CATEGORIES.FLAT_ROOF,
     },
     {
@@ -8003,7 +7224,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Bitumen Roof Removal",
         description: "Removal of an existing bitumen roof in preparation for new installation or other projects. This service includes stripping the bitumen, disposing of debris, and preparing the roof surface. Includes comprehensive labor and rough materials. Ensures a clean and ready surface for new roofing.",
-        price: 100,
         category: SERVICE_CATEGORIES.FLAT_ROOF,
     },
     {
@@ -8013,7 +7233,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Silicone Reflective Roof Coating Installation",
         description: "Application of silicone reflective roof coating to enhance energy efficiency and durability. This service includes surface preparation, coating application, and finishing. Includes comprehensive labor, rough materials, and silicone reflective coating (client's choice of specifications). Ensures a reflective and protective roof surface.",
-        price: 100,
         category: SERVICE_CATEGORIES.FLAT_ROOF,
     },
     {
@@ -8023,7 +7242,6 @@ export const ALL_SERVICES = [
         max_quantity: 20,
         title: "Roof Leak Detection and Assessment",
         description: "Comprehensive inspection to detect and assess roof leaks. This service includes visual inspection, moisture detection, and assessment of leak sources. Includes comprehensive labor and necessary equipment usage. Provides detailed information on roof condition and necessary repairs.",
-        price: 100,
         category: SERVICE_CATEGORIES.ROOF_INSPECTION,
     },
     {
@@ -8033,7 +7251,6 @@ export const ALL_SERVICES = [
         max_quantity: 20,
         title: "Comprehensive Roof Inspection",
         description: "Thorough inspection of the entire roof to evaluate its condition. This service includes visual inspection, structural assessment, and identification of potential issues. Includes comprehensive labor and necessary equipment usage. Provides a detailed report on roof condition and maintenance needs.",
-        price: 100,
         category: SERVICE_CATEGORIES.ROOF_INSPECTION,
     },
     {
@@ -8043,7 +7260,6 @@ export const ALL_SERVICES = [
         max_quantity: 20,
         title: "Roof Damage Inspection",
         description: "Detailed inspection to identify and assess roof damage. This service includes visual inspection, structural assessment, and damage documentation. Includes comprehensive labor and necessary equipment usage. Provides detailed information on roof damage and recommended repairs.",
-        price: 100,
         category: SERVICE_CATEGORIES.ROOF_INSPECTION,
     },
     {
@@ -8053,7 +7269,6 @@ export const ALL_SERVICES = [
         max_quantity: 20,
         title: "Gutter and Drainage Evaluation",
         description: "Inspection and evaluation of the gutter and drainage system to ensure proper functionality. This service includes visual inspection, flow testing, and identification of blockages or damage. Includes comprehensive labor and necessary equipment usage. Provides a detailed report on gutter and drainage system condition and maintenance needs.",
-        price: 100,
         category: SERVICE_CATEGORIES.ROOF_INSPECTION,
     },
     {
@@ -8063,7 +7278,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Gutter Downspout Installation",
         description: "Installation of gutter downspouts to ensure proper water drainage. This service includes mounting downspouts, securing connections, and testing for proper flow. Includes comprehensive labor, rough materials, and downspouts (client's choice of model and specifications). Ensures effective water drainage from gutters.",
-        price: 100,
         category: SERVICE_CATEGORIES.GUTTER,
     },
     {
@@ -8073,7 +7287,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Edge and Gutter Installation for Single-Story House",
         description: "Installation of drip edges and gutters on single-story houses to protect the roof and foundation. This service includes mounting drip edges, installing gutters, and securing connections. Includes comprehensive labor, rough materials, and gutters (client's choice of model and specifications). Ensures effective water management and roof protection.",
-        price: 100,
         category: SERVICE_CATEGORIES.GUTTER,
     },
     {
@@ -8083,7 +7296,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Edge and Gutter Installation for 2-3 Story Houses",
         description: "Installation of drip edges and gutters on 2-3 story houses to protect the roof and foundation. This service includes mounting drip edges, installing gutters, and securing connections. Includes comprehensive labor, rough materials, and gutters (client's choice of model and specifications). Ensures effective water management and roof protection.",
-        price: 100,
         category: SERVICE_CATEGORIES.GUTTER,
     },
     {
@@ -8093,7 +7305,6 @@ export const ALL_SERVICES = [
         max_quantity: 20,
         title: "Gutter Repair",
         description: "Repair of existing gutters to restore functionality and prevent leaks. This service includes identifying damage, replacing or securing damaged sections, and testing for proper flow. Includes comprehensive labor and rough materials. Ensures fully functional and leak-free gutters.",
-        price: 100,
         category: SERVICE_CATEGORIES.GUTTER,
     },
     {
@@ -8103,7 +7314,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Gutter Removal",
         description: "Removal of existing gutters in preparation for new installation or other projects. This service includes detaching gutters, disposing of debris, and preparing the structure for new gutters. Includes comprehensive labor and rough materials. Ensures a clean and ready surface for new gutter installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.GUTTER,
     },
     {
@@ -8113,7 +7323,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Ridge Vent Installation",
         description: "Installation of a ridge vent to enhance roof ventilation. This service includes cutting the roof ridge, installing the vent, and securing it properly. Includes comprehensive labor, rough materials, and ridge vent (client's choice of model and specifications). Ensures effective ventilation for the attic.",
-        price: 100,
         category: SERVICE_CATEGORIES.ROOF_VENTILATION,
     },
     {
@@ -8123,7 +7332,6 @@ export const ALL_SERVICES = [
         max_quantity: 20,
         title: "Gravity Roof Ventilator Installation",
         description: "Installation of a gravity roof ventilator to improve air circulation. This service includes mounting the ventilator, securing it, and ensuring proper airflow. Includes comprehensive labor, rough materials, and gravity roof ventilator (client's choice of model and specifications). Provides natural ventilation for the attic.",
-        price: 100,
         category: SERVICE_CATEGORIES.ROOF_VENTILATION,
     },
     {
@@ -8133,7 +7341,6 @@ export const ALL_SERVICES = [
         max_quantity: 20,
         title: "Static Ventilator Installation",
         description: "Installation of a static ventilator to enhance attic ventilation. This service includes mounting the ventilator, securing it, and ensuring proper airflow. Includes comprehensive labor, rough materials, and static ventilator (client's choice of model and specifications). Ensures continuous ventilation without moving parts.",
-        price: 100,
         category: SERVICE_CATEGORIES.ROOF_VENTILATION,
     },
     {
@@ -8143,7 +7350,6 @@ export const ALL_SERVICES = [
         max_quantity: 20,
         title: "Solar Powered Attic Fan Installation",
         description: "Installation of a solar-powered attic fan to improve ventilation using solar energy. This service includes mounting the fan, connecting solar panels, and ensuring proper operation. Includes comprehensive labor, rough materials, and solar-powered attic fan (client's choice of model and specifications). Provides energy-efficient attic ventilation.",
-        price: 100,
         category: SERVICE_CATEGORIES.ROOF_VENTILATION,
     },
     {
@@ -8153,7 +7359,6 @@ export const ALL_SERVICES = [
         max_quantity: 20,
         title: "Roof Turbines Installation",
         description: "Installation of roof turbines to enhance attic ventilation. This service includes mounting the turbines, securing them, and ensuring proper airflow. Includes comprehensive labor, rough materials, and roof turbines (client's choice of model and specifications). Ensures effective ventilation through wind-powered turbines.",
-        price: 100,
         category: SERVICE_CATEGORIES.ROOF_VENTILATION,
     },
     {
@@ -8163,7 +7368,6 @@ export const ALL_SERVICES = [
         max_quantity: 20,
         title: "Roof Ventilation Maintenance",
         description: "Maintenance of existing roof ventilation systems to ensure optimal performance. This service includes cleaning, inspecting, and repairing ventilation components as needed. Includes comprehensive labor and necessary materials. Ensures continued effective ventilation for the attic.",
-        price: 100,
         category: SERVICE_CATEGORIES.ROOF_VENTILATION,
     },
     {
@@ -8173,7 +7377,6 @@ export const ALL_SERVICES = [
         max_quantity: 20,
         title: "Tubular Skylights Installation",
         description: "Installation of tubular skylights to bring natural light into interior spaces. This service includes cutting the roof, installing the skylight tubes, and sealing them properly. Includes comprehensive labor, rough materials, and tubular skylights (client's choice of model and specifications). Enhances interior lighting with natural sunlight.",
-        price: 100,
         category: SERVICE_CATEGORIES.SKYLIGHT,
     },
     {
@@ -8183,7 +7386,6 @@ export const ALL_SERVICES = [
         max_quantity: 20,
         title: "Fixed Skylight Installation",
         description: "Installation of fixed skylights to provide natural light. This service includes cutting the roof, installing the skylight, and sealing it properly. Includes comprehensive labor, rough materials, and fixed skylights (client's choice of model and specifications). Ensures a durable and well-sealed skylight.",
-        price: 100,
         category: SERVICE_CATEGORIES.SKYLIGHT,
     },
     {
@@ -8193,7 +7395,6 @@ export const ALL_SERVICES = [
         max_quantity: 20,
         title: "Venting Skylight Installation",
         description: "Installation of venting skylights to provide natural light and ventilation. This service includes cutting the roof, installing the skylight, and sealing it properly. Includes comprehensive labor, rough materials, and venting skylights (client's choice of model and specifications). Provides natural light and ventilation.",
-        price: 100,
         category: SERVICE_CATEGORIES.SKYLIGHT,
     },
     {
@@ -8203,7 +7404,6 @@ export const ALL_SERVICES = [
         max_quantity: 20,
         title: "Curb-Mount Skylight Installation",
         description: "Installation of curb-mount skylights for enhanced natural light. This service includes building the curb, installing the skylight, and sealing it properly. Includes comprehensive labor, rough materials, and curb-mount skylights (client's choice of model and specifications). Ensures a secure and well-sealed skylight.",
-        price: 100,
         category: SERVICE_CATEGORIES.SKYLIGHT,
     },
     {
@@ -8213,7 +7413,6 @@ export const ALL_SERVICES = [
         max_quantity: 20,
         title: "Skylight Removal",
         description: "Removal of existing skylights in preparation for new installation or other projects. This service includes detaching the skylight, disposing of debris, and sealing the roof opening. Includes comprehensive labor and necessary materials. Ensures a clean and ready surface for new skylight installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.SKYLIGHT,
     },
     {
@@ -8223,7 +7422,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "OSB Sheathing Install",
         description: "Installation of OSB sheathing for structural support. This service includes cutting and securing the OSB panels to the roof or walls. Includes comprehensive labor, rough materials, and OSB sheathing (client's choice of specifications). Provides a sturdy and reliable sheathing layer.",
-        price: 100,
         category: SERVICE_CATEGORIES.SHEATHING,
     },
     {
@@ -8233,7 +7431,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Plywood Sheathing Installation",
         description: "Installation of plywood sheathing for structural support. This service includes cutting and securing the plywood panels to the roof or walls. Includes comprehensive labor, rough materials, and plywood sheathing (client's choice of specifications). Ensures a strong and durable sheathing layer.",
-        price: 100,
         category: SERVICE_CATEGORIES.SHEATHING,
     },
     {
@@ -8243,7 +7440,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Steep Roof Plywood Sheathing Installation",
         description: "Installation of plywood sheathing on steep roofs for structural support. This service includes cutting and securing the plywood panels to the roof. Includes comprehensive labor, rough materials, and plywood sheathing (client's choice of specifications). Provides a sturdy and reliable sheathing layer on steep roofs.",
-        price: 100,
         category: SERVICE_CATEGORIES.SHEATHING,
     },
     {
@@ -8253,7 +7449,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Steep Roof OSB Sheathing Installation",
         description: "Installation of OSB sheathing on steep roofs for structural support. This service includes cutting and securing the OSB panels to the roof. Includes comprehensive labor, rough materials, and OSB sheathing (client's choice of specifications). Ensures a strong and durable sheathing layer on steep roofs.",
-        price: 100,
         category: SERVICE_CATEGORIES.SHEATHING,
     },
     {
@@ -8263,7 +7458,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "OSB Sheathing Removal",
         description: "Removal of existing OSB sheathing in preparation for new installation or other projects. This service includes detaching the OSB panels, disposing of debris, and preparing the surface. Includes comprehensive labor and necessary materials. Ensures a clean and ready surface for new sheathing installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.SHEATHING,
     },
     {
@@ -8273,7 +7467,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Plywood Sheathing Removal",
         description: "Removal of existing plywood sheathing in preparation for new installation or other projects. This service includes detaching the plywood panels, disposing of debris, and preparing the surface. Includes comprehensive labor and necessary materials. Ensures a clean and ready surface for new sheathing installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.SHEATHING,
     },
     {
@@ -8283,7 +7476,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Regular Lawn Mowing",
         description: "Regular mowing of the lawn to maintain an even and well-kept appearance. This service includes mowing the lawn, trimming the edges, and clearing away grass clippings. Includes comprehensive labor and necessary equipment. Ensures a consistently neat and tidy lawn.",
-        price: 100,
         category: SERVICE_CATEGORIES.LAWN_MAINTENANCE,
     },
     {
@@ -8293,7 +7485,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Lawn Edging and Trimming",
         description: "Edging and trimming the lawn to create clean lines along borders and pathways. This service includes using specialized tools to trim grass edges and clean up borders. Includes comprehensive labor and necessary equipment. Provides a polished and professional look to lawn edges.",
-        price: 100,
         category: SERVICE_CATEGORIES.LAWN_MAINTENANCE,
     },
     {
@@ -8303,7 +7494,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Lawn Aeration and Scarifying",
         description: "Aerating and scarifying the lawn to improve soil health and promote grass growth. This service includes perforating the soil and removing thatch buildup. Includes comprehensive labor, rough materials, and necessary equipment. Enhances lawn health and appearance.",
-        price: 100,
         category: SERVICE_CATEGORIES.LAWN_MAINTENANCE,
     },
     {
@@ -8313,7 +7503,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Spring Lawn Revitalization",
         description: "Revitalizing the lawn in spring to prepare it for the growing season. This service includes aeration, fertilization, overseeding, and weed control. Includes comprehensive labor, rough materials, and necessary equipment. Ensures a healthy and vibrant lawn for the year ahead.",
-        price: 100,
         category: SERVICE_CATEGORIES.LAWN_MAINTENANCE,
     },
     {
@@ -8323,7 +7512,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Autumn Lawn Preparation",
         description: "Preparing the lawn for the winter season to promote healthy growth in spring. This service includes aeration, fertilization, overseeding, and removing fallen leaves. Includes comprehensive labor, rough materials, and necessary equipment. Prepares the lawn to withstand winter conditions.",
-        price: 100,
         category: SERVICE_CATEGORIES.LAWN_MAINTENANCE,
     },
     {
@@ -8333,7 +7521,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Lawn Winterization",
         description: "Winterizing the lawn to protect it from harsh winter conditions. This service includes applying winter fertilizer, mowing to an appropriate height, and clearing debris. Includes comprehensive labor, rough materials, and necessary equipment. Ensures the lawn is ready for winter and healthy regrowth in spring.",
-        price: 100,
         category: SERVICE_CATEGORIES.LAWN_MAINTENANCE,
     },
     {
@@ -8343,7 +7530,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Faded Grass Painting",
         description: "Painting faded grass areas to restore a vibrant green color. This service includes applying eco-friendly grass paint to discolored patches. Includes comprehensive labor and necessary materials. Provides an instantly refreshed and lush-looking lawn.",
-        price: 100,
         category: SERVICE_CATEGORIES.LAWN_MAINTENANCE,
     },
     {
@@ -8353,7 +7539,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Lawn Hand Seeding",
         description: "Hand seeding the lawn to promote new grass growth in bare or thin areas. This service includes preparing the soil, applying grass seed, and covering the seeds with soil or mulch. Includes comprehensive labor, rough materials, and necessary equipment. Ensures even and effective grass growth.",
-        price: 100,
         category: SERVICE_CATEGORIES.LAWN_SEEDING,
     },
     {
@@ -8363,7 +7548,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Lawn Hydroseeding",
         description: "Applying a hydroseeding mixture to promote rapid grass growth. This service includes spraying a mixture of seed, fertilizer, and mulch onto the lawn. Includes comprehensive labor, rough materials, and necessary equipment. Provides a quick and efficient way to establish a new lawn.",
-        price: 100,
         category: SERVICE_CATEGORIES.LAWN_SEEDING,
     },
     {
@@ -8373,7 +7557,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Lawn Sod Installation",
         description: "Installing sod to create an instant, fully-grown lawn. This service includes soil preparation, laying sod, and watering. Includes comprehensive labor, rough materials, and sod (client's choice of type and specifications). Provides an immediate and professional lawn finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.LAWN_SEEDING,
     },
     {
@@ -8383,7 +7566,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Artificial Grass Installation",
         description: "Installing artificial grass for a low-maintenance and evergreen lawn. This service includes preparing the base, laying artificial grass, and securing it in place. Includes comprehensive labor, rough materials, and artificial grass (client's choice of type and specifications). Provides a durable and maintenance-free lawn solution.",
-        price: 100,
         category: SERVICE_CATEGORIES.LAWN_SEEDING,
     },
     {
@@ -8393,7 +7575,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Lawn Edging Installation",
         description: "Installing edging around the lawn to define borders and prevent grass spread. This service includes digging trenches, placing edging materials, and securing them. Includes comprehensive labor, rough materials, and edging materials (client's choice of type and specifications). Provides a clean and defined lawn edge.",
-        price: 100,
         category: SERVICE_CATEGORIES.LAWN_SEEDING,
     },
     {
@@ -8403,7 +7584,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Tree Removal (Under 12' Diameter, Large Canopy)",
         description: "Removal of a tree with a diameter under 12 inches and a large canopy. This service includes cutting down the tree, removing branches and debris, and grinding the stump. Includes comprehensive labor, rough materials, and necessary equipment. Ensures safe and efficient tree removal.",
-        price: 100,
         category: SERVICE_CATEGORIES.TREE_PRUNING,
     },
     {
@@ -8413,7 +7593,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Tree Removal (12' to 24' Diameter, Large Canopy)",
         description: "Removal of a tree with a diameter between 12 and 24 inches and a large canopy. This service includes cutting down the tree, removing branches and debris, and grinding the stump. Includes comprehensive labor, rough materials, and necessary equipment. Ensures safe and efficient tree removal.",
-        price: 100,
         category: SERVICE_CATEGORIES.TREE_PRUNING,
     },
     {
@@ -8423,7 +7602,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Tree Removal (24' to 36' Diameter, Large Canopy)",
         description: "Removal of a tree with a diameter between 24 and 36 inches and a large canopy. This service includes cutting down the tree, removing branches and debris, and grinding the stump. Includes comprehensive labor, rough materials, and necessary equipment. Ensures safe and efficient tree removal.",
-        price: 100,
         category: SERVICE_CATEGORIES.TREE_PRUNING,
     },
     {
@@ -8433,7 +7611,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Tree Stump Grinding",
         description: "Grinding of a tree stump to below ground level. This service includes grinding the stump and removing the debris. Includes comprehensive labor, rough materials, and necessary equipment. Ensures the stump is fully ground, and the area is ready for new planting or landscaping.",
-        price: 100,
         category: SERVICE_CATEGORIES.TREE_PRUNING,
     },
     {
@@ -8443,7 +7620,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Tree Formative Pruning",
         description: "Pruning young trees to encourage healthy growth and shape. This service includes selectively removing branches to improve structure and aesthetics. Includes comprehensive labor, rough materials, and necessary equipment. Promotes healthy tree growth and appearance.",
-        price: 100,
         category: SERVICE_CATEGORIES.TREE_PRUNING,
     },
     {
@@ -8453,7 +7629,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Small Tree Planting (Up to 2' Tall)",
         description: "Planting small trees up to 2 feet tall. This service includes digging holes, planting trees, and adding soil and mulch. Includes comprehensive labor, rough materials, and necessary equipment. Ensures proper planting and establishment of young trees.",
-        price: 100,
         category: SERVICE_CATEGORIES.PLANTING,
     },
     {
@@ -8463,7 +7638,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Medium Tree Planting (3' to 5' Tall)",
         description: "Planting medium-sized trees between 3 and 5 feet tall. This service includes digging holes, planting trees, and adding soil and mulch. Includes comprehensive labor, rough materials, and necessary equipment. Ensures proper planting and establishment of medium-sized trees.",
-        price: 100,
         category: SERVICE_CATEGORIES.PLANTING,
     },
     {
@@ -8473,7 +7647,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Large Tree Planting (Over 6' Tall)",
         description: "Planting large trees over 6 feet tall. This service includes digging holes, planting trees, and adding soil and mulch. Includes comprehensive labor, rough materials, and necessary equipment. Ensures proper planting and establishment of large trees.",
-        price: 100,
         category: SERVICE_CATEGORIES.PLANTING,
     },
     {
@@ -8483,7 +7656,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Medium Size Tree Relocation",
         description: "Relocating medium-sized trees to a new location. This service includes digging up the tree, transporting it, and replanting it in a new location. Includes comprehensive labor, rough materials, and necessary equipment. Ensures safe and successful tree relocation.",
-        price: 100,
         category: SERVICE_CATEGORIES.PLANTING,
     },
     {
@@ -8493,7 +7665,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Shrubs Planting",
         description: "Planting various types of shrubs. This service includes digging holes, planting shrubs, and adding soil and mulch. Includes comprehensive labor, rough materials, and necessary equipment. Ensures proper planting and establishment of shrubs.",
-        price: 100,
         category: SERVICE_CATEGORIES.PLANTING,
     },
     {
@@ -8503,7 +7674,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Perennial Grasses Planting",
         description: "Planting perennial grasses to enhance landscape aesthetics. This service includes preparing the soil, planting grasses, and adding mulch. Includes comprehensive labor, rough materials, and necessary equipment. Promotes healthy growth and establishment of perennial grasses.",
-        price: 100,
         category: SERVICE_CATEGORIES.PLANTING,
     },
     {
@@ -8513,7 +7683,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Organic Mulching (Up to 3' Deep)",
         description: "Applying organic mulch up to 3 inches deep to garden beds and around plants. This service includes spreading mulch evenly to retain moisture and suppress weeds. Includes comprehensive labor, rough materials, and necessary equipment. Enhances soil health and plant growth.",
-        price: 100,
         category: SERVICE_CATEGORIES.MULCHING,
     },
     {
@@ -8523,7 +7692,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Organic Mulching for Playgrounds",
         description: "Applying organic mulch to playground areas for safety and aesthetics. This service includes spreading mulch to the appropriate depth and ensuring even coverage. Includes comprehensive labor, rough materials, and necessary equipment. Provides a safe and attractive play area surface.",
-        price: 100,
         category: SERVICE_CATEGORIES.MULCHING,
     },
     {
@@ -8533,7 +7701,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Pea Gravel Pebble Mulching",
         description: "Applying pea gravel or pebble mulch to garden beds and pathways. This service includes spreading gravel or pebbles evenly for decorative and functional purposes. Includes comprehensive labor, rough materials, and necessary equipment. Enhances landscape appearance and functionality.",
-        price: 100,
         category: SERVICE_CATEGORIES.MULCHING,
     },
     {
@@ -8543,7 +7710,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Mulch Replacement and Top-Up",
         description: "Replacing old mulch and adding a fresh layer to garden beds and around plants. This service includes removing old mulch, applying new mulch, and ensuring even coverage. Includes comprehensive labor, rough materials, and necessary equipment. Maintains a neat and healthy garden appearance.",
-        price: 100,
         category: SERVICE_CATEGORIES.MULCHING,
     },
     {
@@ -8553,7 +7719,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Mulch Color Covering",
         description: "Applying colored mulch to garden beds and around plants. This service includes spreading colored mulch evenly to enhance landscape aesthetics. Includes comprehensive labor, rough materials, and necessary equipment. Provides a vibrant and polished look to the garden.",
-        price: 100,
         category: SERVICE_CATEGORIES.MULCHING,
     },
     {
@@ -8563,7 +7728,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Mulch Removal",
         description: "Removing old or unwanted mulch from garden beds and around plants. This service includes collecting and disposing of mulch debris. Includes comprehensive labor, rough materials, and necessary equipment. Ensures clean and mulch-free garden beds.",
-        price: 100,
         category: SERVICE_CATEGORIES.MULCHING,
     },
     {
@@ -8573,7 +7737,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Ground Cover Rocks Installation",
         description: "Installation of ground cover rocks to enhance landscape aesthetics and prevent soil erosion. This service includes laying ground cover rocks evenly across designated areas. Includes comprehensive labor, rough materials, equipment usage, and ground cover rocks (client's choice of type and color). Ensures a well-distributed and attractive ground cover.",
-        price: 100,
         category: SERVICE_CATEGORIES.LANDSCAPE_ROCKS,
     },
     {
@@ -8583,7 +7746,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Erosion Control Rocks Installation",
         description: "Installation of erosion control rocks to prevent soil erosion on slopes and other vulnerable areas. This service includes placing rocks strategically to stabilize soil. Includes comprehensive labor, rough materials, equipment usage, and erosion control rocks (client's choice of type and color). Ensures effective erosion control and landscape stability.",
-        price: 100,
         category: SERVICE_CATEGORIES.LANDSCAPE_ROCKS,
     },
     {
@@ -8593,7 +7755,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Rock Wall Installation",
         description: "Construction of rock walls for decorative or retaining purposes. This service includes sourcing and stacking rocks to create a stable wall structure. Includes comprehensive labor, rough materials, equipment usage, and rocks for the wall (client's choice of type and color). Provides a durable and visually appealing rock wall.",
-        price: 100,
         category: SERVICE_CATEGORIES.LANDSCAPE_ROCKS,
     },
     {
@@ -8603,7 +7764,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Install Plastic Landscape Edging",
         description: "Installation of plastic landscape edging to define garden beds and pathways. This service includes measuring, cutting, and securing plastic edging in place. Includes comprehensive labor, rough materials, equipment usage, and plastic edging (client's choice of type and color). Ensures clean and distinct landscape borders.",
-        price: 100,
         category: SERVICE_CATEGORIES.EDGING,
     },
     {
@@ -8613,7 +7773,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Install Metal Landscape Edging",
         description: "Installation of metal landscape edging for a sleek and durable garden border. This service includes measuring, cutting, and securing metal edging. Includes comprehensive labor, rough materials, equipment usage, and metal edging (client's choice of type and color). Provides a long-lasting and modern landscape edge.",
-        price: 100,
         category: SERVICE_CATEGORIES.EDGING,
     },
     {
@@ -8623,7 +7782,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Install Natural Stone Landscape Edging",
         description: "Installation of natural stone landscape edging for a rustic and natural garden border. This service includes measuring, cutting, and securing natural stone edging. Includes comprehensive labor, rough materials, equipment usage, and natural stone edging (client's choice of type and color). Ensures a visually appealing and durable landscape edge.",
-        price: 100,
         category: SERVICE_CATEGORIES.EDGING,
     },
     {
@@ -8633,7 +7791,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Install Brick Landscape Edging",
         description: "Installation of brick landscape edging to add a classic and durable border to garden beds and pathways. This service includes measuring, cutting, and securing brick edging. Includes comprehensive labor, rough materials, equipment usage, and brick edging (client's choice of type and color). Provides a traditional and sturdy landscape edge.",
-        price: 100,
         category: SERVICE_CATEGORIES.EDGING,
     },
     {
@@ -8643,7 +7800,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Install Wood Landscape Edging",
         description: "Installation of wood landscape edging for a natural and flexible garden border. This service includes measuring, cutting, and securing wood edging. Includes comprehensive labor, rough materials, equipment usage, and wood edging (client's choice of type and finish). Ensures a rustic and adaptable landscape edge.",
-        price: 100,
         category: SERVICE_CATEGORIES.EDGING,
     },
     {
@@ -8653,7 +7809,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Install Paver Landscape Edging",
         description: "Installation of paver landscape edging to create a clean and durable border for garden beds and pathways. This service includes measuring, cutting, and securing paver edging. Includes comprehensive labor, rough materials, equipment usage, and paver edging (client's choice of type and color). Provides a polished and resilient landscape edge.",
-        price: 100,
         category: SERVICE_CATEGORIES.EDGING,
     },
     {
@@ -8663,7 +7818,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Raised Garden Bed Installation (Wood)",
         description: "Installation of a wooden raised garden bed for enhanced gardening. This service includes assembling and positioning the wooden bed structure. Includes comprehensive labor, rough materials, equipment usage, and wooden garden bed materials (client's choice of type and finish). Ensures a durable and attractive garden bed.",
-        price: 100,
         category: SERVICE_CATEGORIES.GARDEN_BEDS,
     },
     {
@@ -8673,7 +7827,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Raised Garden Bed Installation (Corten Steel)",
         description: "Installation of a corten steel raised garden bed for modern and durable gardening. This service includes assembling and positioning the corten steel bed structure. Includes comprehensive labor, rough materials, equipment usage, and corten steel garden bed materials (client's choice of size and design). Provides a sleek and long-lasting garden bed.",
-        price: 100,
         category: SERVICE_CATEGORIES.GARDEN_BEDS,
     },
     {
@@ -8683,7 +7836,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Raised Garden Bed Installation (Galvanized Steel)",
         description: "Installation of a galvanized steel raised garden bed for robust and contemporary gardening. This service includes assembling and positioning the galvanized steel bed structure. Includes comprehensive labor, rough materials, equipment usage, and galvanized steel garden bed materials (client's choice of size and design). Ensures a sturdy and modern garden bed.",
-        price: 100,
         category: SERVICE_CATEGORIES.GARDEN_BEDS,
     },
     {
@@ -8693,7 +7845,6 @@ export const ALL_SERVICES = [
         max_quantity: 500,
         title: "Hedge Planting",
         description: "Planting of hedges to create natural privacy screens or decorative garden borders. This service includes digging, planting, and initial care. Includes comprehensive labor, rough materials, equipment usage, and hedges (client's choice of type and size). Ensures healthy and well-planted hedges.",
-        price: 100,
         category: SERVICE_CATEGORIES.HEDGE,
     },
     {
@@ -8703,7 +7854,6 @@ export const ALL_SERVICES = [
         max_quantity: 500,
         title: "Hedge Pruning",
         description: "Pruning of hedges to maintain shape, health, and appearance. This service includes trimming and removal of excess growth. Includes comprehensive labor, rough materials, and necessary equipment. Ensures well-maintained and attractive hedges.",
-        price: 100,
         category: SERVICE_CATEGORIES.HEDGE,
     },
     {
@@ -8713,7 +7863,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Natural Path Installation",
         description: "Installation of a natural path using materials such as wood chips or mulch. This service includes site preparation, material placement, and compaction. Includes comprehensive labor, rough materials, equipment usage, and natural path materials (client's choice of type). Ensures an eco-friendly and natural walkway.",
-        price: 100,
         category: SERVICE_CATEGORIES.WALKWAY_AND_PATH,
     },
     {
@@ -8723,7 +7872,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Concrete Walkway and Path Installation",
         description: "Installation of a concrete walkway or path for a durable and long-lasting surface. This service includes preparation, formwork, pouring, and finishing. Includes comprehensive labor, rough materials, equipment usage, and concrete (client's choice of finish). Provides a sturdy and low-maintenance walkway.",
-        price: 100,
         category: SERVICE_CATEGORIES.WALKWAY_AND_PATH,
     },
     {
@@ -8733,7 +7881,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Pavers Walkway and Path Installation",
         description: "Installation of a pavers walkway or path for a decorative and durable surface. This service includes site preparation, base material placement, and paver installation. Includes comprehensive labor, rough materials, equipment usage, and pavers (client's choice of type and color). Ensures a visually appealing and robust walkway.",
-        price: 100,
         category: SERVICE_CATEGORIES.WALKWAY_AND_PATH,
     },
     {
@@ -8743,7 +7890,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Brick Walkway and Path Installation",
         description: "Installation of a brick walkway or path for a classic and timeless look. This service includes site preparation, base material placement, and brick installation. Includes comprehensive labor, rough materials, equipment usage, and bricks (client's choice of type and color). Provides a traditional and durable walkway.",
-        price: 100,
         category: SERVICE_CATEGORIES.WALKWAY_AND_PATH,
     },
     {
@@ -8753,7 +7899,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Stepping Stone Walkway and Path Installation",
         description: "Installation of a stepping stone walkway or path for a natural and aesthetic look. This service includes site preparation, base material placement, and stepping stone installation. Includes comprehensive labor, rough materials, equipment usage, and stepping stones (client's choice of type and color). Ensures a charming and practical walkway.",
-        price: 100,
         category: SERVICE_CATEGORIES.WALKWAY_AND_PATH,
     },
     {
@@ -8763,7 +7908,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Crushed Stone or Gravel Path Installation",
         description: "Installation of a crushed stone or gravel path for a versatile and cost-effective surface. This service includes site preparation, base material placement, and spreading of crushed stone or gravel. Includes comprehensive labor, rough materials, equipment usage, and crushed stone or gravel (client's choice of type and color). Provides a durable and low-maintenance walkway.",
-        price: 100,
         category: SERVICE_CATEGORIES.WALKWAY_AND_PATH,
     },
     {
@@ -8773,7 +7917,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Surface Maintenance and Weed Control",
         description: "Regular maintenance of walkways and paths to prevent weed growth and maintain surface integrity. This service includes weed removal, surface cleaning, and minor repairs. Includes comprehensive labor, rough materials, and necessary equipment. Ensures a clean and well-maintained walkway.",
-        price: 100,
         category: SERVICE_CATEGORIES.WALKWAY_AND_PATH,
     },
     {
@@ -8783,7 +7926,6 @@ export const ALL_SERVICES = [
         max_quantity: 500,
         title: "Small Landscape Fountain Installation",
         description: "Installation of a small landscape fountain to enhance garden aesthetics. This service includes site preparation, plumbing, and fountain setup. Includes comprehensive labor, rough materials, equipment usage, and fountain (client's choice of model and design). Provides a tranquil and attractive water feature.",
-        price: 100,
         category: SERVICE_CATEGORIES.WATER_FEATURES,
     },
     {
@@ -8793,7 +7935,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Preformed Pond Installation",
         description: "Installation of a preformed pond for a ready-made water feature. This service includes site excavation, pond placement, and finishing. Includes comprehensive labor, rough materials, equipment usage, and preformed pond (client's choice of size and design). Ensures a quick and visually appealing pond installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.WATER_FEATURES,
     },
     {
@@ -8803,7 +7944,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Ponds and Fountains Maintenance",
         description: "Regular maintenance of ponds and fountains to ensure proper operation and aesthetics. This service includes cleaning, water treatment, and minor repairs. Includes comprehensive labor, rough materials, and necessary equipment. Ensures a well-maintained and functional water feature.",
-        price: 100,
         category: SERVICE_CATEGORIES.WATER_FEATURES,
     },
     {
@@ -8813,7 +7953,6 @@ export const ALL_SERVICES = [
         max_quantity: 500,
         title: "Sprinkler Systems Installation",
         description: "Installation of a sprinkler system for efficient lawn and garden watering. This service includes site assessment, system design, trenching, and installation. Includes comprehensive labor, rough materials, equipment usage, and sprinkler system components (client's choice of brand and features). Ensures a reliable and efficient irrigation system.",
-        price: 100,
         category: SERVICE_CATEGORIES.IRRIGATION_SYSTEM,
     },
     {
@@ -8823,7 +7962,6 @@ export const ALL_SERVICES = [
         max_quantity: 500,
         title: "Irrigation Timers and Controllers Installation",
         description: "Installation of timers and controllers for automated irrigation systems. This service includes connecting controllers to the irrigation system and programming settings. Includes comprehensive labor, rough materials, equipment usage, and timers/controllers (client's choice of brand and features). Provides automated and efficient watering control.",
-        price: 100,
         category: SERVICE_CATEGORIES.IRRIGATION_SYSTEM,
     },
     {
@@ -8833,7 +7971,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Drip Irrigation System Installation",
         description: "Installation of a drip irrigation system for precise watering of plants and garden beds. This service includes system layout, tubing installation, and emitter placement. Includes comprehensive labor, rough materials, equipment usage, and drip irrigation components (client's choice of brand and design). Ensures water-efficient and targeted irrigation.",
-        price: 100,
         category: SERVICE_CATEGORIES.IRRIGATION_SYSTEM,
     },
     {
@@ -8843,7 +7980,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Raised Bed Garden Drip Irrigation System Installation",
         description: "Installation of a drip irrigation system specifically for raised bed gardens. This service includes system layout, tubing installation, and emitter placement. Includes comprehensive labor, rough materials, equipment usage, and drip irrigation components (client's choice of brand and design). Provides efficient watering for raised bed gardens.",
-        price: 100,
         category: SERVICE_CATEGORIES.IRRIGATION_SYSTEM,
     },
     {
@@ -8853,7 +7989,6 @@ export const ALL_SERVICES = [
         max_quantity: 500,
         title: "Irrigation System Winterization",
         description: "Winterization of irrigation systems to prevent damage from freezing temperatures. This service includes draining water from the system and protecting components. Includes comprehensive labor, rough materials, and necessary equipment. Ensures irrigation system is protected during winter months.",
-        price: 100,
         category: SERVICE_CATEGORIES.IRRIGATION_SYSTEM,
     },
     {
@@ -8863,7 +7998,6 @@ export const ALL_SERVICES = [
         max_quantity: 500,
         title: "Irrigation System Maintenance",
         description: "Regular maintenance of irrigation systems to ensure proper operation. This service includes system inspection, cleaning, and minor repairs. Includes comprehensive labor, rough materials, and necessary equipment. Ensures a well-maintained and efficient irrigation system.",
-        price: 100,
         category: SERVICE_CATEGORIES.IRRIGATION_SYSTEM,
     },
     {
@@ -8873,7 +8007,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "French Drain System Installation",
         description: "Installation of a French drain system to effectively manage surface water. This service includes site assessment, trenching, pipe installation, and gravel backfilling. Includes comprehensive labor, rough materials, equipment usage, and French drain components (client's choice of type). Ensures efficient water drainage and prevention of water accumulation.",
-        price: 100,
         category: SERVICE_CATEGORIES.DRAINAGE,
     },
     {
@@ -8883,7 +8016,6 @@ export const ALL_SERVICES = [
         max_quantity: 500,
         title: "Downspout Runoff Installation",
         description: "Installation of downspout runoff extensions to direct water away from the foundation. This service includes attachment to existing downspouts and extension placement. Includes comprehensive labor, rough materials, and downspout extensions (client's choice of type). Provides effective management of roof water runoff.",
-        price: 100,
         category: SERVICE_CATEGORIES.DRAINAGE,
     },
     {
@@ -8893,7 +8025,6 @@ export const ALL_SERVICES = [
         max_quantity: 500,
         title: "Landscape Drainage Solutions Installation",
         description: "Installation of drainage solutions to manage water in landscaped areas. This service includes site assessment, trenching, and installation of drainage components. Includes comprehensive labor, rough materials, equipment usage, and drainage components (client's choice of type). Ensures effective water management in gardens and landscaped areas.",
-        price: 100,
         category: SERVICE_CATEGORIES.DRAINAGE,
     },
     {
@@ -8903,7 +8034,6 @@ export const ALL_SERVICES = [
         max_quantity: 500,
         title: "Driveway Drainage Solutions Installation",
         description: "Installation of drainage solutions to prevent water accumulation on driveways. This service includes assessment, trenching, and installation of drainage components. Includes comprehensive labor, rough materials, and drainage components (client's choice of type). Provides effective water management for driveways.",
-        price: 100,
         category: SERVICE_CATEGORIES.DRAINAGE,
     },
     {
@@ -8913,7 +8043,6 @@ export const ALL_SERVICES = [
         max_quantity: 500,
         title: "Yard Drainage Solutions Installation",
         description: "Installation of yard drainage solutions to manage surface water. This service includes site assessment, trenching, and installation of drainage components. Includes comprehensive labor, rough materials, equipment usage, and drainage components (client's choice of type). Ensures effective water drainage in yards.",
-        price: 100,
         category: SERVICE_CATEGORIES.DRAINAGE,
     },
     {
@@ -8923,7 +8052,6 @@ export const ALL_SERVICES = [
         max_quantity: 500,
         title: "Drainage System Cleaning",
         description: "Cleaning and maintenance of existing drainage systems to ensure proper function. This service includes debris removal, flushing, and inspection of drainage components. Includes comprehensive labor, rough materials, and necessary equipment. Ensures efficient and reliable drainage system performance.",
-        price: 100,
         category: SERVICE_CATEGORIES.DRAINAGE,
     },
     {
@@ -8933,7 +8061,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Aluminum Frame Greenhouse Installation",
         description: "Installation of an aluminum frame greenhouse for growing plants. This service includes site preparation, frame assembly, and panel installation. Includes comprehensive labor, rough materials, equipment usage, and greenhouse components (client's choice of type and size). Provides a durable and efficient greenhouse structure.",
-        price: 100,
         category: SERVICE_CATEGORIES.GREENHOUSES,
     },
     {
@@ -8943,7 +8070,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Metal Orangery Installation",
         description: "Installation of a metal orangery for growing citrus and other plants. This service includes site preparation, frame assembly, and panel installation. Includes comprehensive labor, rough materials, equipment usage, and orangery components (client's choice of type and size). Ensures a robust and aesthetically pleasing orangery structure.",
-        price: 100,
         category: SERVICE_CATEGORIES.GREENHOUSES,
     },
     {
@@ -8953,7 +8079,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Greenhouse Seasonal Cleaning",
         description: "Seasonal cleaning of greenhouses to maintain optimal growing conditions. This service includes debris removal, surface cleaning, and inspection of greenhouse components. Includes comprehensive labor, rough materials, and necessary equipment. Ensures a clean and well-maintained greenhouse environment.",
-        price: 100,
         category: SERVICE_CATEGORIES.GREENHOUSES,
     },
     {
@@ -8963,7 +8088,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Outdoor Grill Assembly",
         description: "Assembly of an outdoor grill to provide a convenient cooking solution. This service includes unpacking, parts verification, and complete assembly according to the manufacturer's instructions. Includes comprehensive labor, rough materials, and necessary equipment usage. Ensures the grill is correctly and securely assembled, ready for use.",
-        price: 100,
         category: SERVICE_CATEGORIES.GRILLS,
     },
     {
@@ -8973,7 +8097,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Outdoor Grill Cleaning",
         description: "Thorough cleaning of an outdoor grill to maintain optimal performance and hygiene. This service includes cleaning grill grates, burners, and exterior surfaces. Includes comprehensive labor, rough materials, and necessary cleaning equipment. Ensures the grill is clean and well-maintained for safe and efficient use.",
-        price: 100,
         category: SERVICE_CATEGORIES.GRILLS,
     },
     {
@@ -8983,7 +8106,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Outdoor Kitchen Cabinets Installation",
         description: "Installation of outdoor kitchen cabinets to provide storage and workspace. This service includes site preparation, cabinet assembly, and secure mounting. Includes comprehensive labor, rough materials, equipment usage, and cabinet components (client's choice of type and design). Ensures a functional and aesthetically pleasing outdoor kitchen setup.",
-        price: 100,
         category: SERVICE_CATEGORIES.OUTDOOR_KITCHEN,
     },
     {
@@ -8993,7 +8115,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Outdoor Kitchen Built-In Grill Installation",
         description: "Installation of a built-in grill in an outdoor kitchen setup. This service includes site preparation, grill placement, and secure mounting. Includes comprehensive labor, rough materials, equipment usage, and built-in grill components (client's choice of model and specifications). Ensures a seamless and functional grill installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.OUTDOOR_KITCHEN,
     },
     {
@@ -9003,7 +8124,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Outdoor Gas Grill Island Installation",
         description: "Installation of a Gas Grill Island in an outdoor kitchen setup. This service includes site preparation, grill placement, and secure mounting. Includes comprehensive labor, rough materials, equipment usage, and built-in grill components (client's choice of model and specifications). Ensures a seamless and functional grill installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.OUTDOOR_KITCHEN,
     },
     {
@@ -9013,7 +8133,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Outdoor Kitchen Sink Installation",
         description: "Installation of a sink in an outdoor kitchen to provide a convenient water source. This service includes site preparation, plumbing connections, and secure mounting. Includes comprehensive labor, rough materials, equipment usage, and sink components (client's choice of model and specifications). Ensures a functional and efficient sink installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.OUTDOOR_KITCHEN,
     },
     {
@@ -9023,7 +8142,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Outdoor Kitchen Cleaning",
         description: "Thorough cleaning of an outdoor kitchen to maintain hygiene and functionality. This service includes cleaning countertops, cabinets, appliances, and sinks. Includes comprehensive labor, rough materials, and necessary cleaning equipment. Ensures the outdoor kitchen is clean and ready for use.",
-        price: 100,
         category: SERVICE_CATEGORIES.OUTDOOR_KITCHEN,
     },
     {
@@ -9033,7 +8151,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Outdoor Kitchen Removal",
         description: "Safe removal of an outdoor kitchen setup. This service includes disassembly of cabinets, appliances, and plumbing fixtures, followed by site cleanup. Includes comprehensive labor, rough materials, and necessary equipment usage. Ensures efficient and clean removal of the outdoor kitchen.",
-        price: 100,
         category: SERVICE_CATEGORIES.OUTDOOR_KITCHEN,
     },
     {
@@ -9043,7 +8160,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Fire Pit Kit Installation",
         description: "Installation of a fire pit kit to provide a convenient outdoor heating solution. This service includes site preparation, assembly, and secure placement. Includes comprehensive labor, rough materials, equipment usage, and fire pit components (client's choice of kit and design). Ensures a functional and aesthetically pleasing fire pit setup.",
-        price: 100,
         category: SERVICE_CATEGORIES.FIRE_PIT,
     },
     {
@@ -9053,7 +8169,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Seat Wall Installation",
         description: "Installation of a seat wall around a fire pit or in a garden area. This service includes site preparation, wall construction, and secure placement. Includes comprehensive labor, rough materials, equipment usage, and seat wall components (client's choice of materials and design). Ensures a comfortable and durable seating solution.",
-        price: 100,
         category: SERVICE_CATEGORIES.FIRE_PIT,
     },
     {
@@ -9063,7 +8178,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Fire Pit Cleaning",
         description: "Thorough cleaning of a fire pit to maintain safety and functionality. This service includes ash removal, surface cleaning, and inspection of fire pit components. Includes comprehensive labor, rough materials, and necessary cleaning equipment. Ensures the fire pit is clean and ready for safe use.",
-        price: 100,
         category: SERVICE_CATEGORIES.FIRE_PIT,
     },
     {
@@ -9073,7 +8187,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Fire Pit Removal",
         description: "Safe removal of a fire pit. This service includes disassembly of the fire pit components and site cleanup. Includes comprehensive labor, rough materials, and necessary equipment usage. Ensures efficient and clean removal of the fire pit.",
-        price: 100,
         category: SERVICE_CATEGORIES.FIRE_PIT,
     },
     {
@@ -9083,7 +8196,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Compact Outdoor Fireplace Installation",
         description: "Installation of a compact outdoor fireplace to enhance outdoor living spaces. This service includes site preparation, fireplace assembly, and secure mounting. Includes comprehensive labor, rough materials, equipment usage, and fireplace components (client's choice of model and specifications). Ensures a functional and aesthetically pleasing outdoor fireplace setup.",
-        price: 100,
         category: SERVICE_CATEGORIES.FIREPLACE,
     },
     {
@@ -9093,7 +8205,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Compact Wood Box Installation",
         description: "Installation of a compact wood box for convenient wood storage. This service includes site preparation, box assembly, and secure placement. Includes comprehensive labor, rough materials, equipment usage, and wood box components (client's choice of model and specifications). Ensures a practical and durable wood storage solution.",
-        price: 100,
         category: SERVICE_CATEGORIES.FIREPLACE,
     },
     {
@@ -9103,7 +8214,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Compact Outdoor Hearth Installation",
         description: "Installation of a compact outdoor hearth to complement a fireplace. This service includes site preparation, hearth construction, and secure placement. Includes comprehensive labor, rough materials, equipment usage, and hearth components (client's choice of materials and design). Ensures a functional and aesthetically pleasing hearth setup.",
-        price: 100,
         category: SERVICE_CATEGORIES.FIREPLACE,
     },
     {
@@ -9113,7 +8223,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Fireplace Cleaning",
         description: "Thorough cleaning of an outdoor fireplace to maintain safety and efficiency. This service includes ash removal, surface cleaning, and inspection of fireplace components. Includes comprehensive labor, rough materials, and necessary cleaning equipment. Ensures the fireplace is clean and ready for safe use.",
-        price: 100,
         category: SERVICE_CATEGORIES.FIREPLACE,
     },
     {
@@ -9123,7 +8232,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Fireplace Removal",
         description: "Safe removal of an outdoor fireplace. This service includes disassembly of fireplace components and site cleanup. Includes comprehensive labor, rough materials, and necessary equipment usage. Ensures efficient and clean removal of the fireplace.",
-        price: 100,
         category: SERVICE_CATEGORIES.FIREPLACE,
     },
     {
@@ -9133,7 +8241,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Ceiling-Mounted Electric Heater Installation",
         description: "Installation of an infrared ceiling-mounted electric heater for efficient outdoor heating. This service includes site preparation, heater mounting, and electrical connections. Includes comprehensive labor, rough materials, equipment usage, and heater components (client's choice of model and specifications). Ensures effective and reliable outdoor heating.",
-        price: 100,
         category: SERVICE_CATEGORIES.PATIO_HEATER,
     },
     {
@@ -9143,7 +8250,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Infrared Electric Heater Replacement",
         description: "Replacement of an existing infrared electric heater with a new model. This service includes removal of the old heater, installation of the new heater, and electrical connections. Includes comprehensive labor, rough materials, equipment usage, and heater components (client's choice of model and specifications). Ensures continued efficient outdoor heating.",
-        price: 100,
         category: SERVICE_CATEGORIES.PATIO_HEATER,
     },
     {
@@ -9153,7 +8259,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Hot Tub Installation",
         description: "Installation of a hot tub to enhance outdoor relaxation. This service includes site preparation, hot tub placement, plumbing and electrical connections, and testing. Includes comprehensive labor, rough materials, equipment usage, and hot tub components (client's choice of model and specifications). Ensures a functional and enjoyable hot tub setup.",
-        price: 100,
         category: SERVICE_CATEGORIES.HOT_TUBS,
     },
     {
@@ -9163,7 +8268,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Hot Tub Maintenance",
         description: "Regular maintenance of a hot tub to ensure optimal performance and cleanliness. This service includes water treatment, filter cleaning or replacement, and inspection of hot tub components. Includes comprehensive labor, rough materials, and necessary maintenance equipment. Ensures the hot tub is clean, safe, and ready for use.",
-        price: 100,
         category: SERVICE_CATEGORIES.HOT_TUBS,
     },
     {
@@ -9173,7 +8277,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Swimming Pool Site Preparation",
         description: "Preparation of the site for swimming pool installation. This service includes excavation, leveling, and ground preparation. Includes comprehensive labor, rough materials, and necessary equipment usage. Ensures the site is ready for pool installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.POOL,
     },
     {
@@ -9183,7 +8286,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Hard-Sided Swimming Pool Installation",
         description: "Installation of a hard-sided swimming pool. This service includes pool assembly, placement, plumbing, and electrical connections. Includes comprehensive labor, rough materials, equipment usage, and pool components (client's choice of model and specifications). Ensures a secure and functional pool setup.",
-        price: 100,
         category: SERVICE_CATEGORIES.POOL,
     },
     {
@@ -9193,7 +8295,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Frame Swimming Pool Installation",
         description: "Installation of a frame swimming pool. This service includes pool frame assembly, liner placement, plumbing, and electrical connections. Includes comprehensive labor, rough materials, equipment usage, and pool components (client's choice of model and specifications). Ensures a secure and functional pool setup.",
-        price: 100,
         category: SERVICE_CATEGORIES.POOL,
     },
     {
@@ -9203,7 +8304,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Cartridge Pool Filter Replacement",
         description: "Replacement of the cartridge pool filter to maintain water cleanliness. This service includes removal of the old filter, installation of the new filter, and system testing. Includes comprehensive labor, rough materials, and necessary equipment usage. Ensures the pool filtration system is effective.",
-        price: 100,
         category: SERVICE_CATEGORIES.POOL,
     },
     {
@@ -9213,7 +8313,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Outdoor Pool Pump Replacement",
         description: "Replacement of the outdoor pool pump to ensure proper water circulation. This service includes removal of the old pump, installation of the new pump, and system testing. Includes comprehensive labor, rough materials, equipment usage, and pump components (client's choice of model and specifications). Ensures the pool pump is functioning efficiently.",
-        price: 100,
         category: SERVICE_CATEGORIES.POOL,
     },
     {
@@ -9223,7 +8322,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Outdoor Pool Winterization",
         description: "Winterization of the outdoor pool to protect it during the cold season. This service includes water drainage, plumbing system preparation, and covering the pool. Includes comprehensive labor, rough materials, and necessary equipment usage. Ensures the pool is properly prepared for winter.",
-        price: 100,
         category: SERVICE_CATEGORIES.POOL,
     },
     {
@@ -9233,7 +8331,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Outdoor Pool Opening",
         description: "Opening of the outdoor pool for the summer season. This service includes uncovering the pool, plumbing system preparation, water treatment, and system testing. Includes comprehensive labor, rough materials, and necessary equipment usage. Ensures the pool is ready for use.",
-        price: 100,
         category: SERVICE_CATEGORIES.POOL,
     },
     {
@@ -9243,7 +8340,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Built-In Outdoor Cooler Installation",
         description: "Installation of a built-in outdoor cooler for convenient outdoor refrigeration. This service includes site preparation, cooler installation, and electrical connections. Includes comprehensive labor, rough materials, equipment usage, and cooler components (client's choice of model and specifications). Ensures a functional and efficient outdoor cooler setup.",
-        price: 100,
         category: SERVICE_CATEGORIES.REFRIGERATION,
     },
     {
@@ -9253,7 +8349,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Outdoor Refrigeration Electrical Repair",
         description: "Electrical repair of outdoor refrigeration systems. This service includes diagnosis of electrical issues, repair of wiring and components, and system testing. Includes comprehensive labor, rough materials, and necessary equipment usage. Ensures the refrigeration system is functioning properly.",
-        price: 100,
         category: SERVICE_CATEGORIES.REFRIGERATION,
     },
     {
@@ -9263,7 +8358,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Outdoor Refrigeration System Maintenance",
         description: "Regular maintenance of outdoor refrigeration systems to ensure optimal performance. This service includes inspection, cleaning, and testing of components. Includes comprehensive labor, rough materials, and necessary maintenance equipment. Ensures the refrigeration system is well-maintained and efficient.",
-        price: 100,
         category: SERVICE_CATEGORIES.REFRIGERATION,
     },
     {
@@ -9273,7 +8367,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Cooling System for Small to Midsize Patio Installation",
         description: "Installation of an outdoor mist cooling system for small to midsize patios. This service includes site preparation, system assembly, and plumbing connections. Includes comprehensive labor, rough materials, equipment usage, and cooling system components (client's choice of model and specifications). Ensures a comfortable and cool patio environment.",
-        price: 100,
         category: SERVICE_CATEGORIES.OUTDOOR_COOLING,
     },
     {
@@ -9283,7 +8376,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Cooling System for Mid to Large Patio Installation",
         description: "Installation of an outdoor mist cooling system for mid to large patios. This service includes site preparation, system assembly, and plumbing connections. Includes comprehensive labor, rough materials, equipment usage, and cooling system components (client's choice of model and specifications). Ensures a comfortable and cool patio environment.",
-        price: 100,
         category: SERVICE_CATEGORIES.OUTDOOR_COOLING,
     },
     {
@@ -9293,7 +8385,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Wooden Clapboard Siding Installation on a Single-Story Building",
         description: "Installation of wooden clapboard siding on a single-story building. This service includes site preparation, siding attachment, and finishing. Includes comprehensive labor, rough materials, equipment usage, and siding materials (client's choice of type and specifications). Ensures a durable and aesthetically pleasing wood siding installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.WOOD_SIDING,
     },
     {
@@ -9303,7 +8394,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Wooden Clapboard Siding Installation on 2-3 Story Building",
         description: "Installation of wooden clapboard siding on a 2-3 story building. This service includes site preparation, siding attachment, and finishing. Includes comprehensive labor, rough materials, equipment usage, and siding materials (client's choice of type and specifications). Ensures a durable and aesthetically pleasing wood siding installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.WOOD_SIDING,
     },
     {
@@ -9313,7 +8403,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Cedar Wood Shingle Siding Installation on a Single-Story Building",
         description: "Installation of cedar wood shingle siding on a single-story building. This service includes site preparation, shingle attachment, and finishing. Includes comprehensive labor, rough materials, equipment usage, and shingle materials (client's choice of type and specifications). Ensures a durable and aesthetically pleasing wood shingle siding installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.WOOD_SIDING,
     },
     {
@@ -9323,7 +8412,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Cedar Wood Shingle Siding Installation on a 2-3 Story Building",
         description: "Installation of cedar wood shingle siding on a 2-3 story building. This service includes site preparation, siding attachment, and finishing. Includes comprehensive labor, rough materials, equipment usage, and shingle materials (client's choice of type and specifications). Ensures a durable and aesthetically pleasing wood shingle siding installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.WOOD_SIDING,
     },
     {
@@ -9333,7 +8421,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Plywood Siding Panel Installation on a Single-Story Building",
         description: "Installation of plywood siding panels on a single-story building. This service includes site preparation, panel attachment, and finishing. Includes comprehensive labor, rough materials, equipment usage, and siding materials (client's choice of type and specifications). Ensures a durable and aesthetically pleasing plywood siding installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.WOOD_SIDING,
     },
     {
@@ -9343,7 +8430,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Plywood Siding Panel Installation on a 2-3 Story Building",
         description: "Installation of plywood siding panels on a 2-3 story building. This service includes site preparation, panel attachment, and finishing. Includes comprehensive labor, rough materials, equipment usage, and siding materials (client's choice of type and specifications). Ensures a durable and aesthetically pleasing plywood siding installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.WOOD_SIDING,
     },
     {
@@ -9353,7 +8439,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Grid Siding Board Installation on a Single-Story Building",
         description: "Installation of grid siding boards on a single-story building. This service includes site preparation, board attachment, and finishing. Includes comprehensive labor, rough materials, equipment usage, and siding materials (client's choice of type and specifications). Ensures a durable and aesthetically pleasing grid siding installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.WOOD_SIDING,
     },
     {
@@ -9363,7 +8448,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Grid Siding Board Installation on a 2-3 Story Building",
         description: "Installation of grid siding boards on a 2-3 story building. This service includes site preparation, board attachment, and finishing. Includes comprehensive labor, rough materials, equipment usage, and siding materials (client's choice of type and specifications). Ensures a durable and aesthetically pleasing grid siding installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.WOOD_SIDING,
     },
     {
@@ -9373,7 +8457,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Wood Siding Removal",
         description: "Removal of existing wood siding. This service includes careful detachment of siding, disposal of old materials, and site cleanup. Includes comprehensive labor, rough materials, and necessary equipment usage. Ensures the safe and efficient removal of wood siding.",
-        price: 100,
         category: SERVICE_CATEGORIES.WOOD_SIDING,
     },
     {
@@ -9383,7 +8466,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Vinyl Siding Installation on a Single-Story Building",
         description: "Installation of vinyl siding on a single-story building. This service includes site preparation, siding attachment, and finishing. Includes comprehensive labor, rough materials, equipment usage, and vinyl siding materials (client's choice of type and specifications). Ensures a durable and aesthetically pleasing vinyl siding installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.VINYL_SIDING,
     },
     {
@@ -9393,7 +8475,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Vinyl Siding Installation on a 2-3 Story Building",
         description: "Installation of vinyl siding on a 2-3 story building. This service includes site preparation, siding attachment, and finishing. Includes comprehensive labor, rough materials, equipment usage, and vinyl siding materials (client's choice of type and specifications). Ensures a durable and aesthetically pleasing vinyl siding installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.VINYL_SIDING,
     },
     {
@@ -9403,7 +8484,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Vinyl Siding Repair",
         description: "Repair of damaged vinyl siding. This service includes assessment, removal of damaged sections, and replacement with new vinyl siding. Includes comprehensive labor, rough materials, and necessary equipment usage. Ensures effective and seamless repair of vinyl siding.",
-        price: 100,
         category: SERVICE_CATEGORIES.VINYL_SIDING,
     },
     {
@@ -9413,7 +8493,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Vinyl Siding Removal",
         description: "Removal of existing vinyl siding. This service includes careful detachment of siding, disposal of old materials, and site cleanup. Includes comprehensive labor, rough materials, and necessary equipment usage. Ensures the safe and efficient removal of vinyl siding.",
-        price: 100,
         category: SERVICE_CATEGORIES.VINYL_SIDING,
     },
     {
@@ -9423,7 +8502,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Thin Brick Veneer Removal",
         description: "Removal of thin brick veneer. This service includes careful detachment of veneer, disposal of old materials, and site cleanup. Includes comprehensive labor, rough materials, and necessary equipment usage. Ensures the safe and efficient removal of thin brick veneer.",
-        price: 100,
         category: SERVICE_CATEGORIES.BRICK_VENEER,
     },
     {
@@ -9433,7 +8511,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Thin Brick Veneer Installation on a Single-Story Building",
         description: "Installation of thin brick veneer on a single-story building. This service includes site preparation, veneer attachment, and finishing. Includes comprehensive labor, rough materials, equipment usage, and thin brick veneer materials (client's choice of type and specifications). Ensures a durable and aesthetically pleasing brick veneer installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.BRICK_VENEER,
     },
     {
@@ -9443,7 +8520,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Thin Brick Veneer Installation on a 2-3 Story Building",
         description: "Installation of thin brick veneer on a 2-3 story building. This service includes site preparation, veneer attachment, and finishing. Includes comprehensive labor, rough materials, equipment usage, and thin brick veneer materials (client's choice of type and specifications). Ensures a durable and aesthetically pleasing brick veneer installation.",
-        price: 100,
         category: SERVICE_CATEGORIES.BRICK_VENEER,
     },
     {
@@ -9453,7 +8529,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Brick Veneer Sealing",
         description: "Sealing of brick veneer to protect against moisture and staining. This service includes cleaning, application of sealant, and drying. Includes comprehensive labor, rough materials, equipment usage, and sealant materials (client's choice of type and specifications). Ensures enhanced durability and appearance of brick veneer.",
-        price: 100,
         category: SERVICE_CATEGORIES.BRICK_VENEER,
     },
     {
@@ -9463,7 +8538,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Brick Veneer Pointing and Repointing",
         description: "Pointing and repointing of brick veneer joints to maintain structural integrity and appearance. This service includes removal of old mortar, cleaning, and application of new mortar. Includes comprehensive labor, rough materials, equipment usage, and mortar materials (client's choice of type and specifications). Ensures a durable and visually appealing brick veneer finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.BRICK_VENEER,
     },
     {
@@ -9473,7 +8547,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Brick Veneer Damage Repair",
         description: "Repair of damaged brick veneer sections. This service includes assessment, removal of damaged bricks, and replacement with new bricks. Includes comprehensive labor, rough materials, and necessary equipment usage. Ensures effective and seamless repair of brick veneer.",
-        price: 100,
         category: SERVICE_CATEGORIES.BRICK_VENEER,
     },
     {
@@ -9483,7 +8556,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Old Cladding Removal",
         description: "Safe and efficient removal of old cladding materials from building exteriors, ensuring the underlying structure is not damaged. This service includes comprehensive labor, the use of appropriate tools and equipment, and responsible disposal of old materials.",
-        price: 100,
         category: SERVICE_CATEGORIES.STONE_CLADDING,
     },
     {
@@ -9493,7 +8565,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Stone Cladding Surface Preparation",
         description: "Preparing surfaces for new stone cladding installation by cleaning, repairing any damage, and applying a suitable primer. This service includes comprehensive labor, the use of necessary equipment, and application of primer and other preparatory materials.",
-        price: 100,
         category: SERVICE_CATEGORIES.STONE_CLADDING,
     },
     {
@@ -9503,7 +8574,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Natural Stone Installation on a Single-Story Building",
         description: "Installing natural stone cladding on a single-story building to provide a durable and aesthetically pleasing exterior. This service includes comprehensive labor, rough materials, equipment usage, and natural stone materials (client's choice of type and specifications). Ensures a professional and long-lasting finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.STONE_CLADDING,
     },
     {
@@ -9513,7 +8583,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Natural Stone Installation on a 2-3 Story Building",
         description: "Installing natural stone cladding on a 2-3 story building to enhance its durability and appearance. This service includes comprehensive labor, rough materials, equipment usage, and natural stone materials (client's choice of type and specifications). Ensures a professional and long-lasting finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.STONE_CLADDING,
     },
     {
@@ -9523,7 +8592,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Manufactured Stone Veneer Installation on a Single-Story Building",
         description: "Installing manufactured stone veneer on a single-story building to achieve the look of natural stone with little maintenance. This service includes comprehensive labor, rough materials, equipment usage, and manufactured stone veneer materials (client's choice of type and specifications). Ensures a durable and attractive finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.STONE_CLADDING,
     },
     {
@@ -9533,7 +8601,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Manufactured Stone Veneer Installation on a 2-3 Story Building",
         description: "Installing manufactured stone veneer on a 2-3 story building to provide a lightweight yet durable exterior. This service includes comprehensive labor, rough materials, equipment usage, and manufactured stone veneer materials (client's choice of type and specifications). Ensures a durable and attractive finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.STONE_CLADDING,
     },
     {
@@ -9543,7 +8610,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Faux Stone Siding Installation on a Single-Story Building",
         description: "Installing faux stone siding on a single-story building to mimic the appearance of natural stone with easy-install materials. This service includes comprehensive labor, rough materials, equipment usage, and faux stone siding materials (client's choice of type and specifications). Ensures a professional and appealing finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.STONE_CLADDING,
     },
     {
@@ -9553,7 +8619,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Faux Stone Siding Installation on a 2-3 Story Building",
         description: "Installing faux stone siding on a 2-3 story building to achieve the look of natural stone with less weight and cost. This service includes comprehensive labor, rough materials, equipment usage, and faux stone siding materials (client's choice of type and specifications). Ensures a professional and appealing finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.STONE_CLADDING,
     },
     {
@@ -9563,7 +8628,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Stone Cladding Column Wrap",
         description: "Wrapping columns with stone cladding for a decorative and protective finish, enhancing the architectural details. This service includes comprehensive labor, rough materials, equipment usage, and stone cladding materials (client's choice of type and specifications). Ensures a professional and attractive appearance.",
-        price: 100,
         category: SERVICE_CATEGORIES.STONE_CLADDING,
     },
     {
@@ -9573,7 +8637,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Stone Cladding Protective Sealants Application",
         description: "Applying protective sealants to stone cladding to enhance durability, resistance to weathering, and longevity of the finish. This service includes comprehensive labor, rough materials, equipment usage, and sealant materials (client's choice of type and specifications). Ensures extended life and appearance of stone cladding.",
-        price: 100,
         category: SERVICE_CATEGORIES.STONE_CLADDING,
     },
     {
@@ -9583,7 +8646,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Traditional Stucco Application on a Single-Story Building",
         description: "Applying traditional stucco on a single-story building to provide a textured and durable exterior finish. This service includes comprehensive labor, rough materials, equipment usage, and stucco materials (client's choice of type and specifications). Ensures a durable and attractive finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.STUCCO,
     },
     {
@@ -9593,7 +8655,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Traditional Stucco Application on a 2-3 Story Building",
         description: "Applying traditional stucco on a 2-3 story building to achieve a textured and durable exterior. This service includes comprehensive labor, rough materials, equipment usage, and stucco materials (client's choice of type and specifications). Ensures a durable and attractive finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.STUCCO,
     },
     {
@@ -9603,7 +8664,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Old Stucco Removal on a Single-Story Building",
         description: "Safe and efficient removal of old stucco from a single-story building, preparing the surface for new applications. This service includes comprehensive labor, use of appropriate tools and equipment, and responsible disposal of old materials.",
-        price: 100,
         category: SERVICE_CATEGORIES.STUCCO,
     },
     {
@@ -9613,7 +8673,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Old Stucco Removal on a 2-3 Story Building",
         description: "Safe and efficient removal of old stucco from a 2-3 story building, ensuring the surface is properly prepared for new applications. This service includes comprehensive labor, use of appropriate tools and equipment, and responsible disposal of old materials.",
-        price: 100,
         category: SERVICE_CATEGORIES.STUCCO,
     },
     {
@@ -9623,7 +8682,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Galvanized Steel Panel Installation",
         description: "Installation of galvanized steel panels for a durable and weather-resistant exterior. This service includes comprehensive labor, rough materials, equipment usage, and galvanized steel panels (client's choice of type and specifications). Ensures a strong and long-lasting cladding.",
-        price: 100,
         category: SERVICE_CATEGORIES.METAL_CLADDING,
     },
     {
@@ -9633,7 +8691,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Old Cladding Removal",
         description: "Safe and efficient removal of old cladding materials to prepare the surface for new installation. This service includes comprehensive labor, use of appropriate tools and equipment, and responsible disposal of old materials.",
-        price: 100,
         category: SERVICE_CATEGORIES.METAL_CLADDING,
     },
     {
@@ -9643,7 +8700,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Glass Blocks Installation",
         description: "Installation of glass blocks to enhance the aesthetics and light diffusion of a building. This service includes comprehensive labor, rough materials, equipment usage, and glass blocks (client's choice of type and specifications). Ensures a visually appealing and functional glass facade.",
-        price: 100,
         category: SERVICE_CATEGORIES.GLASS_FACADES,
     },
     {
@@ -9653,7 +8709,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Glass Blocks Removal",
         description: "Safe and efficient removal of glass blocks, preparing the area for new installations or other applications. This service includes comprehensive labor, use of appropriate tools and equipment, and responsible disposal of old materials.",
-        price: 100,
         category: SERVICE_CATEGORIES.GLASS_FACADES,
     },
     {
@@ -9663,7 +8718,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Composite Siding Installation on a Single-Story Building",
         description: "Installation of composite siding on a single-story building for a modern and durable exterior. This service includes comprehensive labor, rough materials, equipment usage, and composite siding (client's choice of type and specifications). Ensures a professional and long-lasting finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.COMPOSITE_PANELING,
     },
     {
@@ -9673,7 +8727,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Composite Siding Installation on a 2-3 Story Building",
         description: "Installation of composite siding on a 2-3 story building to enhance its appearance and durability. This service includes comprehensive labor, rough materials, equipment usage, and composite siding (client's choice of type and specifications). Ensures a professional and long-lasting finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.COMPOSITE_PANELING,
     },
     {
@@ -9683,7 +8736,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Fiber Cement Siding Installation on a Single Story Building",
         description: "Installation of fiber cement siding on a single-story building for a resilient and attractive exterior. This service includes comprehensive labor, rough materials, equipment usage, and fiber cement siding (client's choice of type and specifications). Ensures a durable and appealing finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.COMPOSITE_PANELING,
     },
     {
@@ -9693,7 +8745,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Fiber Cement Siding Installation on a 2-3 Story Building",
         description: "Installation of fiber cement siding on a 2-3 story building to provide a durable and visually appealing exterior. This service includes comprehensive labor, rough materials, equipment usage, and fiber cement siding (client's choice of type and specifications). Ensures a durable and appealing finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.COMPOSITE_PANELING,
     },
     {
@@ -9703,7 +8754,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Composite Paneling Removal on a Single-Story Building",
         description: "Safe and efficient removal of composite paneling from a single-story building, preparing the surface for new applications. This service includes comprehensive labor, use of appropriate tools and equipment, and responsible disposal of old materials.",
-        price: 100,
         category: SERVICE_CATEGORIES.COMPOSITE_PANELING,
     },
     {
@@ -9713,7 +8763,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Composite Paneling Removal on a 2-3 Story Building",
         description: "Safe and efficient removal of composite paneling from a 2-3 story building, preparing the surface for new applications. This service includes comprehensive labor, use of appropriate tools and equipment, and responsible disposal of old materials.",
-        price: 100,
         category: SERVICE_CATEGORIES.COMPOSITE_PANELING,
     },
     {
@@ -9723,7 +8772,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Fiber Cement Trim Board Installation on a Single-Story Building",
         description: "Installation of fiber cement trim boards on a single-story building to enhance its architectural detail and durability. This service includes comprehensive labor, rough materials, equipment usage, and fiber cement trim boards (client's choice of type and specifications). Ensures a professional and attractive finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.TRIMS_AND_MOLDINGS,
     },
     {
@@ -9733,7 +8781,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Fiber Cement Trim Board Installation on a 2-3 Story Building",
         description: "Installation of fiber cement trim boards on a 2-3 story building to provide detailed and durable architectural accents. This service includes comprehensive labor, rough materials, equipment usage, and fiber cement trim boards (client's choice of type and specifications). Ensures a professional and attractive finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.TRIMS_AND_MOLDINGS,
     },
     {
@@ -9743,7 +8790,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Engineered Treated Wood Siding Installation on a Single-Story Building",
         description: "Installation of engineered treated wood trim on a single-story building for a durable and aesthetically pleasing finish. This service includes comprehensive labor, rough materials, equipment usage, and treated wood trim (client's choice of type and specifications). Ensures a professional and long-lasting finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.TRIMS_AND_MOLDINGS,
     },
     {
@@ -9753,7 +8799,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Engineered Treated Wood Siding Installation on a 2-3 Story Building",
         description: "Installation of engineered treated wood trim on a 2-3 story building to enhance its durability and appearance. This service includes comprehensive labor, rough materials, equipment usage, and treated wood trim (client's choice of type and specifications). Ensures a professional and long-lasting finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.TRIMS_AND_MOLDINGS,
     },
     {
@@ -9763,7 +8808,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "PVC Trim Installation on a Single-Story Building",
         description: "Installation of PVC trim on a single-story building for a low-maintenance and durable exterior finish. This service includes comprehensive labor, rough materials, equipment usage, and PVC trim (client's choice of type and specifications). Ensures a professional and long-lasting finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.TRIMS_AND_MOLDINGS,
     },
     {
@@ -9773,7 +8817,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "PVC Trim Installation on a 2-3 Story Building",
         description: "Installation of PVC trim on a 2-3 story building to provide a durable and low-maintenance finish. This service includes comprehensive labor, rough materials, equipment usage, and PVC trim (client's choice of type and specifications). Ensures a professional and long-lasting finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.TRIMS_AND_MOLDINGS,
     },
     {
@@ -9783,7 +8826,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Custom bent aluminum Installation",
         description: "Installation of custom bent aluminum trim to provide detailed and durable architectural accents. This service includes comprehensive labor, rough materials, equipment usage, and custom aluminum trim (client's choice of type and specifications). Ensures a professional and precise finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.TRIMS_AND_MOLDINGS,
     },
     {
@@ -9793,7 +8835,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Texture Soffit Installation",
         description: "Installation of textured soffit panels to enhance the architectural detail and ventilation of a building. This service includes comprehensive labor, rough materials, equipment usage, and soffit panels (client's choice of type and specifications). Ensures a professional and functional finish.",
-        price: 100,
         category: SERVICE_CATEGORIES.TRIMS_AND_MOLDINGS,
     },
     {
@@ -9803,7 +8844,6 @@ export const ALL_SERVICES = [
         max_quantity: 1000,
         title: "Trim and Molding Removal",
         description: "Safe and efficient removal of old trim and molding, preparing the surface for new applications. This service includes comprehensive labor, use of appropriate tools and equipment, and responsible disposal of old materials.",
-        price: 100,
         category: SERVICE_CATEGORIES.TRIMS_AND_MOLDINGS,
     },
     {
@@ -9813,7 +8853,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "House Wrap Installation",
         description: "Installation of house wrap to provide a moisture barrier and improve energy efficiency. This service includes comprehensive labor, rough materials, equipment usage, and house wrap (client's choice of type and specifications). Ensures a professional and effective installation for enhanced protection.",
-        price: 100,
         category: SERVICE_CATEGORIES.UNDERLAYMENT,
     },
     {
@@ -9823,7 +8862,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "House Wrap Removal",
         description: "Safe and efficient removal of old house wrap, preparing the surface for new applications. This service includes comprehensive labor, use of appropriate tools and equipment, and responsible disposal of old materials.",
-        price: 100,
         category: SERVICE_CATEGORIES.UNDERLAYMENT,
     },
     {
@@ -9833,7 +8871,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Perimeter Bug Barrier Installation",
         description: "Installation of a bug barrier around the perimeter of the building to prevent insect infestations. This service includes comprehensive labor, rough materials, equipment usage, and bug barrier materials (client's choice of type and specifications). Ensures a professional and effective pest control solution.",
-        price: 100,
         category: SERVICE_CATEGORIES.PEST_CONTROL,
     },
     {
@@ -9843,7 +8880,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Bird Spikes Installation",
         description: "Installation of bird spikes to deter birds from landing and nesting on building surfaces. This service includes comprehensive labor, rough materials, equipment usage, and bird spikes (client's choice of type and specifications). Ensures a professional and effective bird control solution.",
-        price: 100,
         category: SERVICE_CATEGORIES.PEST_CONTROL,
     },
     {
@@ -9853,7 +8889,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Screening Installation",
         description: "Installation of screening to prevent insects and debris from entering the building. This service includes comprehensive labor, rough materials, equipment usage, and screening materials (client's choice of type and specifications). Ensures a professional and effective screening solution.",
-        price: 100,
         category: SERVICE_CATEGORIES.PEST_CONTROL,
     },
     {
@@ -9863,7 +8898,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Screening Replacement",
         description: "Safe and efficient replacement of damaged or old screening, improving protection against insects and debris. This service includes comprehensive labor, rough materials, equipment usage, and screening materials (client's choice of type and specifications). Ensures a professional and effective replacement.",
-        price: 100,
         category: SERVICE_CATEGORIES.PEST_CONTROL,
     },
     {
@@ -9873,7 +8907,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Routine Facade Inspections",
         description: "Regular inspections of the building Facade to identify and address potential issues. This service includes comprehensive labor, use of appropriate tools and equipment, and detailed inspection reports. Ensures early detection and maintenance of Facade integrity.",
-        price: 100,
         category: SERVICE_CATEGORIES.MAINTENANCE,
     },
     {
@@ -9883,7 +8916,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Facade Structural Assessment",
         description: "Comprehensive assessment of the structural integrity of the building Facade. This service includes comprehensive labor, use of appropriate tools and equipment, and detailed assessment reports. Ensures a thorough evaluation and maintenance plan.",
-        price: 100,
         category: SERVICE_CATEGORIES.MAINTENANCE,
     },
     {
@@ -9893,7 +8925,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Graffiti Removal",
         description: "Safe and effective removal of graffiti from building surfaces. This service includes comprehensive labor, use of appropriate tools and cleaning agents, and responsible disposal of removed materials. Ensures a clean and professional appearance.",
-        price: 100,
         category: SERVICE_CATEGORIES.MAINTENANCE,
     },
     {
@@ -9903,7 +8934,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Concrete & Masonry Waterproofing",
         description: "Application of waterproofing solutions to concrete and masonry surfaces to protect against moisture damage. This service includes comprehensive labor, rough materials, equipment usage, and waterproofing products (client's choice of type and specifications). Ensures enhanced durability and protection.",
-        price: 100,
         category: SERVICE_CATEGORIES.MAINTENANCE,
     },
     {
@@ -9913,7 +8943,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Exterior Wood Facade Waterproofing",
         description: "Application of waterproofing solutions to exterior wood surfaces to protect against moisture damage. This service includes comprehensive labor, rough materials, equipment usage, and waterproofing products (client's choice of type and specifications). Ensures enhanced durability and protection.",
-        price: 100,
         category: SERVICE_CATEGORIES.MAINTENANCE,
     },
     {
@@ -9923,7 +8952,6 @@ export const ALL_SERVICES = [
         max_quantity: 10000,
         title: "Protection Facade Against Moisture",
         description: "Comprehensive moisture protection solutions for building facades to prevent water infiltration and damage. This service includes comprehensive labor, rough materials, equipment usage, and moisture protection products (client's choice of type and specifications). Ensures enhanced durability and protection.",
-        price: 100,
         category: SERVICE_CATEGORIES.MAINTENANCE,
     },
     {
@@ -9933,7 +8961,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "4 WiFi Security Camera System with Monitor Installation",
         description: "Installation of a 4-camera WiFi security system with a monitor for enhanced surveillance. This service includes mounting cameras, connecting to the WiFi network, and setting up the monitor. Comprehensive labor, rough materials, equipment usage, and security cameras with monitor (client's choice of model and specifications) are included.",
-        price: 100,
         category: SERVICE_CATEGORIES.CCTV,
     },
     {
@@ -9943,7 +8970,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "8 WiFi Security Camera System with Monitor Installation",
         description: "Installation of an 8-camera WiFi security system with a monitor for extended coverage. This service includes mounting cameras, connecting to the WiFi network, and setting up the monitor. Comprehensive labor, rough materials, equipment usage, and security cameras with monitor (client's choice of model and specifications) are included.",
-        price: 100,
         category: SERVICE_CATEGORIES.CCTV,
     },
     {
@@ -9953,7 +8979,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Security Camera System with Human & Vehicle Detection Installation",
         description: "Installation of a 16-camera security system with advanced human and vehicle detection capabilities. This service includes mounting cameras, connecting to the network, and configuring detection features. Comprehensive labor, rough materials, equipment usage, and security cameras with detection system (client's choice of model and specifications) are included.",
-        price: 100,
         category: SERVICE_CATEGORIES.CCTV,
     },
     {
@@ -9963,7 +8988,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Battery-Powered Wireless Smart Home Security Camera Installation",
         description: "Installation of a battery-powered wireless security camera for smart home integration. This service includes mounting the camera, connecting to the wireless network, and configuring smart features. Comprehensive labor, rough materials, equipment usage, and wireless security camera (client's choice of model and specifications) are included.",
-        price: 100,
         category: SERVICE_CATEGORIES.WIRELESS_CAMERAS,
     },
     {
@@ -9973,7 +8997,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Small Solar Panel for Outdoor Cameras Installation",
         description: "Installation of a small solar panel to power outdoor security cameras. This service includes mounting the solar panel and connecting it to the camera system. Comprehensive labor, rough materials, equipment usage, and solar panel (client's choice of model and specifications) are included.",
-        price: 100,
         category: SERVICE_CATEGORIES.WIRELESS_CAMERAS,
     },
     {
@@ -9983,7 +9006,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Gutter Mount Security Camera and Solar Panel Installation",
         description: "Installation of a gutter mount security camera and solar panel for optimal placement and power supply. This service includes mounting the camera and solar panel on the gutter and connecting them. Comprehensive labor, rough materials, equipment usage, and security camera with solar panel (client's choice of model and specifications) are included.",
-        price: 100,
         category: SERVICE_CATEGORIES.WIRELESS_CAMERAS,
     },
     {
@@ -9993,7 +9015,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Maintenance (battery replacement, cleaning)",
         description: "Regular maintenance of wireless security cameras, including battery replacement and cleaning. This service ensures the cameras remain functional and provide clear footage. Comprehensive labor, rough materials, and equipment usage are included.",
-        price: 100,
         category: SERVICE_CATEGORIES.WIRELESS_CAMERAS,
     },
     {
@@ -10003,7 +9024,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Motion-Sensing Security Alarm Installation",
         description: "Installation of a motion-sensing security alarm for enhanced home security. This service includes mounting the alarm and connecting it to the security system. Comprehensive labor, rough materials, equipment usage, and motion-sensing alarm (client's choice of model and specifications) are included.",
-        price: 100,
         category: SERVICE_CATEGORIES.SECURITY_ALARMS,
     },
     {
@@ -10013,7 +9033,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Door/Window Alarm Installation",
         description: "Installation of door and window alarms to detect unauthorized entry. This service includes mounting alarms on doors and windows and connecting them to the security system. Comprehensive labor, rough materials, equipment usage, and door/window alarms (client's choice of model and specifications) are included.",
-        price: 100,
         category: SERVICE_CATEGORIES.SECURITY_ALARMS,
     },
     {
@@ -10023,7 +9042,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Wireless Security System, 14 Piece Installation",
         description: "Installation of a 14-piece wireless security system for comprehensive home protection. This service includes mounting and configuring all components of the security system. Comprehensive labor, rough materials, equipment usage, and wireless security system (client's choice of model and specifications) are included.",
-        price: 100,
         category: SERVICE_CATEGORIES.SECURITY_ALARMS,
     },
     {
@@ -10033,7 +9051,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Video Doorbell Installation",
         description: "Installation of a video doorbell for enhanced entryway monitoring. This service includes mounting the doorbell, connecting to the network, and configuring the system. Comprehensive labor, rough materials, equipment usage, and video doorbell (client's choice of model and specifications) are included.",
-        price: 100,
         category: SERVICE_CATEGORIES.DOORBELL_CAMERAS,
     },
     {
@@ -10043,7 +9060,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Maintenance and Battery Pack Replacement",
         description: "Regular maintenance and battery pack replacement for video doorbells to ensure continuous operation. Comprehensive labor, rough materials, and equipment usage are included.",
-        price: 100,
         category: SERVICE_CATEGORIES.DOORBELL_CAMERAS,
     },
     {
@@ -10053,7 +9069,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Fingerprint WiFi Smart Lock Installation",
         description: "Installation of a fingerprint WiFi smart lock for secure and convenient access control. This service includes mounting the lock, connecting to the WiFi network, and configuring fingerprint access. Comprehensive labor, rough materials, equipment usage, and fingerprint WiFi smart lock (client's choice of model and specifications) are included.",
-        price: 100,
         category: SERVICE_CATEGORIES.BIOMETRIC_ACCESS,
     },
     {
@@ -10063,7 +9078,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Over Existing Deadbolt Smart Lock Installation",
         description: "Installation of a smart lock over an existing deadbolt for added security and smart access features. This service includes mounting the smart lock and configuring it. Comprehensive labor, rough materials, equipment usage, and smart lock (client's choice of model and specifications) are included.",
-        price: 100,
         category: SERVICE_CATEGORIES.BIOMETRIC_ACCESS,
     },
     {
@@ -10073,7 +9087,6 @@ export const ALL_SERVICES = [
         max_quantity: 100,
         title: "Smart Door Lock with Bluetooth and Pushbutton Keypad Installation",
         description: "Installation of a smart door lock with Bluetooth and pushbutton keypad for secure and flexible access control. This service includes mounting the lock, connecting to the network, and configuring keypad access. Comprehensive labor, rough materials, equipment usage, and smart door lock (client's choice of model and specifications) are included.",
-        price: 100,
         category: SERVICE_CATEGORIES.KEYPAD_ACCESS,
     },
 ];
