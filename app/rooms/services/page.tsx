@@ -16,13 +16,15 @@ import { ChevronDown } from "lucide-react";
 import AddressSection from "@/components/ui/AddressSection";
 import PhotosAndDescription from "@/components/ui/PhotosAndDescription";
 
+// Unified session utilities
 import {
   setSessionItem,
   getSessionItem,
+  clearSession,
 } from "@/utils/session";
 
-/** 
- * Interface for finishing materials returned by /work/finishing_materials
+/**
+ * Interface describing finishing materials returned by /work/finishing_materials
  */
 interface FinishingMaterial {
   id: number;
@@ -33,29 +35,23 @@ interface FinishingMaterial {
   cost: string;
 }
 
-/**
- * Formats a numeric value with commas and two decimals.
- */
+/** Formats a numeric value with commas and two decimals. */
 function formatWithSeparator(value: number): string {
   return new Intl.NumberFormat("en-US", { minimumFractionDigits: 2 }).format(value);
 }
 
-/**
- * Replaces hyphens ("1-1-1") with dots ("1.1.1").
- */
+/** Replaces hyphens ("1-1-1") with dots ("1.1.1"). */
 function convertServiceIdToApiFormat(serviceId: string) {
   return serviceId.replaceAll("-", ".");
 }
 
-/**
- * Returns the base API URL from env variable or a default.
- */
+/** Returns the base API URL from environment variable or uses a default. */
 function getApiBaseUrl(): string {
   return process.env.NEXT_PUBLIC_API_BASE_URL || "http://dev.thejamb.com";
 }
 
 /**
- * Fetch finishing materials via POST /work/finishing_materials.
+ * POST /work/finishing_materials => fetch finishing materials for a given work_code.
  */
 async function fetchFinishingMaterials(workCode: string) {
   const baseUrl = getApiBaseUrl();
@@ -76,7 +72,7 @@ async function fetchFinishingMaterials(workCode: string) {
 }
 
 /**
- * Calls POST /calculate to get labor + materials cost for a service.
+ * POST /calculate => compute labor + materials cost for a service.
  */
 async function calculatePrice(params: {
   work_code: string;
@@ -107,9 +103,15 @@ export default function RoomDetails() {
   const { location } = useLocation();
 
   // Basic states
-  const [searchQuery, setSearchQuery] = useState<string>(getSessionItem("rooms_searchQuery", ""));
-  const [photos, setPhotos] = useState<string[]>(() => getSessionItem("photos", []));
-  const [description, setDescription] = useState<string>(getSessionItem("description", ""));
+  const [searchQuery, setSearchQuery] = useState<string>(
+    getSessionItem("rooms_searchQuery", "")
+  );
+  const [photos, setPhotos] = useState<string[]>(() =>
+    getSessionItem("photos", [])
+  );
+  const [description, setDescription] = useState<string>(
+    getSessionItem("description", "")
+  );
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
 
   // Address states
@@ -121,19 +123,9 @@ export default function RoomDetails() {
   const [city, setCity] = useState<string>(getSessionItem("city", ""));
   const [country, setCountry] = useState<string>(getSessionItem("country", ""));
 
-  // Persist new states into session storage
+  // Keep these in session
   useEffect(() => setSessionItem("city", city), [city]);
   useEffect(() => setSessionItem("country", country), [country]);
-
-  // Rooms selected from the previous page
-  const selectedRooms: string[] = getSessionItem("rooms_selectedSections", []);
-  useEffect(() => {
-    if (selectedRooms.length === 0) {
-      router.push("/rooms");
-    }
-  }, [selectedRooms, router]);
-
-  // Keep everything in sync with session
   useEffect(() => setSessionItem("rooms_searchQuery", searchQuery), [searchQuery]);
   useEffect(() => setSessionItem("photos", photos), [photos]);
   useEffect(() => setSessionItem("description", description), [description]);
@@ -141,7 +133,15 @@ export default function RoomDetails() {
   useEffect(() => setSessionItem("zip", zip), [zip]);
   useEffect(() => setSessionItem("stateName", stateName), [stateName]);
 
-  // Merge all indoor + outdoor rooms
+  // Rooms selected
+  const selectedRooms: string[] = getSessionItem("rooms_selectedSections", []);
+  useEffect(() => {
+    if (selectedRooms.length === 0) {
+      router.push("/rooms");
+    }
+  }, [selectedRooms, router]);
+
+  // Merge indoor/outdoor rooms
   const allRooms = [...ROOMS.indoor, ...ROOMS.outdoor];
   const chosenRooms = selectedRooms
     .map((roomId) => allRooms.find((r) => r.id === roomId))
@@ -157,7 +157,7 @@ export default function RoomDetails() {
     return <p>Loading...</p>;
   }
 
-  // We'll build data structures to know which categories & services belong to each chosen room
+  // Build structures: categoriesBySection + categoryServicesMap for each chosen room
   type RoomData = {
     categoriesBySection: Record<string, string[]>;
     categoryServicesMap: Record<string, (typeof ALL_SERVICES)[number][]>;
@@ -165,10 +165,9 @@ export default function RoomDetails() {
   const roomsData: Record<string, RoomData> = {};
 
   for (const room of chosenRooms) {
-    // gather service IDs
     const chosenRoomServiceIDs = room.services.map((s) => s.id);
 
-    // compute categories
+    // categories
     const categoriesWithSection = room.services
       .map((s) => {
         const catId = s.id.split("-").slice(0, 2).join("-");
@@ -181,13 +180,12 @@ export default function RoomDetails() {
       if (!categoriesBySection[cat.section]) {
         categoriesBySection[cat.section] = [];
       }
-      // ensure no duplicates
       if (!categoriesBySection[cat.section].includes(cat.id)) {
         categoriesBySection[cat.section].push(cat.id);
       }
     });
 
-    // build cat->services map for this room
+    // cat->services
     const categoryServicesMap: Record<string, (typeof ALL_SERVICES)[number][]> = {};
     chosenRoomServiceIDs.forEach((serviceId) => {
       const catId = serviceId.split("-").slice(0, 2).join("-");
@@ -200,14 +198,13 @@ export default function RoomDetails() {
       }
     });
 
-    // filter by search query
+    // apply searchQuery filter
     if (searchQuery) {
       for (const catId in categoryServicesMap) {
         categoryServicesMap[catId] = categoryServicesMap[catId].filter(
           (svc) =>
             svc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            (svc.description &&
-              svc.description.toLowerCase().includes(searchQuery.toLowerCase()))
+            svc.description?.toLowerCase().includes(searchQuery.toLowerCase())
         );
       }
     }
@@ -227,100 +224,100 @@ export default function RoomDetails() {
   // For user typed quantity
   const [manualInputValue, setManualInputValue] = useState<Record<string, string | null>>({});
 
-  // finishingMaterialsMapAll => serviceId -> { sections: {...} }
+  // finishing materials storage
   const [finishingMaterialsMapAll, setFinishingMaterialsMapAll] = useState<
     Record<string, { sections: Record<string, FinishingMaterial[]> }>
   >({});
 
-  // finishingMaterialSelections => serviceId -> array of external_ids
+  // finishing materials selected => serviceId -> external_ids
   const [finishingMaterialSelections, setFinishingMaterialSelections] = useState<
     Record<string, string[]>
   >({});
 
-  // cost for each service => (serviceId -> number)
+  // costs => serviceId -> numeric
   const [serviceCosts, setServiceCosts] = useState<Record<string, number>>({});
-  // full JSON for cost breakdown => (serviceId -> object)
+  // cost breakdown => serviceId -> object
   const [calculationResultsMap, setCalculationResultsMap] = useState<Record<string, any>>({});
+  useEffect(() => {
+    setSessionItem("calculationResultsMap", calculationResultsMap);
+  }, [calculationResultsMap]);
 
-  // expanded categories => { roomId: Set<catId> }
+  // expanded categories => { roomId => Set of catIds }
   const [expandedCategoriesByRoom, setExpandedCategoriesByRoom] = useState<
     Record<string, Set<string>>
   >({});
 
-  // expanded service details => set of serviceId
+  // expanded service details => set of serviceIds
   const [expandedServiceDetails, setExpandedServiceDetails] = useState<Set<string>>(new Set());
 
-  // user-owned materials => (serviceId -> Set<externalId>)
+  // user-owned materials => serviceId -> set of externalIds
   const [clientOwnedMaterials, setClientOwnedMaterials] = useState<Record<string, Set<string>>>({});
 
-  // This is the new "finishingAllLoaded" flag to handle race conditions:
-  const [finishingAllLoaded, setFinishingAllLoaded] = useState<boolean>(false);
-
-  /**
-   * Step 1: On mount, load finishing materials for all selected services,
-   * pick defaults if not present, then set finishingAllLoaded = true
-   */
-  useEffect(() => {
-    async function loadAllFinishingMaterials() {
+  // Helper: load finishing materials for a single service if missing
+  async function ensureFinishingMaterialsLoaded(serviceId: string) {
+    if (!finishingMaterialsMapAll[serviceId]) {
       try {
-        // Gather all serviceId from selectedServicesState
-        const allServiceIds: string[] = [];
-        Object.values(selectedServicesState).forEach((roomServices) => {
-          Object.keys(roomServices).forEach((svcId) => {
-            allServiceIds.push(svcId);
-          });
-        });
-
-        if (allServiceIds.length === 0) {
-          // If no services are selected, we're trivially done
-          setFinishingAllLoaded(true);
-          return;
-        }
-
-        // For each serviceId => ensure finishing materials are loaded
-        for (const svcId of allServiceIds) {
-          if (!finishingMaterialsMapAll[svcId]) {
-            try {
-              const dot = convertServiceIdToApiFormat(svcId);
-              const data = await fetchFinishingMaterials(dot);
-              finishingMaterialsMapAll[svcId] = data;
-
-              // If no finishingMaterialSelections => pick the first item in each sub-section
-              if (!finishingMaterialSelections[svcId]) {
-                const picks: string[] = [];
-                for (const arr of Object.values(data.sections || {})) {
-                  if (Array.isArray(arr) && arr.length > 0) {
-                    picks.push(arr[0].external_id);
-                  }
-                }
-                finishingMaterialSelections[svcId] = picks;
-              }
-            } catch (err) {
-              console.error("Error in loadAllFinishingMaterials:", err);
-            }
-          }
-        }
-
-        setFinishingMaterialsMapAll({ ...finishingMaterialsMapAll });
-        setFinishingMaterialSelections({ ...finishingMaterialSelections });
+        const dot = convertServiceIdToApiFormat(serviceId);
+        const data = await fetchFinishingMaterials(dot);
+        finishingMaterialsMapAll[serviceId] = data;
+        setFinishingMaterialsMapAll((old) => ({ ...old }));
       } catch (err) {
-        console.error("Error loading finishing materials globally:", err);
+        console.error("Error in ensureFinishingMaterialsLoaded:", err);
+        return; // do not proceed if there's an error
       }
-      // done => mark finishingAllLoaded
-      setFinishingAllLoaded(true);
     }
+    if (!finishingMaterialSelections[serviceId]) {
+      const data = finishingMaterialsMapAll[serviceId];
+      if (!data) return;
+      const picks: string[] = [];
+      for (const arr of Object.values(data.sections || {})) {
+        if (Array.isArray(arr) && arr.length > 0) {
+          picks.push(arr[0].external_id);
+        }
+      }
+      finishingMaterialSelections[serviceId] = picks;
+      setFinishingMaterialSelections((old) => ({ ...old }));
+    }
+  }
 
-    loadAllFinishingMaterials();
-  }, []);
+  // Helper: load finishing materials for each service in a category
+  async function fetchFinishingMaterialsForCategory(
+    services: (typeof ALL_SERVICES)[number][] 
+  ) {
+    const promises = services.map(async (svc) => {
+      if (!finishingMaterialsMapAll[svc.id]) {
+        try {
+          const dot = convertServiceIdToApiFormat(svc.id);
+          const data = await fetchFinishingMaterials(dot);
 
-  /**
-   * Step 2: Recompute cost on toggles, but only if finishingAllLoaded = true
-   * and we have a valid ZIP code.
-   */
+          finishingMaterialsMapAll[svc.id] = data;
+          // pick the first from each sub-section if none selected
+          if (!finishingMaterialSelections[svc.id]) {
+            const picks: string[] = [];
+            for (const arr of Object.values(data.sections || {})) {
+              if (Array.isArray(arr) && arr.length > 0) {
+                picks.push(arr[0].external_id);
+              }
+            }
+            finishingMaterialSelections[svc.id] = picks;
+          }
+        } catch (err) {
+          console.error("Error fetching finishing materials:", err);
+        }
+      }
+    });
+
+    try {
+      await Promise.all(promises);
+      setFinishingMaterialsMapAll((old) => ({ ...old }));
+      setFinishingMaterialSelections((old) => ({ ...old }));
+    } catch (err) {
+      console.error("Error fetchFinishingMaterialsForCategory:", err);
+    }
+  }
+
+  // Recompute cost whenever toggles or location changes
   useEffect(() => {
-    // If we haven't loaded finishing materials yet, skip
-    if (!finishingAllLoaded) return;
-
     const { zip: userZip, country } = location;
     if (country !== "United States" || !/^\d{5}$/.test(userZip)) {
       setWarningMessage("Currently, our service is only available for US ZIP codes (5 digits).");
@@ -332,25 +329,25 @@ export default function RoomDetails() {
       Object.keys(roomServices).forEach(async (serviceId) => {
         try {
           const quantity = roomServices[serviceId];
-          const fmSelections = finishingMaterialSelections[serviceId] || [];
-          const foundSvc = ALL_SERVICES.find((x) => x.id === serviceId);
-          if (!foundSvc) return;
-          const dot = convertServiceIdToApiFormat(serviceId);
+          const finishingIds = finishingMaterialSelections[serviceId] || [];
+          const found = ALL_SERVICES.find((s) => s.id === serviceId);
+          if (!found) return;
 
-          // at this point finishing materials are presumably loaded
+          // ensure finishing materials
+          await ensureFinishingMaterialsLoaded(serviceId);
+
+          const dot = convertServiceIdToApiFormat(serviceId);
           const resp = await calculatePrice({
             work_code: dot,
             zipcode: userZip,
-            unit_of_measurement: foundSvc.unit_of_measurement || "each",
+            unit_of_measurement: found.unit_of_measurement || "each",
             square: quantity,
-            finishing_materials: fmSelections,
+            finishing_materials: finishingIds,
           });
 
           const laborCost = parseFloat(resp.work_cost) || 0;
           const matCost = parseFloat(resp.material_cost) || 0;
-          const total = laborCost + matCost;
-
-          setServiceCosts((old) => ({ ...old, [serviceId]: total }));
+          setServiceCosts((old) => ({ ...old, [serviceId]: laborCost + matCost }));
           setCalculationResultsMap((old) => ({ ...old, [serviceId]: resp }));
         } catch (err) {
           console.error("Error calculating price:", err);
@@ -358,18 +355,13 @@ export default function RoomDetails() {
       });
     });
   }, [
-    finishingAllLoaded,
     selectedServicesState,
     finishingMaterialSelections,
     location,
+    finishingMaterialsMapAll,
   ]);
 
-  // Save calculationResultsMap to session
-  useEffect(() => {
-    setSessionItem("calculationResultsMap", calculationResultsMap);
-  }, [calculationResultsMap]);
-
-  // Toggling categories in the UI
+  /** Expand/collapse a category panel */
   function toggleCategory(roomId: string, catId: string) {
     setExpandedCategoriesByRoom((prev) => {
       const next = { ...prev };
@@ -381,13 +373,13 @@ export default function RoomDetails() {
     });
   }
 
-  // Toggling a service
+  /** Turn a service ON/OFF */
   async function handleServiceToggle(roomId: string, serviceId: string) {
     const roomServices = { ...(selectedServicesState[roomId] || {}) };
     const isOn = !!roomServices[serviceId];
 
     if (isOn) {
-      // Turn off => remove references
+      // Turn off
       delete roomServices[serviceId];
 
       const fmCopy = { ...finishingMaterialSelections };
@@ -423,35 +415,16 @@ export default function RoomDetails() {
       const minQ = foundSvc?.min_quantity ?? 1;
       roomServices[serviceId] = minQ;
 
-      // Make sure finishing materials are loaded for this service
-      if (!finishingMaterialsMapAll[serviceId]) {
-        try {
-          const dot = convertServiceIdToApiFormat(serviceId);
-          const data = await fetchFinishingMaterials(dot);
-          finishingMaterialsMapAll[serviceId] = data;
-          setFinishingMaterialsMapAll({ ...finishingMaterialsMapAll });
-
-          if (!finishingMaterialSelections[serviceId]) {
-            const picks: string[] = [];
-            for (const arr of Object.values(data.sections || {})) {
-              if (Array.isArray(arr) && arr.length > 0) {
-                picks.push(arr[0].external_id);
-              }
-            }
-            finishingMaterialSelections[serviceId] = picks;
-            setFinishingMaterialSelections({ ...finishingMaterialSelections });
-          }
-        } catch (err) {
-          console.error("Error ensuring finishing materials for service:", err);
-        }
-      }
+      // Make sure finishing materials are loaded
+      await ensureFinishingMaterialsLoaded(serviceId);
       setManualInputValue((mOld) => ({ ...mOld, [serviceId]: String(minQ) }));
     }
+
     setSelectedServicesState((old) => ({ ...old, [roomId]: roomServices }));
     setWarningMessage(null);
   }
 
-  // increment/decrement quantity
+  /** +/- quantity */
   function handleQuantityChange(
     roomId: string,
     serviceId: string,
@@ -479,7 +452,7 @@ export default function RoomDetails() {
     setManualInputValue((old) => ({ ...old, [serviceId]: null }));
   }
 
-  // typed quantity
+  /** user typed quantity */
   function handleManualQuantityChange(
     roomId: string,
     serviceId: string,
@@ -506,13 +479,14 @@ export default function RoomDetails() {
     setSelectedServicesState((old) => ({ ...old, [roomId]: roomServices }));
   }
 
+  /** if user leaves input empty => revert to null in manualInputValue */
   function handleBlurInput(serviceId: string) {
     if (!manualInputValue[serviceId]) {
       setManualInputValue((old) => ({ ...old, [serviceId]: null }));
     }
   }
 
-  // Clear all
+  /** clear all selections */
   function handleClearAll() {
     const ok = window.confirm("Are you sure you want to clear all selections?");
     if (!ok) return;
@@ -531,7 +505,7 @@ export default function RoomDetails() {
     setClientOwnedMaterials({});
   }
 
-  // Calculate total across all rooms
+  /** sums up the final cost of all services in all rooms */
   function calculateTotalAllRooms() {
     let sum = 0;
     for (const cost of Object.values(serviceCosts)) {
@@ -540,7 +514,7 @@ export default function RoomDetails() {
     return sum;
   }
 
-  // Next => verify everything
+  /** on Next => verify and go to /rooms/estimate */
   function handleNext() {
     let anySelected = false;
     for (const roomId of Object.keys(selectedServicesState)) {
@@ -566,22 +540,19 @@ export default function RoomDetails() {
       return;
     }
 
-    // Flatten service IDs
+    // flatten
     const allSelected: string[] = [];
     for (const rId of Object.keys(selectedServicesState)) {
       allSelected.push(...Object.keys(selectedServicesState[rId]));
     }
     setSessionItem("rooms_selectedServices", allSelected);
-
-    // Also store city, country
     setSessionItem("city", city);
     setSessionItem("country", country);
 
-    // Navigate
     router.push("/rooms/estimate");
   }
 
-  // toggle details
+  /** toggles "Details" for a single service cost breakdown */
   function toggleServiceDetails(serviceId: string) {
     setExpandedServiceDetails((old) => {
       const copy = new Set(old);
@@ -591,8 +562,11 @@ export default function RoomDetails() {
     });
   }
 
-  // Find finishing material by external_id
-  function findFinishingMaterialObj(serviceId: string, externalId: string): FinishingMaterial | null {
+  /** find finishing material by external_id */
+  function findFinishingMaterialObj(
+    serviceId: string,
+    externalId: string
+  ): FinishingMaterial | null {
     const data = finishingMaterialsMapAll[serviceId];
     if (!data) return null;
     for (const arr of Object.values(data.sections || {})) {
@@ -604,19 +578,19 @@ export default function RoomDetails() {
     return null;
   }
 
-  // pick a new finishing material
+  /** pick a new finishing material => finishingMaterialSelections[serviceId] = [externalId] */
   function pickMaterial(serviceId: string, externalId: string) {
     finishingMaterialSelections[serviceId] = [externalId];
-    setFinishingMaterialSelections({ ...finishingMaterialSelections });
+    setFinishingMaterialSelections((old) => ({ ...old }));
   }
 
-  // user has own material
+  /** user has own material => highlight in red */
   function userHasOwnMaterial(serviceId: string, externalId: string) {
     if (!clientOwnedMaterials[serviceId]) {
       clientOwnedMaterials[serviceId] = new Set();
     }
     clientOwnedMaterials[serviceId].add(externalId);
-    setClientOwnedMaterials({ ...clientOwnedMaterials });
+    setClientOwnedMaterials((old) => ({ ...old }));
   }
 
   // finishing-material modal states
@@ -628,10 +602,12 @@ export default function RoomDetails() {
     setShowModalSectionName(null);
   }
 
+  // keep cost breakdown in session
   useEffect(() => {
     setSessionItem("calculationResultsMap", calculationResultsMap);
   }, [calculationResultsMap]);
 
+  /** getCategoryNameById => returns cat.title from ALL_CATEGORIES */
   function getCategoryNameById(catId: string) {
     const found = ALL_CATEGORIES.find((x) => x.id === catId);
     return found ? found.title : catId;
@@ -715,7 +691,7 @@ export default function RoomDetails() {
                             const servicesForCategory = categoryServicesMap[catId] || [];
                             if (servicesForCategory.length === 0) return null;
 
-                            // count how many are selected
+                            // how many in this category are selected
                             const selectedCount = servicesForCategory.filter((svc) =>
                               Object.keys(roomServices).includes(svc.id)
                             ).length;
@@ -940,9 +916,7 @@ export default function RoomDetails() {
                                                                         let foundSection: string | null =
                                                                           null;
                                                                         const fmData =
-                                                                          finishingMaterialsMapAll[
-                                                                            svc.id
-                                                                          ];
+                                                                          finishingMaterialsMapAll[svc.id];
                                                                         if (fmData?.sections) {
                                                                           for (const [
                                                                             secName,
@@ -1043,6 +1017,7 @@ export default function RoomDetails() {
                   );
                 }
 
+                let totalAll = 0;
                 return (
                   <>
                     {chosenRooms.map((room) => {
@@ -1055,12 +1030,11 @@ export default function RoomDetails() {
                       Object.keys(roomServices).forEach((svcId) => {
                         roomTotal += serviceCosts[svcId] || 0;
                       });
+                      totalAll += roomTotal;
 
                       return (
                         <div key={room.id} className="mb-6">
-                          <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                            {room.title}
-                          </h3>
+                          <h3 className="text-xl font-semibold text-gray-800 mb-2">{room.title}</h3>
                           {Object.entries(categoriesBySection).map(([secName, catIds]) => {
                             const relevantCats = catIds.filter((catId) => {
                               const arr = categoryServicesMap[catId] || [];
@@ -1126,7 +1100,7 @@ export default function RoomDetails() {
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-2xl font-semibold text-gray-800">Subtotal:</span>
                       <span className="text-2xl font-semibold text-blue-600">
-                        ${formatWithSeparator(calculateTotalAllRooms())}
+                        ${formatWithSeparator(totalAll)}
                       </span>
                     </div>
                   </>
@@ -1173,7 +1147,7 @@ export default function RoomDetails() {
         finishingMaterialsMapAll[showModalServiceId].sections[showModalSectionName] && (
           <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-lg w-[700px] h-[750px] overflow-hidden relative flex flex-col">
-              {/* Modal header */}
+              {/* Header */}
               <div className="p-4 border-b flex items-center justify-between sticky top-0 bg-white z-10">
                 <h2 className="text-xl font-semibold">
                   Choose a finishing material (section {showModalSectionName})
@@ -1196,8 +1170,7 @@ export default function RoomDetails() {
                 const curCost = parseFloat(curMat.cost || "0") || 0;
                 return (
                   <div className="text-sm text-gray-600 border-b p-4 bg-white sticky top-[61px] z-10">
-                    Current material: <strong>{curMat.name}</strong> ($
-                    {formatWithSeparator(curCost)})
+                    Current material: <strong>{curMat.name}</strong> (${formatWithSeparator(curCost)})
                     <button
                       onClick={() => userHasOwnMaterial(showModalServiceId, currentExtId)}
                       className="ml-4 text-xs text-red-500 border border-red-500 px-2 py-1 rounded"
@@ -1226,8 +1199,8 @@ export default function RoomDetails() {
                   const currentExtId = curSel[0] || null;
                   let currentBaseCost = 0;
                   if (currentExtId) {
-                    const cfm = findFinishingMaterialObj(showModalServiceId, currentExtId);
-                    if (cfm) currentBaseCost = parseFloat(cfm.cost || "0") || 0;
+                    const fmObj = findFinishingMaterialObj(showModalServiceId, currentExtId);
+                    if (fmObj) currentBaseCost = parseFloat(fmObj.cost || "0") || 0;
                   }
 
                   return (
@@ -1254,12 +1227,10 @@ export default function RoomDetails() {
                               isSelected ? "border-blue-500" : "border-gray-300"
                             }`}
                             onClick={() => {
-                              finishingMaterialSelections[showModalServiceId] = [
+                              finishingMaterialSelections[showModalServiceId!] = [
                                 material.external_id,
                               ];
-                              setFinishingMaterialSelections({
-                                ...finishingMaterialSelections,
-                              });
+                              setFinishingMaterialSelections((old) => ({ ...old }));
                             }}
                           >
                             <img
