@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import BreadCrumb from '@/components/ui/BreadCrumb';
 import { EMERGENCY_STEPS } from '@/constants/navigation';
 import Button from '@/components/ui/Button';
+import { SectionBoxTitle } from '@/components/ui/SectionBoxTitle';
 
 export default function Emergency() {
     const router = useRouter();
@@ -13,7 +14,7 @@ export default function Emergency() {
     };
 
     return (
-        <main className="min-h-screen pt-24 ">
+        <main className="min-h-screen pt-24">
             <div className="container mx-auto mb-16">
                 {/* BreadCrumb */}
                 <BreadCrumb items={EMERGENCY_STEPS} />
@@ -28,9 +29,9 @@ export default function Emergency() {
                     {/* Left Column: Text Content and Checklist */}
                     <div className="space-y-8">
                         {/* Text Content */}
-                        <h1 className="text-3xl font-semibold">
-                            Fast assistance for urgent home issues
-                        </h1>
+                        <SectionBoxTitle>
+                        Fast assistance for urgent home issues
+                        </SectionBoxTitle>
 
                         {/* Checklist */}
                         <div className="space-y-5">

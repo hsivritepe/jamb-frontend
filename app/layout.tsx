@@ -14,7 +14,7 @@ export const metadata = {
     title: 'JAMB - Home Services',
     description: 'Home Services Platform',
     icons: {
-        icon: './favicon.ico'
+        icon: '/favicon.ico'
     }
 }
 
