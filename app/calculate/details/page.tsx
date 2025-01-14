@@ -1,152 +1,572 @@
-'use client';
+"use client";
 
-import { useRouter } from 'next/navigation';
-import BreadCrumb from '@/components/ui/BreadCrumb';
-import { SectionBoxTitle } from '@/components/ui/SectionBoxTitle';
-import { CALCULATE_STEPS } from '@/constants/navigation';
-import Button from '@/components/ui/Button';
-import { SectionBoxSubtitle } from '@/components/ui/SectionBoxSubtitle';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import BreadCrumb from "@/components/ui/BreadCrumb";
+import Button from "@/components/ui/Button";
+import { SectionBoxTitle } from "@/components/ui/SectionBoxTitle";
+import { SectionBoxSubtitle } from "@/components/ui/SectionBoxSubtitle";
+import { CALCULATE_STEPS } from "@/constants/navigation";
+import { useLocation } from "@/context/LocationContext";
+import { ALL_CATEGORIES } from "@/constants/categories";
+import { ALL_SERVICES } from "@/constants/services";
+import { ChevronDown } from "lucide-react";
+
+// Utility to format numbers nicely
+const formatWithSeparator = (value: number): string =>
+  new Intl.NumberFormat("en-US", { minimumFractionDigits: 2 }).format(value);
+
+// Session helpers with environment check
+/**
+ * saveToSession: Saves a value to sessionStorage as JSON (only when window is available).
+ */
+const saveToSession = (key: string, value: any) => {
+  if (typeof window !== 'undefined') {
+    sessionStorage.setItem(key, JSON.stringify(value));
+  }
+};
+
+/**
+ * loadFromSession: Loads and parses a value from sessionStorage or returns defaultValue if not found/SSR.
+ */
+const loadFromSession = (key: string, defaultValue: any) => {
+  if (typeof window === 'undefined') return defaultValue;
+  const savedValue = sessionStorage.getItem(key);
+  try {
+    return savedValue ? JSON.parse(savedValue) : defaultValue;
+  } catch (error) {
+    console.error(`Error parsing sessionStorage for key "${key}"`, error);
+    return defaultValue;
+  }
+};
 
 export default function Details() {
-    const router = useRouter();
+  const router = useRouter();
+  const { location } = useLocation();
 
-    const handleNext = () => {
-        // Here you'll handle form submission later
-        console.log('Details selection and submission');
-        router.push('/calculate/estimate');
-    };
+  // Load chosen categories and other data from session
+  const selectedCategories: string[] = loadFromSession("services_selectedCategories", []);
+  const address: string = loadFromSession("address", "");
+  const description: string = loadFromSession("description", "");
+  const photos: string[] = loadFromSession("photos", []);
+  const searchQuery: string = loadFromSession("services_searchQuery", "");
 
-    return (
-        <main className="min-h-screen pt-24">
-            <div className="container mx-auto">
-                <BreadCrumb items={CALCULATE_STEPS} />
-            </div>
+  const [warningMessage, setWarningMessage] = useState<string | null>(null);
 
-            <div className="container mx-auto py-12">
-                <div className="flex justify-between items-start">
-                    <div className="max-w-2xl">
-                        <SectionBoxTitle>Details</SectionBoxTitle>
-                        <p className="text-gray-600 mt-2 mb-8">
-                            This is to accurately calculate the cost
-                            of services
-                        </p>
+  // If no categories or no address, redirect back
+  useEffect(() => {
+    if (selectedCategories.length === 0 || !address) {
+      router.push("/calculate");
+    }
+  }, [selectedCategories, address, router]);
 
-                        <form className="space-y-12">
-                            <div>
-                                <SectionBoxSubtitle>
-                                    Address info
-                                </SectionBoxSubtitle>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Country
-                                        </label>
-                                        <input
-                                            type="text"
-                                            placeholder="United States"
-                                            className="w-full p-3 border border-gray-200 rounded-lg"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            ZIP code
-                                        </label>
-                                        <input
-                                            type="text"
-                                            placeholder="E.g. 78218"
-                                            className="w-full p-3 border border-gray-200 rounded-lg"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
+  // Track which categories (by ID) are expanded
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
-                            <div>
-                                <SectionBoxSubtitle>
-                                    Property details
-                                </SectionBoxSubtitle>
-                                <div className="grid grid-cols-3 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Floors
-                                        </label>
-                                        <input
-                                            type="text"
-                                            placeholder="E.g. 2"
-                                            className="w-full p-3 border border-gray-200 rounded-lg"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Bedrooms
-                                        </label>
-                                        <input
-                                            type="text"
-                                            placeholder="E.g. 2"
-                                            className="w-full p-3 border border-gray-200 rounded-lg"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Bathrooms
-                                        </label>
-                                        <input
-                                            type="text"
-                                            placeholder="E.g. 2"
-                                            className="w-full p-3 border border-gray-200 rounded-lg"
-                                        />
-                                    </div>
-                                </div>
+  // Build data structures: categories -> sections, etc.
+  const categoriesWithSection = selectedCategories
+    .map((catId) => ALL_CATEGORIES.find((c) => c.id === catId) || null)
+    .filter(Boolean) as (typeof ALL_CATEGORIES)[number][];
 
-                                <div className="mt-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Year of construction
-                                    </label>
-                                    <input
-                                        type="text"
-                                        placeholder="E.g. 2021"
-                                        className="w-full p-3 border border-gray-200 rounded-lg"
-                                    />
-                                </div>
+  const categoriesBySection: Record<string, string[]> = {};
+  categoriesWithSection.forEach((cat) => {
+    if (!categoriesBySection[cat.section]) {
+      categoriesBySection[cat.section] = [];
+    }
+    categoriesBySection[cat.section].push(cat.id);
+  });
 
-                                <div className="grid grid-cols-2 gap-4 mt-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Total property area
-                                        </label>
-                                        <div className="flex">
-                                            <input
-                                                type="text"
-                                                placeholder="0.35"
-                                                className="flex-1 p-3 border border-gray-200 rounded-l-lg"
-                                            />
-                                            <span className="inline-flex items-center px-4 bg-gray-50 border border-l-0 border-gray-200 rounded-r-lg text-gray-500">
-                                                acres
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Total house area
-                                        </label>
-                                        <div className="flex">
-                                            <input
-                                                type="text"
-                                                placeholder="1,340"
-                                                className="flex-1 p-3 border border-gray-200 rounded-l-lg"
-                                            />
-                                            <span className="inline-flex items-center px-4 bg-gray-50 border border-l-0 border-gray-200 rounded-r-lg text-gray-500">
-                                                sq. ft
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-
-                    <Button onClick={handleNext}>Next →</Button>
-                </div>
-            </div>
-        </main>
+  const categoryServicesMap: Record<string, (typeof ALL_SERVICES)[number][]> = {};
+  selectedCategories.forEach((catId) => {
+    let matchedServices = ALL_SERVICES.filter((svc) =>
+      svc.id.startsWith(`${catId}-`)
     );
+    if (searchQuery) {
+      matchedServices = matchedServices.filter((svc) =>
+        svc.title.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    categoryServicesMap[catId] = matchedServices;
+  });
+
+  // Load previously chosen services with quantity
+  const [selectedServicesState, setSelectedServicesState] = useState<Record<string, number>>(
+    () => loadFromSession("selectedServicesWithQuantity", {})
+  );
+
+  // Track manual input for numeric quantities
+  const [manualInputValue, setManualInputValue] = useState<Record<string, string | null>>({});
+
+  // Save changes to session whenever selectedServicesState changes
+  useEffect(() => {
+    saveToSession("selectedServicesWithQuantity", selectedServicesState);
+  }, [selectedServicesState]);
+
+  /**
+   * Toggle expand/collapse for a given category ID.
+   */
+  const toggleCategory = (catId: string) => {
+    setExpandedCategories((prev) => {
+      const next = new Set(prev);
+      next.has(catId) ? next.delete(catId) : next.add(catId);
+      return next;
+    });
+  };
+
+  /**
+   * Select or deselect an individual service.
+   */
+  const handleServiceToggle = (serviceId: string) => {
+    setSelectedServicesState((prev) => {
+      if (prev[serviceId]) {
+        const updated = { ...prev };
+        delete updated[serviceId];
+        return updated;
+      }
+      return { ...prev, [serviceId]: 1 };
+    });
+    setWarningMessage(null);
+  };
+
+  /**
+   * Increment/decrement the quantity for a given service.
+   */
+  const handleQuantityChange = (serviceId: string, increment: boolean, unit: string) => {
+    setSelectedServicesState((prev) => {
+      const currentValue = prev[serviceId] || 1;
+      const updatedValue = increment ? currentValue + 1 : Math.max(1, currentValue - 1);
+
+      return {
+        ...prev,
+        [serviceId]: unit === "each" ? Math.round(updatedValue) : updatedValue,
+      };
+    });
+    // Reset manual input if user used the +/- buttons
+    setManualInputValue((prev) => ({
+      ...prev,
+      [serviceId]: null,
+    }));
+  };
+
+  /**
+   * Handle manual quantity input changes.
+   */
+  const handleManualQuantityChange = (serviceId: string, value: string, unit: string) => {
+    setManualInputValue((prev) => ({
+      ...prev,
+      [serviceId]: value,
+    }));
+
+    const numericValue = parseFloat(value.replace(/,/g, "")) || 0;
+    if (!isNaN(numericValue)) {
+      setSelectedServicesState((prev) => ({
+        ...prev,
+        [serviceId]: unit === "each" ? Math.round(numericValue) : numericValue,
+      }));
+    }
+  };
+
+  /**
+   * If user leaves the input field with an empty string, reset manual input to null
+   */
+  const handleBlurInput = (serviceId: string) => {
+    if (!manualInputValue[serviceId]) {
+      setManualInputValue((prev) => ({
+        ...prev,
+        [serviceId]: null,
+      }));
+    }
+  };
+
+  /**
+   * Confirmation prompt and clearing all selected services and expanded categories.
+   */
+  const clearAllSelections = () => {
+    const confirmed = window.confirm(
+      "Are you sure you want to clear all selected services? This will also collapse all expanded categories."
+    );
+    if (!confirmed) {
+      return;
+    }
+    // Clear all selections
+    setSelectedServicesState({});
+    // Reset expanded categories
+    setExpandedCategories(new Set());
+  };
+
+  /**
+   * Calculate the total cost of all selected services.
+   */
+  const calculateTotal = (): number => {
+    let total = 0;
+    for (const [serviceId, quantity] of Object.entries(selectedServicesState)) {
+      const svc = ALL_SERVICES.find((s) => s.id === serviceId);
+      if (svc) {
+        total += svc.price * (quantity || 1);
+      }
+    }
+    return total;
+  };
+
+  /**
+   * Validate and proceed to the next page (Estimate).
+   */
+  const handleNext = () => {
+    if (Object.keys(selectedServicesState).length === 0) {
+      setWarningMessage("Please select at least one service before proceeding.");
+      return;
+    }
+    if (!address.trim()) {
+      setWarningMessage("Please enter your address before proceeding.");
+      return;
+    }
+
+    router.push("/calculate/estimate");
+  };
+
+  /**
+   * Get a category name by its ID (fallback to catId if not found).
+   */
+  const getCategoryNameById = (catId: string): string => {
+    const categoryObj = ALL_CATEGORIES.find((c) => c.id === catId);
+    return categoryObj ? categoryObj.title : catId;
+  };
+
+  return (
+    <main className="min-h-screen pt-24 pb-16">
+      <div className="container mx-auto">
+        <BreadCrumb items={CALCULATE_STEPS} />
+
+        <div className="flex justify-between items-start mt-8">
+          <SectionBoxTitle>Choose a Service and Quantity</SectionBoxTitle>
+          <Button onClick={handleNext}>Next →</Button>
+        </div>
+
+        <div className="flex justify-between items-center text-sm text-gray-500 mt-8 w-full max-w-[600px]">
+          <span>
+            No service?{" "}
+            <a href="#" className="text-blue-600 hover:underline focus:outline-none">
+              Contact support
+            </a>
+          </span>
+          {/* Clear all button triggers confirmation */}
+          <button
+            onClick={clearAllSelections}
+            className="text-blue-600 hover:underline focus:outline-none"
+          >
+            Clear
+          </button>
+        </div>
+
+        {/* Possible warning messages */}
+        <div className="h-6 mt-4 text-left">
+          {warningMessage && <p className="text-red-500">{warningMessage}</p>}
+        </div>
+
+        <div className="container mx-auto relative flex mt-8">
+          {/* Left side: categories & services */}
+          <div className="flex-1">
+            {Object.entries(categoriesBySection).map(([sectionName, catIds]) => (
+              <div key={sectionName} className="mb-8">
+                <SectionBoxSubtitle>{sectionName}</SectionBoxSubtitle>
+                <div className="flex flex-col gap-4 mt-4 w-full max-w-[600px]">
+                  {catIds.map((catId) => {
+                    // List of services in this category
+                    const servicesForCategory = categoryServicesMap[catId] || [];
+                    // Count how many are selected in this category
+                    const selectedInThisCategory = servicesForCategory.filter((svc) =>
+                      Object.keys(selectedServicesState).includes(svc.id)
+                    ).length;
+
+                    const categoryName = getCategoryNameById(catId);
+
+                    return (
+                      <div
+                        key={catId}
+                        className={`p-4 border rounded-xl bg-white ${
+                          selectedInThisCategory > 0 ? "border-blue-500" : "border-gray-300"
+                        }`}
+                      >
+                        {/* Category header toggler */}
+                        <button
+                          onClick={() => toggleCategory(catId)}
+                          className="flex justify-between items-center w-full"
+                        >
+                          <h3
+                            className={`font-medium text-2xl ${
+                              selectedInThisCategory > 0 ? "text-blue-600" : "text-black"
+                            }`}
+                          >
+                            {categoryName}
+                            {selectedInThisCategory > 0 && (
+                              <span className="text-sm text-gray-500 ml-2">
+                                ({selectedInThisCategory} selected)
+                              </span>
+                            )}
+                          </h3>
+                          <ChevronDown
+                            className={`h-5 w-5 transform transition-transform ${
+                              expandedCategories.has(catId) ? "rotate-180" : ""
+                            }`}
+                          />
+                        </button>
+
+                        {/* If category is expanded, list all services */}
+                        {expandedCategories.has(catId) && (
+                          <div className="mt-4 flex flex-col gap-3">
+                            {servicesForCategory.map((svc) => {
+                              const isSelected = selectedServicesState[svc.id] !== undefined;
+                              const quantity = selectedServicesState[svc.id] || 1;
+                              const manualValue =
+                                manualInputValue[svc.id] !== null
+                                  ? manualInputValue[svc.id] || ""
+                                  : quantity.toString();
+
+                              return (
+                                <div key={svc.id} className="space-y-2">
+                                  {/* Service Title Toggle */}
+                                  <div className="flex justify-between items-center">
+                                    <span
+                                      className={`text-lg transition-colors duration-300 ${
+                                        isSelected ? "text-blue-600" : "text-gray-800"
+                                      }`}
+                                    >
+                                      {svc.title}
+                                    </span>
+                                    <label className="relative inline-flex items-center cursor-pointer">
+                                      <input
+                                        type="checkbox"
+                                        checked={isSelected}
+                                        onChange={() => handleServiceToggle(svc.id)}
+                                        className="sr-only peer"
+                                      />
+                                      <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
+                                      <div className="absolute top-[2px] left-[2px] w-[22px] h-[22px] bg-white rounded-full shadow-md peer-checked:translate-x-[24px] transform transition-transform duration-300"></div>
+                                    </label>
+                                  </div>
+
+                                  {/* If service is selected, show description, quantity controls, and price */}
+                                  {isSelected && (
+                                    <>
+                                      {svc.description && (
+                                        <p className="text-sm text-gray-500 pr-16">
+                                          {svc.description}
+                                        </p>
+                                      )}
+                                      <div className="flex justify-between items-center">
+                                        <div className="flex items-center gap-1">
+                                          {/* Decrement button */}
+                                          <button
+                                            onClick={() =>
+                                              handleQuantityChange(
+                                                svc.id,
+                                                false,
+                                                svc.unit_of_measurement
+                                              )
+                                            }
+                                            className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
+                                          >
+                                            −
+                                          </button>
+                                          {/* Manual input field */}
+                                          <input
+                                            type="text"
+                                            value={manualValue}
+                                            onClick={() =>
+                                              setManualInputValue((prev) => ({
+                                                ...prev,
+                                                [svc.id]: "",
+                                              }))
+                                            }
+                                            onBlur={() => handleBlurInput(svc.id)}
+                                            onChange={(e) =>
+                                              handleManualQuantityChange(
+                                                svc.id,
+                                                e.target.value,
+                                                svc.unit_of_measurement
+                                              )
+                                            }
+                                            className="w-20 text-center px-2 py-1 border rounded"
+                                            placeholder="1"
+                                          />
+                                          {/* Increment button */}
+                                          <button
+                                            onClick={() =>
+                                              handleQuantityChange(
+                                                svc.id,
+                                                true,
+                                                svc.unit_of_measurement
+                                              )
+                                            }
+                                            className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
+                                          >
+                                            +
+                                          </button>
+                                          <span className="text-sm text-gray-600">
+                                            {svc.unit_of_measurement}
+                                          </span>
+                                        </div>
+                                        <span className="text-lg text-blue-600 font-medium text-right">
+                                          ${formatWithSeparator(svc.price * quantity)}
+                                        </span>
+                                      </div>
+                                      {/* Separator if not the last chosen service in this category */}
+                                      {(() => {
+                                        const chosenServices = servicesForCategory.filter(
+                                          (s) => selectedServicesState[s.id] !== undefined
+                                        );
+                                        const currentIndex = chosenServices.findIndex(
+                                          (s) => s.id === svc.id
+                                        );
+                                        if (currentIndex !== chosenServices.length - 1) {
+                                          return <hr className="mt-4 border-gray-200" />;
+                                        }
+                                        return null;
+                                      })()}
+                                    </>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Right Section: Summary, Address, Photos, and Description */}
+          <div className="w-1/2 ml-auto mt-14 pt-1">
+            <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden">
+              <SectionBoxSubtitle>Summary</SectionBoxSubtitle>
+              {Object.keys(selectedServicesState).length === 0 ? (
+                <div className="text-left text-gray-500 text-medium mt-4">
+                  No services selected
+                </div>
+              ) : (
+                <>
+                  {Object.entries(categoriesBySection).map(([sectionName, catIds]) => {
+                    // Filter categories that actually have selected services
+                    const categoriesWithSelectedServices = catIds.filter((catId) => {
+                      const servicesForCategory = categoryServicesMap[catId] || [];
+                      return servicesForCategory.some(
+                        (svc) => selectedServicesState[svc.id] !== undefined
+                      );
+                    });
+
+                    if (categoriesWithSelectedServices.length === 0) return null;
+
+                    return (
+                      <div key={sectionName} className="mb-6">
+                        <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                          {sectionName}
+                        </h3>
+                        {categoriesWithSelectedServices.map((catId) => {
+                          const categoryObj = ALL_CATEGORIES.find((c) => c.id === catId);
+                          const categoryName = categoryObj ? categoryObj.title : catId;
+
+                          const servicesForCategory = categoryServicesMap[catId] || [];
+                          const chosenServices = servicesForCategory.filter(
+                            (svc) => selectedServicesState[svc.id] !== undefined
+                          );
+
+                          if (chosenServices.length === 0) return null;
+
+                          return (
+                            <div key={catId} className="mb-4 ml-4">
+                              <h4 className="text-lg font-medium text-gray-700 mb-2">
+                                {categoryName}
+                              </h4>
+                              <ul className="space-y-2 pb-4">
+                                {chosenServices.map((svc) => {
+                                  const quantity = selectedServicesState[svc.id] || 1;
+                                  return (
+                                    <li
+                                      key={svc.id}
+                                      className="grid grid-cols-3 gap-2 text-sm text-gray-600"
+                                      style={{
+                                        gridTemplateColumns: "40% 30% 25%",
+                                        width: "100%",
+                                      }}
+                                    >
+                                      <span className="truncate overflow-hidden">
+                                        {svc.title}
+                                      </span>
+                                      <span className="text-right">
+                                        {quantity} {svc.unit_of_measurement} x $
+                                        {formatWithSeparator(svc.price)}
+                                      </span>
+                                      <span className="text-right">
+                                        ${formatWithSeparator(svc.price * quantity)}
+                                      </span>
+                                    </li>
+                                  );
+                                })}
+                              </ul>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-2xl font-semibold text-gray-800">
+                      Subtotal:
+                    </span>
+                    <span className="text-2xl font-semibold text-blue-600">
+                      ${formatWithSeparator(calculateTotal())}
+                    </span>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Address */}
+            <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
+              <h2 className="text-2xl font-medium text-gray-800 mb-4">Address</h2>
+              <p className="text-gray-500 text-medium">
+                {address || "No address provided"}
+              </p>
+            </div>
+
+            {/* Photos */}
+            <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
+              <h2 className="text-2xl font-medium text-gray-800 mb-4">
+                Uploaded Photos
+              </h2>
+              <div className="grid grid-cols-2 gap-4">
+                {photos.map((photo: string, index: number) => (
+                  <div key={index} className="relative group">
+                    <img
+                      src={photo}
+                      alt={`Uploaded photo ${index + 1}`}
+                      className="w-full h-32 object-cover rounded-lg"
+                    />
+                  </div>
+                ))}
+              </div>
+              {photos.length === 0 && (
+                <p className="text-medium text-gray-500 mt-2">
+                  No photos uploaded
+                </p>
+              )}
+            </div>
+
+            {/* Additional details */}
+            <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
+              <h2 className="text-2xl font-medium text-gray-800 mb-4">
+                Additional details
+              </h2>
+              <p className="text-gray-500 text-medium whitespace-pre-wrap">
+                {description || "No details provided"}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
 }

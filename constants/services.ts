@@ -6670,7 +6670,7 @@ export const ALL_SERVICES = [
     },
     {
         id: "20-1-1",
-        unit_of_measurement: "1000 sq ft",
+        unit_of_measurement: "K sq ft",
         title: "Regular Lawn Mowing",
         description: "Regular mowing of the lawn to maintain an even and well-kept appearance. This service includes mowing the lawn, trimming the edges, and clearing away grass clippings. Includes comprehensive labor and necessary equipment. Ensures a consistently neat and tidy lawn.",
         price: 100,
@@ -6678,7 +6678,7 @@ export const ALL_SERVICES = [
     },
     {
         id: "20-1-2",
-        unit_of_measurement: "1000 sq ft",
+        unit_of_measurement: "K sq ft",
         title: "Lawn Edging and Trimming",
         description: "Edging and trimming the lawn to create clean lines along borders and pathways. This service includes using specialized tools to trim grass edges and clean up borders. Includes comprehensive labor and necessary equipment. Provides a polished and professional look to lawn edges.",
         price: 100,
@@ -6686,7 +6686,7 @@ export const ALL_SERVICES = [
     },
     {
         id: "20-1-3",
-        unit_of_measurement: "1000 sq ft",
+        unit_of_measurement: "K sq ft",
         title: "Lawn Aeration and Scarifying",
         description: "Aerating and scarifying the lawn to improve soil health and promote grass growth. This service includes perforating the soil and removing thatch buildup. Includes comprehensive labor, rough materials, and necessary equipment. Enhances lawn health and appearance.",
         price: 100,
@@ -6694,7 +6694,7 @@ export const ALL_SERVICES = [
     },
     {
         id: "20-1-4",
-        unit_of_measurement: "1000 sq ft",
+        unit_of_measurement: "K sq ft",
         title: "Spring Lawn Revitalization",
         description: "Revitalizing the lawn in spring to prepare it for the growing season. This service includes aeration, fertilization, overseeding, and weed control. Includes comprehensive labor, rough materials, and necessary equipment. Ensures a healthy and vibrant lawn for the year ahead.",
         price: 100,
@@ -6702,7 +6702,7 @@ export const ALL_SERVICES = [
     },
     {
         id: "20-1-5",
-        unit_of_measurement: "1000 sq ft",
+        unit_of_measurement: "K sq ft",
         title: "Autumn Lawn Preparation",
         description: "Preparing the lawn for the winter season to promote healthy growth in spring. This service includes aeration, fertilization, overseeding, and removing fallen leaves. Includes comprehensive labor, rough materials, and necessary equipment. Prepares the lawn to withstand winter conditions.",
         price: 100,
@@ -6710,7 +6710,7 @@ export const ALL_SERVICES = [
     },
     {
         id: "20-1-6",
-        unit_of_measurement: "1000 sq ft",
+        unit_of_measurement: "K sq ft",
         title: "Lawn Winterization",
         description: "Winterizing the lawn to protect it from harsh winter conditions. This service includes applying winter fertilizer, mowing to an appropriate height, and clearing debris. Includes comprehensive labor, rough materials, and necessary equipment. Ensures the lawn is ready for winter and healthy regrowth in spring.",
         price: 100,
@@ -6718,7 +6718,7 @@ export const ALL_SERVICES = [
     },
     {
         id: "20-1-7",
-        unit_of_measurement: "1000 sq ft",
+        unit_of_measurement: "K sq ft",
         title: "Faded Grass Painting",
         description: "Painting faded grass areas to restore a vibrant green color. This service includes applying eco-friendly grass paint to discolored patches. Includes comprehensive labor and necessary materials. Provides an instantly refreshed and lush-looking lawn.",
         price: 100,
@@ -6726,7 +6726,7 @@ export const ALL_SERVICES = [
     },
     {
         id: "20-2-1",
-        unit_of_measurement: "1000 sq ft",
+        unit_of_measurement: "K sq ft",
         title: "Lawn Hand Seeding",
         description: "Hand seeding the lawn to promote new grass growth in bare or thin areas. This service includes preparing the soil, applying grass seed, and covering the seeds with soil or mulch. Includes comprehensive labor, rough materials, and necessary equipment. Ensures even and effective grass growth.",
         price: 100,
@@ -6734,7 +6734,7 @@ export const ALL_SERVICES = [
     },
     {
         id: "20-2-2",
-        unit_of_measurement: "1000 sq ft",
+        unit_of_measurement: "K sq ft",
         title: "Lawn Hydroseeding",
         description: "Applying a hydroseeding mixture to promote rapid grass growth. This service includes spraying a mixture of seed, fertilizer, and mulch onto the lawn. Includes comprehensive labor, rough materials, and necessary equipment. Provides a quick and efficient way to establish a new lawn.",
         price: 100,
@@ -6742,7 +6742,7 @@ export const ALL_SERVICES = [
     },
     {
         id: "20-2-3",
-        unit_of_measurement: "1000 sq ft",
+        unit_of_measurement: "K sq ft",
         title: "Lawn Sod Installation",
         description: "Installing sod to create an instant, fully-grown lawn. This service includes soil preparation, laying sod, and watering. Includes comprehensive labor, rough materials, and sod (client's choice of type and specifications). Provides an immediate and professional lawn finish.",
         price: 100,
@@ -6750,7 +6750,7 @@ export const ALL_SERVICES = [
     },
     {
         id: "20-2-4",
-        unit_of_measurement: "1000 sq ft",
+        unit_of_measurement: "K sq ft",
         title: "Artificial Grass Installation",
         description: "Installing artificial grass for a low-maintenance and evergreen lawn. This service includes preparing the base, laying artificial grass, and securing it in place. Includes comprehensive labor, rough materials, and artificial grass (client's choice of type and specifications). Provides a durable and maintenance-free lawn solution.",
         price: 100,
@@ -7094,7 +7094,7 @@ export const ALL_SERVICES = [
     },
     {
         id: "20-12-1",
-        unit_of_measurement: "1000 sq ft",
+        unit_of_measurement: "K sq ft",
         title: "Sprinkler Systems Installation",
         description: "Installation of a sprinkler system for efficient lawn and garden watering. This service includes site assessment, system design, trenching, and installation. Includes comprehensive labor, rough materials, equipment usage, and sprinkler system components (client's choice of brand and features). Ensures a reliable and efficient irrigation system.",
         price: 100,

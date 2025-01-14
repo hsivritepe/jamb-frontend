@@ -1288,19 +1288,19 @@
           "activities": {
             "20.2.1": {
               "activity": "Lawn Hand Seeding",
-              "unit_of_measurement": "1000 sq ft"
+              "unit_of_measurement": "K sq ft"
             },
             "20.2.2": {
               "activity": "Lawn Hydroseeding",
-              "unit_of_measurement": "1000 sq ft"
+              "unit_of_measurement": "K sq ft"
             },
             "20.2.3": {
               "activity": "Lawn Sod Installation",
-              "unit_of_measurement": "1000 sq ft"
+              "unit_of_measurement": "K sq ft"
             },
             "20.2.4": {
               "activity": "Artificial Grass Installation",
-              "unit_of_measurement": "1000 sq ft"
+              "unit_of_measurement": "K sq ft"
             },
             "20.2.5": {
               "activity": "Lawn Edging Installation ",
@@ -1518,7 +1518,7 @@
           "activities": {
             "20.12.1": {
               "activity": "Sprinkler Systems Installation",
-              "unit_of_measurement": "1000 sq ft"
+              "unit_of_measurement": "K sq ft"
             },
             "20.12.2": {
               "activity": "Irrigation Timers and Controllers Installation",

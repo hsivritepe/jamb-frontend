@@ -2,69 +2,75 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Menu, X, ChevronDown } from "lucide-react";
-import Image from "next/image";
 import { NavigationItem } from "@/types/common";
 import { useLocation } from "@/context/LocationContext";
 
-// Navigation items (no automatic fetching here, just static navigation links)
+// Example array for top navigation
 const navigation: NavigationItem[] = [
-  { name: "Services", href: "/services" },
+  { name: "Services", href: "/calculate" },
   { name: "Rooms", href: "/rooms" },
   { name: "Packages", href: "/packages" },
   { name: "About", href: "/about" },
 ];
 
-// Utility function to truncate text for UI clarity
+// Mapping language codes to localized display text
+const languageMap: Record<string, string> = {
+  ENG: "English",
+  FRA: "Français",
+  ESP: "Español",
+  CHN: "中文",
+  RUS: "Русский",
+  KOR: "한국어",
+  TUR: "Türkçe",
+  POR: "Português",
+  JPN: "日本語",
+  GER: "Deutsch",
+  HEB: "עברית",
+  ARB: "العربية",
+};
+
+// Helper: truncates text to a max length
 function truncateText(text: string, maxLength: number) {
   return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
 }
 
 export default function Header() {
-  // State for mobile menu visibility
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Accessing the location context (no automatic fetch triggered here)
+  // ---------- LOCATION ----------
   const { location, setLocation } = useLocation();
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const locationModalRef = useRef<HTMLDivElement>(null);
 
-  // State for modal (for setting location manually)
-  const [showModal, setShowModal] = useState(false);
-
-  // Local state for manual location inputs (city and ZIP)
+  // For the location input fields
   const [manualLocation, setManualLocation] = useState({ city: "", zip: "" });
 
-  // Reference to the modal element for outside-click detection
-  const modalRef = useRef<HTMLDivElement>(null);
+  // ---------- PREFERENCES MODAL (LANGUAGE, UNITS, CURRENCY) ----------
+  const [showPreferencesModal, setShowPreferencesModal] = useState(false);
+  const preferencesModalRef = useRef<HTMLDivElement>(null);
 
-  /**
-   * Handles saving the manually entered location:
-   * - Updates the global location context with the entered city and ZIP.
-   * - Closes the modal afterwards.
-   */
+  const pathname = usePathname();
+  const isEmergencyActive = pathname.startsWith("/emergency");
+
+  // ---------- LOCATION HANDLERS ----------
   const handleManualLocationSave = () => {
     setLocation({
       city: manualLocation.city || "Enter City",
       zip: manualLocation.zip.trim() || "and ZIP",
     });
-    setShowModal(false);
+    setShowLocationModal(false);
   };
 
-  /**
-   * Handles fetching the location automatically when the "Auto" button is clicked:
-   * - Fetches user's location from the API.
-   * - Updates local manualLocation and global location context with fetched data.
-   * - NOTE: This is triggered only by user action (button click), not on navigation.
-   */
   const handleAutoFill = async () => {
     try {
       const response = await fetch("https://ipapi.co/json/");
-      if (!response.ok) {
-        throw new Error("Failed to fetch location data");
-      }
+      if (!response.ok) throw new Error("Failed to fetch location data");
+
       const data = await response.json();
       const fullZip = data.postal || "0000000";
 
-      // Update local state and global context only once, on user request
       setManualLocation({
         city: data.city || "City",
         zip: fullZip,
@@ -79,54 +85,78 @@ export default function Header() {
     }
   };
 
-  /**
-   * Clears the manual location inputs in the modal.
-   */
-  const handleClear = () => {
+  const handleClearLocation = () => {
     setManualLocation({ city: "", zip: "" });
   };
 
-  /**
-   * Closes the modal if the user clicks outside of it.
-   */
+  // ---------- PREFERENCES STATE & HANDLERS ----------
+  const [selectedLanguage, setSelectedLanguage] = useState("ENG");
+  const [selectedUnit, setSelectedUnit] = useState("Feet");
+  const [selectedCurrency, setSelectedCurrency] = useState("US");
+
+  // Example arrays
+  const languages = Object.keys(languageMap); // e.g. ["ENG","FRA","ESP" ...]
+  const units = ["Feet", "Meters"];
+  const currencies = ["US", "CAD", "GBP", "EUR", "JPY", "CNY"];
+
+  const handlePreferencesSave = () => {
+    // You could store these in sessionStorage, context, or user profile
+    console.log("Saved preferences:", {
+      language: selectedLanguage,
+      unit: selectedUnit,
+      currency: selectedCurrency,
+    });
+    setShowPreferencesModal(false);
+  };
+
+  // ---------- OUTSIDE CLICK HANDLER FOR MODALS ----------
   const handleOutsideClick = (e: MouseEvent) => {
-    if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
-      setShowModal(false);
+    // Location modal
+    if (
+      showLocationModal &&
+      locationModalRef.current &&
+      !locationModalRef.current.contains(e.target as Node)
+    ) {
+      setShowLocationModal(false);
+    }
+    // Preferences modal
+    if (
+      showPreferencesModal &&
+      preferencesModalRef.current &&
+      !preferencesModalRef.current.contains(e.target as Node)
+    ) {
+      setShowPreferencesModal(false);
     }
   };
 
-  /**
-   * Adds or removes the outside click listener depending on whether the modal is shown.
-   * This ensures that clicking outside the modal closes it, but no unnecessary listeners remain active.
-   */
   useEffect(() => {
-    if (showModal) {
+    if (showLocationModal || showPreferencesModal) {
       document.addEventListener("mousedown", handleOutsideClick);
     } else {
       document.removeEventListener("mousedown", handleOutsideClick);
     }
-
     return () => {
       document.removeEventListener("mousedown", handleOutsideClick);
     };
-  }, [showModal]);
+  }, [showLocationModal, showPreferencesModal]);
 
-  // NOTE: We do not automatically fetch location data on navigation.
-  // The handleAutoFill function is only called when the user explicitly clicks the "Auto" button in the modal.
-  // Hence, no automatic API calls are made just by page navigation or link clicks.
-
+  // ---------- RENDER ----------
   return (
     <>
-      <header className="fixed w-full z-50 bg-gray-100/50 backdrop-blur-sm">
+      <header className="fixed w-full z-50 bg-gray-100/50 backdrop-blur-sm shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4">
-          <nav className="bg-white rounded-2xl shadow-sm">
+          <nav className="bg-white rounded-2xl">
             <div className="flex justify-between items-center h-16 px-6">
-              {/* Logo - Static link, no automatic fetch */}
+              {/* Logo */}
               <Link href="/" prefetch={false} className="flex-shrink-0">
-                <img src="/images/logo.png" alt="Jamb" className="h-8 w-auto" />
+                <img
+                  src="/images/logo.png"
+                  alt="Jamb"
+                  className="h-8 w-auto"
+                />
               </Link>
 
-              {/* Location display section */}
+              {/* Location chunk */}
               <div
                 className="flex flex-col items-start w-[200px] overflow-hidden text-ellipsis whitespace-normal"
                 title="Click to change location"
@@ -135,43 +165,60 @@ export default function Header() {
                   Are you here?
                 </span>
                 <strong
-                  onClick={() => setShowModal(true)}
-                  className="text-[1.15rem] font-medium text-black cursor-pointer transition-colors duration-200 hover:text-[#1948f0]"
+                  onClick={() => setShowLocationModal(true)}
+                  className="text-[1.15rem] font-medium text-black cursor-pointer transition-colors duration-200 hover:text-blue-600"
                 >
-                  {truncateText(location.city, 10)}, {truncateText(location.zip, 10)}
+                  {truncateText(location.city, 10)},{" "}
+                  {truncateText(location.zip, 10)}
                 </strong>
               </div>
 
-              {/* Desktop Navigation - no automatic fetch here */}
+              {/* Desktop navigation */}
               <div className="hidden md:flex items-center gap-8">
-                {navigation.map((item) => (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className="text-gray-700 hover:text-blue-600 font-medium"
-                    prefetch={false} 
-                  >
-                    {item.name}
-                  </Link>
-                ))}
+                {navigation.map((item) => {
+                  const isActive = pathname.startsWith(item.href);
+                  return (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      className={`font-medium transition-colors duration-200 ${
+                        isActive
+                          ? "text-blue-600"
+                          : "text-gray-700 hover:text-blue-600"
+                      }`}
+                      prefetch={false}
+                    >
+                      {item.name}
+                    </Link>
+                  );
+                })}
               </div>
 
-              {/* Right Section */}
+              {/* Right side (desktop) */}
               <div className="hidden md:flex items-center gap-4">
+                {/* Emergency */}
                 <Link
                   href="/emergency"
                   prefetch={false}
-                  className="flex items-center gap-2 text-red-600 font-medium bg-red-100/50 px-4 py-2 rounded-lg transition-colors duration-200 hover:bg-red-200"
+                  className={`flex items-center gap-2 text-red-600 font-medium px-4 py-2 rounded-lg transition-colors duration-200 bg-red-50 hover:bg-red-100
+                    border-2 ${
+                      isEmergencyActive ? "border-red-600" : "border-transparent"
+                    }`}
                 >
-                  <span>🚨</span> Emergency
+                  <span>🚨</span>
+                  Emergency
                 </Link>
 
-                <div className="relative">
-                  <button className="flex items-center gap-2 text-gray-700 bg-[rgba(0,0,0,0.03)] px-4 py-2 rounded-lg transition-colors duration-200 hover:bg-[rgba(0,0,0,0.08)]">
-                    <span>EN</span>
-                    <ChevronDown className="w-4 h-4" />
-                  </button>
-                </div>
+                {/* Preferences button: fixed width so it doesn't resize */}
+                <button
+                  onClick={() => setShowPreferencesModal(true)}
+                  className="w-[110px] inline-flex items-center justify-between gap-1 text-gray-700 bg-[rgba(0,0,0,0.03)] px-3 py-2 rounded-lg transition-colors duration-200 hover:bg-[rgba(0,0,0,0.08)]"
+                >
+                  <span className="truncate">
+                    {languageMap[selectedLanguage] ?? "English"}
+                  </span>
+                  <ChevronDown className="w-4 h-4 shrink-0" />
+                </button>
               </div>
 
               {/* Mobile menu button */}
@@ -189,37 +236,54 @@ export default function Header() {
               </div>
             </div>
 
-            {/* Mobile Navigation (no automatic fetch) */}
+            {/* Mobile navigation */}
             {isMobileMenuOpen && (
               <div className="md:hidden py-4 px-6 border-t">
                 <div className="flex flex-col gap-4">
-                  {navigation.map((item) => (
-                    <Link
-                      key={item.name}
-                      href={item.href}
-                      className="text-gray-700 hover:text-blue-600 font-medium"
-                      prefetch={false}
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      {item.name}
-                    </Link>
-                  ))}
+                  {navigation.map((item) => {
+                    const isActive = pathname.startsWith(item.href);
+                    return (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        className={`font-medium transition-colors duration-200 ${
+                          isActive
+                            ? "text-blue-600"
+                            : "text-gray-700 hover:text-blue-600"
+                        }`}
+                        prefetch={false}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        {item.name}
+                      </Link>
+                    );
+                  })}
 
+                  {/* Emergency link for mobile */}
                   <Link
                     href="/emergency"
                     prefetch={false}
-                    className="flex items-center gap-2 text-red-600 font-medium"
+                    className={`flex items-center gap-2 text-red-600 font-medium border-2 ${
+                      isEmergencyActive ? "border-red-600" : "border-transparent"
+                    }`}
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
-                    <span>🚨</span> Emergency
+                    <span>🚨</span>
+                    Emergency
                   </Link>
 
+                  {/* Preferences link for mobile */}
                   <button
-                    className="flex items-center gap-2 text-gray-700"
-                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="w-[110px] inline-flex items-center justify-between gap-1 text-gray-700 bg-[rgba(0,0,0,0.03)] px-3 py-2 rounded-lg hover:bg-[rgba(0,0,0,0.08)]"
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      setShowPreferencesModal(true);
+                    }}
                   >
-                    <span>EN</span>
-                    <ChevronDown className="w-4 h-4" />
+                    <span className="truncate">
+                      {languageMap[selectedLanguage] ?? "English"}
+                    </span>
+                    <ChevronDown className="w-4 h-4 shrink-0" />
                   </button>
                 </div>
               </div>
@@ -228,18 +292,27 @@ export default function Header() {
         </div>
       </header>
 
-      {/* Modal for Setting Location */}
-      {showModal && (
-        // Modal placed outside the header to avoid clipping or partial visibility
+      {/* ---------- LOCATION MODAL ---------- */}
+      {showLocationModal && (
         <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-[9999]">
           <div
-            ref={modalRef}
+            ref={locationModalRef}
             className="bg-white p-8 rounded-xl shadow-lg max-w-[400px] w-[90%] text-center"
           >
-            <h2 className="text-xl font-semibold mb-4">Set Your Location</h2>
-            {/* City Input */}
+            <h2 className="text-xl font-semibold mb-4 text-gray-800">
+              Set Your Location
+            </h2>
+
+            {/* City */}
+            <label
+              htmlFor="city-input"
+              className="block text-left text-sm font-medium text-gray-600 mb-1"
+            >
+              City
+            </label>
             <input
-              id="city-autocomplete"
+              id="city-input"
+              name="city"
               type="text"
               placeholder="Enter your city"
               value={manualLocation.city}
@@ -248,8 +321,17 @@ export default function Header() {
               }
               className="w-full max-w-[360px] p-3 mb-4 border border-gray-300 rounded-lg text-base"
             />
-            {/* ZIP Code Input */}
+
+            {/* ZIP */}
+            <label
+              htmlFor="zip-input"
+              className="block text-left text-sm font-medium text-gray-600 mb-1"
+            >
+              ZIP Code
+            </label>
             <input
+              id="zip-input"
+              name="zip"
               type="text"
               placeholder="Enter your ZIP code"
               value={manualLocation.zip}
@@ -259,8 +341,7 @@ export default function Header() {
               className="w-full max-w-[360px] p-3 mb-4 border border-gray-300 rounded-lg text-base"
             />
 
-            {/* Buttons for auto fill, clear, and save */}
-            <div className="flex justify-between gap-4 mt-4">
+            <div className="flex justify-between gap-4 mt-6">
               <button
                 className="flex-1 p-3 font-medium border rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-800 border-gray-300"
                 onClick={handleAutoFill}
@@ -269,13 +350,111 @@ export default function Header() {
               </button>
               <button
                 className="flex-1 p-3 font-medium border rounded-lg bg-red-100 text-red-700 border-red-300 hover:bg-red-200"
-                onClick={handleClear}
+                onClick={handleClearLocation}
               >
                 Clear
               </button>
               <button
                 className="flex-1 p-3 font-medium border-none rounded-lg bg-blue-600 text-white hover:bg-blue-700"
                 onClick={handleManualLocationSave}
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ---------- PREFERENCES MODAL ---------- */}
+      {showPreferencesModal && (
+        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-[9999]">
+          <div
+            ref={preferencesModalRef}
+            className="bg-white p-6 rounded-xl shadow-lg max-w-[500px] w-[90%]"
+          >
+            <h2 className="text-2xl font-bold mb-4 text-gray-800">
+              Preferences
+            </h2>
+
+            {/* Language */}
+            <div className="mb-6">
+              <h3 className="font-medium text-gray-700 mb-2">Language</h3>
+              <div className="flex flex-wrap gap-2">
+                {languages.map((langCode) => {
+                  const label = languageMap[langCode];
+                  return (
+                    <button
+                      key={langCode}
+                      onClick={() => setSelectedLanguage(langCode)}
+                      className={`px-3 py-1 rounded border transition-colors 
+                      ${
+                        selectedLanguage === langCode
+                          ? "bg-blue-600 text-white border-blue-600"
+                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Units */}
+            <div className="mb-6">
+              <h3 className="font-medium text-gray-700 mb-2">
+                Measurement Units
+              </h3>
+              <div className="flex gap-4">
+                {units.map((u) => (
+                  <button
+                    key={u}
+                    onClick={() => setSelectedUnit(u)}
+                    className={`px-3 py-1 rounded border transition-colors 
+                      ${
+                        selectedUnit === u
+                          ? "bg-blue-600 text-white border-blue-600"
+                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                      }`}
+                  >
+                    {u}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Currency */}
+            <div className="mb-6">
+              <h3 className="font-medium text-gray-700 mb-2">Currency</h3>
+              <div className="flex flex-wrap gap-2">
+                {currencies.map((cur) => (
+                  <button
+                    key={cur}
+                    onClick={() => setSelectedCurrency(cur)}
+                    className={`px-3 py-1 rounded border transition-colors 
+                      ${
+                        selectedCurrency === cur
+                          ? "bg-blue-600 text-white border-blue-600"
+                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                      }`}
+                  >
+                    {cur}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Action buttons */}
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                onClick={() => setShowPreferencesModal(false)}
+                className="px-4 py-2 rounded bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handlePreferencesSave}
+                className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors"
               >
                 Save
               </button>

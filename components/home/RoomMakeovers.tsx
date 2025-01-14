@@ -1,11 +1,13 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { SectionBoxTitle } from '../ui/SectionBoxTitle';
-import { ImageBoxGrid } from '../ui/ImageBoxGrid';
-import { ROOMS } from '@/constants/rooms';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { SectionBoxTitle } from "../ui/SectionBoxTitle";
+import { ImageBoxGrid } from "../ui/ImageBoxGrid";
+import Button from "@/components/ui/Button";
+import { ROOMS } from "@/constants/rooms";
 
-// Function to shuffle array elements randomly
+// shuffleArray: Randomly shuffle an array
 function shuffleArray<T>(array: T[]): T[] {
   const shuffled = [...array];
   for (let i = shuffled.length - 1; i > 0; i--) {
@@ -15,32 +17,77 @@ function shuffleArray<T>(array: T[]): T[] {
   return shuffled;
 }
 
-// Prepare indoor room data
+// Session helpers
+const saveToSession = (key: string, value: any) => {
+  if (typeof window !== "undefined") {
+    sessionStorage.setItem(key, JSON.stringify(value));
+  }
+};
+
+const loadFromSession = (key: string, defaultValue: any) => {
+  if (typeof window === "undefined") {
+    return defaultValue;
+  }
+  const savedValue = sessionStorage.getItem(key);
+  try {
+    return savedValue ? JSON.parse(savedValue) : defaultValue;
+  } catch (error) {
+    console.error(`Error parsing sessionStorage for key "${key}"`, error);
+    return defaultValue;
+  }
+};
+
+// Prepare indoor and outdoor room data
 const indoorRooms = ROOMS.indoor.map((room) => ({
+  id: room.id,
   title: room.title,
-  image: `/images/rooms/${room.id}.jpg`, // Generate the image path dynamically
-  subcategories: room.services.map((service) => service.title), // Extract service titles
+  image: `/images/rooms/${room.id}.jpg`,
+  subcategories: room.services.map((service) => service.title),
 }));
 
-// Prepare outdoor room data
 const outdoorRooms = ROOMS.outdoor.map((room) => ({
+  id: room.id,
   title: room.title,
-  image: `/images/rooms/${room.id}.jpg`, // Generate the image path dynamically
-  subcategories: room.services.map((service) => service.title), // Extract service titles
+  image: `/images/rooms/${room.id}.jpg`,
+  subcategories: room.services.map((service) => service.title),
 }));
 
-export default function RoomsGrid({
-  title = 'Whole-Room Makeovers, Done Right',
-  subtitle = 'Comprehensive Home Renovations for Every Room',
-}: {
+interface RoomsGridProps {
   title?: string;
   subtitle?: string;
-}) {
-  // State to toggle between indoor and outdoor types
-  const [selectedType, setSelectedType] = useState<'indoor' | 'outdoor'>('indoor');
-  const [rooms, setRooms] = useState(selectedType === 'indoor' ? indoorRooms : outdoorRooms);
+  searchQuery?: string;
+}
 
-  // Update the rooms based on the selected type and shuffle the subcategories
+export default function RoomsGrid({
+  title = "Whole-Room Makeovers, Done Right",
+  subtitle = "Comprehensive Home Renovations for Every Room",
+  searchQuery = ""
+}: RoomsGridProps) {
+  const router = useRouter();
+
+  // Load previously saved type and selected rooms
+  const [selectedType, setSelectedType] = useState<'indoor' | 'outdoor'>(
+    loadFromSession("rooms_selectedType", "indoor")
+  );
+  const [selectedSections, setSelectedSections] = useState<string[]>(
+    loadFromSession("rooms_selectedSections", [])
+  );
+
+  // Initialize rooms based on selectedType
+  const [rooms, setRooms] = useState(
+    selectedType === 'indoor' ? indoorRooms : outdoorRooms
+  );
+
+  // Save changes to session
+  useEffect(() => {
+    saveToSession("rooms_selectedType", selectedType);
+  }, [selectedType]);
+
+  useEffect(() => {
+    saveToSession("rooms_selectedSections", selectedSections);
+  }, [selectedSections]);
+
+  // Recompute rooms when selectedType changes (shuffle subcategories for variety)
   useEffect(() => {
     const shuffledRooms =
       selectedType === 'indoor'
@@ -52,57 +99,89 @@ export default function RoomsGrid({
             ...room,
             subcategories: shuffleArray(room.subcategories),
           }));
+
     setRooms(shuffledRooms);
   }, [selectedType]);
 
+  // Filter rooms by searchQuery
+  const filteredRooms = rooms.filter(
+    (room) =>
+      room.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      room.subcategories.some((sub) =>
+        sub.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+  );
+
+  // Toggle room selection
+  const handleSectionClick = (sectionId: string) => {
+    setSelectedSections((prev) =>
+      prev.includes(sectionId)
+        ? prev.filter((s) => s !== sectionId)
+        : [...prev, sectionId]
+    );
+  };
+
+  // Proceed to next page after selecting rooms
+  const handleNext = () => {
+    if (selectedSections.length === 0) {
+      alert("Please select at least one room before proceeding.");
+      return;
+    }
+    // Proceed to the next step: /rooms/services
+    router.push("/rooms/services");
+  };
+
   return (
-    <section className="py-16">
-      <div className="container mx-auto px-4">
-        {/* Section title */}
+    <section className="py-8">
+      <div className="container mx-auto">
         <SectionBoxTitle>
           <div dangerouslySetInnerHTML={{ __html: title }} />
-          <p className="text-[30px] leading-[41px] font-normal text-gray-500">{subtitle}</p>
+          <p className="text-[30px] leading-[41px] font-normal text-gray-500">
+            {subtitle}
+          </p>
         </SectionBoxTitle>
 
-        {/* Toggle buttons for indoor and outdoor */}
-        <div className="flex mb-8">
+        {/* Indoor/Outdoor toggle */}
+        <div className="flex justify-between items-center mb-8">
           <div className="inline-flex rounded-lg border border-gray-200 p-1">
-            {/* Button for indoor */}
             <button
-              onClick={() => setSelectedType('indoor')}
+              onClick={() => setSelectedType("indoor")}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                selectedType === 'indoor'
-                  ? 'bg-blue-600 text-white'
-                  : 'hover:bg-gray-100 text-gray-600'
+                selectedType === "indoor"
+                  ? "bg-blue-600 text-white"
+                  : "hover:bg-gray-100 text-gray-600"
               }`}
             >
               Indoor
             </button>
-
-            {/* Button for outdoor */}
             <button
-              onClick={() => setSelectedType('outdoor')}
+              onClick={() => setSelectedType("outdoor")}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                selectedType === 'outdoor'
-                  ? 'bg-blue-600 text-white'
-                  : 'hover:bg-gray-100 text-gray-600'
+                selectedType === "outdoor"
+                  ? "bg-blue-600 text-white"
+                  : "hover:bg-gray-100 text-gray-600"
               }`}
             >
               Outdoor
             </button>
           </div>
+
+          {/* Next button */}
+          <Button onClick={handleNext}>Next →</Button>
         </div>
 
-        {/* Rooms grid */}
+        {/* Rooms grid display */}
         <ImageBoxGrid
-          items={rooms.map((room) => ({
-            id: room.title,
+          items={filteredRooms.map((room) => ({
+            id: room.id,
             title: room.title,
             image: room.image,
-            url: `/rooms/${room.title.toLowerCase().replace(/ /g, '_')}`, // Generate URL dynamically
-            subcategories: room.subcategories, // Pass subcategories
+            url: `/rooms/${room.title.toLowerCase().replace(/ /g, '_')}`,
+            subcategories: room.subcategories,
+            isSelected: selectedSections.includes(room.id),
           }))}
-          moreText="services" // Customize "more" text for this component
+          onSectionClick={handleSectionClick}
+          moreText="services"
         />
       </div>
     </section>

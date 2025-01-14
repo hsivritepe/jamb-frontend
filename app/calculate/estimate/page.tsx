@@ -1,287 +1,378 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import BreadCrumb from '@/components/ui/BreadCrumb';
-import { CALCULATE_STEPS } from '@/constants/navigation';
-import { SectionBoxTitle } from '@/components/ui/SectionBoxTitle';
-import SearchServices from '@/components/SearchServices';
-import ServiceAccordion from '@/components/calculate/ServiceAccordion';
-import EstimateCalculation from '@/components/calculate/EstimateCalculation';
-import { EstimateService } from '@/types/services';
-import { ALL_SERVICES } from '@/constants/service';
-import { ChevronDown } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import BreadCrumb from "@/components/ui/BreadCrumb";
+import { SectionBoxTitle } from "@/components/ui/SectionBoxTitle";
+import { SectionBoxSubtitle } from "@/components/ui/SectionBoxSubtitle";
+import { CALCULATE_STEPS } from "@/constants/navigation";
+import { ALL_CATEGORIES } from "@/constants/categories";
+import { ALL_SERVICES } from "@/constants/services";
+import ServiceTimePicker from "@/components/ui/ServiceTimePicker";
 
-// Helper function to group services by category
-const groupServicesByCategory = (services: EstimateService[]) => {
-    return services.reduce((acc, service) => {
-        const category = (service as any).category || 'Other';
-        if (!acc[category]) {
-            acc[category] = [];
-        }
-        acc[category].push(service);
-        return acc;
-    }, {} as Record<string, EstimateService[]>);
+// Utility function to format numbers with commas and exactly two decimal places
+const formatWithSeparator = (value: number): string =>
+  new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
+
+// Utility function to format quantity as an integer with commas if needed
+const formatQuantity = (value: number): string =>
+  new Intl.NumberFormat("en-US").format(value);
+
+// Session storage helpers with environment checks
+const saveToSession = (key: string, value: any) => {
+  if (typeof window !== "undefined") {
+    sessionStorage.setItem(key, JSON.stringify(value));
+  }
+};
+
+const loadFromSession = (key: string, defaultValue: any) => {
+  if (typeof window === "undefined") return defaultValue;
+  const savedValue = sessionStorage.getItem(key);
+  try {
+    return savedValue ? JSON.parse(savedValue) : defaultValue;
+  } catch (error) {
+    console.error(`Error parsing sessionStorage for key "${key}"`, error);
+    return defaultValue;
+  }
 };
 
 export default function Estimate() {
-    const [selectedServices, setSelectedServices] = useState<
-        EstimateService[]
-    >([]);
-    const [searchQuery, setSearchQuery] = useState('');
-    const router = useRouter();
-    const [expandedCategories, setExpandedCategories] = useState<
-        Set<string>
-    >(() => {
-        const initialCategories = new Set<string>();
-        selectedServices.forEach((service) => {
-            initialCategories.add(service.category);
-            initialCategories.add(`selected-${service.category}`);
-        });
-        return initialCategories;
-    });
+  const router = useRouter();
 
-    const filteredServices = searchQuery
-        ? ALL_SERVICES.filter(
-              (service) =>
-                  !selectedServices.some(
-                      (s) => s.id === service.id
-                  ) &&
-                  (service.title
-                      .toLowerCase()
-                      .includes(searchQuery.toLowerCase()) ||
-                      service.description
-                          .toLowerCase()
-                          .includes(searchQuery.toLowerCase()))
-          )
-        : [];
+  // Load data from the session saved on the 'details' page
+  const selectedServicesState: Record<string, number> = loadFromSession(
+    "selectedServicesWithQuantity",
+    {}
+  );
+  const address: string = loadFromSession("address", "");
+  const photos: string[] = loadFromSession("photos", []);
+  const description: string = loadFromSession("description", "");
 
-    const groupedServices = groupServicesByCategory(filteredServices);
+  // Also load categories and searchQuery for grouping services by section/category
+  const selectedCategories: string[] = loadFromSession(
+    "services_selectedCategories",
+    []
+  );
+  const searchQuery: string = loadFromSession("services_searchQuery", "");
 
-    const toggleCategory = (category: string) => {
-        setExpandedCategories((prev) => {
-            const next = new Set(prev);
-            if (next.has(category)) {
-                next.delete(category);
-            } else {
-                next.add(category);
-            }
-            return next;
-        });
-    };
+  // If no services or no address, go back
+  useEffect(() => {
+    if (
+      Object.keys(selectedServicesState).length === 0 ||
+      !address ||
+      selectedCategories.length === 0
+    ) {
+      router.push("/calculate");
+    }
+  }, [selectedServicesState, address, selectedCategories, router]);
 
-    const handleServiceToggle = (service: EstimateService) => {
-        if (selectedServices.find((s) => s.id === service.id)) {
-            setSelectedServices(
-                selectedServices.filter((s) => s.id !== service.id)
-            );
-        } else {
-            setExpandedCategories(
-                (prev) =>
-                    new Set(
-                        Array.from(prev).concat([
-                            service.category,
-                            `selected-${service.category}`,
-                        ])
-                    )
-            );
-            setSelectedServices([...selectedServices, service]);
-        }
-    };
+  // Group categories by sections for better organization
+  const categoriesWithSection = selectedCategories
+    .map((catId) => ALL_CATEGORIES.find((c) => c.id === catId) || null)
+    .filter(Boolean) as (typeof ALL_CATEGORIES)[number][];
 
-    return (
-        <main className="min-h-screen pt-24">
-            <div className="container mx-auto">
-                <BreadCrumb items={CALCULATE_STEPS} />
-            </div>
+  const categoriesBySection: Record<string, string[]> = {};
+  categoriesWithSection.forEach((cat) => {
+    if (!categoriesBySection[cat.section]) {
+      categoriesBySection[cat.section] = [];
+    }
+    categoriesBySection[cat.section].push(cat.id);
+  });
 
-            <div className="container mx-auto py-12">
-                <div className="flex gap-12">
-                    {/* Left Column */}
-                    <div className="flex-1">
-                        <SectionBoxTitle>Services</SectionBoxTitle>
-                        <p className="text-gray-600 mt-2 mb-8">
-                            This is to accurately calculate the cost
-                            of services
-                        </p>
-
-                        <SearchServices
-                            value={searchQuery}
-                            onChange={(e) =>
-                                setSearchQuery(e.target.value)
-                            }
-                        />
-
-                        {/* Selected Services */}
-                        {selectedServices.length > 0 && (
-                            <div className="mt-4 space-y-2">
-                                <h3 className="font-medium">
-                                    Selected Services
-                                </h3>
-                                <div className="space-y-2">
-                                    {Object.entries(
-                                        groupServicesByCategory(
-                                            selectedServices
-                                        )
-                                    ).map(([category, services]) => (
-                                        <div
-                                            key={category}
-                                            className="border rounded-lg"
-                                        >
-                                            <button
-                                                onClick={() =>
-                                                    toggleCategory(
-                                                        `selected-${category}`
-                                                    )
-                                                }
-                                                className="w-full p-4 flex justify-between items-center bg-gray-100 hover:bg-gray-200"
-                                            >
-                                                <h2 className="font-mediumtext-lg">
-                                                    {category}
-                                                </h2>
-                                                <ChevronDown
-                                                    className={`w-5 h-5 transform transition-transform ${
-                                                        expandedCategories.has(
-                                                            `selected-${category}`
-                                                        )
-                                                            ? 'rotate-180'
-                                                            : ''
-                                                    }`}
-                                                />
-                                            </button>
-                                            {expandedCategories.has(
-                                                `selected-${category}`
-                                            ) && (
-                                                <div className="p-4 space-y-4">
-                                                    {services.map(
-                                                        (service) => (
-                                                            <ServiceAccordion
-                                                                key={
-                                                                    service.id
-                                                                }
-                                                                service={
-                                                                    service
-                                                                }
-                                                                isSelected={
-                                                                    true
-                                                                }
-                                                                onToggle={() =>
-                                                                    handleServiceToggle(
-                                                                        service
-                                                                    )
-                                                                }
-                                                            />
-                                                        )
-                                                    )}
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Search Results */}
-                        <div className="mt-12 space-y-4">
-                            {filteredServices.length > 0 && (
-                                <>
-                                    <h3 className="font-medium">
-                                        Search Results
-                                    </h3>
-                                    {Object.entries(
-                                        groupedServices
-                                    ).map(([category, services]) => (
-                                        <div
-                                            key={category}
-                                            className="border rounded-lg"
-                                        >
-                                            <button
-                                                onClick={() =>
-                                                    toggleCategory(
-                                                        category
-                                                    )
-                                                }
-                                                className="w-full p-4 flex justify-between items-center bg-gray-50 hover:bg-gray-100"
-                                            >
-                                                <h2 className="font-medium text-lg">
-                                                    {category}
-                                                </h2>
-                                                <ChevronDown
-                                                    className={`w-5 h-5 transform transition-transform ${
-                                                        expandedCategories.has(
-                                                            category
-                                                        )
-                                                            ? 'rotate-180'
-                                                            : ''
-                                                    }`}
-                                                />
-                                            </button>
-                                            {expandedCategories.has(
-                                                category
-                                            ) && (
-                                                <div className="p-4 space-y-4">
-                                                    {services.map(
-                                                        (service) => (
-                                                            <ServiceAccordion
-                                                                key={
-                                                                    service.id
-                                                                }
-                                                                service={
-                                                                    service
-                                                                }
-                                                                isSelected={selectedServices.some(
-                                                                    (
-                                                                        s
-                                                                    ) =>
-                                                                        s.id ===
-                                                                        service.id
-                                                                )}
-                                                                onToggle={() =>
-                                                                    handleServiceToggle(
-                                                                        {
-                                                                            ...service,
-                                                                            categoryId: 1,
-                                                                        }
-                                                                    )
-                                                                }
-                                                            />
-                                                        )
-                                                    )}
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
-                                </>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Right Column - Estimate Calculation */}
-                    <div className="w-[400px]">
-                        <EstimateCalculation
-                            selectedServices={selectedServices}
-                        />
-
-                        <div className="mt-6 space-y-4">
-                            <button className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium">
-                                Get estimate itemization →
-                            </button>
-                            <button className="w-full text-brand border border-brand py-3 rounded-lg font-medium">
-                                Add more services →
-                            </button>
-
-                            <div className="flex items-center gap-2 text-sm text-gray-500">
-                                <div className="w-4 h-4 rounded-full bg-gray-100 flex-shrink-0" />
-                                <p>
-                                    You will be able to customize the
-                                    details for each service in the
-                                    next step
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
+  // For each selected category, find matching services
+  const categoryServicesMap: Record<string, (typeof ALL_SERVICES)[number][]> =
+    {};
+  selectedCategories.forEach((catId) => {
+    let matchedServices = ALL_SERVICES.filter((svc) =>
+      svc.id.startsWith(`${catId}-`)
     );
+    if (searchQuery) {
+      matchedServices = matchedServices.filter((svc) =>
+        svc.title.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    categoryServicesMap[catId] = matchedServices;
+  });
+
+  // State for handling the modal, selected time, and time coefficient
+  const [showModal, setShowModal] = useState(false);
+  const [selectedTime, setSelectedTime] = useState<string | null>(() =>
+    loadFromSession("selectedTime", null)
+  );
+  const [timeCoefficient, setTimeCoefficient] = useState<number>(() =>
+    loadFromSession("timeCoefficient", 1)
+  );
+
+  useEffect(() => {
+    saveToSession("selectedTime", selectedTime);
+  }, [selectedTime]);
+
+  useEffect(() => {
+    saveToSession("timeCoefficient", timeCoefficient);
+  }, [timeCoefficient]);
+
+  // Calculate total cost
+  const calculateTotal = (): number => {
+    let total = 0;
+    for (const [serviceId, quantity] of Object.entries(selectedServicesState)) {
+      const svc = ALL_SERVICES.find((s) => s.id === serviceId);
+      if (svc) {
+        total += svc.price * (quantity || 1);
+      }
+    }
+    return total;
+  };
+
+  // Compute subtotal and then tax and total
+  const subtotal = calculateTotal();
+  const adjustedSubtotal = subtotal * timeCoefficient;
+  const salesTax = adjustedSubtotal * 0.0825;
+  const total = adjustedSubtotal + salesTax;
+
+  const handleProceedToCheckout = () => {
+    saveToSession("selectedTime", selectedTime);
+    saveToSession("timeCoefficient", timeCoefficient);
+    router.push("/calculate/checkout");
+  };
+
+  const getCategoryNameById = (catId: string): string => {
+    const categoryObj = ALL_CATEGORIES.find((c) => c.id === catId);
+    return categoryObj ? categoryObj.title : catId;
+  };
+
+  return (
+    <main className="min-h-screen pt-24">
+      <div className="container mx-auto">
+        {/* Breadcrumb navigation */}
+        <BreadCrumb items={CALCULATE_STEPS} />
+      </div>
+
+      <div className="container mx-auto py-12">
+        <div className="flex gap-12">
+          {/* Left column showing Estimate with section/category grouping but same appearance */}
+          <div className="w-[700px]">
+            <div className="bg-brand-light p-6 rounded-xl border border-gray-300 overflow-hidden">
+              <SectionBoxSubtitle>Estimate</SectionBoxSubtitle>
+
+              {/* Services grouped by section and category */}
+              <div className="mt-4 space-y-4">
+                {Object.entries(categoriesBySection).map(
+                  ([sectionName, catIds]) => {
+                    // Filter categories that have selected services
+                    const categoriesWithSelected = catIds.filter((catId) => {
+                      const servicesForCategory =
+                        categoryServicesMap[catId] || [];
+                      return servicesForCategory.some(
+                        (svc) => selectedServicesState[svc.id] !== undefined
+                      );
+                    });
+                    if (categoriesWithSelected.length === 0) return null;
+
+                    return (
+                      <div key={sectionName} className="space-y-4">
+                        <h3 className="text-xl font-semibold text-gray-800">
+                          {sectionName}
+                        </h3>
+                        {categoriesWithSelected.map((catId) => {
+                          const categoryName = getCategoryNameById(catId);
+                          const servicesForCategory =
+                            categoryServicesMap[catId] || [];
+                          const chosenServices = servicesForCategory.filter(
+                            (svc) => selectedServicesState[svc.id] !== undefined
+                          );
+
+                          if (chosenServices.length === 0) return null;
+
+                          return (
+                            <div key={catId} className="ml-4 space-y-4">
+                              <h4 className="text-lg font-semibold text-gray-700">
+                                {categoryName}
+                              </h4>
+                              {chosenServices.map((activity) => {
+                                const quantity =
+                                  selectedServicesState[activity.id] || 1;
+                                return (
+                                  <div
+                                    key={activity.id}
+                                    className="flex justify-between items-start gap-4 border-b pb-2"
+                                  >
+                                    <div>
+                                      <h3 className="font-medium text-lg text-gray-800">
+                                        {activity.title}
+                                      </h3>
+                                      {activity.description && (
+                                        <div className="text-sm text-gray-500 mt-1">
+                                          <span>{activity.description}</span>
+                                        </div>
+                                      )}
+                                      <div className="text-medium font-medium text-gray-800 mt-2">
+                                        <span>{formatQuantity(quantity)} </span>
+                                        <span>
+                                          {activity.unit_of_measurement}
+                                        </span>
+                                      </div>
+                                    </div>
+                                    <div className="text-right mt-auto">
+                                      <span className="block text-gray-800 font-medium">
+                                        $
+                                        {formatWithSeparator(
+                                          activity.price * quantity
+                                        )}
+                                      </span>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  }
+                )}
+              </div>
+
+              {/* Summary of costs including time coefficient and sales tax */}
+              <div className="pt-4 mt-4">
+                {timeCoefficient !== 1 && (
+                  <div className="flex justify-between mb-2">
+                    <span className="text-gray-600">
+                      {timeCoefficient > 1 ? "Surcharge" : "Discount"}
+                    </span>
+                    <span
+                      className={`font-semibold text-lg ${
+                        timeCoefficient > 1 ? "text-red-600" : "text-green-600"
+                      }`}
+                    >
+                      {timeCoefficient > 1 ? "+" : "-"}$
+                      {formatWithSeparator(
+                        Math.abs(subtotal * (timeCoefficient - 1))
+                      )}
+                    </span>
+                  </div>
+                )}
+
+                <div className="flex justify-between mb-2">
+                  <span className="font-semibold text-lg text-gray-800">
+                    Subtotal
+                  </span>
+                  <span className="font-semibold text-lg text-gray-800">
+                    ${formatWithSeparator(adjustedSubtotal)}
+                  </span>
+                </div>
+
+                <div className="flex justify-between mb-4">
+                  <span className="text-gray-600">Sales tax (8.25%)</span>
+                  <span>${formatWithSeparator(salesTax)}</span>
+                </div>
+
+                {/* Button to open modal for selecting time and adjusting coefficient */}
+                <button
+                  onClick={() => setShowModal(true)}
+                  className={`w-full py-3 rounded-lg font-medium mt-4 border ${
+                    selectedTime
+                      ? "text-red-500 border-red-500"
+                      : "text-brand border-brand"
+                  }`}
+                >
+                  {selectedTime ? "Change Date" : "Select Available Time"}
+                </button>
+
+                {selectedTime && (
+                  <p className="mt-2 text-gray-700 text-center font-medium">
+                    Selected Date:{" "}
+                    <span className="text-blue-600">{selectedTime}</span>
+                  </p>
+                )}
+
+                {/* Modal component to pick date/time and adjust timeCoefficient */}
+                {showModal && (
+                  <ServiceTimePicker
+                    subtotal={subtotal}
+                    onClose={() => setShowModal(false)}
+                    onConfirm={(date, coefficient) => {
+                      setSelectedTime(date);
+                      setTimeCoefficient(coefficient);
+                      setShowModal(false);
+                    }}
+                  />
+                )}
+
+                {/* Total after adjustments */}
+                <div className="flex justify-between text-2xl font-semibold mt-4">
+                  <span>Total</span>
+                  <span>${formatWithSeparator(total)}</span>
+                </div>
+              </div>
+
+              {/* Address */}
+              <div className="mt-6">
+                <h3 className="font-semibold text-xl text-gray-800">Address</h3>
+                <p className="text-gray-500 mt-2">
+                  {address || "No address provided"}
+                </p>
+              </div>
+
+              {/* Uploaded Photos */}
+              <div className="mt-6">
+                <h3 className="font-semibold text-xl text-gray-800">
+                  Uploaded Photos
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+                  {photos.map((photo, index) => (
+                    <div key={index} className="relative group">
+                      <img
+                        src={photo}
+                        alt={`Uploaded photo ${index + 1}`}
+                        className="w-full h-32 object-cover rounded-lg border border-gray-300 transition-transform duration-300 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-black bg-opacity-20 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                        <span className="text-white font-medium">
+                          Photo {index + 1}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {photos.length === 0 && (
+                  <p className="text-medium text-gray-500 mt-2">
+                    No photos uploaded
+                  </p>
+                )}
+              </div>
+
+              {/* Additional details */}
+              <div className="mt-6">
+                <h3 className="font-semibold text-xl text-gray-800">
+                  Additional details
+                </h3>
+                <p className="text-gray-500 mt-2 whitespace-pre-wrap">
+                  {description || "No details provided"}
+                </p>
+              </div>
+
+              {/* Action buttons */}
+              <div className="mt-6 space-y-4">
+                <button
+                  className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium"
+                  onClick={handleProceedToCheckout}
+                >
+                  Proceed to Checkout &nbsp;→
+                </button>
+                <button
+                  onClick={() => router.push("/calculate/details")}
+                  className="w-full text-brand border border-brand py-3 rounded-lg font-medium"
+                >
+                  Add more services &nbsp;→
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
 }

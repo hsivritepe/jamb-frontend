@@ -1,43 +1,437 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import BreadCrumb from '@/components/ui/BreadCrumb';
-import ServicesSelection from '@/components/calculate/ServicesSelection';
-import { CALCULATE_STEPS } from '@/constants/navigation';
-import Button from '@/components/ui/Button';
-import { EstimateService } from '@/types/services';
+import { useState, ChangeEvent, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import BreadCrumb from "@/components/ui/BreadCrumb";
+import SearchServices from "@/components/SearchServices";
+import Button from "@/components/ui/Button";
+import { CALCULATE_STEPS } from "@/constants/navigation";
+import { SectionBoxTitle } from "@/components/ui/SectionBoxTitle";
+import { ChevronDown } from "lucide-react";
+import { useLocation } from "@/context/LocationContext";
+import { ALL_CATEGORIES } from "@/constants/categories";
+
+/**
+ * Saves a value to sessionStorage as JSON (only works in the browser).
+ */
+const saveToSession = (key: string, value: any) => {
+  if (typeof window !== "undefined") {
+    sessionStorage.setItem(key, JSON.stringify(value));
+  }
+};
+
+/**
+ * Loads a JSON-parsed value from sessionStorage or returns defaultValue if none/SSR/parse error.
+ */
+const loadFromSession = (key: string, defaultValue: any) => {
+  if (typeof window === "undefined") return defaultValue;
+  const savedValue = sessionStorage.getItem(key);
+  try {
+    return savedValue ? JSON.parse(savedValue) : defaultValue;
+  } catch (error) {
+    console.error(`Error parsing sessionStorage for key "${key}"`, error);
+    return defaultValue;
+  }
+};
 
 export default function Services() {
-    const router = useRouter();
-    const [selectedServices, setSelectedServices] = useState<
-        EstimateService[]
-    >([]);
+  const router = useRouter();
+  const { location } = useLocation();
 
-    const handleServiceSelect = (service: EstimateService) => {
-        setSelectedServices((prev) => [...prev, service]);
-    };
+  // Load previously chosen "sections" (like Electrical, Plumbing, etc.)
+  const selectedSections: string[] = loadFromSession("services_selectedSections", []);
 
-    return (
-        <main className="min-h-screen pt-24">
-            <div className="container mx-auto">
-                <BreadCrumb items={CALCULATE_STEPS} />
-                <div className="flex gap-8 mt-12">
-                    <ServicesSelection
-                        selectedServices={selectedServices}
-                        onServiceSelect={handleServiceSelect}
-                    />
-                    <div className="flex-1 flex justify-end">
-                        <Button
-                            onClick={() =>
-                                router.push('/calculate/details')
-                            }
-                        >
-                            Next →
-                        </Button>
-                    </div>
-                </div>
-            </div>
-        </main>
+  // If no sections are chosen, redirect back
+  useEffect(() => {
+    if (selectedSections.length === 0) {
+      router.push("/calculate");
+    }
+  }, [selectedSections, router]);
+
+  // Load states from session
+  const [searchQuery, setSearchQuery] = useState<string>(
+    loadFromSession("services_searchQuery", "")
+  );
+  const [address, setAddress] = useState<string>(loadFromSession("address", ""));
+  const [description, setDescription] = useState<string>(
+    loadFromSession("description", "")
+  );
+  const [photos, setPhotos] = useState<string[]>(loadFromSession("photos", []));
+  const [warningMessage, setWarningMessage] = useState<string | null>(null);
+
+  // Build map: section -> categories, from ALL_CATEGORIES
+  const categoriesBySection: Record<string, { id: string; title: string }[]> = {};
+  ALL_CATEGORIES.forEach((cat) => {
+    if (!categoriesBySection[cat.section]) {
+      categoriesBySection[cat.section] = [];
+    }
+    categoriesBySection[cat.section].push({ id: cat.id, title: cat.title });
+  });
+
+  // Initialize selectedCategories from session or from selectedSections
+  const storedSelectedCategories = loadFromSession("selectedCategoriesMap", null);
+  const initialSelectedCategories: Record<string, string[]> =
+    storedSelectedCategories ||
+    (() => {
+      // If none stored, create empty arrays for each section
+      const init: Record<string, string[]> = {};
+      selectedSections.forEach((section) => {
+        init[section] = [];
+      });
+      return init;
+    })();
+
+  const [selectedCategories, setSelectedCategories] = useState<
+    Record<string, string[]>
+  >(initialSelectedCategories);
+
+  // Save changes to session
+  useEffect(() => saveToSession("services_searchQuery", searchQuery), [searchQuery]);
+  useEffect(() => saveToSession("address", address), [address]);
+  useEffect(() => saveToSession("description", description), [description]);
+  useEffect(() => saveToSession("photos", photos), [photos]);
+  useEffect(
+    () => saveToSession("selectedCategoriesMap", selectedCategories),
+    [selectedCategories]
+  );
+
+  // Filter categories by search query, but only within the sections user selected
+  const filteredCategoriesBySection = Object.fromEntries(
+    selectedSections.map((section) => {
+      const allCats = categoriesBySection[section] || [];
+      const filtered = searchQuery
+        ? allCats.filter((c) =>
+            c.title.toLowerCase().includes(searchQuery.toLowerCase())
+          )
+        : allCats;
+      return [section, filtered];
+    })
+  ) as Record<string, { id: string; title: string }[]>;
+
+  // Track which sections are expanded/collapsed
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+
+  /**
+   * Toggle expand/collapse for a given section
+   */
+  const toggleCategory = (section: string) => {
+    setExpandedCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(section)) {
+        next.delete(section);
+      } else {
+        next.add(section);
+      }
+      return next;
+    });
+  };
+
+  /**
+   * Toggle a specific category in a given section
+   */
+  const handleCategorySelect = (section: string, catId: string) => {
+    setSelectedCategories((prev) => {
+      const currentCatIds = prev[section] || [];
+      const isSelected = currentCatIds.includes(catId);
+
+      // Clear any warning
+      if (!isSelected) setWarningMessage(null);
+
+      return {
+        ...prev,
+        [section]: isSelected
+          ? currentCatIds.filter((id) => id !== catId)
+          : [...currentCatIds, catId],
+      };
+    });
+  };
+
+  /**
+   * Confirm and clear all selected categories; also reset expandedCategories
+   */
+  const handleClearSelection = () => {
+    // Show a confirmation prompt:
+    const userConfirmed = window.confirm(
+      "Are you sure you want to clear all selections? This will also collapse all categories."
     );
+    if (!userConfirmed) {
+      return;
+    }
+
+    // If confirmed, reset everything
+    const cleared: Record<string, string[]> = {};
+    selectedSections.forEach((section) => {
+      cleared[section] = [];
+    });
+    setSelectedCategories(cleared);
+
+    // Reset expanded categories
+    setExpandedCategories(new Set());
+  };
+
+  /**
+   * Proceed to next step: validate user input, then store final arrays
+   */
+  const handleNext = () => {
+    const totalChosen = Object.values(selectedCategories).flat().length;
+    if (totalChosen === 0) {
+      setWarningMessage("Please select at least one category before proceeding.");
+      return;
+    }
+    if (!address.trim()) {
+      setWarningMessage("Please enter your address before proceeding.");
+      return;
+    }
+
+    // Flatten all chosen category IDs
+    const chosenCategoryIDs = Object.values(selectedCategories).flat();
+    saveToSession("services_selectedCategories", chosenCategoryIDs);
+
+    // Move to details page
+    router.push("/calculate/details");
+  };
+
+  // Handle address changes
+  const handleAddressChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setAddress(e.target.value);
+  };
+
+  // Handle additional description changes
+  const handleDescriptionChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+    setDescription(e.target.value);
+  };
+
+  // Attempt to auto-fill address from geolocation
+  const handleUseMyLocation = () => {
+    if (location?.city && location?.zip) {
+      setAddress(`${location.city}, ${location.zip}, ${location.country || ""}`);
+    } else {
+      setWarningMessage("Location data is unavailable. Please enter manually.");
+    }
+  };
+
+  // Remove one photo from state
+  const handleRemovePhoto = (index: number) => {
+    setPhotos((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  return (
+    <main className="min-h-screen pt-24 pb-16">
+      <div className="container mx-auto">
+        {/* Breadcrumb navigation */}
+        <BreadCrumb items={CALCULATE_STEPS} />
+
+        {/* Page title & Next button */}
+        <div className="flex justify-between items-start mt-8">
+          <SectionBoxTitle>Select Your Categories</SectionBoxTitle>
+          <Button onClick={handleNext}>Next →</Button>
+        </div>
+
+        {/* Search bar */}
+        <div className="flex flex-col gap-4 mt-8 w-full max-w-[600px]">
+          <SearchServices
+            value={searchQuery}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+            placeholder="Search within selected sections..."
+          />
+          <div className="flex justify-between items-center text-sm text-gray-500 mt-2">
+            <span>
+              No service?{" "}
+              <a href="#" className="text-blue-600 hover:underline focus:outline-none">
+                Contact support
+              </a>
+            </span>
+            <button
+              onClick={handleClearSelection}
+              className="text-blue-600 hover:underline focus:outline-none"
+            >
+              Clear All
+            </button>
+          </div>
+        </div>
+
+        {/* Warning messages */}
+        <div className="h-6 mt-4 text-left">
+          {warningMessage && <p className="text-red-500">{warningMessage}</p>}
+        </div>
+
+        {/* Main content */}
+        <div className="flex container mx-auto relative">
+          {/* Left side: sections & categories */}
+          <div className="flex-1">
+            <div className="flex flex-col gap-3 mt-5 w-full max-w-[600px]">
+              {selectedSections.map((section) => {
+                const allCats = filteredCategoriesBySection[section] || [];
+                const selectedCount = (selectedCategories[section] || []).length;
+
+                return (
+                  <div
+                    key={section}
+                    className={`p-4 border rounded-xl bg-white ${
+                      selectedCount > 0 ? "border-blue-500" : "border-gray-300"
+                    }`}
+                  >
+                    <button
+                      onClick={() => toggleCategory(section)}
+                      className="flex justify-between items-center w-full"
+                    >
+                      <h3
+                        className={`font-medium text-2xl ${
+                          selectedCount > 0 ? "text-blue-600" : "text-black"
+                        }`}
+                      >
+                        {section}
+                        {selectedCount > 0 && (
+                          <span className="text-sm text-gray-500 ml-2">
+                            ({selectedCount} selected)
+                          </span>
+                        )}
+                      </h3>
+                      <ChevronDown
+                        className={`h-5 w-5 transform transition-transform ${
+                          expandedCategories.has(section) ? "rotate-180" : ""
+                        }`}
+                      />
+                    </button>
+
+                    {expandedCategories.has(section) && (
+                      <div className="mt-4 flex flex-col gap-3">
+                        {allCats.length === 0 ? (
+                          <p className="text-sm text-gray-500">
+                            No categories match your search.
+                          </p>
+                        ) : (
+                          allCats.map((cat) => {
+                            const isSelected =
+                              selectedCategories[section]?.includes(cat.id) ||
+                              false;
+                            return (
+                              <div key={cat.id} className="flex justify-between items-center">
+                                <span
+                                  className={`text-lg transition-colors duration-300 ${
+                                    isSelected
+                                      ? "text-blue-600"
+                                      : "text-gray-800"
+                                  }`}
+                                >
+                                  {cat.title}
+                                </span>
+                                <label className="relative inline-flex items-center cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={() =>
+                                      handleCategorySelect(section, cat.id)
+                                    }
+                                    className="sr-only peer"
+                                  />
+                                  <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
+                                  <div className="absolute top-[2px] left-[2px] w-[22px] h-[22px] bg-white rounded-full shadow-md peer-checked:translate-x-[24px] transform transition-transform duration-300"></div>
+                                </label>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Right side: Address & Photos */}
+          <div className="w-1/2 ml-auto mt-4 pt-0">
+            <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mb-6">
+              <h2 className="text-2xl font-medium text-gray-800 mb-4">
+                We Need Your Address
+              </h2>
+              <div className="flex flex-col gap-4">
+                <input
+                  type="text"
+                  value={address}
+                  onChange={handleAddressChange}
+                  onFocus={(e) => (e.target.placeholder = "")}
+                  onBlur={(e) => (e.target.placeholder = "Enter your address")}
+                  placeholder="Enter your address"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button onClick={handleUseMyLocation} className="text-blue-600 text-left">
+                  Use my location
+                </button>
+              </div>
+            </div>
+
+            <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden">
+              <h2 className="text-2xl font-medium text-gray-800 mb-4">
+                Upload Photos & Description
+              </h2>
+              <div className="flex flex-col gap-4">
+                <div>
+                  <label
+                    htmlFor="photo-upload"
+                    className="block w-full px-4 py-2 text-center bg-blue-500 text-white rounded-md cursor-pointer hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  >
+                    Choose Files
+                  </label>
+                  <input
+                    type="file"
+                    id="photo-upload"
+                    accept="image/*"
+                    multiple
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files || []);
+                      if (files.length > 12 || photos.length + files.length > 12) {
+                        alert("You can upload up to 12 photos total.");
+                        e.target.value = "";
+                        return;
+                      }
+                      const fileUrls = files.map((file) =>
+                        URL.createObjectURL(file)
+                      );
+                      setPhotos((prev) => [...prev, ...fileUrls]);
+                    }}
+                    className="hidden"
+                  />
+                  <p className="text-sm text-gray-500 mt-1">
+                    Maximum 12 images. Supported formats: JPG, PNG.
+                  </p>
+
+                  <div className="mt-4 grid grid-cols-3 gap-4">
+                    {photos.map((photo, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={photo}
+                          alt={`Uploaded preview ${index + 1}`}
+                          className="w-full h-24 object-cover rounded-md border border-gray-300"
+                        />
+                        <button
+                          onClick={() => handleRemovePhoto(index)}
+                          className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          aria-label="Remove photo"
+                        >
+                          <span className="text-sm">✕</span>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <textarea
+                    id="details"
+                    rows={5}
+                    value={description}
+                    onChange={handleDescriptionChange}
+                    placeholder="Please provide more details about your issue (optional)..."
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  ></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
 }

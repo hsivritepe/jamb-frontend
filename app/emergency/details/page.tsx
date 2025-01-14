@@ -18,15 +18,14 @@ const capitalizeAndTransform = (text: string): string =>
     .trim()
     .replace(/^./, (char) => char.toUpperCase());
 
-// Utility function to format numbers with separators and decimal places
+// Utility function to format numbers
 const formatWithSeparator = (value: number): string =>
   new Intl.NumberFormat("en-US", { minimumFractionDigits: 2 }).format(value);
 
-// Save and load data from sessionStorage for state persistence
+// Save/load data from sessionStorage
 const saveToSession = (key: string, value: any) => {
   sessionStorage.setItem(key, JSON.stringify(value));
 };
-
 const loadFromSession = (key: string, defaultValue: any = {}) => {
   const savedValue = sessionStorage.getItem(key);
   return savedValue ? JSON.parse(savedValue) : defaultValue;
@@ -35,42 +34,37 @@ const loadFromSession = (key: string, defaultValue: any = {}) => {
 export default function EmergencyDetails() {
   const router = useRouter();
 
-  // Load all required data from sessionStorage
+  // Load data from session
   const selectedServices: Record<string, string[]> = loadFromSession("selectedServices", {});
   const address: string = loadFromSession("address", "");
   const photos: string[] = loadFromSession("photos", []);
   const description: string = loadFromSession("description", "");
 
-  // selectedActivities: User's chosen activities and their quantities
-  const [selectedActivities, setSelectedActivities] = useState<
-    Record<string, Record<string, number>>
-  >(() => loadFromSession("selectedActivities", {}));
+  // Activities chosen: { [serviceKey]: { [activityKey]: quantity } }
+  const [selectedActivities, setSelectedActivities] = useState<Record<string, Record<string, number>>>(
+    () => loadFromSession("selectedActivities", {})
+  );
 
-  // manualInputValue: Tracks manual text input for activity quantities
-  const [manualInputValue, setManualInputValue] = useState<
-    Record<string, Record<string, string | null>>
-  >({});
+  // For storing any text the user typed into a quantity field
+  const [manualInputValue, setManualInputValue] = useState<Record<string, Record<string, string | null>>>({});
 
-  // expandedServices: Set of services that are currently expanded to show activities
+  // For toggling open/closed state of the service's activity lists
   const [expandedServices, setExpandedServices] = useState<Set<string>>(new Set());
 
-  // If essential data is missing (e.g., no selected services or no address), redirect to the first page
-  useEffect(() => {
-    if (
-      !selectedServices ||
-      Object.values(selectedServices).flat().length === 0 ||
-      !address
-    ) {
-      router.push("/emergency");
-    }
-  }, [selectedServices, address, router]);
+  // For showing an error if needed
+  const [warningMessage, setWarningMessage] = useState<string | null>(null);
 
-  // Save selectedActivities to sessionStorage whenever they change
+  // We do NOT forcibly redirect if zero services are chosen. We'll handle that on Next.
+  useEffect(() => {
+    // If needed, we could show a local warning or do nothing
+  }, [selectedServices]);
+
+  // Persist changes to sessionStorage
   useEffect(() => {
     saveToSession("selectedActivities", selectedActivities);
   }, [selectedActivities]);
 
-  // Toggle the expansion of a service to show/hide its activities
+  // Toggle a service's expanded/collapsed state
   const handleToggleExpand = (service: string) => {
     setExpandedServices((prev) => {
       const updated = new Set(prev);
@@ -79,27 +73,29 @@ export default function EmergencyDetails() {
     });
   };
 
-  // Add or remove an activity from selectedActivities when toggled
+  // Toggle an activity in or out of selectedActivities
   const handleActivityToggle = (service: string, activityKey: string) => {
     setSelectedActivities((prev) => {
       const serviceActivities = prev[service] || {};
       if (serviceActivities[activityKey]) {
-        // If activity is already selected, remove it
+        // Remove if already selected
         const updatedActivities = { ...serviceActivities };
         delete updatedActivities[activityKey];
         return { ...prev, [service]: updatedActivities };
       }
-      // Otherwise, add it with a default quantity of 1
+      // Otherwise add with default quantity 1
       return { ...prev, [service]: { ...serviceActivities, [activityKey]: 1 } };
     });
-    // Reset manual input value for this activity
+    // Reset manual input for that activity
     setManualInputValue((prev) => ({
       ...prev,
       [service]: { ...prev[service], [activityKey]: null },
     }));
+    // Clear warning if a service is selected
+    setWarningMessage(null);
   };
 
-  // Increment or decrement the activity quantity
+  // Increase or decrease quantity
   const handleQuantityChange = (
     service: string,
     activityKey: string,
@@ -108,39 +104,40 @@ export default function EmergencyDetails() {
   ) => {
     setSelectedActivities((prev) => {
       const currentValue = prev[service]?.[activityKey] || 1;
-      const updatedValue = increment ? currentValue + 1 : Math.max(1, currentValue - 1);
+      const newValue = increment ? currentValue + 1 : Math.max(1, currentValue - 1);
 
       return {
         ...prev,
         [service]: {
           ...prev[service],
-          [activityKey]: unit === "each" ? Math.round(updatedValue) : updatedValue,
+          [activityKey]: unit === "each" ? Math.round(newValue) : newValue,
         },
       };
     });
-    // Clear any manual input since we used buttons now
+
+    // Clear manual input
     setManualInputValue((prev) => ({
       ...prev,
       [service]: { ...prev[service], [activityKey]: null },
     }));
+    // Also clear the warning
+    setWarningMessage(null);
   };
 
-  // Handle manual input in the quantity field
+  // Handle manual text input for quantity
   const handleManualQuantityChange = (
     service: string,
     activityKey: string,
     value: string,
     unit: string
   ) => {
-    const numericValue = parseFloat(value.replace(/,/g, "")) || 0;
-
     setManualInputValue((prev) => ({
       ...prev,
       [service]: { ...prev[service], [activityKey]: value },
     }));
 
+    const numericValue = parseFloat(value.replace(/,/g, "")) || 0;
     if (!isNaN(numericValue)) {
-      // Update the selectedActivities with the parsed numeric value
       setSelectedActivities((prev) => ({
         ...prev,
         [service]: {
@@ -149,9 +146,11 @@ export default function EmergencyDetails() {
         },
       }));
     }
+    // If user typed anything, presumably they've chosen a service, so remove warning
+    setWarningMessage(null);
   };
 
-  // When input loses focus, if no valid input is there, reset manual input to null
+  // On input blur, if no valid input, reset it
   const handleBlurInput = (service: string, activityKey: string) => {
     if (!manualInputValue[service]?.[activityKey]) {
       setManualInputValue((prev) => ({
@@ -161,14 +160,23 @@ export default function EmergencyDetails() {
     }
   };
 
-  // Clear all selected activities
+  // Clear everything
   const handleClearSelection = () => {
+    // Confirmation prompt
+    const confirmed = confirm("Are you sure you want to clear all selections?");
+    if (!confirmed) return;
+
     setSelectedActivities({});
     setManualInputValue({});
     saveToSession("selectedActivities", {});
+
+    // Also close expansions
+    setExpandedServices(new Set());
+    // Remove warning if any
+    setWarningMessage(null);
   };
 
-  // Calculate the subtotal cost of all selected activities
+  // Calculate total cost of all selected activities
   const calculateTotal = (): number => {
     let total = 0;
     for (const service in selectedActivities) {
@@ -182,8 +190,21 @@ export default function EmergencyDetails() {
     return total;
   };
 
-  // Save current state and proceed to the next page
+  // On Next, ensure there's at least 1 service selected and an address
   const handleNext = () => {
+    const anyChosen = Object.values(selectedActivities).some(
+      (srvObj) => Object.keys(srvObj).length > 0
+    );
+    if (!anyChosen) {
+      setWarningMessage("Please select at least one service before proceeding.");
+      return;
+    }
+    if (!address.trim()) {
+      setWarningMessage("Please enter your address before proceeding.");
+      return;
+    }
+
+    // If OK, proceed
     saveToSession("selectedActivities", selectedActivities);
     saveToSession("address", address);
     saveToSession("photos", photos);
@@ -192,7 +213,7 @@ export default function EmergencyDetails() {
     router.push("/emergency/estimate");
   };
 
-  // Prepare a list of services the user selected on the first page
+  // Create a list of all services user selected from the first page
   const servicesList = Object.entries(selectedServices).flatMap(
     ([category, services]) =>
       services.map((service) => ({
@@ -214,9 +235,9 @@ export default function EmergencyDetails() {
         </div>
 
         <div className="container mx-auto relative flex">
-          {/* Left Section: Allows user to select activities and quantities */}
+          {/* Left column: show chosen services from the first page, + expand/collapse for activities */}
           <div className="flex-1">
-            {/* If no suitable service, option to clear or contact support */}
+            {/* Clear or contact support row */}
             <div className="flex justify-between items-center text-sm text-gray-500 mt-8 w-full max-w-[600px]">
               <span>
                 No service?{" "}
@@ -232,7 +253,12 @@ export default function EmergencyDetails() {
               </button>
             </div>
 
-            {/* Display selected services and their activities */}
+            {/* Warning message if user tries Next with no service */}
+            <div className="h-6 mt-4 text-left">
+              {warningMessage && <p className="text-red-500">{warningMessage}</p>}
+            </div>
+
+            {/* List of user-selected services from page 1 */}
             <div className="flex flex-col gap-4 mt-8 w-full max-w-[600px]">
               {servicesList.map(({ service, category, activities }, index) => {
                 const serviceLabel = capitalizeAndTransform(service);
@@ -244,7 +270,7 @@ export default function EmergencyDetails() {
                     key={index}
                     className="p-4 border rounded-xl bg-white border-gray-300"
                   >
-                    {/* Service header (click to expand/collapse) */}
+                    {/* Service title row */}
                     <div
                       className="flex justify-between items-center cursor-pointer"
                       onClick={() => handleToggleExpand(service)}
@@ -268,134 +294,124 @@ export default function EmergencyDetails() {
                       />
                     </div>
 
-                    {/* If expanded, show activities inside this service */}
                     {isExpanded && (
                       <div className="mt-4 flex flex-col gap-4">
-                        {Object.entries(activities).map(
-                          ([activityKey, activityData], idx) => {
-                            const isSelected =
-                              selectedActivities[service]?.[activityKey] !== undefined;
-                            const activityLabel = capitalizeAndTransform(
-                              activityData.activity
-                            );
-                            const activityDetails = ALL_SERVICES.find(
-                              (s) => s.id === activityKey
-                            );
+                        {Object.entries(activities).map(([activityKey, activityData], idx) => {
+                          const isSelected =
+                            selectedActivities[service]?.[activityKey] !== undefined;
+                          const activityLabel = capitalizeAndTransform(
+                            activityData.activity
+                          );
+                          const activityDetails = ALL_SERVICES.find(
+                            (s) => s.id === activityKey
+                          );
 
-                            return (
-                              <div key={activityKey} className="space-y-2">
-                                <div className="flex justify-between items-center">
-                                  <span className="text-lg text-gray-800">
-                                    {activityLabel}
-                                  </span>
-                                  <label className="relative inline-flex items-center cursor-pointer">
-                                    <input
-                                      type="checkbox"
-                                      checked={isSelected}
-                                      onChange={() =>
-                                        handleActivityToggle(service, activityKey)
-                                      }
-                                      className="sr-only peer"
-                                    />
-                                    <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
-                                    <div className="absolute top-[2px] left-[2px] w-[22px] h-[22px] bg-white rounded-full shadow-md peer-checked:translate-x-[24px] transform transition-transform duration-300"></div>
-                                  </label>
-                                </div>
+                          return (
+                            <div key={activityKey} className="space-y-2">
+                              {/* Activity name + toggle */}
+                              <div className="flex justify-between items-center">
+                                <span className="text-lg text-gray-800">
+                                  {activityLabel}
+                                </span>
+                                <label className="relative inline-flex items-center cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={() => handleActivityToggle(service, activityKey)}
+                                    className="sr-only peer"
+                                  />
+                                  <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
+                                  <div className="absolute top-[2px] left-[2px] w-[22px] h-[22px] bg-white rounded-full shadow-md peer-checked:translate-x-[24px] transform transition-transform duration-300"></div>
+                                </label>
+                              </div>
 
-                                {isSelected && activityDetails && (
-                                  <>
-                                    <div className="flex flex-col gap-2">
-                                      {/* Activity description */}
-                                      <p className="text-sm text-gray-500 pr-16 pb-2">
-                                        {activityDetails.description}
-                                      </p>
-                                      {/* Quantity and Price Controls */}
-                                      <div className="flex justify-between items-center">
-                                        <div className="flex items-center gap-1">
-                                          {/* Decrement button */}
-                                          <button
-                                            onClick={() =>
-                                              handleQuantityChange(
-                                                service,
-                                                activityKey,
-                                                false,
-                                                activityDetails.unit_of_measurement
-                                              )
-                                            }
-                                            className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
-                                          >
-                                            −
-                                          </button>
-                                          {/* Manual input field */}
-                                          <input
-                                            type="text"
-                                            value={
-                                              manualInputValue[service]?.[activityKey] !== null
-                                                ? manualInputValue[service]?.[activityKey] || ""
-                                                : selectedActivities[service]?.[activityKey]
-                                                    ?.toString() || ""
-                                            }
-                                            onClick={() =>
-                                              setManualInputValue((prev) => ({
-                                                ...prev,
-                                                [service]: {
-                                                  ...prev[service],
-                                                  [activityKey]: "",
-                                                },
-                                              }))
-                                            }
-                                            onBlur={() =>
-                                              handleBlurInput(service, activityKey)
-                                            }
-                                            onChange={(e) =>
-                                              handleManualQuantityChange(
-                                                service,
-                                                activityKey,
-                                                e.target.value,
-                                                activityDetails.unit_of_measurement
-                                              )
-                                            }
-                                            className="w-20 text-center px-2 py-1 border rounded"
-                                            placeholder="1"
-                                          />
-                                          {/* Increment button */}
-                                          <button
-                                            onClick={() =>
-                                              handleQuantityChange(
-                                                service,
-                                                activityKey,
-                                                true,
-                                                activityDetails.unit_of_measurement
-                                              )
-                                            }
-                                            className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
-                                          >
-                                            +
-                                          </button>
-                                          <span className="text-sm text-gray-600">
-                                            {activityDetails.unit_of_measurement}
-                                          </span>
-                                        </div>
-                                        {/* Display calculated price for the activity */}
-                                        <span className="text-lg text-blue-600 font-medium text-right">
-                                          $
-                                          {formatWithSeparator(
-                                            activityDetails.price *
-                                              (selectedActivities[service][activityKey] || 1)
-                                          )}
+                              {/* If chosen, show quantity and cost */}
+                              {isSelected && activityDetails && (
+                                <>
+                                  <div className="flex flex-col gap-2">
+                                    <p className="text-sm text-gray-500 pr-16 pb-2">
+                                      {activityDetails.description}
+                                    </p>
+                                    <div className="flex justify-between items-center">
+                                      <div className="flex items-center gap-1">
+                                        {/* Decrement */}
+                                        <button
+                                          onClick={() =>
+                                            handleQuantityChange(
+                                              service,
+                                              activityKey,
+                                              false,
+                                              activityDetails.unit_of_measurement
+                                            )
+                                          }
+                                          className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
+                                        >
+                                          −
+                                        </button>
+                                        {/* Manual input */}
+                                        <input
+                                          type="text"
+                                          value={
+                                            manualInputValue[service]?.[activityKey] !== null
+                                              ? manualInputValue[service]?.[activityKey] || ""
+                                              : selectedActivities[service]?.[activityKey]?.toString() || ""
+                                          }
+                                          onClick={() =>
+                                            setManualInputValue(prev => ({
+                                              ...prev,
+                                              [service]: {
+                                                ...prev[service],
+                                                [activityKey]: "",
+                                              },
+                                            }))
+                                          }
+                                          onBlur={() => handleBlurInput(service, activityKey)}
+                                          onChange={(e) =>
+                                            handleManualQuantityChange(
+                                              service,
+                                              activityKey,
+                                              e.target.value,
+                                              activityDetails.unit_of_measurement
+                                            )
+                                          }
+                                          className="w-20 text-center px-2 py-1 border rounded"
+                                          placeholder="1"
+                                        />
+                                        {/* Increment */}
+                                        <button
+                                          onClick={() =>
+                                            handleQuantityChange(
+                                              service,
+                                              activityKey,
+                                              true,
+                                              activityDetails.unit_of_measurement
+                                            )
+                                          }
+                                          className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
+                                        >
+                                          +
+                                        </button>
+                                        <span className="text-sm text-gray-600">
+                                          {activityDetails.unit_of_measurement}
                                         </span>
                                       </div>
+                                      <span className="text-lg text-blue-600 font-medium text-right">
+                                        $
+                                        {formatWithSeparator(
+                                          activityDetails.price *
+                                          (selectedActivities[service][activityKey] || 1)
+                                        )}
+                                      </span>
                                     </div>
-                                    {/* Separator between activities */}
-                                    {idx !== Object.keys(activities).length - 1 && (
-                                      <hr className="mt-4 border-gray-200" />
-                                    )}
-                                  </>
-                                )}
-                              </div>
-                            );
-                          }
-                        )}
+                                  </div>
+                                  {idx !== Object.keys(activities).length - 1 && (
+                                    <hr className="mt-4 border-gray-200" />
+                                  )}
+                                </>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -404,13 +420,13 @@ export default function EmergencyDetails() {
             </div>
           </div>
 
-          {/* Right Section: Summary, Address, Photos, and Description */}
+          {/* Right side: summary, address, photos, description */}
           <div className="w-1/2 ml-auto mt-20 pt-1">
-            {/* Summary Section */}
+            {/* Summary */}
             <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden">
               <SectionBoxSubtitle>Summary</SectionBoxSubtitle>
               {Object.keys(selectedActivities).length === 0 ? (
-                <div className="text-left text-gray-500 text-lg mt-4">
+                <div className="text-left text-gray-500 text-medium mt-4">
                   No services selected
                 </div>
               ) : (
@@ -456,13 +472,13 @@ export default function EmergencyDetails() {
               )}
             </div>
 
-            {/* Address Section */}
+            {/* Address */}
             <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
               <h2 className="text-2xl font-medium text-gray-800 mb-4">Address</h2>
-              <p className="text-gray-500 text-lg">{address || "No address provided"}</p>
+              <p className="text-gray-500 text-medium">{address || "No address provided"}</p>
             </div>
 
-            {/* Photos Section */}
+            {/* Photos */}
             <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
               <h2 className="text-2xl font-medium text-gray-800 mb-4">
                 Uploaded Photos
@@ -479,16 +495,16 @@ export default function EmergencyDetails() {
                 ))}
               </div>
               {photos.length === 0 && (
-                <p className="text-lg text-gray-500 mt-2">No photos uploaded</p>
+                <p className="text-medium text-gray-500 mt-2">No photos uploaded</p>
               )}
             </div>
 
-            {/* Problem Description Section */}
+            {/* Problem Description */}
             <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
               <h2 className="text-2xl font-medium text-gray-800 mb-4">
                 Problem Description
               </h2>
-              <p className="text-gray-500 text-lg whitespace-pre-wrap">
+              <p className="text-gray-500 text-medium whitespace-pre-wrap">
                 {description || "No description provided"}
               </p>
             </div>

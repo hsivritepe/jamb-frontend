@@ -11,10 +11,16 @@ h6 {
     font-feature-settings: 'liga' 1, 'ss01' 1;
 }
 
-/* Make sure there are no conflicting background colors here */
-
+/* Brand colors etc. */
 :root {
     --color-brand-light: #1948f00d;
     --color-brand: #1948f0;
     --color-brand-dark: #1537be;
+}
+
+/* --- Print rules --- */
+@media print {
+  footer {
+    display: none !important;
+  }
 }
