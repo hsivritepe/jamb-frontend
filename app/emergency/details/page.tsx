@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Image from "next/image"; // 1) Import from next/image
 import { useEffect, useState } from "react";
 import BreadCrumb from "@/components/ui/BreadCrumb";
 import Button from "@/components/ui/Button";
@@ -87,6 +88,42 @@ async function fetchFinishingMaterials(workCode: string) {
     throw new Error(`Failed to fetch finishing materials (work_code=${workCode}).`);
   }
   return res.json();
+}
+
+/**
+ * Simple component that constructs a direct image URL:
+ *   http://dev.thejamb.com/images/[firstSegment]/[converted].jpg
+ * Then displays it using Next.js <Image /> for optimization.
+ */
+function ServiceImage({ activityKey }: { activityKey: string }) {
+  const [imageSrc, setImageSrc] = useState<string | null>(null);
+
+  useEffect(() => {
+    // The first segment is the part before the first hyphen, e.g. "1" from "1-1-1"
+    const firstSegment = activityKey.split("-")[0];
+    // Convert "1-1-1" => "1.1.1"
+    const code = convertServiceIdToApiFormat(activityKey);
+    // Construct final image URL
+    const url = `http://dev.thejamb.com/images/${firstSegment}/${code}.jpg`;
+    setImageSrc(url);
+  }, [activityKey]);
+
+  if (!imageSrc) return null;
+
+  // Next.js <Image> for automatic optimization. We'll unify all images to e.g. width=600, height=400.
+  // Ensure "dev.thejamb.com" is in next.config.js -> images.domains
+  return (
+    <div className="mb-2 border rounded overflow-hidden">
+      <Image
+        src={imageSrc}
+        alt="Service"
+        width={600}
+        height={400}
+        style={{ objectFit: "cover" }}
+        // optionally, you can specify priority or other props
+      />
+    </div>
+  );
 }
 
 /**
@@ -550,7 +587,9 @@ export default function EmergencyDetails() {
                             <div key={activityKey} className="space-y-2">
                               {/* Toggle row */}
                               <div className="flex justify-between items-center">
-                                <span className="text-lg text-gray-800">{activityLabel}</span>
+                                <span className={`text-lg transition-colors duration-300 ${
+                                        isSelected ? "text-blue-600" : "text-gray-800"
+                                      }`}>{activityLabel}</span>
                                 <label className="relative inline-flex items-center cursor-pointer">
                                   <input
                                     type="checkbox"
@@ -565,6 +604,7 @@ export default function EmergencyDetails() {
 
                               {isSelected && foundActivity && (
                                 <>
+                                  <ServiceImage activityKey={activityKey} />                               
                                   {foundActivity.description && (
                                     <p className="text-sm text-gray-500 pr-16">
                                       {foundActivity.description}

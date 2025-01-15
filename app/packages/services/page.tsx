@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image"; // 1) Import from next/image
 import React, { useState, useEffect, ChangeEvent } from "react";
 import BreadCrumb from "@/components/ui/BreadCrumb";
 import SearchServices from "@/components/SearchServices";
@@ -53,12 +54,16 @@ function formatHouseType(ht: string): string {
 
 /** Check if the section is an indoor one. */
 function isIndoorSection(sectionValue: string): boolean {
-  return (Object.values(INDOOR_SERVICE_SECTIONS) as string[]).includes(sectionValue);
+  return (Object.values(INDOOR_SERVICE_SECTIONS) as string[]).includes(
+    sectionValue
+  );
 }
 
 /** Check if the section is an outdoor one. */
 function isOutdoorSection(sectionValue: string): boolean {
-  return (Object.values(OUTDOOR_SERVICE_SECTIONS) as string[]).includes(sectionValue);
+  return (Object.values(OUTDOOR_SERVICE_SECTIONS) as string[]).includes(
+    sectionValue
+  );
 }
 
 /** Return a shorter label for each package ID (for the toggler). */
@@ -84,7 +89,8 @@ function convertServiceIdToApiFormat(serviceId: string) {
 
 /** Fetch finishing materials (POST /work/finishing_materials). */
 async function fetchFinishingMaterials(workCode: string) {
-  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "https://your-api.example.com";
+  const baseUrl =
+    process.env.NEXT_PUBLIC_API_BASE_URL || "https://your-api.example.com";
   const url = `${baseUrl}/work/finishing_materials`;
   const res = await fetch(url, {
     method: "POST",
@@ -95,7 +101,9 @@ async function fetchFinishingMaterials(workCode: string) {
     body: JSON.stringify({ work_code: workCode }),
   });
   if (!res.ok) {
-    throw new Error(`Failed to fetch finishing materials (work_code=${workCode}).`);
+    throw new Error(
+      `Failed to fetch finishing materials (work_code=${workCode}).`
+    );
   }
   return res.json();
 }
@@ -108,7 +116,8 @@ async function calculatePrice(params: {
   square: number;
   finishing_materials: string[];
 }) {
-  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "https://your-api.example.com";
+  const baseUrl =
+    process.env.NEXT_PUBLIC_API_BASE_URL || "https://your-api.example.com";
   const url = `${baseUrl}/calculate`;
 
   const res = await fetch(url, {
@@ -120,18 +129,59 @@ async function calculatePrice(params: {
     body: JSON.stringify(params),
   });
   if (!res.ok) {
-    throw new Error(`Failed to calculate price (work_code=${params.work_code}).`);
+    throw new Error(
+      `Failed to calculate price (work_code=${params.work_code}).`
+    );
   }
   return res.json();
+}
+
+/**
+ * Simple component that constructs a direct image URL:
+ *   http://dev.thejamb.com/images/[firstSegment]/[converted].
+ */
+function ServiceImage({ serviceId }: { serviceId: string }) {
+  const [imageSrc, setImageSrc] = useState<string | null>(null);
+
+  useEffect(() => {
+    // The first segment is the part before the first hyphen, e.g. "1" from "1-1-1"
+    const firstSegment = serviceId.split("-")[0];
+    // Convert "1-1-1" => "1.1.1"
+    const code = convertServiceIdToApiFormat(serviceId);
+    // Construct final image URL
+    const url = `http://dev.thejamb.com/images/${firstSegment}/${code}.jpg`;
+    setImageSrc(url);
+  }, [serviceId]);
+
+  if (!imageSrc) return null;
+
+  // Next.js <Image> for automatic optimization. We'll unify all images to e.g. width=600, height=400.
+  // Ensure "dev.thejamb.com" is in next.config.js -> images.domains
+  return (
+    <div className="mb-2 border rounded overflow-hidden">
+      <Image
+        src={imageSrc}
+        alt="Service"
+        width={600}
+        height={400}
+        style={{ objectFit: "cover" }}
+        // optionally, you can specify priority or other props
+      />
+    </div>
+  );
 }
 
 /** Ensure finishing materials for a service are loaded. */
 async function ensureFinishingMaterialsLoaded(
   serviceId: string,
   finishingMaterialsMap: Record<string, any>,
-  setFinishingMaterialsMap: React.Dispatch<React.SetStateAction<Record<string, any>>>,
+  setFinishingMaterialsMap: React.Dispatch<
+    React.SetStateAction<Record<string, any>>
+  >,
   finishingMaterialSelections: Record<string, string[]>,
-  setFinishingMaterialSelections: React.Dispatch<React.SetStateAction<Record<string, string[]>>>
+  setFinishingMaterialSelections: React.Dispatch<
+    React.SetStateAction<Record<string, string[]>>
+  >
 ) {
   try {
     if (!finishingMaterialsMap[serviceId]) {
@@ -176,7 +226,9 @@ export default function PackageServicesPage() {
   const [selectedServices, setSelectedServices] = useState<{
     indoor: Record<string, number>;
     outdoor: Record<string, number>;
-  }>(() => getSessionItem("packages_selectedServices", { indoor: {}, outdoor: {} }));
+  }>(() =>
+    getSessionItem("packages_selectedServices", { indoor: {}, outdoor: {} })
+  );
 
   useEffect(() => {
     setSessionItem("packages_selectedServices", selectedServices);
@@ -216,7 +268,9 @@ export default function PackageServicesPage() {
   }, [searchQuery]);
 
   // Expanded categories
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
+    new Set()
+  );
   function toggleCategory(catId: string) {
     setExpandedCategories((prev) => {
       const copy = new Set(prev);
@@ -226,18 +280,23 @@ export default function PackageServicesPage() {
   }
 
   // Materials & cost breakdown
-  const [finishingMaterialsMap, setFinishingMaterialsMap] = useState<Record<string, any>>({});
-  const [finishingMaterialSelections, setFinishingMaterialSelections] = useState<
-    Record<string, string[]>
+  const [finishingMaterialsMap, setFinishingMaterialsMap] = useState<
+    Record<string, any>
   >({});
+  const [finishingMaterialSelections, setFinishingMaterialSelections] =
+    useState<Record<string, string[]>>({});
 
   // calculationResultsMap => server response for each service
-  const [calculationResultsMap, setCalculationResultsMap] = useState<Record<string, any>>({});
+  const [calculationResultsMap, setCalculationResultsMap] = useState<
+    Record<string, any>
+  >({});
   // serviceCosts => final numeric cost (labor + materials) for each service
   const [serviceCosts, setServiceCosts] = useState<Record<string, number>>({});
 
   // For toggling cost breakdown UI
-  const [expandedCostBreakdown, setExpandedCostBreakdown] = useState<Set<string>>(new Set());
+  const [expandedCostBreakdown, setExpandedCostBreakdown] = useState<
+    Set<string>
+  >(new Set());
   function toggleCostBreakdown(svcId: string) {
     setExpandedCostBreakdown((old) => {
       const copy = new Set(old);
@@ -247,7 +306,9 @@ export default function PackageServicesPage() {
   }
 
   // Manual input for quantity
-  const [manualInputValue, setManualInputValue] = useState<Record<string, string>>({});
+  const [manualInputValue, setManualInputValue] = useState<
+    Record<string, string>
+  >({});
 
   // Keep packageId in session
   useEffect(() => {
@@ -256,7 +317,9 @@ export default function PackageServicesPage() {
 
   // "Select all" and "Clear all"
   function handleClearAll() {
-    const sure = window.confirm("Are you sure you want to clear all selections?");
+    const sure = window.confirm(
+      "Are you sure you want to clear all selections?"
+    );
     if (!sure) return;
 
     setSelectedServices({ indoor: {}, outdoor: {} });
@@ -287,7 +350,10 @@ export default function PackageServicesPage() {
     const nextIndoor: Record<string, number> = {};
     const nextOutdoor: Record<string, number> = {};
 
-    async function selectServiceWithMinQuantity(serviceId: string, isIndoor: boolean) {
+    async function selectServiceWithMinQuantity(
+      serviceId: string,
+      isIndoor: boolean
+    ) {
       const found = ALL_SERVICES.find((s) => s.id === serviceId);
       const minQ = found?.min_quantity || 1;
       if (isIndoor) {
@@ -330,7 +396,9 @@ export default function PackageServicesPage() {
   // Toggle a service on/off
   async function toggleService(serviceId: string) {
     // Determine isIndoor by checking if the service is in .indoor array
-    const isIndoor = !!chosenPackage.services.indoor.find((x) => x.id === serviceId);
+    const isIndoor = !!chosenPackage.services.indoor.find(
+      (x) => x.id === serviceId
+    );
     const sideKey = isIndoor ? "indoor" : "outdoor";
     const copy = { ...selectedServices[sideKey] };
     const isOn = !!copy[serviceId];
@@ -379,9 +447,15 @@ export default function PackageServicesPage() {
   }
 
   // increment/decrement for the quantity
-  function handleQuantityChange(serviceId: string, increment: boolean, unit: string) {
+  function handleQuantityChange(
+    serviceId: string,
+    increment: boolean,
+    unit: string
+  ) {
     // isIndoor => check chosenPackage.services.indoor
-    const isIndoor = !!chosenPackage.services.indoor.find((x) => x.id === serviceId);
+    const isIndoor = !!chosenPackage.services.indoor.find(
+      (x) => x.id === serviceId
+    );
     const sideKey = isIndoor ? "indoor" : "outdoor";
     const copy = { ...selectedServices[sideKey] };
     const oldVal = copy[serviceId] || 1;
@@ -394,16 +468,25 @@ export default function PackageServicesPage() {
     // If unit is "each", we might want to keep it integer
     copy[serviceId] = unit === "each" ? Math.round(newVal) : newVal;
     setSelectedServices((prev) => ({ ...prev, [sideKey]: copy }));
-    setManualInputValue((old) => ({ ...old, [serviceId]: String(copy[serviceId]) }));
+    setManualInputValue((old) => ({
+      ...old,
+      [serviceId]: String(copy[serviceId]),
+    }));
   }
 
   // Manually typed quantity
-  function handleManualQuantityChange(serviceId: string, value: string, unit: string) {
+  function handleManualQuantityChange(
+    serviceId: string,
+    value: string,
+    unit: string
+  ) {
     setManualInputValue((old) => ({ ...old, [serviceId]: value }));
   }
   function handleBlurInput(serviceId: string, unit: string) {
     // isIndoor => check chosenPackage
-    const isIndoor = !!chosenPackage.services.indoor.find((x) => x.id === serviceId);
+    const isIndoor = !!chosenPackage.services.indoor.find(
+      (x) => x.id === serviceId
+    );
     const sideKey = isIndoor ? "indoor" : "outdoor";
     const copy = { ...selectedServices[sideKey] };
 
@@ -417,7 +500,10 @@ export default function PackageServicesPage() {
     }
     copy[serviceId] = unit === "each" ? Math.round(parsed) : parsed;
     setSelectedServices((prev) => ({ ...prev, [sideKey]: copy }));
-    setManualInputValue((old) => ({ ...old, [serviceId]: String(copy[serviceId]) }));
+    setManualInputValue((old) => ({
+      ...old,
+      [serviceId]: String(copy[serviceId]),
+    }));
   }
 
   // Build a combined list of services from chosenPackage, apply search filter
@@ -477,7 +563,10 @@ export default function PackageServicesPage() {
   const userZip = houseInfo?.zip || "";
   useEffect(() => {
     async function recalcAll() {
-      const merged = { ...selectedServices.indoor, ...selectedServices.outdoor };
+      const merged = {
+        ...selectedServices.indoor,
+        ...selectedServices.outdoor,
+      };
       for (const [svcId, qty] of Object.entries(merged)) {
         // Ensure finishing materials loaded
         await ensureFinishingMaterialsLoaded(
@@ -604,7 +693,9 @@ export default function PackageServicesPage() {
                   key={pkgId}
                   onClick={() => handlePackageToggle(pkgId)}
                   className={`flex-1 px-4 py-2 rounded-md font-semibold transition-colors text-lg ${
-                    isActive ? "bg-blue-600 text-white" : "text-gray-600 hover:bg-gray-100"
+                    isActive
+                      ? "bg-blue-600 text-white"
+                      : "text-gray-600 hover:bg-gray-100"
                   }`}
                 >
                   {displayTitle}
@@ -622,7 +713,9 @@ export default function PackageServicesPage() {
         <div className="w-full max-w-[624px] mt-6 mb-4">
           <SearchServices
             value={searchQuery}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+            onChange={(e: ChangeEvent<HTMLInputElement>) =>
+              setSearchQuery(e.target.value)
+            }
             placeholder="Search for services..."
           />
         </div>
@@ -631,7 +724,10 @@ export default function PackageServicesPage() {
         <div className="flex justify-between items-center text-sm text-gray-500 mt-6 w-full max-w-[624px]">
           <span>
             No service?{" "}
-            <a href="#" className="text-blue-600 hover:underline focus:outline-none">
+            <a
+              href="#"
+              className="text-blue-600 hover:underline focus:outline-none"
+            >
               Contact support
             </a>
           </span>
@@ -665,7 +761,9 @@ export default function PackageServicesPage() {
                   >
                     <div className="absolute inset-0 bg-black bg-opacity-30"></div>
                     <div className="relative z-10 flex items-center justify-center h-full">
-                      <SectionBoxTitle className="text-white">For Home</SectionBoxTitle>
+                      <SectionBoxTitle className="text-white">
+                        For Home
+                      </SectionBoxTitle>
                     </div>
                   </div>
                 </div>
@@ -692,14 +790,18 @@ export default function PackageServicesPage() {
                             }
                           });
 
-                          const catObj = ALL_CATEGORIES.find((c) => c.id === catId);
+                          const catObj = ALL_CATEGORIES.find(
+                            (c) => c.id === catId
+                          );
                           const catName = catObj ? catObj.title : catId;
 
                           return (
                             <div
                               key={catId}
                               className={`p-4 border rounded-xl bg-white mt-4 ${
-                                selectedInCat > 0 ? "border-blue-500" : "border-gray-300"
+                                selectedInCat > 0
+                                  ? "border-blue-500"
+                                  : "border-gray-300"
                               }`}
                             >
                               <button
@@ -708,7 +810,9 @@ export default function PackageServicesPage() {
                               >
                                 <h3
                                   className={`font-medium text-2xl ${
-                                    selectedInCat > 0 ? "text-blue-600" : "text-black"
+                                    selectedInCat > 0
+                                      ? "text-blue-600"
+                                      : "text-black"
                                   }`}
                                 >
                                   {catName}
@@ -720,7 +824,9 @@ export default function PackageServicesPage() {
                                 </h3>
                                 <ChevronDown
                                   className={`h-5 w-5 transform transition-transform ${
-                                    expandedCategories.has(catId) ? "rotate-180" : ""
+                                    expandedCategories.has(catId)
+                                      ? "rotate-180"
+                                      : ""
                                   }`}
                                 />
                               </button>
@@ -732,7 +838,8 @@ export default function PackageServicesPage() {
                                       selectedServices.indoor[svc.id] != null;
                                     const isOutdoorSelected =
                                       selectedServices.outdoor[svc.id] != null;
-                                    const isSelected = isIndoorSelected || isOutdoorSelected;
+                                    const isSelected =
+                                      isIndoorSelected || isOutdoorSelected;
 
                                     const quantity = isIndoorSelected
                                       ? selectedServices.indoor[svc.id]
@@ -745,16 +852,20 @@ export default function PackageServicesPage() {
                                         ? manualInputValue[svc.id]
                                         : String(quantity);
 
-                                    const calcResult = calculationResultsMap[svc.id];
+                                    const calcResult =
+                                      calculationResultsMap[svc.id];
                                     const finalCost = serviceCosts[svc.id] || 0;
-                                    const isBreakdownOpen = expandedCostBreakdown.has(svc.id);
+                                    const isBreakdownOpen =
+                                      expandedCostBreakdown.has(svc.id);
 
                                     return (
                                       <div key={svc.id} className="space-y-2">
                                         <div className="flex justify-between items-center">
                                           <span
                                             className={`text-lg transition-colors duration-300 ${
-                                              isSelected ? "text-blue-600" : "text-gray-800"
+                                              isSelected
+                                                ? "text-blue-600"
+                                                : "text-gray-800"
                                             }`}
                                           >
                                             {svc.title}
@@ -763,7 +874,9 @@ export default function PackageServicesPage() {
                                             <input
                                               type="checkbox"
                                               checked={isSelected}
-                                              onChange={() => toggleService(svc.id)}
+                                              onChange={() =>
+                                                toggleService(svc.id)
+                                              }
                                               className="sr-only peer"
                                             />
                                             <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
@@ -773,6 +886,8 @@ export default function PackageServicesPage() {
 
                                         {isSelected && (
                                           <>
+                                            {/* Use Next.js Image-based component */}
+                                            <ServiceImage serviceId={svc.id} />
                                             {svc.description && (
                                               <p className="text-sm text-gray-500 pr-16">
                                                 {svc.description}
@@ -796,13 +911,18 @@ export default function PackageServicesPage() {
                                                   type="text"
                                                   value={inputValue}
                                                   onClick={() =>
-                                                    setManualInputValue((prev) => ({
-                                                      ...prev,
-                                                      [svc.id]: "",
-                                                    }))
+                                                    setManualInputValue(
+                                                      (prev) => ({
+                                                        ...prev,
+                                                        [svc.id]: "",
+                                                      })
+                                                    )
                                                   }
                                                   onBlur={() =>
-                                                    handleBlurInput(svc.id, svc.unit_of_measurement)
+                                                    handleBlurInput(
+                                                      svc.id,
+                                                      svc.unit_of_measurement
+                                                    )
                                                   }
                                                   onChange={(e) =>
                                                     handleManualQuantityChange(
@@ -833,12 +953,19 @@ export default function PackageServicesPage() {
                                               {/* cost + breakdown toggle */}
                                               <div className="flex items-center gap-2">
                                                 <span className="text-lg text-blue-600 font-medium text-right">
-                                                  ${formatWithSeparator(finalCost)}
+                                                  $
+                                                  {formatWithSeparator(
+                                                    finalCost
+                                                  )}
                                                 </span>
                                                 <button
-                                                  onClick={() => toggleCostBreakdown(svc.id)}
+                                                  onClick={() =>
+                                                    toggleCostBreakdown(svc.id)
+                                                  }
                                                   className={`text-blue-500 text-sm ml-2 ${
-                                                    isBreakdownOpen ? "" : "underline"
+                                                    isBreakdownOpen
+                                                      ? ""
+                                                      : "underline"
                                                   }`}
                                                 >
                                                   Details
@@ -864,7 +991,8 @@ export default function PackageServicesPage() {
                                                   </div>
                                                   <div className="flex justify-between">
                                                     <span className="text-md font-medium text-gray-700">
-                                                      Materials, tools, &amp; equipment
+                                                      Materials, tools, &amp;
+                                                      equipment
                                                     </span>
                                                     <span>
                                                       {calcResult.material_cost
@@ -874,8 +1002,11 @@ export default function PackageServicesPage() {
                                                   </div>
                                                 </div>
 
-                                                {Array.isArray(calcResult.materials) &&
-                                                  calcResult.materials.length > 0 && (
+                                                {Array.isArray(
+                                                  calcResult.materials
+                                                ) &&
+                                                  calcResult.materials.length >
+                                                    0 && (
                                                     <div className="mt-2">
                                                       <table className="table-auto w-full text-sm text-left text-gray-700">
                                                         <thead>
@@ -883,14 +1014,23 @@ export default function PackageServicesPage() {
                                                             <th className="py-2 px-1 text-left">
                                                               Name
                                                             </th>
-                                                            <th className="py-2 px-1">Price</th>
-                                                            <th className="py-2 px-1">Qty</th>
-                                                            <th className="py-2 px-1">Subtotal</th>
+                                                            <th className="py-2 px-1">
+                                                              Price
+                                                            </th>
+                                                            <th className="py-2 px-1">
+                                                              Qty
+                                                            </th>
+                                                            <th className="py-2 px-1">
+                                                              Subtotal
+                                                            </th>
                                                           </tr>
                                                         </thead>
                                                         <tbody className="divide-y divide-gray-200">
                                                           {calcResult.materials.map(
-                                                            (m: any, idx2: number) => (
+                                                            (
+                                                              m: any,
+                                                              idx2: number
+                                                            ) => (
                                                               <tr
                                                                 key={`${m.external_id}-${idx2}`}
                                                               >
@@ -898,7 +1038,10 @@ export default function PackageServicesPage() {
                                                                   {m.name}
                                                                 </td>
                                                                 <td className="py-3 px-1">
-                                                                  ${m.cost_per_unit}
+                                                                  $
+                                                                  {
+                                                                    m.cost_per_unit
+                                                                  }
                                                                 </td>
                                                                 <td className="py-3 px-3">
                                                                   {m.quantity}
@@ -938,11 +1081,15 @@ export default function PackageServicesPage() {
                 <div className="w-full max-w-[624px] mx-auto">
                   <div
                     className="relative overflow-hidden rounded-xl border border-gray-300 h-32 bg-center bg-cover"
-                    style={{ backgroundImage: `url(/images/rooms/landscape.jpg)` }}
+                    style={{
+                      backgroundImage: `url(/images/rooms/landscape.jpg)`,
+                    }}
                   >
                     <div className="absolute inset-0 bg-black bg-opacity-30"></div>
                     <div className="relative z-10 flex items-center justify-center h-full">
-                      <SectionBoxTitle className="text-white">For Garden</SectionBoxTitle>
+                      <SectionBoxTitle className="text-white">
+                        For Garden
+                      </SectionBoxTitle>
                     </div>
                   </div>
                 </div>
@@ -969,14 +1116,18 @@ export default function PackageServicesPage() {
                             }
                           });
 
-                          const catObj = ALL_CATEGORIES.find((c) => c.id === catId);
+                          const catObj = ALL_CATEGORIES.find(
+                            (c) => c.id === catId
+                          );
                           const catName = catObj ? catObj.title : catId;
 
                           return (
                             <div
                               key={catId}
                               className={`p-4 border rounded-xl bg-white mt-4 ${
-                                selectedInCat > 0 ? "border-blue-500" : "border-gray-300"
+                                selectedInCat > 0
+                                  ? "border-blue-500"
+                                  : "border-gray-300"
                               }`}
                             >
                               <button
@@ -985,7 +1136,9 @@ export default function PackageServicesPage() {
                               >
                                 <h3
                                   className={`font-medium text-2xl ${
-                                    selectedInCat > 0 ? "text-blue-600" : "text-black"
+                                    selectedInCat > 0
+                                      ? "text-blue-600"
+                                      : "text-black"
                                   }`}
                                 >
                                   {catName}
@@ -997,7 +1150,9 @@ export default function PackageServicesPage() {
                                 </h3>
                                 <ChevronDown
                                   className={`h-5 w-5 transform transition-transform ${
-                                    expandedCategories.has(catId) ? "rotate-180" : ""
+                                    expandedCategories.has(catId)
+                                      ? "rotate-180"
+                                      : ""
                                   }`}
                                 />
                               </button>
@@ -1009,7 +1164,8 @@ export default function PackageServicesPage() {
                                       selectedServices.indoor[svc.id] != null;
                                     const isOutdoorSelected =
                                       selectedServices.outdoor[svc.id] != null;
-                                    const isSelected = isIndoorSelected || isOutdoorSelected;
+                                    const isSelected =
+                                      isIndoorSelected || isOutdoorSelected;
 
                                     const quantity = isIndoorSelected
                                       ? selectedServices.indoor[svc.id]
@@ -1022,16 +1178,20 @@ export default function PackageServicesPage() {
                                         ? manualInputValue[svc.id]
                                         : String(quantity);
 
-                                    const calcResult = calculationResultsMap[svc.id];
+                                    const calcResult =
+                                      calculationResultsMap[svc.id];
                                     const finalCost = serviceCosts[svc.id] || 0;
-                                    const isBreakdownOpen = expandedCostBreakdown.has(svc.id);
+                                    const isBreakdownOpen =
+                                      expandedCostBreakdown.has(svc.id);
 
                                     return (
                                       <div key={svc.id} className="space-y-2">
                                         <div className="flex justify-between items-center">
                                           <span
                                             className={`text-lg transition-colors duration-300 ${
-                                              isSelected ? "text-blue-600" : "text-gray-800"
+                                              isSelected
+                                                ? "text-blue-600"
+                                                : "text-gray-800"
                                             }`}
                                           >
                                             {svc.title}
@@ -1040,7 +1200,9 @@ export default function PackageServicesPage() {
                                             <input
                                               type="checkbox"
                                               checked={isSelected}
-                                              onChange={() => toggleService(svc.id)}
+                                              onChange={() =>
+                                                toggleService(svc.id)
+                                              }
                                               className="sr-only peer"
                                             />
                                             <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
@@ -1073,13 +1235,18 @@ export default function PackageServicesPage() {
                                                   type="text"
                                                   value={inputVal}
                                                   onClick={() =>
-                                                    setManualInputValue((old) => ({
-                                                      ...old,
-                                                      [svc.id]: "",
-                                                    }))
+                                                    setManualInputValue(
+                                                      (old) => ({
+                                                        ...old,
+                                                        [svc.id]: "",
+                                                      })
+                                                    )
                                                   }
                                                   onBlur={() =>
-                                                    handleBlurInput(svc.id, svc.unit_of_measurement)
+                                                    handleBlurInput(
+                                                      svc.id,
+                                                      svc.unit_of_measurement
+                                                    )
                                                   }
                                                   onChange={(e) =>
                                                     handleManualQuantityChange(
@@ -1110,12 +1277,19 @@ export default function PackageServicesPage() {
                                               {/* cost + breakdown toggle */}
                                               <div className="flex items-center gap-2">
                                                 <span className="text-lg text-blue-600 font-medium text-right">
-                                                  ${formatWithSeparator(finalCost)}
+                                                  $
+                                                  {formatWithSeparator(
+                                                    finalCost
+                                                  )}
                                                 </span>
                                                 <button
-                                                  onClick={() => toggleCostBreakdown(svc.id)}
+                                                  onClick={() =>
+                                                    toggleCostBreakdown(svc.id)
+                                                  }
                                                   className={`text-blue-500 text-sm ml-2 ${
-                                                    isBreakdownOpen ? "" : "underline"
+                                                    isBreakdownOpen
+                                                      ? ""
+                                                      : "underline"
                                                   }`}
                                                 >
                                                   Details
@@ -1141,7 +1315,8 @@ export default function PackageServicesPage() {
                                                   </div>
                                                   <div className="flex justify-between">
                                                     <span className="text-md font-medium text-gray-700">
-                                                      Materials, tools, &amp; equipment
+                                                      Materials, tools, &amp;
+                                                      equipment
                                                     </span>
                                                     <span>
                                                       {calcResult.material_cost
@@ -1151,21 +1326,35 @@ export default function PackageServicesPage() {
                                                   </div>
                                                 </div>
 
-                                                {Array.isArray(calcResult.materials) &&
-                                                  calcResult.materials.length > 0 && (
+                                                {Array.isArray(
+                                                  calcResult.materials
+                                                ) &&
+                                                  calcResult.materials.length >
+                                                    0 && (
                                                     <div className="mt-2">
                                                       <table className="table-auto w-full text-sm text-left text-gray-700">
                                                         <thead>
                                                           <tr className="border-b">
-                                                            <th className="py-2 px-1">Name</th>
-                                                            <th className="py-2 px-1">Price</th>
-                                                            <th className="py-2 px-1">Qty</th>
-                                                            <th className="py-2 px-1">Subtotal</th>
+                                                            <th className="py-2 px-1">
+                                                              Name
+                                                            </th>
+                                                            <th className="py-2 px-1">
+                                                              Price
+                                                            </th>
+                                                            <th className="py-2 px-1">
+                                                              Qty
+                                                            </th>
+                                                            <th className="py-2 px-1">
+                                                              Subtotal
+                                                            </th>
                                                           </tr>
                                                         </thead>
                                                         <tbody className="divide-y divide-gray-200">
                                                           {calcResult.materials.map(
-                                                            (m: any, idx2: number) => (
+                                                            (
+                                                              m: any,
+                                                              idx2: number
+                                                            ) => (
                                                               <tr
                                                                 key={`${m.external_id}-${idx2}`}
                                                               >
@@ -1173,7 +1362,10 @@ export default function PackageServicesPage() {
                                                                   {m.name}
                                                                 </td>
                                                                 <td className="py-3 px-1">
-                                                                  ${m.cost_per_unit}
+                                                                  $
+                                                                  {
+                                                                    m.cost_per_unit
+                                                                  }
                                                                 </td>
                                                                 <td className="py-3 px-1">
                                                                   {m.quantity}
@@ -1212,7 +1404,9 @@ export default function PackageServicesPage() {
           <div className="w-1/2 ml-auto pt-0 space-y-6">
             {/* Summary Card */}
             <div className="max-w-[500px] ml-auto bg-white p-4 rounded-lg border border-gray-300 overflow-hidden">
-              <SectionBoxSubtitle>Your {chosenPackage.title}</SectionBoxSubtitle>
+              <SectionBoxSubtitle>
+                Your {chosenPackage.title}
+              </SectionBoxSubtitle>
 
               {Object.keys(mergedSelected).length === 0 ? (
                 <div className="text-left text-gray-500 text-medium mt-4">
@@ -1221,55 +1415,60 @@ export default function PackageServicesPage() {
               ) : (
                 <>
                   <p className="text-gray-700 mb-4">
-                    These are the services you selected, grouped by section &amp; category:
+                    These are the services you selected, grouped by section
+                    &amp; category:
                   </p>
 
                   {/* Build a local summary structure */}
                   <div className="space-y-6">
-                    {Object.entries(summaryStructure).map(([sectionName, cats]) => {
-                      if (!Object.keys(cats).length) return null;
-                      return (
-                        <div key={sectionName}>
-                          <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                            {sectionName}
-                          </h3>
-                          {Object.entries(cats).map(([catId, arr]) => {
-                            const catObj = ALL_CATEGORIES.find((c) => c.id === catId);
-                            const catName = catObj ? catObj.title : catId;
-                            if (!arr.length) return null;
+                    {Object.entries(summaryStructure).map(
+                      ([sectionName, cats]) => {
+                        if (!Object.keys(cats).length) return null;
+                        return (
+                          <div key={sectionName}>
+                            <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                              {sectionName}
+                            </h3>
+                            {Object.entries(cats).map(([catId, arr]) => {
+                              const catObj = ALL_CATEGORIES.find(
+                                (c) => c.id === catId
+                              );
+                              const catName = catObj ? catObj.title : catId;
+                              if (!arr.length) return null;
 
-                            return (
-                              <div key={catId} className="ml-4 mb-4">
-                                <h4 className="text-lg font-medium text-gray-700 mb-2">
-                                  {catName}
-                                </h4>
-                                <ul className="space-y-1">
-                                  {arr.map(({ svcObj, qty }) => {
-                                    const cost = serviceCosts[svcObj.id] || 0;
-                                    return (
-                                      <li
-                                        key={svcObj.id}
-                                        className="flex justify-between items-center text-sm text-gray-600"
-                                      >
-                                        <span className="truncate w-1/2 pr-2">
-                                          {svcObj.title}
-                                        </span>
-                                        <span>
-                                          {qty} {svcObj.unit_of_measurement}
-                                        </span>
-                                        <span className="text-right w-1/4">
-                                          ${formatWithSeparator(cost)}
-                                        </span>
-                                      </li>
-                                    );
-                                  })}
-                                </ul>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      );
-                    })}
+                              return (
+                                <div key={catId} className="ml-4 mb-4">
+                                  <h4 className="text-lg font-medium text-gray-700 mb-2">
+                                    {catName}
+                                  </h4>
+                                  <ul className="space-y-1">
+                                    {arr.map(({ svcObj, qty }) => {
+                                      const cost = serviceCosts[svcObj.id] || 0;
+                                      return (
+                                        <li
+                                          key={svcObj.id}
+                                          className="flex justify-between items-center text-sm text-gray-600"
+                                        >
+                                          <span className="truncate w-1/2 pr-2">
+                                            {svcObj.title}
+                                          </span>
+                                          <span>
+                                            {qty} {svcObj.unit_of_measurement}
+                                          </span>
+                                          <span className="text-right w-1/4">
+                                            ${formatWithSeparator(cost)}
+                                          </span>
+                                        </li>
+                                      );
+                                    })}
+                                  </ul>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        );
+                      }
+                    )}
                   </div>
 
                   {/* Price total */}
@@ -1311,7 +1510,8 @@ export default function PackageServicesPage() {
                 </p>
                 <hr className="my-2" />
                 <p>
-                  <strong>House Type:</strong> {formatHouseType(houseInfo.houseType)}
+                  <strong>House Type:</strong>{" "}
+                  {formatHouseType(houseInfo.houseType)}
                 </p>
                 <p>
                   <strong>Floors:</strong> {houseInfo.floors}
@@ -1334,7 +1534,9 @@ export default function PackageServicesPage() {
                 </p>
                 <p>
                   <strong>Boiler/Heater:</strong>{" "}
-                  {houseInfo.hasBoiler ? houseInfo.boilerType || "Yes" : "No / None"}
+                  {houseInfo.hasBoiler
+                    ? houseInfo.boilerType || "Yes"
+                    : "No / None"}
                 </p>
                 <hr className="my-2" />
                 <p>
@@ -1343,11 +1545,15 @@ export default function PackageServicesPage() {
                 </p>
                 <p>
                   <strong>Yard:</strong>{" "}
-                  {houseInfo.hasYard ? `${houseInfo.yardArea} sq ft` : "No yard/garden"}
+                  {houseInfo.hasYard
+                    ? `${houseInfo.yardArea} sq ft`
+                    : "No yard/garden"}
                 </p>
                 <p>
                   <strong>Pool:</strong>{" "}
-                  {houseInfo.hasPool ? `${houseInfo.poolArea} sq ft` : "No pool"}
+                  {houseInfo.hasPool
+                    ? `${houseInfo.poolArea} sq ft`
+                    : "No pool"}
                 </p>
               </div>
             </div>
