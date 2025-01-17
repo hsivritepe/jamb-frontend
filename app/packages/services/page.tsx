@@ -1212,6 +1212,8 @@ export default function PackageServicesPage() {
 
                                         {isSelected && (
                                           <>
+                                            {/* Use Next.js Image-based component */}
+                                            <ServiceImage serviceId={svc.id} />                                          
                                             {svc.description && (
                                               <p className="text-sm text-gray-500 pr-16">
                                                 {svc.description}
