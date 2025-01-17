@@ -1,17 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import BreadCrumb from "@/components/ui/BreadCrumb";
 import { SectionBoxSubtitle } from "@/components/ui/SectionBoxSubtitle";
+import ServiceTimePicker from "@/components/ui/ServiceTimePicker";
 import { CALCULATE_STEPS } from "@/constants/navigation";
 import { ALL_CATEGORIES } from "@/constants/categories";
 import { ALL_SERVICES } from "@/constants/services";
-import ServiceTimePicker from "@/components/ui/ServiceTimePicker";
 import { useLocation } from "@/context/LocationContext"; // for userState
 import { taxRatesUSA } from "@/constants/taxRatesUSA";
-
 import { setSessionItem, getSessionItem } from "@/utils/session";
+import { servicesRecommendations } from "@/components/ServicesRecommendations";
 
 /**
  * Formats a numeric value with commas and exactly two decimals.
@@ -35,6 +35,192 @@ function getTaxRateForState(stateName: string): number {
   return row ? row.combinedStateAndLocalTaxRate : 0;
 }
 
+/**
+ * Converts "1-1-1" => "1.1.1"
+ */
+function dashToDot(id: string): string {
+  return id.replaceAll("-", ".");
+}
+
+/**
+ * Converts "1.1.1" => "1-1-1"
+ */
+function dotToDash(id: string): string {
+  return id.replaceAll(".", "-");
+}
+
+/**
+ * (Optional) we can fetch minimal cost for recommended services if needed.
+ * You can adjust the logic or remove if you don't need dynamic pricing in the sidebar.
+ */
+async function calculateRecommendedCost(
+  workCode: string,
+  zip: string,
+  unit: string,
+  quantity: number
+) {
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://dev.thejamb.com";
+  const url = `${baseUrl}/calculate`;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({
+      work_code: workCode,
+      zipcode: zip,
+      unit_of_measurement: unit,
+      square: quantity,
+      finishing_materials: [],
+    }),
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to calculate cost for recommended service: ${workCode}`);
+  }
+  return res.json();
+}
+
+/**
+ * A small sidebar component that shows recommended activities.
+ * It reads which services are currently selected (selectedServicesState),
+ * looks up recommendations in servicesRecommendations, and then displays them.
+ */
+function RecommendedActivitiesSidebar({
+  selectedServicesState,
+}: {
+  selectedServicesState: Record<string, number>;
+}) {
+  const router = useRouter();
+  const { location } = useLocation();
+
+  // We'll store minimal cost for each recommended service
+  const [recommendedCosts, setRecommendedCosts] = useState<Record<string, number>>({});
+
+  // Step 1: Collect recommended IDs in dash-format
+  const recommendedIds = useMemo(() => {
+    const recSet = new Set<string>();
+
+    Object.keys(selectedServicesState).forEach((selectedDashId) => {
+      const dotId = dashToDot(selectedDashId); // "1-1-1" => "1.1.1"
+
+      // Decompose something like "1.1.1" => [ "1", "1", "1" ]
+      const [secKey, catKey, actKey] = dotId.split(".");
+      if (!secKey || !catKey || !actKey) return;
+
+      const sectionObj = servicesRecommendations[secKey];
+      if (!sectionObj) return;
+
+      const categoryObj = sectionObj.categories[`${secKey}.${catKey}`];
+      if (!categoryObj) return;
+
+      const activityObj = categoryObj.activities[dotId];
+      if (!activityObj) return;
+
+      const recs = activityObj.recommendedActivities || {};
+      // recs keys are dot-format => convert them to dash-format
+      for (const recDotKey of Object.keys(recs)) {
+        const recDashKey = dotToDash(recDotKey);
+        recSet.add(recDashKey);
+      }
+    });
+
+    // Exclude the services that are already selected
+    const filtered = Array.from(recSet).filter((dashId) => !selectedServicesState[dashId]);
+    return filtered;
+  }, [selectedServicesState]);
+
+  // Step 2: Convert recommended IDs => actual service objects (title, description, etc.)
+  const recommendedServices = useMemo(() => {
+    return recommendedIds.map((dashId) => {
+      const found = ALL_SERVICES.find((x) => x.id === dashId);
+      if (!found) {
+        // fallback object
+        return {
+          id: dashId,
+          title: dashId,
+          description: "",
+          unit_of_measurement: "each",
+          min_quantity: 1,
+        };
+      }
+      return found;
+    });
+  }, [recommendedIds]);
+
+  // Step 3: Optionally fetch minimal cost for each recommended service
+  useEffect(() => {
+    (async () => {
+      // We assume location.zip is a valid 5-digit US ZIP code
+      if (!location?.zip) return;
+      const zip = location.zip;
+
+      const nextCosts: Record<string, number> = {};
+      for (const svc of recommendedServices) {
+        try {
+          const dot = dashToDot(svc.id);
+          const qty = svc.min_quantity || 1;
+          const resp = await calculateRecommendedCost(dot, zip, svc.unit_of_measurement, qty);
+          const labor = parseFloat(resp.work_cost) || 0;
+          const mat = parseFloat(resp.material_cost) || 0;
+          nextCosts[svc.id] = labor + mat;
+        } catch (err) {
+          console.warn("Failed to load recommended cost for", svc.id, err);
+        }
+      }
+      setRecommendedCosts(nextCosts);
+    })();
+  }, [recommendedServices, location]);
+
+  // Step 4: "Add" button. For now, let's just navigate to "/calculate/details?addService=..."
+  function handleAddService(serviceId: string) {
+    router.push(`/calculate/details?addService=${serviceId}`);
+  }
+
+  // Render
+  return (
+    <div className="min-w-[300px]">
+      <h2 className="text-xl font-semibold mb-4">Maybe You Also Need</h2>
+      {recommendedServices.length === 0 ? (
+        <p className="text-sm text-gray-500">No additional recommendations.</p>
+      ) : (
+        <div className="space-y-4">
+          {recommendedServices.map((svc) => {
+            const totalCost = recommendedCosts[svc.id] || 0;
+            return (
+              <div key={svc.id} className="bg-white p-3 rounded border border-gray-300 shadow-sm">
+                <h3 className="text-md font-semibold text-gray-800">{svc.title}</h3>
+                {svc.description && (
+                  <p className="text-xs text-gray-600 mt-1 line-clamp-2">
+                    {svc.description}
+                  </p>
+                )}
+                <div className="flex justify-between items-center mt-2">
+                  <span className="text-sm text-blue-600 font-semibold">
+                    ${formatWithSeparator(totalCost)}
+                  </span>
+                  <button
+                    onClick={() => handleAddService(svc.id)}
+                    className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                  >
+                    Add
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Main Estimate component
+ * Left column: everything as before
+ * Right column: only the RecommendedActivitiesSidebar
+ */
 export default function Estimate() {
   const router = useRouter();
   const { location } = useLocation();
@@ -45,17 +231,14 @@ export default function Estimate() {
     "selectedServicesWithQuantity",
     {}
   );
-  const calculationResultsMap: Record<string, any> = getSessionItem(
-    "calculationResultsMap",
-    {}
-  );
+  const calculationResultsMap: Record<string, any> = getSessionItem("calculationResultsMap", {});
   const address: string = getSessionItem("address", "");
   const photos: string[] = getSessionItem("photos", []);
   const description: string = getSessionItem("description", "");
   const selectedCategories: string[] = getSessionItem("services_selectedCategories", []);
   const searchQuery: string = getSessionItem("services_searchQuery", "");
 
-  // If no data => redirect to /calculate
+  // If no data => redirect
   useEffect(() => {
     if (
       Object.keys(selectedServicesState).length === 0 ||
@@ -76,7 +259,7 @@ export default function Estimate() {
   const [overrideCalcResults, setOverrideCalcResults] = useState<Record<string, any>>({});
 
   /**
-   * Returns the effective calcResult for a service, 
+   * Returns the effective calcResult for a service,
    * either from overrideCalcResults or from calculationResultsMap.
    */
   function getCalcResultFor(serviceId: string): any {
@@ -212,7 +395,7 @@ export default function Estimate() {
 
       <div className="container mx-auto py-12">
         <div className="flex gap-12">
-          {/* Left column */}
+          {/* Left column: unchanged */}
           <div className="w-[700px]">
             <div className="bg-brand-light p-6 rounded-xl border border-gray-300 overflow-hidden">
               <SectionBoxSubtitle>Estimate for Selected Services</SectionBoxSubtitle>
@@ -252,7 +435,9 @@ export default function Estimate() {
                               const svcIndex = k + 1;
                               const qty = selectedServicesState[svc.id] || 1;
                               const calcResult = getCalcResultFor(svc.id);
-                              const finalCost = calcResult ? parseFloat(calcResult.total) || 0 : 0;
+                              const finalCost = calcResult
+                                ? parseFloat(calcResult.total) || 0
+                                : 0;
 
                               return (
                                 <div key={svc.id} className="flex flex-col gap-2 mb-2">
@@ -520,6 +705,11 @@ export default function Estimate() {
                 </button>
               </div>
             </div>
+          </div>
+
+          {/* Right column => ONLY the RecommendedActivitiesSidebar */}
+          <div className="w-1/4 ml-auto mt-0 pt-1">
+            <RecommendedActivitiesSidebar selectedServicesState={selectedServicesState} />
           </div>
         </div>
       </div>
