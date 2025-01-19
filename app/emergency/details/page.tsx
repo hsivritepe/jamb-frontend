@@ -814,7 +814,7 @@ export default function EmergencyDetails() {
           </div>
 
           {/* RIGHT column: summary, address, photos, description */}
-          <div className="w-1/2 ml-auto mt-16 pt-1">
+          <div className="w-1/2 ml-auto mt-4 pt-1">
             {/* Summary */}
             <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden">
               <SectionBoxSubtitle>Summary</SectionBoxSubtitle>

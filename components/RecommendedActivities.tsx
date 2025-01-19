@@ -8,22 +8,27 @@ import { servicesRecommendations } from "@/components/ServicesRecommendations";
 import { setSessionItem } from "@/utils/session";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-/** Helper: format a number with commas + two decimals. */
+/** Formats a number with commas and two decimals. */
 function formatWithSeparator(value: number): string {
-  return new Intl.NumberFormat("en-US", { minimumFractionDigits: 2 }).format(value);
+  return new Intl.NumberFormat("en-US", { minimumFractionDigits: 2 }).format(
+    value
+  );
 }
 
-/** Convert "1-1-1" => "1.1.1". */
+/** Converts "1-1-1" => "1.1.1". */
 function dashToDot(s: string): string {
   return s.replaceAll("-", ".");
 }
 
-/** Base API or fallback. */
+/** Returns a base API URL or fallback. */
 function getApiBaseUrl(): string {
   return process.env.NEXT_PUBLIC_API_BASE_URL || "http://dev.thejamb.com";
 }
 
-/** POST /calculate => get cost for recommended. */
+/** 
+ * POST /calculate => compute cost for a single recommended service 
+ * based on location zip, quantity, etc.
+ */
 async function calculatePrice(params: {
   work_code: string;
   zipcode: string;
@@ -46,7 +51,10 @@ async function calculatePrice(params: {
   return res.json();
 }
 
-/** Simple image for recommended items. */
+/** 
+ * A helper component for rendering the image of a recommended service.
+ * We'll convert "1-1-1" => "1.1.1" => /images/1/1.1.1.jpg
+ */
 function ServiceImage({ serviceId }: { serviceId: string }) {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
 
@@ -58,6 +66,7 @@ function ServiceImage({ serviceId }: { serviceId: string }) {
   }, [serviceId]);
 
   if (!imageSrc) return null;
+
   return (
     <Image
       src={imageSrc}
@@ -70,10 +79,12 @@ function ServiceImage({ serviceId }: { serviceId: string }) {
 }
 
 /**
- * RecommendedActivities:
- * - Gathers recommended items for each selected service.
+ * RecommendedActivities component
+ * --------------------------------
+ * - Collects recommended items from each selected service (based on servicesRecommendations).
+ * - Prevents duplicates if the same recommended service is suggested by multiple origins.
  * - Shows them in pages of 2 with a fade transition.
- * - Input logic is never “uncontrolled” => we coalesce `undefined` to `null`.
+ * - Allows direct "Add" or "Remove" from parent's selectedServicesState.
  */
 export default function RecommendedActivities({
   selectedServicesState,
@@ -81,9 +92,13 @@ export default function RecommendedActivities({
   selectedCategories,
   setSelectedCategories,
 }: {
+  /** The parent's flat { serviceId => quantity } mapping of currently selected services. */
   selectedServicesState: Record<string, number>;
+  /** Callback to update that mapping if the user chooses to Add/Remove a recommended service. */
   onUpdateSelectedServicesState: (newState: Record<string, number>) => void;
+  /** The parent's list of categories that are currently in use. */
   selectedCategories: string[];
+  /** Callback to update those categories if a new recommended belongs to a missing category. */
   setSelectedCategories: (cats: string[]) => void;
 }) {
   const { location } = useLocation();
@@ -106,14 +121,15 @@ export default function RecommendedActivities({
       const recs = actObj.recommendedActivities || {};
       let recIds = Object.keys(recs).map((k) => k.replaceAll(".", "-"));
 
-      // Exclude if already selected
+      // Exclude if the user already selected that rec on the left side
       recIds = recIds.filter((rId) => selectedServicesState[rId] == null);
+
       out[originDash] = recIds;
     }
     return out;
   }, [selectedServicesState]);
 
-  // 2) Flatten into an array of recommended items
+  // 2) Flatten them into an array, but skip duplicates
   interface FlatRec {
     originId: string;
     recommendedId: string;
@@ -126,19 +142,27 @@ export default function RecommendedActivities({
 
   const flatRecommended: FlatRec[] = useMemo(() => {
     const arr: FlatRec[] = [];
+    const usedIds = new Set<string>(); // track recommended IDs we have already processed
+
     for (const [originId, recIds] of Object.entries(originToRecommendedIds)) {
       const originQty = selectedServicesState[originId] ?? 1;
       const originSvc = ALL_SERVICES.find((x) => x.id === originId);
       const originUnit = originSvc?.unit_of_measurement || "each";
 
-      recIds.forEach((rDash) => {
+      for (const rDash of recIds) {
+        // Skip if we've already added this recommendedId (no duplicates)
+        if (usedIds.has(rDash)) {
+          continue;
+        }
+        usedIds.add(rDash);
+
         const recSvc = ALL_SERVICES.find((x) => x.id === rDash);
-        if (!recSvc) return;
+        if (!recSvc) continue;
 
         const minQ = recSvc.min_quantity ?? 1;
         let recommendedQty = minQ;
 
-        // If same unit => sync
+        // If same unit => we sync the recommended quantity to the origin's
         if (recSvc.unit_of_measurement === originUnit) {
           recommendedQty = Math.max(minQ, originQty);
         }
@@ -152,21 +176,30 @@ export default function RecommendedActivities({
           unit_of_measurement: recSvc.unit_of_measurement || "each",
           recommendedQty,
         });
-      });
+      }
     }
     return arr;
   }, [originToRecommendedIds, selectedServicesState]);
 
   // recommendedQuantities => recId => number
-  const [recommendedQuantities, setRecommendedQuantities] = useState<Record<string, number>>({});
+  const [recommendedQuantities, setRecommendedQuantities] = useState<
+    Record<string, number>
+  >({});
   // manualRecInput => recId => string|null
-  const [manualRecInput, setManualRecInput] = useState<Record<string, string | null>>({});
+  const [manualRecInput, setManualRecInput] = useState<
+    Record<string, string | null>
+  >({});
   // recommendedCosts => recId => number
-  const [recommendedCosts, setRecommendedCosts] = useState<Record<string, number>>({});
+  const [recommendedCosts, setRecommendedCosts] = useState<
+    Record<string, number>
+  >({});
   // fade transition
   const [isFading, setIsFading] = useState(false);
 
-  // Initialize recommendedQuantities if missing
+  /**
+   * On mount or if flatRecommended changes, initialize recommendedQuantities
+   * if missing for any new recommended items.
+   */
   useEffect(() => {
     const copy = { ...recommendedQuantities };
     let changed = false;
@@ -181,14 +214,18 @@ export default function RecommendedActivities({
     }
   }, [flatRecommended, recommendedQuantities]);
 
-  // Recompute cost whenever recommendedQuantities or location changes
+  /**
+   * Recompute cost if recommendedQuantities changes or location changes (ZIP code).
+   */
   useEffect(() => {
     (async () => {
       const { zip, country } = location;
+      // If not a valid US ZIP, skip cost fetch
       if (!/^\d{5}$/.test(zip) || country !== "United States") {
         return;
       }
       const nextCosts: Record<string, number> = {};
+
       await Promise.all(
         flatRecommended.map(async (item) => {
           try {
@@ -214,8 +251,15 @@ export default function RecommendedActivities({
     })();
   }, [flatRecommended, recommendedQuantities, location]);
 
-  /** + / - for recommended quantity */
-  function handleRecQuantityChange(recId: string, increment: boolean, unit: string, minQ: number) {
+  /**
+   * Handle + / - quantity for a recommended item
+   */
+  function handleRecQuantityChange(
+    recId: string,
+    increment: boolean,
+    unit: string,
+    minQ: number
+  ) {
     setRecommendedQuantities((prev) => {
       const oldVal = prev[recId] ?? minQ;
       let newVal = increment ? oldVal + 1 : oldVal - 1;
@@ -225,12 +269,19 @@ export default function RecommendedActivities({
         [recId]: unit === "each" ? Math.round(newVal) : newVal,
       };
     });
+    // Clear the typed input
     setManualRecInput((prev) => ({ ...prev, [recId]: null }));
   }
 
-  /** typed recommended quantity input */
-  function handleRecManualChange(recId: string, val: string, unit: string, minQ: number) {
-    // Coalesce typed value to a string (never undefined)
+  /**
+   * Handle typed recommended quantity input
+   */
+  function handleRecManualChange(
+    recId: string,
+    val: string,
+    unit: string,
+    minQ: number
+  ) {
     setManualRecInput((prev) => ({ ...prev, [recId]: val }));
 
     let numericVal = parseFloat(val.replace(/,/g, "")) || 0;
@@ -242,19 +293,26 @@ export default function RecommendedActivities({
     }));
   }
 
-  /** If user leaves the field blank on blur => revert to numeric next render. */
+  /**
+   * If the user leaves the field blank on blur => revert typed input to null,
+   * so next render shows the numeric quantity instead.
+   */
   function handleRecBlur(recId: string) {
     if (manualRecInput[recId] === "") {
       setManualRecInput((prev) => ({ ...prev, [recId]: null }));
     }
   }
 
+  /**
+   * On click => set typed input to "" so user can type
+   */
   function handleRecClick(recId: string) {
-    // Clear to "" so user can type
     setManualRecInput((prev) => ({ ...prev, [recId]: "" }));
   }
 
-  /** Add or remove a recommended item => update parent's selected state. */
+  /**
+   * Add or Remove a recommended item => calls the parent's callback
+   */
   function handleAddRecommended(recId: string, minQ: number) {
     const isSelected = selectedServicesState[recId] != null;
     if (isSelected) {
@@ -270,7 +328,7 @@ export default function RecommendedActivities({
         [recId]: qty,
       });
 
-      // If that rec's category isn't yet in left side => add it
+      // If that rec belongs to a category not in the left side => add it
       const catPrefix = recId.split("-").slice(0, 2).join("-");
       if (!selectedCategories.includes(catPrefix)) {
         const nextCats = [...selectedCategories, catPrefix];
@@ -283,6 +341,9 @@ export default function RecommendedActivities({
   // Pagination => 2 items per page
   const [currentIndex, setCurrentIndex] = useState(0);
 
+  /**
+   * If data changes drastically, clamp the current index
+   */
   useEffect(() => {
     if (currentIndex >= flatRecommended.length) {
       setCurrentIndex(0);
@@ -311,8 +372,8 @@ export default function RecommendedActivities({
     }, 300);
   }
 
+  // If nothing is recommended, show a small block
   if (flatRecommended.length === 0) {
-    // no recommended
     return (
       <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
         <h2 className="text-2xl font-medium text-gray-800 mb-4">Maybe You Also Need</h2>
@@ -321,7 +382,7 @@ export default function RecommendedActivities({
     );
   }
 
-  // Render
+  // Otherwise => show the fade container with pagination
   return (
     <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
       {/* Title / Pagination */}
@@ -332,7 +393,9 @@ export default function RecommendedActivities({
             onClick={handlePrev}
             disabled={currentIndex === 0}
             className={`p-2 rounded border transition-colors ${
-              currentIndex === 0 ? "text-gray-300 border-gray-200" : "text-black border-gray-400"
+              currentIndex === 0
+                ? "text-gray-300 border-gray-200"
+                : "text-black border-gray-400"
             }`}
           >
             <ChevronLeft className="w-4 h-4" />
@@ -357,13 +420,13 @@ export default function RecommendedActivities({
         }`}
       >
         {pageItems.map((item) => {
+          // cost from recommendedCosts
           const costVal = recommendedCosts[item.recommendedId] || 0;
-          // numeric fallback
-          const numericVal = recommendedQuantities[item.recommendedId] ?? item.min_quantity;
-          // typed or numeric => coalesced
+          // numeric quantity from recommendedQuantities or fallback
+          const numeric = recommendedQuantities[item.recommendedId] ?? item.min_quantity;
+          // typed => if null => display numeric, else typed string
           const typedVal = manualRecInput[item.recommendedId] ?? null;
-          const displayVal = typedVal !== null ? typedVal : String(numericVal);
-
+          const displayVal = typedVal !== null ? typedVal : String(numeric);
           const isSelected = selectedServicesState[item.recommendedId] != null;
 
           return (
@@ -371,6 +434,7 @@ export default function RecommendedActivities({
               key={`${item.originId}-${item.recommendedId}`}
               className="p-3 bg-white border border-gray-200 rounded shadow-sm flex flex-col justify-between h-[350px]"
             >
+              {/* Image */}
               <div className="w-full h-40 overflow-hidden mb-2 rounded">
                 <ServiceImage serviceId={item.recommendedId} />
               </div>
@@ -434,6 +498,7 @@ export default function RecommendedActivities({
                 </div>
               </div>
 
+              {/* cost + add/remove */}
               <div className="mt-2 flex justify-between items-center">
                 <span className="text-sm text-blue-600 font-semibold">
                   ${formatWithSeparator(costVal)}
