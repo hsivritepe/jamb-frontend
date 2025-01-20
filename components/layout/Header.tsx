@@ -6,8 +6,6 @@ import { usePathname } from "next/navigation";
 import { Menu, X, ChevronDown } from "lucide-react";
 import { NavigationItem } from "@/types/common";
 import { useLocation } from "@/context/LocationContext";
-
-// ← Импортируем наш новый компонент!
 import PreferencesModal from "@/components/ui/PreferencesModal";
 
 // Example array for top navigation
@@ -19,10 +17,19 @@ const navigation: NavigationItem[] = [
 ];
 
 const languageMap: Record<string, string> = {
-  ENG: "English",
-  FRA: "Français",
-  ESP: "Español",
-  // ...
+  ENG: "ENG",
+  FRA: "FRA",
+  ESP: "ESP",
+  GER: "GER",
+  ITA: "ITA",
+  RUS: "RUS",
+  JPN: "JPN",
+  CHN: "CHN",
+  IND: "IND",
+  TUR: "TUR",
+  KOR: "KOR",
+  POR: "POR"
+
 };
 
 // Helper function to truncate text if it exceeds a maximum length
@@ -272,7 +279,7 @@ export default function Header() {
                 {/* Preferences button */}
                 <button
                   onClick={() => setShowPreferencesModal(true)}
-                  className="w-[110px] inline-flex items-center justify-between gap-1 text-gray-700 bg-[rgba(0,0,0,0.03)] px-3 py-2 rounded-lg transition-colors duration-200 hover:bg-[rgba(0,0,0,0.08)]"
+                  className="w-[80px] inline-flex items-center justify-between gap-1 text-gray-700 bg-[rgba(0,0,0,0.03)] px-3 py-2 rounded-lg transition-colors duration-200 hover:bg-[rgba(0,0,0,0.08)]"
                 >
                   <span className="truncate">{languageMap[selectedLanguage] ?? "English"}</span>
                   <ChevronDown className="w-4 h-4 shrink-0" />
@@ -351,7 +358,7 @@ export default function Header() {
         </div>
       </header>
 
-      {/* LOCATION MODAL (не меняем!) */}
+      {/* LOCATION MODAL*/}
       {showLocationModal && (
         <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-[9999]">
           <div
@@ -452,7 +459,7 @@ export default function Header() {
         </div>
       )}
 
-      {/* PREFERENCES MODAL (теперь отдельный компонент) */}
+      {/* PREFERENCES MODAL */}
       <PreferencesModal
         show={showPreferencesModal}
         onClose={() => setShowPreferencesModal(false)}

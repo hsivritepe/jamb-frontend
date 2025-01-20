@@ -28,7 +28,7 @@ interface PreferencesModalProps {
   /** Set selected currency code */
   setSelectedCurrency: (val: string) => void;
 
-  /** All possible languages */
+  /** All possible language codes */
   languages: string[];
   /** All possible units */
   units: string[];
@@ -39,8 +39,10 @@ interface PreferencesModalProps {
 }
 
 /**
- * Separate Preferences Modal:
- * Language, units, currency. Rendered only if props.show=true.
+ * PreferencesModal:
+ * - A modal for language, units, and currency.
+ * - The 'show' prop controls visibility.
+ * - Each section is now a row of same-size buttons for consistent styling.
  */
 export default function PreferencesModal({
   show,
@@ -62,6 +64,45 @@ export default function PreferencesModal({
 }: PreferencesModalProps) {
   if (!show) return null;
 
+  /**
+   * A helper to render a horizontal group of same-size buttons
+   * for any array of codes (like 'ENG','FRA','ESP' or 'Feet','Meters', etc.).
+   */
+  function renderButtonGroup<T extends string>(
+    label: string,
+    items: T[],
+    selected: T,
+    onSelect: (val: T) => void,
+    mapFn?: Record<string, string>
+  ) {
+    return (
+      <div className="mb-6">
+        <p className="block text-sm font-medium text-gray-700 mb-2">{label}</p>
+        <div className="flex flex-wrap gap-2">
+          {items.map((item) => {
+            const isSelected = selected === item;
+            const displayName = mapFn?.[item] ?? item;
+            return (
+              <button
+                key={item}
+                onClick={() => onSelect(item)}
+                className={`px-3 py-2 w-24 rounded font-medium border text-center transition-colors
+                  ${
+                    isSelected
+                      ? "bg-blue-600 text-white border-blue-600"
+                      : "bg-gray-200 text-gray-700 hover:bg-gray-300 border-gray-300"
+                  }
+                `}
+              >
+                {displayName}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-[9999]">
       <div
@@ -70,60 +111,27 @@ export default function PreferencesModal({
       >
         <h2 className="text-2xl font-bold mb-4 text-gray-800">Preferences</h2>
 
-        {/* Language dropdown */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Language
-          </label>
-          <select
-            value={selectedLanguage}
-            onChange={(e) => setSelectedLanguage(e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-100 focus:border-blue-300"
-          >
-            {languages.map((lang) => (
-              <option key={lang} value={lang}>
-                {languageMap[lang] ?? lang}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* Language buttons */}
+        {renderButtonGroup(
+          "Language",
+          languages,
+          selectedLanguage,
+          setSelectedLanguage,
+          languageMap
+        )}
 
-        {/* Units dropdown */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Units
-          </label>
-          <select
-            value={selectedUnit}
-            onChange={(e) => setSelectedUnit(e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-100 focus:border-blue-300"
-          >
-            {units.map((u) => (
-              <option key={u} value={u}>
-                {u}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* Units buttons */}
+        {renderButtonGroup("Units", units, selectedUnit, setSelectedUnit)}
 
-        {/* Currency dropdown */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Currency
-          </label>
-          <select
-            value={selectedCurrency}
-            onChange={(e) => setSelectedCurrency(e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-100 focus:border-blue-300"
-          >
-            {currencies.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* Currency buttons */}
+        {renderButtonGroup(
+          "Currency",
+          currencies,
+          selectedCurrency,
+          setSelectedCurrency
+        )}
 
+        {/* Action buttons */}
         <div className="mt-6 flex justify-end gap-3">
           <button
             onClick={onClose}

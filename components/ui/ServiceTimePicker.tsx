@@ -388,8 +388,8 @@ export default function ServiceTimePicker({
             !selectedDate
               ? "opacity-50 cursor-not-allowed bg-blue-600 text-white"
               : hasConfirmed
-              ? "bg-red-600 text-white"
-              : "bg-blue-600 text-white"
+              ? "bg-blue-600 text-white"
+              : "bg-red-600 text-white"
           }
         `}
       >
