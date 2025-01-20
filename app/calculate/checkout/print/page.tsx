@@ -6,7 +6,7 @@ import { ALL_SERVICES } from "@/constants/services";
 import { ALL_CATEGORIES } from "@/constants/categories";
 import { taxRatesUSA } from "@/constants/taxRatesUSA";
 import { DisclaimerBlock } from "@/components/ui/DisclaimerBlock";
-import { getSessionItem, setSessionItem } from "@/utils/session";
+import { getSessionItem } from "@/utils/session";
 
 /**
  * Formats a number with commas and exactly two decimals, e.g. 1234 => "1,234.00"
@@ -82,18 +82,14 @@ function numberToWordsUSD(amount: number): string {
       if (remainder > 0) result += " ";
     }
     if (remainder > 0) {
-      if (remainder < 100) {
-        result += twoDigits(remainder);
-      }
+      if (remainder < 100) result += twoDigits(remainder);
     }
     return result || "zero";
   }
 
   let integerPart = Math.floor(amount);
   const decimalPart = Math.round((amount - integerPart) * 100);
-  if (integerPart === 0) {
-    integerPart = 0;
-  }
+  if (integerPart === 0) integerPart = 0;
 
   let str = "";
   const units = ["", "thousand", "million", "billion"];
@@ -326,19 +322,64 @@ export default function PrintServicesEstimate() {
         <strong>Details:</strong> {description || "No details provided"}
       </p>
 
+      {/* Uploaded Photos */}
       {photos.length > 0 && (
         <section className="mb-6">
           <h3 className="font-semibold text-xl mb-2">Uploaded Photos</h3>
-          <div className="flex gap-2 w-full">
-            {photos.map((photo, idx) => (
-              <img
-                key={idx}
-                src={photo}
-                alt={`Photo ${idx + 1}`}
-                className="flex-1 h-24 object-cover rounded-md border border-gray-300"
-              />
-            ))}
-          </div>
+          {photos.length <= 8 ? (
+            /* If 8 or fewer => single row with photos.length columns */
+            <div
+              className={`grid grid-cols-${photos.length} gap-2 w-full`}
+              style={{
+                gridTemplateColumns: `repeat(${photos.length}, minmax(0, 1fr))`,
+              }}
+            >
+              {photos.map((photoUrl, idx) => (
+                <div
+                  key={idx}
+                  className="overflow-hidden rounded-md border border-gray-300"
+                >
+                  <img
+                    src={photoUrl}
+                    alt={`Photo ${idx + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ))}
+            </div>
+          ) : (
+            /* If more than 8 => two rows: 8 columns each */
+            <div className="flex flex-col gap-2 w-full">
+              <div className="grid grid-cols-8 gap-2 w-full">
+                {photos.slice(0, 8).map((photoUrl, idx) => (
+                  <div
+                    key={idx}
+                    className="overflow-hidden rounded-md border border-gray-300"
+                  >
+                    <img
+                      src={photoUrl}
+                      alt={`Photo ${idx + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
+              <div className="grid grid-cols-8 gap-2 w-full">
+                {photos.slice(8).map((photoUrl, idx) => (
+                  <div
+                    key={idx}
+                    className="overflow-hidden rounded-md border border-gray-300"
+                  >
+                    <img
+                      src={photoUrl}
+                      alt={`Photo ${8 + idx + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </section>
       )}
 
@@ -606,9 +647,7 @@ export default function PrintServicesEstimate() {
                                       <tbody className="divide-y divide-gray-200">
                                         {cr.materials.map(
                                           (m: any, idx2: number) => (
-                                            <tr
-                                              key={`${m.external_id}-${idx2}`}
-                                            >
+                                            <tr key={`${m.external_id}-${idx2}`}>
                                               <td className="py-2 px-1">
                                                 {m.name}
                                               </td>
@@ -781,7 +820,9 @@ export default function PrintServicesEstimate() {
                 </tbody>
               </table>
               <div className="flex justify-end mt-2 text-sm font-semibold">
-                <span className="mr-6">Total Materials, tools and equipment:</span>
+                <span className="mr-6">
+                  Total Materials, tools and equipment:
+                </span>
                 <span>${formatWithSeparator(totalMaterialsCost)}</span>
               </div>
             </div>

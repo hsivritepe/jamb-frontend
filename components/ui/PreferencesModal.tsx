@@ -77,7 +77,7 @@ export default function PreferencesModal({
   ) {
     return (
       <div className="mb-6">
-        <p className="block text-sm font-medium text-gray-700 mb-2">{label}</p>
+        <p className="block text-lg font-medium text-gray-700 mb-2">{label}</p>
         <div className="flex flex-wrap gap-2">
           {items.map((item) => {
             const isSelected = selected === item;
@@ -107,7 +107,7 @@ export default function PreferencesModal({
     <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-[9999]">
       <div
         ref={preferencesModalRef}
-        className="bg-white p-6 rounded-xl shadow-lg max-w-[500px] w-[90%]"
+        className="bg-white p-6 rounded-xl shadow-lg max-w-[460px] w-[90%]"
       >
         <h2 className="text-2xl font-bold mb-4 text-gray-800">Preferences</h2>
 
@@ -141,7 +141,7 @@ export default function PreferencesModal({
           </button>
           <button
             onClick={onSave}
-            className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+            className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700 transition-colors"
           >
             Save
           </button>

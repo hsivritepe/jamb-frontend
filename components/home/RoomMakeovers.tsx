@@ -60,7 +60,7 @@ interface RoomsGridProps {
 
 export default function RoomsGrid({
   title = "Whole-Room Makeovers, Done Right",
-  subtitle = "Comprehensive Home Renovations for Every Room",
+  subtitle = "Comprehensive Home Renovations for Every Room and Space",
   searchQuery = ""
 }: RoomsGridProps) {
   const router = useRouter();

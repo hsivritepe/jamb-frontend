@@ -59,9 +59,98 @@ function buildEstimateNumber(stateCode: string, zip: string): string {
  * Converts a numeric USD amount into spelled-out words (simplified).
  */
 function numberToWordsUSD(amount: number): string {
-  // ... (your existing implementation)
-  // omitted for brevity
-  return "one hundred and 00/100 dollars"; // placeholder
+  // We'll split into whole dollars + cents
+  const wholeDollars = Math.floor(amount);
+  const cents = Math.round((amount - wholeDollars) * 100);
+
+  // Helper function for 0..999
+  function threeDigitToWords(n: number): string {
+    const ones = [
+      "",
+      "one",
+      "two",
+      "three",
+      "four",
+      "five",
+      "six",
+      "seven",
+      "eight",
+      "nine",
+    ];
+    const teens = [
+      "ten",
+      "eleven",
+      "twelve",
+      "thirteen",
+      "fourteen",
+      "fifteen",
+      "sixteen",
+      "seventeen",
+      "eighteen",
+      "nineteen",
+    ];
+    const tensWords = [
+      "",
+      "",
+      "twenty",
+      "thirty",
+      "forty",
+      "fifty",
+      "sixty",
+      "seventy",
+      "eighty",
+      "ninety",
+    ];
+
+    let str = "";
+    const hundred = Math.floor(n / 100);
+    const remainder = n % 100;
+
+    if (hundred > 0) {
+      str += ones[hundred] + " hundred";
+      if (remainder > 0) str += " ";
+    }
+    if (remainder >= 10 && remainder <= 19) {
+      str += teens[remainder - 10];
+    } else {
+      const t = Math.floor(remainder / 10);
+      const o = remainder % 10;
+      if (t > 1) {
+        str += tensWords[t];
+        if (o > 0) str += "-" + ones[o];
+      } else if (t === 1) {
+        // handle '10..19' if not used teens above
+        str += teens[o];
+      } else if (o > 0) {
+        str += ones[o];
+      }
+    }
+    return str.trim();
+  }
+
+  // For thousands, etc.
+  function numberToWords(num: number): string {
+    if (num === 0) return "zero";
+    let words = "";
+
+    // handle thousands
+    const thousands = Math.floor(num / 1000);
+    const remainder = num % 1000;
+    if (thousands > 0) {
+      words += threeDigitToWords(thousands) + " thousand";
+      if (remainder > 0) words += " ";
+    }
+    if (remainder > 0) {
+      words += threeDigitToWords(remainder);
+    }
+    return words || "zero";
+  }
+
+  const dollarsPart = numberToWords(wholeDollars);
+  const centsPart = cents < 10 ? `0${cents}` : `${cents}`;
+
+  // Combine final => "one thousand two hundred... and 45/100 dollars"
+  return `${dollarsPart} and ${centsPart}/100 dollars`.trim();
 }
 
 /**

@@ -9,7 +9,7 @@ import { DisclaimerBlock } from "@/components/ui/DisclaimerBlock";
 import { taxRatesUSA } from "@/constants/taxRatesUSA";
 
 // Unified session utilities
-import { getSessionItem, setSessionItem } from "@/utils/session";
+import { getSessionItem } from "@/utils/session";
 
 /**
  * Formats a numeric value with commas and exactly two decimals.
@@ -76,9 +76,9 @@ function numberToWordsUSD(amount: number): string {
     return `${onesMap[tens]}-${onesMap[ones]}`;
   }
 
-  function threeDigitsToWords(num: number): string {
-    const hundreds = Math.floor(num / 100);
-    const remainder = num % 100;
+  function threeDigitsToWords(numVal: number): string {
+    const hundreds = Math.floor(numVal / 100);
+    const remainder = numVal % 100;
     let result = "";
     if (hundreds > 0) {
       result += `${onesMap[hundreds]} hundred`;
@@ -97,7 +97,7 @@ function numberToWordsUSD(amount: number): string {
 
   if (integerPart === 0) integerPart = 0;
 
-  let words = "";
+  let wordsString = "";
   const units = ["", "thousand", "million", "billion"];
   let i = 0;
 
@@ -107,17 +107,17 @@ function numberToWordsUSD(amount: number): string {
     if (chunk > 0) {
       const chunkStr = threeDigitsToWords(chunk);
       const label = units[i] ? ` ${units[i]}` : "";
-      words = chunkStr + label + (words ? " " + words : "");
+      wordsString = chunkStr + label + (wordsString ? " " + wordsString : "");
     }
     i++;
   }
 
-  if (!words) {
-    words = "zero";
+  if (!wordsString) {
+    wordsString = "zero";
   }
 
-  const dec = decimalPart < 10 ? `0${decimalPart}` : String(decimalPart);
-  return `${words} and ${dec}/100 dollars`;
+  const decimalStr = decimalPart < 10 ? `0${decimalPart}` : String(decimalPart);
+  return `${wordsString} and ${decimalStr}/100 dollars`;
 }
 
 /**
@@ -142,7 +142,7 @@ function buildEstimateNumber(stateName: string, zip: string): string {
 }
 
 /**
- * Returns a room object from ROOMS.indoor/outdoor arrays by its ID, or null if not found.
+ * Returns a room object from ROOMS.indoor or ROOMS.outdoor arrays by its ID, or null if not found.
  */
 function getRoomById(roomId: string) {
   const allRooms = [...ROOMS.indoor, ...ROOMS.outdoor];
@@ -165,7 +165,7 @@ function getCategoryNameById(catId: string): string {
 }
 
 /**
- * Decides whether to use override data or normal calculation data for a given serviceId.
+ * Chooses either the override or the normal calculation results for a given serviceId.
  */
 function getCalcResultFor(
   serviceId: string,
@@ -216,8 +216,8 @@ export default function PrintRoomsEstimate() {
   // If no services or no address => redirect
   useEffect(() => {
     let hasServices = false;
-    for (const roomId in selectedServicesState) {
-      if (Object.keys(selectedServicesState[roomId] || {}).length > 0) {
+    for (const roomKey in selectedServicesState) {
+      if (Object.keys(selectedServicesState[roomKey] || {}).length > 0) {
         hasServices = true;
         break;
       }
@@ -253,8 +253,10 @@ export default function PrintRoomsEstimate() {
 
   // Build "sectionLaborMap" and "materialsSpecMap" for the SPECIFICATIONS
   const sectionLaborMap: Record<string, number> = {};
-  const materialsSpecMap: Record<string, { name: string; totalQuantity: number; totalCost: number }> =
-    {};
+  const materialsSpecMap: Record<
+    string,
+    { name: string; totalQuantity: number; totalCost: number }
+  > = {};
 
   // Gather labor and materials data from each selected service
   for (const roomId in selectedServicesState) {
@@ -327,20 +329,63 @@ export default function PrintRoomsEstimate() {
         <strong>Details:</strong> {description || "No details provided"}
       </p>
 
+      {/** Uploaded Photos */}
       {photos.length > 0 && (
         <section className="mb-6">
           <h3 className="font-semibold text-xl mb-2">Uploaded Photos</h3>
-          <div className="grid grid-cols-6 grid-rows-2 gap-2 w-full">
-            {photos.slice(0, 12).map((photoUrl, idx) => (
-              <div key={idx} className="aspect-square overflow-hidden rounded-md border border-gray-300">
-                <img
-                  src={photoUrl}
-                  alt={`Photo ${idx + 1}`}
-                  className="w-full h-full object-cover"
-                />
+          {photos.length <= 8 ? (
+            /** If 8 or fewer, one row with exactly photos.length columns (full width). */
+            <div
+              className={`grid grid-cols-${photos.length} gap-2 w-full`}
+              style={{ gridTemplateColumns: `repeat(${photos.length}, minmax(0, 1fr))` }}
+            >
+              {photos.map((photoUrl, idx) => (
+                <div
+                  key={idx}
+                  className="overflow-hidden rounded-md border border-gray-300"
+                >
+                  <img
+                    src={photoUrl}
+                    alt={`Photo ${idx + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ))}
+            </div>
+          ) : (
+            /** If more than 8 => 2 lines: First line has 8 photos, second line has the rest (8 columns each). */
+            <div className="flex flex-col gap-2 w-full">
+              <div className="grid grid-cols-8 gap-2 w-full">
+                {photos.slice(0, 8).map((photoUrl, idx) => (
+                  <div
+                    key={idx}
+                    className="overflow-hidden rounded-md border border-gray-300"
+                  >
+                    <img
+                      src={photoUrl}
+                      alt={`Photo ${idx + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+
+              <div className="grid grid-cols-8 gap-2 w-full">
+                {photos.slice(8).map((photoUrl, idx) => (
+                  <div
+                    key={idx}
+                    className="overflow-hidden rounded-md border border-gray-300"
+                  >
+                    <img
+                      src={photoUrl}
+                      alt={`Photo ${8 + idx + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </section>
       )}
 
@@ -489,51 +534,46 @@ export default function PrintRoomsEstimate() {
         </table>
 
         <div className="border-t pt-4 mt-6 space-y-1 text-sm">
-          <div className="flex justify-between">
-            <span>Labor total:</span>
+          <div className="flex justify-end">
+            <span className="mr-6">Labor total:</span>
             <span>${formatWithSeparator(laborSubtotal)}</span>
           </div>
-          <div className="flex justify-between">
-            <span>Materials, tools and equipment:</span>
+          <div className="flex justify-end">
+            <span className="mr-6">Materials, tools and equipment:</span>
             <span>${formatWithSeparator(materialsSubtotal)}</span>
           </div>
 
           {timeCoefficient !== 1 && (
-            <div className="flex justify-between">
-              <span>
+            <div className="flex justify-end">
+              <span className="mr-6">
                 {timeCoefficient > 1 ? "Surcharge (date selection)" : "Discount (date selection)"}
               </span>
               <span>
                 {timeCoefficient > 1 ? "+" : "-"}$
-                {formatWithSeparator(
-                  Math.abs(laborSubtotal * timeCoefficient - laborSubtotal)
-                )}
+                {formatWithSeparator(Math.abs(laborSubtotal * timeCoefficient - laborSubtotal))}
               </span>
             </div>
           )}
 
-          <div className="flex justify-between">
-            <span>Service Fee (15% on labor)</span>
+          <div className="flex justify-end">
+            <span className="mr-6">Service Fee (15% on labor):</span>
             <span>${formatWithSeparator(serviceFeeOnLabor)}</span>
           </div>
-          <div className="flex justify-between">
-            <span>Delivery &amp; Processing (5% on materials)</span>
+          <div className="flex justify-end">
+            <span className="mr-6">Delivery &amp; Processing (5% on materials):</span>
             <span>${formatWithSeparator(serviceFeeOnMaterials)}</span>
           </div>
 
-          <div className="flex justify-between font-semibold">
-            <span>Subtotal:</span>
+          <div className="flex justify-end font-semibold mt-1">
+            <span className="mr-6">Subtotal:</span>
             <span>${formatWithSeparator(sumBeforeTax)}</span>
           </div>
-          <div className="flex justify-between">
-            <span>
-              Sales tax
-              {taxRatePercent > 0 ? ` (${taxRatePercent.toFixed(2)}%)` : ""}
-            </span>
+          <div className="flex justify-end">
+            <span className="mr-6">Sales tax {taxRatePercent > 0 ? `(${taxRatePercent.toFixed(2)}%)` : ""}:</span>
             <span>${formatWithSeparator(taxAmount)}</span>
           </div>
-          <div className="flex justify-between text-base font-semibold mt-2">
-            <span>Total:</span>
+          <div className="flex justify-end font-semibold text-base mt-1">
+            <span className="mr-6">Total:</span>
             <span>${formatWithSeparator(finalTotal)}</span>
           </div>
           <p className="text-right text-sm text-gray-600">
@@ -702,116 +742,147 @@ export default function PrintRoomsEstimate() {
         </p>
 
         {/* A) Labor by Section */}
-        <div className="mb-8">
-          <h3 className="text-lg font-bold text-gray-800 mb-2">A) Labor by Section</h3>
+        {(() => {
+          // We already collected labor amounts in "sectionLaborMap"
+          const sectionLaborMap: Record<string, number> = {};
+          for (const roomId in selectedServicesState) {
+            const roomServices = selectedServicesState[roomId];
+            for (const svcId of Object.keys(roomServices)) {
+              const cr = getCalcResultFor(svcId, overrideCalcResults, calculationResultsMap);
+              if (!cr) continue;
+              const catId = getCategoryIdFromServiceId(svcId);
+              const catObj = ALL_CATEGORIES.find((c) => c.id === catId);
+              const secName = catObj ? catObj.section : "Other";
+              const labVal = parseFloat(cr.work_cost) || 0;
+              if (!sectionLaborMap[secName]) sectionLaborMap[secName] = 0;
+              sectionLaborMap[secName] += labVal;
+            }
+          }
 
-          <table className="w-full table-auto border border-gray-300 text-sm text-gray-700 mb-3">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="px-3 py-2 border border-gray-300 text-left">Section</th>
-                <th className="px-3 py-2 border border-gray-300 text-right">Labor</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Object.entries(sectionLaborMap).map(([secName, totalLab]) => {
-                if (totalLab === 0) return null;
-                return (
-                  <tr key={secName} className="border-b last:border-0">
-                    <td className="px-3 py-2 border-r border-gray-300">{secName}</td>
-                    <td className="px-3 py-2 text-right">${formatWithSeparator(totalLab)}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          // Build materialsSpecArray again if needed
+          const materialsSpecMap: Record<string, { name: string; qty: number; cost: number }> = {};
+          for (const roomId in selectedServicesState) {
+            const roomServices = selectedServicesState[roomId];
+            for (const svcId of Object.keys(roomServices)) {
+              const cr = getCalcResultFor(svcId, overrideCalcResults, calculationResultsMap);
+              if (!cr) continue;
+              if (Array.isArray(cr.materials)) {
+                cr.materials.forEach((m: any) => {
+                  if (!materialsSpecMap[m.name]) {
+                    materialsSpecMap[m.name] = { name: m.name, qty: 0, cost: 0 };
+                  }
+                  materialsSpecMap[m.name].qty += m.quantity || 0;
+                  materialsSpecMap[m.name].cost += parseFloat(m.cost) || 0;
+                });
+              }
+            }
+          }
+          const specsArray = Object.values(materialsSpecMap);
 
-          <div className="text-sm">
-            <div className="flex justify-end">
-              <span className="mr-6">Labor Sum:</span>
-              <span>${formatWithSeparator(laborSubtotal)}</span>
-            </div>
-
-            {timeCoefficient !== 1 && (
-              <div className="flex justify-end mt-1">
-                <span className="mr-6">
-                  {timeCoefficient > 1 ? "Surcharge" : "Discount"}:
-                </span>
-                <span>
-                  {timeCoefficient > 1 ? "+" : "-"}$
-                  {formatWithSeparator(
-                    Math.abs(laborSubtotal * timeCoefficient - laborSubtotal)
-                  )}
-                </span>
-              </div>
-            )}
-
-            <div className="flex justify-end font-semibold mt-1">
-              <span className="mr-6">Total Labor:</span>
-              <span>
-                $
-                {formatWithSeparator(
-                  laborSubtotal * (timeCoefficient !== 1 ? timeCoefficient : 1)
-                )}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* B) Overall Materials */}
-        <div>
-          <h3 className="text-lg font-bold text-gray-800 mb-2">
-            B) Overall Materials, tools and equipment
-          </h3>
-          <p className="text-sm text-gray-500 mb-2">
-            All materials, tools, and equipment used across all services, summed together.
-          </p>
-          {materialsSpecArray.length === 0 ? (
-            <p className="text-sm text-gray-700">No materials used in this estimate.</p>
-          ) : (
+          return (
             <div>
-              <table className="w-full table-auto border border-gray-300 text-sm text-gray-700">
+              <h3 className="text-lg font-bold text-gray-800 mb-2">A) Labor by Section</h3>
+              <table className="w-full table-auto border border-gray-300 text-sm text-gray-700 mb-3">
                 <thead className="bg-gray-100">
                   <tr>
-                    <th className="px-3 py-2 border border-gray-300 text-left">
-                      Material Name
-                    </th>
-                    <th className="px-3 py-2 border border-gray-300 text-center">
-                      Qty
-                    </th>
-                    <th className="px-3 py-2 border border-gray-300 text-center">
-                      Price
-                    </th>
-                    <th className="px-3 py-2 border text-center">Subtotal</th>
+                    <th className="px-3 py-2 border border-gray-300 text-left">Section</th>
+                    <th className="px-3 py-2 border border-gray-300 text-right">Labor</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {materialsSpecArray.map((mat) => {
-                    const unitPrice =
-                      mat.totalQuantity > 0 ? mat.totalCost / mat.totalQuantity : 0;
+                  {Object.entries(sectionLaborMap).map(([secName, totalLab]) => {
+                    if (totalLab === 0) return null;
                     return (
-                      <tr key={mat.name} className="border-b last:border-0">
-                        <td className="px-3 py-2 border-r border-gray-300">{mat.name}</td>
-                        <td className="px-3 py-2 border-r border-gray-300 text-center">
-                          {mat.totalQuantity}
-                        </td>
-                        <td className="px-3 py-2 border-r border-gray-300 text-center">
-                          ${formatWithSeparator(unitPrice)}
-                        </td>
-                        <td className="px-3 py-2 text-center">
-                          ${formatWithSeparator(mat.totalCost)}
+                      <tr key={secName} className="border-b last:border-0">
+                        <td className="px-3 py-2 border-r border-gray-300">{secName}</td>
+                        <td className="px-3 py-2 text-right">
+                          ${formatWithSeparator(totalLab)}
                         </td>
                       </tr>
                     );
                   })}
                 </tbody>
               </table>
-              <div className="flex justify-end mt-2 text-sm font-semibold">
-                <span className="mr-6">Total materials, tools and equipment:</span>
-                <span>${formatWithSeparator(totalMaterialsCost)}</span>
+
+              <div className="text-sm">
+                <div className="flex justify-end">
+                  <span className="mr-6">Labor Sum:</span>
+                  <span>${formatWithSeparator(laborSubtotal)}</span>
+                </div>
+
+                {timeCoefficient !== 1 && (
+                  <div className="flex justify-end mt-1">
+                    <span className="mr-6">
+                      {timeCoefficient > 1 ? "Surcharge" : "Discount"} (date):
+                    </span>
+                    <span>
+                      {timeCoefficient > 1 ? "+" : "-"}$
+                      {formatWithSeparator(
+                        Math.abs(laborSubtotal * timeCoefficient - laborSubtotal)
+                      )}
+                    </span>
+                  </div>
+                )}
+
+                <div className="flex justify-end font-semibold mt-1">
+                  <span className="mr-6">Total Labor:</span>
+                  <span>
+                    $
+                    {formatWithSeparator(
+                      laborSubtotal * (timeCoefficient !== 1 ? timeCoefficient : 1)
+                    )}
+                  </span>
+                </div>
+              </div>
+
+              <div className="mt-6">
+                <h3 className="text-lg font-bold text-gray-800 mb-2">
+                  B) Overall Materials, tools and equipment
+                </h3>
+                {specsArray.length === 0 ? (
+                  <p className="text-sm text-gray-700">
+                    No materials used in this estimate.
+                  </p>
+                ) : (
+                  <div>
+                    <table className="w-full table-auto border border-gray-300 text-sm text-gray-700">
+                      <thead className="bg-gray-100">
+                        <tr>
+                          <th className="px-3 py-2 border border-gray-300 text-left">
+                            Material
+                          </th>
+                          <th className="px-3 py-2 border border-gray-300 text-center">
+                            Qty
+                          </th>
+                          <th className="px-3 py-2 border border-gray-300 text-center">
+                            Subtotal
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {specsArray.map((mat) => {
+                          return (
+                            <tr key={mat.name} className="border-b last:border-0">
+                              <td className="px-3 py-2 border-r border-gray-300">
+                                {mat.name}
+                              </td>
+                              <td className="px-3 py-2 border-r border-gray-300 text-center">
+                                {mat.qty}
+                              </td>
+                              <td className="px-3 py-2 text-center">
+                                ${formatWithSeparator(mat.cost)}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             </div>
-          )}
-        </div>
+          );
+        })()}
       </section>
     </div>
   );
