@@ -255,7 +255,7 @@ export default function ServiceTimePicker({
         <h2 className="text-xl font-semibold text-gray-800">
           Select Available Date{" "}
           <span className="text-sm text-gray-500 font-normal">
-            (impacts labor total)
+            (Impacts Total Labor)
           </span>
         </h2>
         {onClose && (
