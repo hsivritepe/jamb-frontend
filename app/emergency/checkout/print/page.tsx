@@ -6,8 +6,6 @@ import { EMERGENCY_SERVICES } from "@/constants/emergency";
 import { ALL_SERVICES } from "@/constants/services";
 import { taxRatesUSA } from "@/constants/taxRatesUSA";
 import { DisclaimerBlock } from "@/components/ui/DisclaimerBlock";
-
-// New imports:
 import { getSessionItem } from "@/utils/session";
 import { formatWithSeparator } from "@/utils/format";
 
@@ -58,7 +56,7 @@ function numberToWordsUSD(amount: number): string {
   };
 
   function twoDigits(num: number): string {
-    if (num <= 20) return onesMap[num];
+    if (num <= 20) return onesMap[num] || "";
     const tens = Math.floor(num / 10) * 10;
     const ones = num % 10;
     if (ones === 0) return onesMap[tens];
@@ -156,6 +154,7 @@ function deriveCategoryFromActivityKey(activityKey: string): string {
     for (const svcKey of Object.keys(catObj.services)) {
       const svcData = catObj.services[svcKey];
       if (svcData?.activities && svcData.activities[activityKey]) {
+        // e.g. "plumbing" => "Plumbing"
         return catKey.charAt(0).toUpperCase() + catKey.slice(1);
       }
     }
@@ -347,7 +346,6 @@ export default function PrintEmergencyEstimate() {
     };
   }, [estimateNumber]);
 
-  // ---------- RENDER ----------
   return (
     <div className="print-page p-4 text-sm text-gray-800">
       {/* Logo + horizontal divider */}
@@ -370,7 +368,7 @@ export default function PrintEmergencyEstimate() {
         order number after confirmation.
       </p>
 
-      {/* Address / date / description / photos */}
+      {/* Address / date / description */}
       <div className="space-y-2 mb-6">
         <div>
           <strong>Address:</strong>{" "}
@@ -385,18 +383,76 @@ export default function PrintEmergencyEstimate() {
           <span>{description || "No details provided"}</span>
         </div>
 
+        {/* Photos logic here */}
         {photos.length > 0 && (
           <div className="mt-2">
             <strong>Uploaded Photos:</strong>
-            <div className="grid grid-cols-3 gap-2 mt-2">
-              {photos.map((ph, idx) => (
-                <img
-                  key={idx}
-                  src={ph}
-                  alt={`Photo ${idx + 1}`}
-                  className="w-full h-24 object-cover border border-gray-300"
-                />
-              ))}
+            <div className="mt-2">
+              {/* 1) Single photo => half width */}
+              {photos.length === 1 ? (
+                <div className="flex w-full justify-center">
+                  <div className="w-1/2 overflow-hidden rounded-md border border-gray-300">
+                    <img
+                      src={photos[0]}
+                      alt="Emergency Photo"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </div>
+              ) : photos.length <= 8 ? (
+                /* 2) If 2..8 => single row => exactly photos.length columns */
+                <div
+                  className={`grid grid-cols-${photos.length} gap-2 w-full`}
+                  style={{
+                    gridTemplateColumns: `repeat(${photos.length}, minmax(0, 1fr))`,
+                  }}
+                >
+                  {photos.map((ph, idx) => (
+                    <div
+                      key={idx}
+                      className="overflow-hidden rounded-md border border-gray-300"
+                    >
+                      <img
+                        src={ph}
+                        alt={`Photo ${idx + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                /* 3) More than 8 => two rows, each 8 columns */
+                <div className="flex flex-col gap-2 w-full">
+                  <div className="grid grid-cols-8 gap-2 w-full">
+                    {photos.slice(0, 8).map((ph, idx) => (
+                      <div
+                        key={idx}
+                        className="overflow-hidden rounded-md border border-gray-300"
+                      >
+                        <img
+                          src={ph}
+                          alt={`Photo ${idx + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-8 gap-2 w-full">
+                    {photos.slice(8).map((ph, idx) => (
+                      <div
+                        key={idx}
+                        className="overflow-hidden rounded-md border border-gray-300"
+                      >
+                        <img
+                          src={ph}
+                          alt={`Photo ${8 + idx + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -438,8 +494,13 @@ export default function PrintEmergencyEstimate() {
                   {items.map((item, j) => {
                     const rowNum = `${catIndex}.${j + 1}`;
                     return (
-                      <tr key={item.activityKey} className="border-b last:border-0">
-                        <td className="px-3 py-2 border-r text-center">{rowNum}</td>
+                      <tr
+                        key={item.activityKey}
+                        className="border-b last:border-0"
+                      >
+                        <td className="px-3 py-2 border-r text-center">
+                          {rowNum}
+                        </td>
                         <td className="px-3 py-2 border-r">{item.title}</td>
                         <td className="px-3 py-2 border-r text-center">
                           {item.quantity}
@@ -470,7 +531,9 @@ export default function PrintEmergencyEstimate() {
 
           {hasSurchargeOrDiscount && (
             <div className="flex justify-between">
-              <span>{timeCoefficient > 1 ? "Surcharge (urgency)" : "Discount (date selection)"}:</span>
+              <span>
+                {timeCoefficient > 1 ? "Surcharge (urgency)" : "Discount (date selection)"}:
+              </span>
               <span>
                 {timeCoefficient > 1 ? "+" : "-"}$
                 {formatWithSeparator(surchargeOrDiscount)}
@@ -537,11 +600,7 @@ export default function PrintEmergencyEstimate() {
                       </p>
                     )}
                     <div className="flex justify-between items-center text-sm mt-1">
-                      <span>
-                        {item.quantity}{" "}
-                        {ALL_SERVICES.find((svc) => svc.id === item.activityKey)
-                          ?.unit_of_measurement || "each"}
-                      </span>
+                      <span>{item.quantity} (units)</span>
                       <span className="mr-4">
                         ${formatWithSeparator(item.combinedCost)}
                       </span>

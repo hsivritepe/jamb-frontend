@@ -92,17 +92,17 @@ function numberToWordsUSD(amount: number): string {
     90: "ninety",
   };
 
-  function twoDigitWords(n: number): string {
-    if (n <= 20) return wordsMap[n] || "";
-    const tens = Math.floor(n / 10) * 10;
-    const ones = n % 10;
+  function twoDigitWords(num: number): string {
+    if (num <= 20) return wordsMap[num] || "";
+    const tens = Math.floor(num / 10) * 10;
+    const ones = num % 10;
     if (ones === 0) return wordsMap[tens];
     return `${wordsMap[tens]}-${wordsMap[ones]}`;
   }
 
-  function threeDigitWords(n: number): string {
-    const hundreds = Math.floor(n / 100);
-    const remainder = n % 100;
+  function threeDigitWords(num: number): string {
+    const hundreds = Math.floor(num / 100);
+    const remainder = num % 100;
     let result = "";
     if (hundreds > 0) {
       result += `${wordsMap[hundreds]} hundred`;
@@ -146,6 +146,61 @@ function getCalcResultFor(
   calcMap: Record<string, any>
 ): Record<string, any> | null {
   return calcMap[svcId] || null;
+}
+
+/** 
+ * Adds a small Payment Schedule block:
+ *  - If "100% Prepayment", show one-time
+ *  - If "Monthly", show 12 equal
+ *  - If "Quarterly", show 4 equal
+ *  - Else => no schedule
+ */
+function renderPaymentSchedule(selectedPaymentOption: string | null, finalTotal: number) {
+  if (!selectedPaymentOption) return null;
+
+  if (selectedPaymentOption === "100% Prepayment") {
+    return (
+      <div className="mt-4 text-sm">
+        <h4 className="font-semibold text-gray-800">Payment Schedule</h4>
+        <p className="text-gray-600 mt-1">
+          You pay the entire total of{" "}
+          <span className="font-medium text-blue-600">
+            ${formatWithSeparator(finalTotal)}
+          </span>{" "}
+          once (upfront).
+        </p>
+      </div>
+    );
+  } else if (selectedPaymentOption === "Monthly") {
+    const monthlyPay = finalTotal / 12;
+    return (
+      <div className="mt-4 text-sm">
+        <h4 className="font-semibold text-gray-800">Payment Schedule (Monthly)</h4>
+        <p className="text-gray-600 mt-1">
+          You will pay{" "}
+          <span className="font-medium text-blue-600">
+            ${formatWithSeparator(monthlyPay)}
+          </span>{" "}
+          monthly for 12 months.
+        </p>
+      </div>
+    );
+  } else if (selectedPaymentOption === "Quarterly") {
+    const quarterlyPay = finalTotal / 4;
+    return (
+      <div className="mt-4 text-sm">
+        <h4 className="font-semibold text-gray-800">Payment Schedule (Quarterly)</h4>
+        <p className="text-gray-600 mt-1">
+          You will pay{" "}
+          <span className="font-medium text-blue-600">
+            ${formatWithSeparator(quarterlyPay)}
+          </span>{" "}
+          every 3 months (4 total payments).
+        </p>
+      </div>
+    );
+  }
+  return null;
 }
 
 export default function PackagesPrintPage() {
@@ -578,6 +633,9 @@ export default function PackagesPrintPage() {
             ({finalTotalWords})
           </span>
         </div>
+
+        {/* Payment Schedule insertion */}
+        {renderPaymentSchedule(selectedPaymentOption, finalTotal)}
       </section>
     );
   }
@@ -933,7 +991,7 @@ export default function PackagesPrintPage() {
       {/* Page 1 => heading, disclaimers, home details */}
       {renderPage1()}
 
-      {/* Page 2 => (1) Summary with "For Home" / "For Garden" */}
+      {/* Page 2 => (1) Summary with "For Home" / "For Garden" + Payment Schedule */}
       {renderPage2Summary()}
 
       {/* Page 3 => (2) Cost Breakdown */}

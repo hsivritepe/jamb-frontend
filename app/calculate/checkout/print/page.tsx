@@ -19,7 +19,7 @@ function formatWithSeparator(value: number): string {
 }
 
 /**
- * Returns the combined state+local tax rate (e.g. 8.85) for "CA" from taxRatesUSA.
+ * Returns the combined state+local tax rate (e.g. 8.85) for a given state code ("CA", "NY", etc.).
  */
 function getTaxRateForState(stateCode: string): number {
   if (!stateCode) return 0;
@@ -162,10 +162,7 @@ export default function PrintServicesEstimate() {
   const serviceFeeOnMaterials = getSessionItem("serviceFeeOnMaterials", 0);
   const userStateCode = getSessionItem("location_state", "");
   const userZip = getSessionItem("location_zip", "00000");
-  const selectedCategories: string[] = getSessionItem(
-    "services_selectedCategories",
-    []
-  );
+  const selectedCategories: string[] = getSessionItem("services_selectedCategories", []);
   const searchQuery: string = getSessionItem("services_searchQuery", "");
 
   // If no data => redirect
@@ -290,7 +287,10 @@ export default function PrintServicesEstimate() {
   }
 
   const materialsSpecArray = Object.values(materialsSpecMap);
-  const totalMaterialsCost = materialsSpecArray.reduce((acc, m) => acc + m.totalCost, 0);
+  const totalMaterialsCost = materialsSpecArray.reduce(
+    (acc, m) => acc + m.totalCost,
+    0
+  );
   const laborDiff = finalLabor - laborSubtotal;
 
   return (
@@ -326,8 +326,20 @@ export default function PrintServicesEstimate() {
       {photos.length > 0 && (
         <section className="mb-6">
           <h3 className="font-semibold text-xl mb-2">Uploaded Photos</h3>
-          {photos.length <= 8 ? (
-            /* If 8 or fewer => single row with photos.length columns */
+
+          {/* 1) If exactly one photo => half the page width */}
+          {photos.length === 1 ? (
+            <div className="flex w-full justify-center">
+              <div className="w-1/2 overflow-hidden rounded-md border border-gray-300">
+                <img
+                  src={photos[0]}
+                  alt="Uploaded Photo"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+          ) : photos.length <= 8 ? (
+            /* 2) If 2..8 => single row => grid with exactly `photos.length` columns */
             <div
               className={`grid grid-cols-${photos.length} gap-2 w-full`}
               style={{
@@ -348,7 +360,7 @@ export default function PrintServicesEstimate() {
               ))}
             </div>
           ) : (
-            /* If more than 8 => two rows: 8 columns each */
+            /* 3) If more than 8 => two rows of 8 columns each */
             <div className="flex flex-col gap-2 w-full">
               <div className="grid grid-cols-8 gap-2 w-full">
                 {photos.slice(0, 8).map((photoUrl, idx) => (
@@ -400,85 +412,80 @@ export default function PrintServicesEstimate() {
             <tr className="border-b bg-white">
               <th className="px-3 py-2 border-r border-gray-300 w-14 text-center">#</th>
               <th className="px-3 py-2 border-r border-gray-300 text-left">Service</th>
-              <th className="px-3 py-2 border-r border-gray-300 text-center w-20">Qty</th>
+              <th className="px-3 py-2 border-r border-gray-300 text-center w-20">
+                Qty
+              </th>
               <th className="px-3 py-2 text-center w-24">Total Cost</th>
             </tr>
           </thead>
           <tbody>
-            {Object.entries(categoriesBySection).map(
-              ([sectionName, catIds], i) => {
-                const sectionIndex = i + 1;
-                const catsWithServices = catIds.filter((catId) => {
-                  const arr = categoryServicesMap[catId] || [];
-                  return arr.some((s) => selectedServicesState[s.id] != null);
-                });
-                if (catsWithServices.length === 0) return null;
+            {Object.entries(categoriesBySection).map(([sectionName, catIds], i) => {
+              const sectionIndex = i + 1;
+              const catsWithServices = catIds.filter((catId) => {
+                const arr = categoryServicesMap[catId] || [];
+                return arr.some((svc) => selectedServicesState[svc.id] != null);
+              });
+              if (catsWithServices.length === 0) return null;
 
-                return (
-                  <React.Fragment key={sectionName}>
-                    <tr>
-                      <td
-                        colSpan={4}
-                        className="px-3 py-2 font-medium bg-gray-100 border-b border-gray-300"
-                      >
-                        {sectionIndex}. {sectionName}
-                      </td>
-                    </tr>
-                    {catsWithServices.map((catId, j) => {
-                      const catIndex = j + 1;
-                      const arr = categoryServicesMap[catId] || [];
-                      const chosenServices = arr.filter(
-                        (svc) => selectedServicesState[svc.id] != null
-                      );
-                      if (chosenServices.length === 0) return null;
+              return (
+                <React.Fragment key={sectionName}>
+                  <tr>
+                    <td
+                      colSpan={4}
+                      className="px-3 py-2 font-medium bg-gray-100 border-b border-gray-300"
+                    >
+                      {sectionIndex}. {sectionName}
+                    </td>
+                  </tr>
+                  {catsWithServices.map((catId, j) => {
+                    const catIndex = j + 1;
+                    const arr = categoryServicesMap[catId] || [];
+                    const chosenServices = arr.filter(
+                      (svc) => selectedServicesState[svc.id] != null
+                    );
+                    if (chosenServices.length === 0) return null;
 
-                      const catName = getCategoryNameById(catId);
+                    const catName = getCategoryNameById(catId);
 
-                      return (
-                        <React.Fragment key={catId}>
-                          <tr>
-                            <td
-                              colSpan={4}
-                              className="px-5 py-2 border-b border-gray-200 font-medium"
-                            >
-                              {sectionIndex}.{catIndex}. {catName}
-                            </td>
-                          </tr>
-                          {chosenServices.map((svc, k2) => {
-                            const svcIndex = k2 + 1;
-                            const qty = selectedServicesState[svc.id] || 1;
-                            const cr = calculationResultsMap[svc.id];
-                            const finalCost = cr
-                              ? parseFloat(cr.total) || 0
-                              : 0;
+                    return (
+                      <React.Fragment key={catId}>
+                        <tr>
+                          <td
+                            colSpan={4}
+                            className="px-5 py-2 border-b border-gray-200 font-medium"
+                          >
+                            {sectionIndex}.{catIndex}. {catName}
+                          </td>
+                        </tr>
+                        {chosenServices.map((svc, k2) => {
+                          const svcIndex = k2 + 1;
+                          const qty = selectedServicesState[svc.id] || 1;
+                          const cr = calculationResultsMap[svc.id];
+                          const finalCost = cr ? parseFloat(cr.total) || 0 : 0;
 
-                            return (
-                              <tr
-                                key={svc.id}
-                                className="border-b last:border-0"
-                              >
-                                <td className="px-3 py-2 border-r border-gray-300 text-center">
-                                  {sectionIndex}.{catIndex}.{svcIndex}
-                                </td>
-                                <td className="px-3 py-2 border-r border-gray-300">
-                                  {svc.title}
-                                </td>
-                                <td className="px-3 py-2 border-r border-gray-300 text-center">
-                                  {qty} {svc.unit_of_measurement}
-                                </td>
-                                <td className="px-3 py-2 text-center">
-                                  ${formatWithSeparator(finalCost)}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </React.Fragment>
-                      );
-                    })}
-                  </React.Fragment>
-                );
-              }
-            )}
+                          return (
+                            <tr key={svc.id} className="border-b last:border-0">
+                              <td className="px-3 py-2 border-r border-gray-300 text-center">
+                                {sectionIndex}.{catIndex}.{svcIndex}
+                              </td>
+                              <td className="px-3 py-2 border-r border-gray-300">
+                                {svc.title}
+                              </td>
+                              <td className="px-3 py-2 border-r border-gray-300 text-center">
+                                {qty} {svc.unit_of_measurement}
+                              </td>
+                              <td className="px-3 py-2 text-center">
+                                ${formatWithSeparator(finalCost)}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </React.Fragment>
+                    );
+                  })}
+                </React.Fragment>
+              );
+            })}
           </tbody>
         </table>
 
@@ -630,49 +637,42 @@ export default function PrintServicesEstimate() {
                                 </span>
                               </div>
 
-                              {Array.isArray(cr.materials) &&
-                                cr.materials.length > 0 && (
-                                  <div className="mt-2">
-                                    <table className="table-auto w-full text-left text-gray-700">
-                                      <thead>
-                                        <tr className="border-b">
-                                          <th className="py-1 px-1">Name</th>
-                                          <th className="py-1 px-1">Price</th>
-                                          <th className="py-1 px-1">Qty</th>
-                                          <th className="py-1 px-1">
-                                            Subtotal
-                                          </th>
+                              {Array.isArray(cr.materials) && cr.materials.length > 0 && (
+                                <div className="mt-2">
+                                  <table className="table-auto w-full text-left text-gray-700">
+                                    <thead>
+                                      <tr className="border-b">
+                                        <th className="py-1 px-1">Name</th>
+                                        <th className="py-1 px-1">Price</th>
+                                        <th className="py-1 px-1">Qty</th>
+                                        <th className="py-1 px-1">
+                                          Subtotal
+                                        </th>
+                                      </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-200">
+                                      {cr.materials.map((m: any, idx2: number) => (
+                                        <tr key={`${m.external_id}-${idx2}`}>
+                                          <td className="py-2 px-1">{m.name}</td>
+                                          <td className="py-2 px-1">
+                                            $
+                                            {formatWithSeparator(
+                                              parseFloat(m.cost_per_unit)
+                                            )}
+                                          </td>
+                                          <td className="py-2 px-1">{m.quantity}</td>
+                                          <td className="py-2 px-1">
+                                            $
+                                            {formatWithSeparator(
+                                              parseFloat(m.cost)
+                                            )}
+                                          </td>
                                         </tr>
-                                      </thead>
-                                      <tbody className="divide-y divide-gray-200">
-                                        {cr.materials.map(
-                                          (m: any, idx2: number) => (
-                                            <tr key={`${m.external_id}-${idx2}`}>
-                                              <td className="py-2 px-1">
-                                                {m.name}
-                                              </td>
-                                              <td className="py-2 px-1">
-                                                $
-                                                {formatWithSeparator(
-                                                  parseFloat(m.cost_per_unit)
-                                                )}
-                                              </td>
-                                              <td className="py-2 px-1">
-                                                {m.quantity}
-                                              </td>
-                                              <td className="py-2 px-1">
-                                                $
-                                                {formatWithSeparator(
-                                                  parseFloat(m.cost)
-                                                )}
-                                              </td>
-                                            </tr>
-                                          )
-                                        )}
-                                      </tbody>
-                                    </table>
-                                  </div>
-                                )}
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>

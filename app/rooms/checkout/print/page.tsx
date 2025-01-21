@@ -85,9 +85,7 @@ function numberToWordsUSD(amount: number): string {
       if (remainder > 0) result += " ";
     }
     if (remainder > 0) {
-      if (remainder < 100) {
-        result += twoDigitsToWords(remainder);
-      }
+      if (remainder < 100) result += twoDigitsToWords(remainder);
     }
     return result || "zero";
   }
@@ -142,7 +140,7 @@ function buildEstimateNumber(stateName: string, zip: string): string {
 }
 
 /**
- * Returns a room object from ROOMS.indoor or ROOMS.outdoor arrays by its ID, or null if not found.
+ * Returns a room object from ROOMS.indoor or ROOMS.outdoor arrays by ID, or null if not found.
  */
 function getRoomById(roomId: string) {
   const allRooms = [...ROOMS.indoor, ...ROOMS.outdoor];
@@ -216,8 +214,8 @@ export default function PrintRoomsEstimate() {
   // If no services or no address => redirect
   useEffect(() => {
     let hasServices = false;
-    for (const roomKey in selectedServicesState) {
-      if (Object.keys(selectedServicesState[roomKey] || {}).length > 0) {
+    for (const roomId in selectedServicesState) {
+      if (Object.keys(selectedServicesState[roomId] || {}).length > 0) {
         hasServices = true;
         break;
       }
@@ -333,11 +331,24 @@ export default function PrintRoomsEstimate() {
       {photos.length > 0 && (
         <section className="mb-6">
           <h3 className="font-semibold text-xl mb-2">Uploaded Photos</h3>
-          {photos.length <= 8 ? (
-            /** If 8 or fewer, one row with exactly photos.length columns (full width). */
+          {/* 1) If exactly 1 photo => half page width */}
+          {photos.length === 1 ? (
+            <div className="flex w-full justify-center">
+              <div className="w-1/2 overflow-hidden rounded-md border border-gray-300">
+                <img
+                  src={photos[0]}
+                  alt="Uploaded Photo"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+          ) : photos.length <= 8 ? (
+            /* 2) If 2..8 => single row with photos.length columns */
             <div
               className={`grid grid-cols-${photos.length} gap-2 w-full`}
-              style={{ gridTemplateColumns: `repeat(${photos.length}, minmax(0, 1fr))` }}
+              style={{
+                gridTemplateColumns: `repeat(${photos.length}, minmax(0, 1fr))`,
+              }}
             >
               {photos.map((photoUrl, idx) => (
                 <div
@@ -353,7 +364,7 @@ export default function PrintRoomsEstimate() {
               ))}
             </div>
           ) : (
-            /** If more than 8 => 2 lines: First line has 8 photos, second line has the rest (8 columns each). */
+            /* 3) If more than 8 => two rows, 8 columns each */
             <div className="flex flex-col gap-2 w-full">
               <div className="grid grid-cols-8 gap-2 w-full">
                 {photos.slice(0, 8).map((photoUrl, idx) => (
@@ -369,7 +380,6 @@ export default function PrintRoomsEstimate() {
                   </div>
                 ))}
               </div>
-
               <div className="grid grid-cols-8 gap-2 w-full">
                 {photos.slice(8).map((photoUrl, idx) => (
                   <div
@@ -409,7 +419,7 @@ export default function PrintRoomsEstimate() {
           </thead>
           <tbody>
             {Object.keys(selectedServicesState).map((roomId) => {
-              const roomObj = getRoomById(roomId);
+              const roomObj = ROOMS.indoor.concat(ROOMS.outdoor).find((r) => r.id === roomId);
               const roomTitle = roomObj ? roomObj.title : roomId;
               const servicesInThisRoom = selectedServicesState[roomId];
 
@@ -460,7 +470,8 @@ export default function PrintRoomsEstimate() {
 
                         {Object.entries(catObjMap).map(([catId, svcIds], cIdx) => {
                           const catNumber = `${sectionNumber}.${cIdx + 1}`;
-                          const catName = getCategoryNameById(catId);
+                          const catObj = ALL_CATEGORIES.find((c) => c.id === catId);
+                          const catTitle = catObj ? catObj.title : catId;
 
                           return (
                             <React.Fragment key={catId}>
@@ -469,7 +480,7 @@ export default function PrintRoomsEstimate() {
                                   colSpan={4}
                                   className="px-8 py-2 border-b border-gray-300 font-medium text-md bg-white"
                                 >
-                                  {catNumber}. {catName}
+                                  {catNumber}. {catTitle}
                                 </td>
                               </tr>
 
@@ -550,7 +561,9 @@ export default function PrintRoomsEstimate() {
               </span>
               <span>
                 {timeCoefficient > 1 ? "+" : "-"}$
-                {formatWithSeparator(Math.abs(laborSubtotal * timeCoefficient - laborSubtotal))}
+                {formatWithSeparator(
+                  Math.abs(laborSubtotal * timeCoefficient - laborSubtotal)
+                )}
               </span>
             </div>
           )}
@@ -569,7 +582,9 @@ export default function PrintRoomsEstimate() {
             <span>${formatWithSeparator(sumBeforeTax)}</span>
           </div>
           <div className="flex justify-end">
-            <span className="mr-6">Sales tax {taxRatePercent > 0 ? `(${taxRatePercent.toFixed(2)}%)` : ""}:</span>
+            <span className="mr-6">
+              Sales tax {taxRatePercent > 0 ? `(${taxRatePercent.toFixed(2)}%)` : ""}:
+            </span>
             <span>${formatWithSeparator(taxAmount)}</span>
           </div>
           <div className="flex justify-end font-semibold text-base mt-1">
@@ -795,9 +810,7 @@ export default function PrintRoomsEstimate() {
                     return (
                       <tr key={secName} className="border-b last:border-0">
                         <td className="px-3 py-2 border-r border-gray-300">{secName}</td>
-                        <td className="px-3 py-2 text-right">
-                          ${formatWithSeparator(totalLab)}
-                        </td>
+                        <td className="px-3 py-2 text-right">${formatWithSeparator(totalLab)}</td>
                       </tr>
                     );
                   })}

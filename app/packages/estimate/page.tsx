@@ -48,23 +48,17 @@ function formatHouseType(value: string): string {
   }
 }
 
-/** 
- * PaymentOptionPanel: the right-side panel where user picks 
- * either "100% Prepayment," "Quarterly," or "Monthly."
- */
+/** PaymentOptionPanel: the right-side panel (import). */
 import PaymentOptionPanel from "@/components/ui/PaymentOptionPanel";
 
 export default function EstimatePage() {
   const router = useRouter();
 
   // Identify which package was chosen
-  const storedPackageId = getSessionItem<string | null>(
-    "packages_currentPackageId",
-    null
-  );
+  const storedPackageId = getSessionItem<string | null>("packages_currentPackageId", null);
   const chosenPackage = PACKAGES.find((p) => p.id === storedPackageId) || null;
 
-  // Load selected services
+  // Load user-chosen services from session
   const selectedServicesData = getSessionItem("packages_selectedServices", {
     indoor: {},
     outdoor: {},
@@ -87,13 +81,13 @@ export default function EstimatePage() {
     }
   }, [mergedSelected, router, storedPackageId]);
 
-  // Load calculation data => labor/material breakdown
+  // Calculation data => labor/material for each service
   const calculationResultsMap = getSessionItem<Record<string, any>>(
     "packages_calculationResultsMap",
     {}
   );
 
-  // House info => to show in summary
+  // Basic house info
   const houseInfo = getSessionItem("packages_houseInfo", {
     addressLine: "",
     city: "",
@@ -121,7 +115,6 @@ export default function EstimatePage() {
   const [selectedPaymentOption, setSelectedPaymentOption] = useState<string | null>(
     () => getSessionItem("packages_selectedTime", null)
   );
-  // Payment coefficient => 1.0 monthly, 0.85 for 15% discount, etc.
   const [paymentCoefficient, setPaymentCoefficient] = useState<number>(() =>
     getSessionItem("packages_timeCoefficient", 1)
   );
@@ -130,40 +123,40 @@ export default function EstimatePage() {
   useEffect(() => {
     setSessionItem("packages_selectedTime", selectedPaymentOption);
   }, [selectedPaymentOption]);
+
   useEffect(() => {
     setSessionItem("packages_timeCoefficient", paymentCoefficient);
   }, [paymentCoefficient]);
 
-  // Summation => we only discount labor portion, not materials
+  // Summation => discount only for labor
   let laborSubtotal = 0;
   let materialsSubtotal = 0;
-
   for (const svcId of Object.keys(mergedSelected)) {
-    const br = calculationResultsMap[svcId];
-    if (!br) continue;
-    laborSubtotal += parseFloat(br.work_cost) || 0;
-    materialsSubtotal += parseFloat(br.material_cost) || 0;
+    const result = calculationResultsMap[svcId];
+    if (!result) continue;
+    laborSubtotal += parseFloat(result.work_cost) || 0;
+    materialsSubtotal += parseFloat(result.material_cost) || 0;
   }
 
   // final labor => apply paymentCoefficient
   const finalLabor = laborSubtotal * paymentCoefficient;
 
-  // 15% fee on labor, 5% on materials
+  // 15% on finalLabor, 5% on materials
   const serviceFeeOnLabor = finalLabor * 0.15;
   const serviceFeeOnMaterials = materialsSubtotal * 0.05;
 
-  // sumBeforeTax => finalLabor + materials + those fees
+  // sumBeforeTax
   const sumBeforeTax = finalLabor + materialsSubtotal + serviceFeeOnLabor + serviceFeeOnMaterials;
 
-  // tax => state-based
+  // tax from state
   const userState = houseInfo.state || "";
   const taxRatePercent = getTaxRateForState(userState);
   const taxAmount = sumBeforeTax * (taxRatePercent / 100);
 
-  // final => after tax
+  // final
   const finalTotal = sumBeforeTax + taxAmount;
 
-  // Build cost breakdown by section->category
+  // Build cost breakdown => group by section -> category
   type ServiceItem = {
     svcId: string;
     quantity: number;
@@ -195,14 +188,13 @@ export default function EstimatePage() {
     })
     .filter(Boolean) as ServiceItem[];
 
-  // Group them
+  // Build a map { sectionName -> { catId -> ServiceItem[] } }
   const summaryBySection: Record<string, Record<string, ServiceItem[]>> = {};
   for (const item of servicesArray) {
-    // get category => "1-1"
+    // Identify the category
     const catId = item.svcId.split("-").slice(0, 2).join("-");
     const catObj = ALL_CATEGORIES.find((c) => c.id === catId);
     if (!catObj) continue;
-
     const sectionName = catObj.section;
     if (!summaryBySection[sectionName]) {
       summaryBySection[sectionName] = {};
@@ -213,7 +205,29 @@ export default function EstimatePage() {
     summaryBySection[sectionName][catId].push(item);
   }
 
-  // Tweak breadcrumbs => pass packageId in query if needed
+  // **CRITICAL**: Store these final numbers in session so Checkout can read them
+  useEffect(() => {
+    // Only do this after we have computed them
+    setSessionItem("packages_laborSubtotal", laborSubtotal);
+    setSessionItem("packages_materialsSubtotal", materialsSubtotal);
+    setSessionItem("serviceFeeOnLabor", serviceFeeOnLabor);
+    setSessionItem("serviceFeeOnMaterials", serviceFeeOnMaterials);
+    setSessionItem("packages_sumBeforeTax", sumBeforeTax);
+    setSessionItem("packages_taxRatePercent", taxRatePercent);
+    setSessionItem("packages_taxAmount", taxAmount);
+    setSessionItem("packages_estimateFinalTotal", finalTotal);
+  }, [
+    laborSubtotal,
+    materialsSubtotal,
+    serviceFeeOnLabor,
+    serviceFeeOnMaterials,
+    sumBeforeTax,
+    taxRatePercent,
+    taxAmount,
+    finalTotal,
+  ]);
+
+  // Tweak breadcrumbs if we have a package ID
   const modifiedCrumbs = PACKAGES_STEPS.map((step) => {
     if (!storedPackageId) return step;
     if (step.href.startsWith("/packages") && !step.href.includes("?")) {
@@ -222,11 +236,11 @@ export default function EstimatePage() {
     return step;
   });
 
-  // Render payment schedule => monthly / quarterly / single prepay
+  /** Renders the monthly/quarterly/100% prepay schedule. */
   function renderPaymentSchedule() {
     if (!selectedPaymentOption) return null;
 
-    // We'll do finalTotal as the total owed
+    // We'll do finalTotal as the total
     const total = finalTotal;
 
     // helper => format date as M/D/YYYY
@@ -237,7 +251,6 @@ export default function EstimatePage() {
     const now = new Date();
 
     if (selectedPaymentOption === "100% Prepayment") {
-      // One payment in 10 days
       const payDate = addDays(now, 10);
       return (
         <div className="mt-4">
@@ -247,7 +260,7 @@ export default function EstimatePage() {
             <span className="font-medium text-blue-600">
               ${formatWithSeparator(total)}
             </span>{" "}
-            due on <strong>{fmtDate(payDate)}</strong> (within 10 days).
+            due on <strong>{fmtDate(payDate)}</strong>.
           </p>
         </div>
       );
@@ -255,11 +268,10 @@ export default function EstimatePage() {
 
     if (selectedPaymentOption === "Quarterly") {
       const payAmount = total / 4;
-      // 4 times => every 3 months
       const schedule = [0, 3, 6, 9].map((m) => addMonths(now, m));
       return (
         <div className="mt-4">
-          <h4 className="text-xl font-semibold text-gray-800">Payment Schedule</h4>
+          <h4 className="text-xl font-semibold text-gray-800">Payment Schedule (Quarterly)</h4>
           <p className="text-md text-gray-600 mt-2 mb-2">
             4 payments of{" "}
             <span className="font-medium text-blue-600">
@@ -281,11 +293,10 @@ export default function EstimatePage() {
 
     if (selectedPaymentOption === "Monthly") {
       const payAmount = total / 12;
-      // 12 monthly
       const schedule = Array.from({ length: 12 }).map((_, i) => addMonths(now, i));
       return (
         <div className="mt-4">
-          <h4 className="text-xl font-semibold text-gray-800">Payment Schedule</h4>
+          <h4 className="text-xl font-semibold text-gray-800">Payment Schedule (Monthly)</h4>
           <p className="text-md text-gray-600 mt-2 mb-2">
             12 monthly payments of{" "}
             <span className="font-medium text-blue-600">
@@ -308,6 +319,7 @@ export default function EstimatePage() {
   }
 
   function handleProceedToCheckout() {
+    // When user hits "checkout", we *already* have set session items above
     router.push("/packages/checkout");
   }
 
@@ -326,7 +338,7 @@ export default function EstimatePage() {
       </div>
 
       <div className="container mx-auto py-12 flex gap-12">
-        {/* LEFT column => cost breakdown */}
+        {/* LEFT column => the main estimate content */}
         <div className="max-w-[700px] bg-brand-light p-6 rounded-xl border border-gray-300 overflow-hidden mr-auto">
           <SectionBoxSubtitle>
             Estimate for {chosenPackage ? chosenPackage.title : "No package found"}
@@ -387,10 +399,7 @@ export default function EstimatePage() {
                                         Labor
                                       </span>
                                       <span className="text-sm font-medium text-gray-700">
-                                        $
-                                        {formatWithSeparator(
-                                          parseFloat(svc.breakdown.work_cost) || 0
-                                        )}
+                                        ${formatWithSeparator(svc.labor)}
                                       </span>
                                     </div>
                                     <div className="flex justify-between mb-2">
@@ -398,10 +407,7 @@ export default function EstimatePage() {
                                         Materials, tools & equipment
                                       </span>
                                       <span className="text-sm font-medium text-gray-700">
-                                        $
-                                        {formatWithSeparator(
-                                          parseFloat(svc.breakdown.material_cost) || 0
-                                        )}
+                                        ${formatWithSeparator(svc.materials)}
                                       </span>
                                     </div>
 
@@ -454,7 +460,7 @@ export default function EstimatePage() {
             )}
           </div>
 
-          {/* Now the Subtotals */}
+          {/* Subtotals + fees */}
           <div className="pt-4 mt-4 border-t border-gray-200">
             <div className="flex justify-between mb-2">
               <span className="font-semibold text-lg text-gray-600">Labor total:</span>
@@ -464,14 +470,13 @@ export default function EstimatePage() {
             </div>
             <div className="flex justify-between mb-2">
               <span className="font-semibold text-lg text-gray-600">
-                Materials, tools & equipment:
+                Materials, tools &amp; equipment:
               </span>
               <span className="font-semibold text-lg text-gray-600">
                 ${formatWithSeparator(materialsSubtotal)}
               </span>
             </div>
 
-            {/* Payment coefficient => discount or surcharge, only on labor */}
             {paymentCoefficient !== 1 && (
               <div className="flex justify-between mb-2">
                 <span className="text-gray-600">
@@ -495,9 +500,7 @@ export default function EstimatePage() {
               </span>
             </div>
             <div className="flex justify-between mb-2">
-              <span className="text-gray-600">
-                Delivery &amp; Processing (5% on materials)
-              </span>
+              <span className="text-gray-600">Delivery &amp; Processing (5% on materials)</span>
               <span className="font-semibold text-lg text-gray-800">
                 ${formatWithSeparator(serviceFeeOnMaterials)}
               </span>
@@ -509,7 +512,6 @@ export default function EstimatePage() {
                 ${formatWithSeparator(sumBeforeTax)}
               </span>
             </div>
-
             <div className="flex justify-between mb-2">
               <span className="text-gray-600">
                 Sales tax
@@ -525,7 +527,7 @@ export default function EstimatePage() {
             </div>
           </div>
 
-          {/* Payment schedule details */}
+          {/* Payment schedule */}
           {renderPaymentSchedule()}
 
           {/* House info */}
@@ -619,7 +621,7 @@ export default function EstimatePage() {
 
         {/* RIGHT column => PaymentOptionPanel (width=500px) */}
         <PaymentOptionPanel
-          subtotal={laborSubtotal} 
+          subtotal={laborSubtotal /* base labor */}
           materialsAndFees={materialsSubtotal + serviceFeeOnLabor + serviceFeeOnMaterials}
           selectedOption={selectedPaymentOption}
           onConfirm={(label, coeff) => {
