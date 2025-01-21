@@ -1,0 +1,211 @@
+.
+├── README.md
+├── app
+│   ├── about
+│   │   └── page.tsx
+│   ├── calculate
+│   │   ├── checkout
+│   │   │   ├── page.tsx
+│   │   │   └── print
+│   │   │       └── page.tsx
+│   │   ├── details
+│   │   │   └── page.tsx
+│   │   ├── estimate
+│   │   │   └── page.tsx
+│   │   ├── page.tsx
+│   │   └── services
+│   │       └── page.tsx
+│   ├── emergency
+│   │   ├── checkout
+│   │   │   ├── page.tsx
+│   │   │   └── print
+│   │   │       └── page.tsx
+│   │   ├── details
+│   │   │   └── page.tsx
+│   │   ├── estimate
+│   │   │   └── page.tsx
+│   │   ├── page.tsx
+│   │   └── services
+│   │       └── page.tsx
+│   ├── globals.css
+│   ├── layout.tsx
+│   ├── packages
+│   │   ├── checkout
+│   │   │   ├── page.tsx
+│   │   │   └── print
+│   │   │       └── page.tsx
+│   │   ├── details
+│   │   │   └── page.tsx
+│   │   ├── estimate
+│   │   │   └── page.tsx
+│   │   ├── page.tsx
+│   │   └── services
+│   │       └── page.tsx
+│   ├── page.tsx
+│   └── rooms
+│       ├── checkout
+│       │   ├── page.tsx
+│       │   └── print
+│       │       └── page.tsx
+│       ├── estimate
+│       │   └── page.tsx
+│       ├── page.tsx
+│       └── services
+│           └── page.tsx
+├── components
+│   ├── AppPromotion.tsx
+│   ├── RecommendedActivities.tsx
+│   ├── SearchServices.tsx
+│   ├── ServiceImage.tsx
+│   ├── ServicePackages.tsx
+│   ├── ServicesAccordion.tsx
+│   ├── ServicesRecommendations.ts
+│   ├── StepByStep.tsx
+│   ├── TryItNow.tsx
+│   ├── WhoIsThisFor.tsx
+│   ├── calculate
+│   │   ├── EstimateCalculation.tsx
+│   │   ├── ServiceAccordion.tsx
+│   │   ├── ServiceSelector.tsx
+│   │   └── ServicesSelection.tsx
+│   ├── home
+│   │   ├── HeroSection.tsx
+│   │   ├── HowItWorks.tsx
+│   │   ├── RoomMakeovers.tsx
+│   │   └── ServicesGrid.tsx
+│   ├── layout
+│   │   ├── Footer.tsx
+│   │   └── Header.tsx
+│   └── ui
+│       ├── ActionIconsBar.tsx
+│       ├── AddressSection.tsx
+│       ├── BoxGrid.tsx
+│       ├── BreadCrumb.tsx
+│       ├── Button.tsx
+│       ├── DisclaimerBlock.tsx
+│       ├── ImageBoxGrid.tsx
+│       ├── InfoBox.tsx
+│       ├── OptionBox.tsx
+│       ├── PaymentOptionPanel.tsx
+│       ├── PhotosAndDescription.tsx
+│       ├── PreferencesModal.tsx
+│       ├── QuantitySelector.tsx
+│       ├── SectionBoxSubtitle.tsx
+│       ├── SectionBoxTitle.tsx
+│       ├── ServiceCostBreakdown.tsx
+│       ├── ServiceTimePicker.tsx
+│       └── Switch.tsx
+├── constants
+│   ├── categories.ts
+│   ├── emergency.ts
+│   ├── navigation.ts
+│   ├── packages.ts
+│   ├── rooms.ts
+│   ├── searchData.ts
+│   ├── service.ts
+│   ├── services.ts
+│   ├── taxRatesCanada.ts
+│   └── taxRatesUSA.ts
+├── context
+│   └── LocationContext.tsx
+├── data
+│   ├── emergency_services.json
+│   ├── indoor_rooms.json
+│   ├── indoor_services.json
+│   ├── outdoor_rooms.json
+│   ├── outdoor_services.json
+│   ├── packages.json
+│   ├── usa_state_tax_rates.json
+│   └── сanada_province_tax_rates.json
+├── lib
+│   └── utils.ts
+├── next-env.d.ts
+├── next.config.mjs
+├── package-lock.json
+├── package.json
+├── postcss.config.mjs
+├── public
+│   ├── favicon.ico
+│   ├── fonts
+│   │   ├── GeistMonoVF.woff
+│   │   └── GeistVF.woff
+│   └── images
+│       ├── about-emergency.jpg
+│       ├── app-screenshot.png
+│       ├── burst-pipe-1.jpg
+│       ├── burst-pipe-2.jpg
+│       ├── download-apple-store.png
+│       ├── download-google-play.png
+│       ├── hero-service-professional.jpg
+│       ├── how-it-works-step-1.png
+│       ├── how-it-works-step-2.png
+│       ├── how-it-works-step-3.png
+│       ├── how-it-works-step-4.png
+│       ├── logo.png
+│       ├── rooms
+│       │   ├── attic.jpg
+│       │   ├── basement.jpg
+│       │   ├── bathroom.jpg
+│       │   ├── bedroom.jpg
+│       │   ├── driveway.jpg
+│       │   ├── entertainment_area.jpg
+│       │   ├── exterior_cleaning.jpg
+│       │   ├── facade.jpg
+│       │   ├── garage.jpg
+│       │   ├── home_cinema.jpg
+│       │   ├── home_office.jpg
+│       │   ├── kitchen.jpg
+│       │   ├── landscape.jpg
+│       │   ├── laundry.jpg
+│       │   ├── living_room.jpg
+│       │   ├── outdoor_kitchen.jpg
+│       │   ├── patio.jpg
+│       │   ├── playground.jpg
+│       │   └── playroom.jpg
+│       ├── services
+│       │   ├── appliance.jpg
+│       │   ├── audio-visual.jpg
+│       │   ├── carpentry.jpg
+│       │   ├── cleaning.jpg
+│       │   ├── electrical.jpg
+│       │   ├── emergency-help.jpg
+│       │   ├── facade.jpg
+│       │   ├── flooring.jpg
+│       │   ├── furniture.jpg
+│       │   ├── hvac.jpg
+│       │   ├── landscaping.jpg
+│       │   ├── moving.jpg
+│       │   ├── outdoor_appliance.jpg
+│       │   ├── outdoor_carpentry.jpg
+│       │   ├── outdoor_cleaning.jpg
+│       │   ├── outdoor_electrical.jpg
+│       │   ├── outdoor_lighting.jpg
+│       │   ├── outdoor_painting.jpg
+│       │   ├── outdoor_security.jpg
+│       │   ├── painting.jpg
+│       │   ├── plumbing.jpg
+│       │   ├── roofing.jpg
+│       │   ├── security.jpg
+│       │   ├── tiling.jpg
+│       │   └── wall_and_ceiling.jpg
+│       ├── who-is-this-for-img-1.jpeg
+│       ├── who-is-this-for-img-1.jpg
+│       ├── who-is-this-for-img-2.jpeg
+│       ├── who-is-this-for-img-2.jpg
+│       ├── who-is-this-for-img-3.jpeg
+│       └── who-is-this-for-img-3.jpg
+├── structure.txt
+├── tailwind.config.js
+├── tsconfig.json
+├── types
+│   ├── app.ts
+│   ├── common.ts
+│   ├── components.ts
+│   ├── layout.ts
+│   └── services.ts
+└── utils
+    ├── clampQuantity.ts
+    ├── format.ts
+    └── session.ts
+
+42 directories, 167 files
