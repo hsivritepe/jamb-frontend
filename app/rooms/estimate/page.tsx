@@ -3,140 +3,206 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import BreadCrumb from "@/components/ui/BreadCrumb";
-import Button from "@/components/ui/Button";
+import ServiceTimePicker from "@/components/ui/ServiceTimePicker";
 import { SectionBoxSubtitle } from "@/components/ui/SectionBoxSubtitle";
 import { ROOMS_STEPS } from "@/constants/navigation";
+import { ROOMS } from "@/constants/rooms";
 import { ALL_CATEGORIES } from "@/constants/categories";
 import { ALL_SERVICES } from "@/constants/services";
-import { ROOMS } from "@/constants/rooms";
-import ServiceTimePicker from "@/components/ui/ServiceTimePicker";
+import { taxRatesUSA } from "@/constants/taxRatesUSA";
+
+// Unified session utilities
+import {
+  getSessionItem,
+  setSessionItem,
+} from "@/utils/session";
 
 /**
- * Utility function to format numeric values (e.g., prices) with commas
- * and **exactly two** decimals (e.g., 100 -> 100.00).
+ * Formats a numeric value with commas and exactly two decimals.
  */
-const formatWithSeparator = (value: number): string =>
-  new Intl.NumberFormat("en-US", {
+function formatWithSeparator(value: number): string {
+  return new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value);
+}
 
 /**
- * Save data to sessionStorage as JSON (only in browser).
+ * Returns a combined state+local tax rate (percentage) for a given state name. 
+ * Returns 0 if not found or empty.
  */
-const saveToSession = (key: string, value: any) => {
-  if (typeof window !== "undefined") {
-    sessionStorage.setItem(key, JSON.stringify(value));
-  }
-};
-
-/**
- * Load JSON-parsed data from sessionStorage or return a default if SSR or parse error.
- */
-const loadFromSession = (key: string, defaultValue: any) => {
-  if (typeof window === "undefined") return defaultValue;
-  const savedValue = sessionStorage.getItem(key);
-  try {
-    return savedValue ? JSON.parse(savedValue) : defaultValue;
-  } catch (error) {
-    console.error(`Error parsing sessionStorage for key "${key}"`, error);
-    return defaultValue;
-  }
-};
+function getTaxRateForState(stateName: string): number {
+  if (!stateName) return 0;
+  const row = taxRatesUSA.taxRates.find(
+    (t) => t.state.toLowerCase() === stateName.toLowerCase()
+  );
+  return row ? row.combinedStateAndLocalTaxRate : 0;
+}
 
 export default function RoomsEstimate() {
   const router = useRouter();
 
-  // 1) Load array of selected room IDs from session
-  const selectedRooms: string[] = loadFromSession("rooms_selectedSections", []);
-
-  // 2) Gather "allRooms" from both indoor and outdoor, find the chosen ones
+  // Load selected room IDs from session
+  const selectedRooms: string[] = getSessionItem("rooms_selectedSections", []);
   const allRooms = [...ROOMS.indoor, ...ROOMS.outdoor];
   const chosenRooms = selectedRooms
-    .map((roomId) => allRooms.find((r) => r.id === roomId))
+    .map((id) => allRooms.find((r) => r.id === id))
     .filter((r): r is Exclude<typeof r, undefined> => r !== undefined);
 
-  // If mismatch or no rooms chosen, redirect back
+  // If mismatch or none => redirect
   useEffect(() => {
     if (selectedRooms.length === 0 || chosenRooms.length !== selectedRooms.length) {
       router.push("/rooms");
     }
   }, [selectedRooms, chosenRooms, router]);
 
-  // 3) Load selected services with quantity for each room:
-  //    { [roomId]: { [serviceId]: number } }
+  // Basic user data from session
+  const address: string = getSessionItem("address", "");
+  const photos: string[] = getSessionItem("photos", []);
+  const description: string = getSessionItem("description", "");
+  const stateName: string = getSessionItem("stateName", "");
+  const zip: string = getSessionItem("zip", "");
+  const city: string = getSessionItem("city", "");
+  const country: string = getSessionItem("country", "");
+
+  // Selected services: { roomId: { serviceId: quantity } }
   const selectedServicesState: Record<string, Record<string, number>> =
-    loadFromSession("rooms_selectedServicesWithQuantity", {});
+    getSessionItem("rooms_selectedServicesWithQuantity", {});
 
-  // 4) Load address, photos, and description
-  const address: string = loadFromSession("address", "");
-  const photos: string[] = loadFromSession("photos", []);
-  const description: string = loadFromSession("description", "");
+  // Calculation results from server
+  const calculationResultsMap: Record<string, any> =
+    getSessionItem("calculationResultsMap", {});
 
-  // 5) Confirm at least one service is chosen across all rooms & we have an address
+  // If the user toggled or removed materials
+  const clientOwnedMaterials: Record<string, string[]> =
+    getSessionItem("clientOwnedMaterials", {});
+
+  // Redirect if no services or no address
   useEffect(() => {
-    const anyServiceSelected = chosenRooms.some((room) => {
+    const anySelected = chosenRooms.some((room) => {
       const roomServices = selectedServicesState[room.id] || {};
       return Object.keys(roomServices).length > 0;
     });
-    if (!anyServiceSelected || !address.trim()) {
+    if (!anySelected || !address.trim()) {
       router.push("/rooms");
     }
   }, [chosenRooms, selectedServicesState, address, router]);
 
-  // 6) Time pick modal states
-  const [showModal, setShowModal] = useState(false);
-  const [selectedTime, setSelectedTime] = useState<string | null>(() =>
-    loadFromSession("selectedTime", null)
+  // Time/delivery selection
+  const [selectedTime, setSelectedTime] = useState<string | null>(
+    () => getSessionItem("selectedTime", null)
   );
-  const [timeCoefficient, setTimeCoefficient] = useState<number>(() =>
-    loadFromSession("timeCoefficient", 1)
+  const [timeCoefficient, setTimeCoefficient] = useState<number>(
+    () => getSessionItem("timeCoefficient", 1)
   );
 
   useEffect(() => {
-    saveToSession("selectedTime", selectedTime);
+    setSessionItem("selectedTime", selectedTime);
   }, [selectedTime]);
 
   useEffect(() => {
-    saveToSession("timeCoefficient", timeCoefficient);
+    setSessionItem("timeCoefficient", timeCoefficient);
   }, [timeCoefficient]);
 
-  // 7) Calculate total cost: sum of all room subtotals
-  function calculateRoomSubtotal(roomId: string): number {
+  // If user wants to override some calculations (removing finishing materials, etc.)
+  const [overrideCalcResults, setOverrideCalcResults] = useState<Record<string, any>>({});
+
+  // Helper to get either original or overridden calc
+  function getCalcResultFor(serviceId: string) {
+    return overrideCalcResults[serviceId] || calculationResultsMap[serviceId];
+  }
+
+  // Remove finishing materials => zero out
+  function removeFinishingMaterials(serviceId: string) {
+    const original = getCalcResultFor(serviceId);
+    if (!original) return;
+    const newObj = {
+      ...original,
+      material_cost: "0.00",
+      materials: [],
+      total: original.work_cost,
+    };
+    setOverrideCalcResults((prev) => ({ ...prev, [serviceId]: newObj }));
+  }
+
+  // Summation of labor
+  function calculateLaborSubtotal(): number {
     let total = 0;
-    const roomServices = selectedServicesState[roomId] || {};
-    for (const [serviceId, qty] of Object.entries(roomServices)) {
-      const svc = ALL_SERVICES.find((s) => s.id === serviceId);
-      if (svc) {
-        total += svc.price * (qty || 1);
-      }
-    }
+    chosenRooms.forEach((room) => {
+      const roomServices = selectedServicesState[room.id] || {};
+      Object.keys(roomServices).forEach((svcId) => {
+        const cr = getCalcResultFor(svcId);
+        if (cr && cr.work_cost) {
+          total += parseFloat(cr.work_cost) || 0;
+        }
+      });
+    });
     return total;
   }
 
-  function calculateAllRoomsSubtotal(): number {
-    return chosenRooms.reduce((sum, room) => sum + calculateRoomSubtotal(room.id), 0);
+  // Summation of materials
+  function calculateMaterialsSubtotal(): number {
+    let total = 0;
+    chosenRooms.forEach((room) => {
+      const roomServices = selectedServicesState[room.id] || {};
+      Object.keys(roomServices).forEach((svcId) => {
+        const cr = getCalcResultFor(svcId);
+        if (cr && cr.material_cost) {
+          total += parseFloat(cr.material_cost) || 0;
+        }
+      });
+    });
+    return total;
   }
 
-  const subtotal = calculateAllRoomsSubtotal();
-  const adjustedSubtotal = subtotal * timeCoefficient;
-  const salesTax = adjustedSubtotal * 0.0825;
-  const total = adjustedSubtotal + salesTax;
+  const laborSubtotal = calculateLaborSubtotal();
+  const materialsSubtotal = calculateMaterialsSubtotal();
 
-  // 8) Build structure for display
-  //    We want to group each room's services by "section -> category -> service"
+  // Apply timeCoefficient only to labor
+  const finalLabor = laborSubtotal * timeCoefficient;
+
+  // Fees: 15% on labor, 5% on materials
+  const serviceFeeOnLabor = finalLabor * 0.15;
+  const serviceFeeOnMaterials = materialsSubtotal * 0.05;
+
+  // Store for next page
+  useEffect(() => {
+    setSessionItem("serviceFeeOnLabor", serviceFeeOnLabor);
+    setSessionItem("serviceFeeOnMaterials", serviceFeeOnMaterials);
+  }, [serviceFeeOnLabor, serviceFeeOnMaterials]);
+
+  // Sum => tax => final
+  const sumBeforeTax = finalLabor + materialsSubtotal + serviceFeeOnLabor + serviceFeeOnMaterials;
+  const taxRatePercent = getTaxRateForState(stateName);
+  const taxAmount = sumBeforeTax * (taxRatePercent / 100);
+  const finalTotal = sumBeforeTax + taxAmount;
+
+  // Store final for next step
+  useEffect(() => {
+    setSessionItem("rooms_laborSubtotal", laborSubtotal);
+    setSessionItem("rooms_materialsSubtotal", materialsSubtotal);
+    setSessionItem("rooms_sumBeforeTax", sumBeforeTax);
+    setSessionItem("rooms_taxRatePercent", taxRatePercent);
+    setSessionItem("rooms_taxAmount", taxAmount);
+    setSessionItem("rooms_estimateFinalTotal", finalTotal);
+  }, [laborSubtotal, materialsSubtotal, sumBeforeTax, taxRatePercent, taxAmount, finalTotal]);
+
+  // Move on
+  function handleProceedToCheckout() {
+    router.push("/rooms/checkout");
+  }
+
+  // Build data structures for the room categories
   type RoomData = {
     categoriesBySection: Record<string, string[]>;
-    categoryServicesMap: Record<string, typeof ALL_SERVICES[number][]>;
+    categoryServicesMap: Record<string, (typeof ALL_SERVICES)[number][]>;
   };
-
   const roomsData: Record<string, RoomData> = {};
 
-  // For each chosen room, gather section->category->services
   for (const room of chosenRooms) {
     const chosenRoomServiceIDs = room.services.map((s) => s.id);
 
-    // Extract categories from each service's ID
+    // Build categories
     const categoriesWithSection = room.services
       .map((svc) => {
         const catId = svc.id.split("-").slice(0, 2).join("-");
@@ -144,7 +210,6 @@ export default function RoomsEstimate() {
       })
       .filter(Boolean) as (typeof ALL_CATEGORIES)[number][];
 
-    // Build a map: sectionName -> array of category IDs
     const categoriesBySection: Record<string, string[]> = {};
     categoriesWithSection.forEach((cat) => {
       if (!categoriesBySection[cat.section]) {
@@ -155,14 +220,14 @@ export default function RoomsEstimate() {
       }
     });
 
-    // Build a map: categoryId -> array of services
-    const categoryServicesMap: Record<string, typeof ALL_SERVICES[number][]> = {};
+    // Build services map
+    const categoryServicesMap: Record<string, (typeof ALL_SERVICES)[number][]> = {};
     chosenRoomServiceIDs.forEach((serviceId) => {
       const catId = serviceId.split("-").slice(0, 2).join("-");
       if (!categoryServicesMap[catId]) {
         categoryServicesMap[catId] = [];
       }
-      const svcObj = ALL_SERVICES.find((s) => s.id === serviceId);
+      const svcObj = ALL_SERVICES.find((x) => x.id === serviceId);
       if (svcObj) {
         categoryServicesMap[catId].push(svcObj);
       }
@@ -171,243 +236,304 @@ export default function RoomsEstimate() {
     roomsData[room.id] = { categoriesBySection, categoryServicesMap };
   }
 
-  // Helper: get user-friendly category name
-  function getCategoryNameById(catId: string): string {
-    const catObj = ALL_CATEGORIES.find((c) => c.id === catId);
-    return catObj ? catObj.title : catId;
+  // Construct address
+  let constructedAddress = "";
+  if (city) constructedAddress += city;
+  if (stateName) {
+    if (constructedAddress) constructedAddress += ", ";
+    constructedAddress += stateName;
+  }
+  if (zip) {
+    if (constructedAddress) constructedAddress += " ";
+    constructedAddress += zip;
+  }
+  if (country) {
+    if (constructedAddress) constructedAddress += ", ";
+    constructedAddress += country;
   }
 
-  // 9) On user click "Proceed to Checkout"
-  const handleProceedToCheckout = () => {
-    saveToSession("selectedTime", selectedTime);
-    saveToSession("timeCoefficient", timeCoefficient);
+  function getCategoryNameById(catId: string): string {
+    const cat = ALL_CATEGORIES.find((x) => x.id === catId);
+    return cat ? cat.title : catId;
+  }
 
-    // Optionally, store the chosenRooms with their titles to session
-    // so the next page can also show them if needed
-    const chosenRoomTitles = chosenRooms.map((rm) => ({
-      id: rm.id,
-      title: rm.title,
-    }));
-    saveToSession("chosenRoomTitles", chosenRoomTitles);
-
-    router.push("/rooms/checkout");
-  };
-
-  // 10) Return final JSX
   return (
     <main className="min-h-screen pt-24">
       <div className="container mx-auto">
-        {/* Breadcrumb for Room Steps */}
         <BreadCrumb items={ROOMS_STEPS} />
       </div>
 
       <div className="container mx-auto py-12">
         <div className="flex gap-12">
-          {/* LEFT COLUMN: main estimate details */}
+          {/* LEFT column => main estimate */}
           <div className="w-[700px]">
             <div className="bg-brand-light p-6 rounded-xl border border-gray-300 overflow-hidden">
-              <SectionBoxSubtitle>Estimate</SectionBoxSubtitle>
+              <SectionBoxSubtitle>Estimate for Selected Rooms</SectionBoxSubtitle>
 
-              {/* If truly no services, show a fallback */}
-              {chosenRooms.every((r) => {
-                const s = selectedServicesState[r.id] || {};
-                return Object.keys(s).length === 0;
-              }) ? (
-                <div className="text-left text-gray-500 text-medium mt-4">
-                  No services selected
-                </div>
-              ) : (
-                <>
-                  {/* Show each chosen room with section/category grouping */}
-                  {chosenRooms.map((room) => {
-                    const roomServices = selectedServicesState[room.id] || {};
-                    const hasServices = Object.keys(roomServices).length > 0;
-                    if (!hasServices) return null;
+              {chosenRooms.map((room) => {
+                const roomServices = selectedServicesState[room.id] || {};
+                const hasServices = Object.keys(roomServices).length > 0;
+                if (!hasServices) return null;
 
-                    const { categoriesBySection, categoryServicesMap } = roomsData[room.id];
-                    const roomSubtotal = calculateRoomSubtotal(room.id);
+                const { categoriesBySection, categoryServicesMap } = roomsData[room.id];
 
-                    return (
-                      <div key={room.id} className="mb-6">
-                        {/* Always show the room title, even if only 1 */}
-                        <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                          {room.title}
-                        </h3>
+                // Summation for this room
+                let roomLabor = 0;
+                let roomMaterials = 0;
+                Object.keys(roomServices).forEach((svcId) => {
+                  const cr = getCalcResultFor(svcId);
+                  if (!cr) return;
+                  roomLabor += parseFloat(cr.work_cost) || 0;
+                  roomMaterials += parseFloat(cr.material_cost) || 0;
+                });
+                const roomSubtotal = roomLabor + roomMaterials;
 
-                        {Object.entries(categoriesBySection).map(
-                          ([sectionName, catIds]) => {
-                            // Filter only categories that have services chosen
-                            const categoriesWithSelected = catIds.filter((catId) =>
-                              (categoryServicesMap[catId] || []).some(
-                                (svc) => roomServices[svc.id] !== undefined
-                              )
+                return (
+                  <div key={room.id} className="mb-6">
+                    <h3 className="text-2xl font-semibold text-gray-800 mb-2">
+                      {room.title}
+                    </h3>
+
+                    {Object.entries(categoriesBySection).map(([sectionName, catIds], secIdx) => {
+                      const sectionNumber = secIdx + 1;
+                      const relevantCats = catIds.filter((catId) => {
+                        const arr = categoryServicesMap[catId] || [];
+                        return arr.some((svc) => roomServices[svc.id] != null);
+                      });
+                      if (relevantCats.length === 0) return null;
+
+                      return (
+                        <div key={sectionName} className="mb-4 ml-2">
+                          <h4 className="text-xl font-medium text-gray-700 mb-2">
+                            {sectionNumber}. {sectionName}
+                          </h4>
+
+                          {relevantCats.map((catId, catIdx) => {
+                            const catNumber = `${sectionNumber}.${catIdx + 1}`;
+                            const catName = getCategoryNameById(catId);
+                            const servicesArr = categoryServicesMap[catId] || [];
+                            const chosenServices = servicesArr.filter(
+                              (svc) => roomServices[svc.id] != null
                             );
-                            if (categoriesWithSelected.length === 0) return null;
+                            if (chosenServices.length === 0) return null;
 
                             return (
-                              <div key={sectionName} className="mb-4 ml-2">
-                                <h4 className="text-lg font-medium text-gray-700 mb-2">
-                                  {sectionName}
-                                </h4>
-                                {categoriesWithSelected.map((catId) => {
-                                  const catName = getCategoryNameById(catId);
-                                  const servicesForCategory = categoryServicesMap[catId] || [];
-                                  const chosenServices = servicesForCategory.filter(
-                                    (svc) => roomServices[svc.id] !== undefined
-                                  );
-                                  if (chosenServices.length === 0) return null;
+                              <div key={catId} className="mb-4 ml-4">
+                                <h5 className="text-lg font-medium text-gray-700 mb-2">
+                                  {catNumber}. {catName}
+                                </h5>
+
+                                {chosenServices.map((svc, svcIdx) => {
+                                  const svcNumber = `${catNumber}.${svcIdx + 1}`;
+                                  const cr = getCalcResultFor(svc.id);
+                                  const qty = roomServices[svc.id] || 1;
+                                  const laborVal = cr ? parseFloat(cr.work_cost) || 0 : 0;
+                                  const matVal = cr ? parseFloat(cr.material_cost) || 0 : 0;
+                                  const totalCost = laborVal + matVal;
 
                                   return (
-                                    <div key={catId} className="mb-4 ml-4">
-                                      <h5 className="text-md font-medium text-gray-700 mb-2">
-                                        {catName}
-                                      </h5>
-                                      <ul className="space-y-2 pb-4">
-                                        {chosenServices.map((svc) => {
-                                          const quantity = roomServices[svc.id] || 1;
-                                          return (
-                                            <li
-                                              key={svc.id}
-                                              className="grid grid-cols-3 gap-2 text-sm text-gray-600"
-                                              style={{
-                                                gridTemplateColumns: "55% 18% 25%",
-                                                width: "100%",
-                                              }}
-                                            >
-                                              {/* Service Title + Full Description */}
-                                              <div className="truncate overflow-hidden">
-                                                <span className="font-medium text-gray-800">
-                                                  {svc.title}
-                                                </span>
-                                                {svc.description && (
-                                                  <p className="text-gray-500 mt-1 text-sm whitespace-normal">
-                                                    {svc.description}
-                                                  </p>
-                                                )}
-                                              </div>
+                                    <div
+                                      key={svc.id}
+                                      className="mb-6 ml-4 space-y-2"
+                                    >
+                                      <h6 className="font-medium text-md text-gray-700">
+                                        {svcNumber}. {svc.title}
+                                      </h6>
+                                      {svc.description && (
+                                        <p className="text-sm text-gray-500 mt-1">
+                                          {svc.description}
+                                        </p>
+                                      )}
 
-                                              {/* Quantity + Unit */}
-                                              <div className="text-right font-medium">
-                                                {quantity} {svc.unit_of_measurement}
-                                              </div>
+                                      <div className="flex items-center justify-between mt-1">
+                                        <div className="text-md font-medium text-gray-700">
+                                          {qty} {svc.unit_of_measurement}
+                                        </div>
+                                        <div className="text-md font-medium text-gray-700 mr-2">
+                                          ${formatWithSeparator(totalCost)}
+                                        </div>
+                                      </div>
 
-                                              {/* Price */}
-                                              <div className="text-right font-medium">
-                                                ${formatWithSeparator(svc.price * quantity)}
+                                      {clientOwnedMaterials[svc.id] && (
+                                        <button
+                                          onClick={() => removeFinishingMaterials(svc.id)}
+                                          className="text-red-600 text-sm underline"
+                                        >
+                                          Remove finishing materials
+                                        </button>
+                                      )}
+
+                                      {cr && (
+                                        <div className="p-4 bg-gray-50 border rounded">
+                                          <div className="flex justify-between mb-3">
+                                            <span className="text-sm font-medium text-gray-800">
+                                              Labor
+                                            </span>
+                                            <span className="text-sm font-medium text-gray-700">
+                                              {cr.work_cost
+                                                ? `$${formatWithSeparator(parseFloat(cr.work_cost))}`
+                                                : "—"}
+                                            </span>
+                                          </div>
+
+                                          <div className="flex justify-between mb-3">
+                                            <span className="text-sm font-medium text-gray-800">
+                                              Materials, tools and equipment
+                                            </span>
+                                            <span className="text-sm font-medium text-gray-700">
+                                              {cr.material_cost
+                                                ? `$${formatWithSeparator(
+                                                    parseFloat(cr.material_cost)
+                                                  )}`
+                                                : "—"}
+                                            </span>
+                                          </div>
+
+                                          {Array.isArray(cr.materials) &&
+                                            cr.materials.length > 0 && (
+                                              <div className="mt-4">
+                                                <table className="table-auto w-full text-sm text-gray-700">
+                                                  <thead>
+                                                    <tr className="border-b">
+                                                      <th className="py-2 px-1">Name</th>
+                                                      <th className="py-2 px-1">Price</th>
+                                                      <th className="py-2 px-1">Qty</th>
+                                                      <th className="py-2 px-1">Subtotal</th>
+                                                    </tr>
+                                                  </thead>
+                                                  <tbody className="divide-y divide-gray-200">
+                                                    {cr.materials.map((m: any, i: number) => (
+                                                      <tr key={`${m.external_id}-${i}`}>
+                                                        <td className="py-3 px-1">{m.name}</td>
+                                                        <td className="py-3 px-1">
+                                                          $
+                                                          {formatWithSeparator(
+                                                            parseFloat(m.cost_per_unit)
+                                                          )}
+                                                        </td>
+                                                        <td className="py-3 px-3">
+                                                          {m.quantity}
+                                                        </td>
+                                                        <td className="py-3 px-3">
+                                                          $
+                                                          {formatWithSeparator(parseFloat(m.cost))}
+                                                        </td>
+                                                      </tr>
+                                                    ))}
+                                                  </tbody>
+                                                </table>
                                               </div>
-                                            </li>
-                                          );
-                                        })}
-                                      </ul>
+                                            )}
+                                        </div>
+                                      )}
                                     </div>
                                   );
                                 })}
                               </div>
                             );
-                          }
-                        )}
-
-                        {/* Show room total */}
-                        <div className="flex justify-between items-center mb-2 ml-2">
-                          <span className="font-medium text-gray-800">
-                            {room.title} Total:
-                          </span>
-                          <span className="font-medium text-blue-600">
-                            ${formatWithSeparator(roomSubtotal)}
-                          </span>
+                          })}
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
 
-                  {/* Subtotal across all rooms */}
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-2xl font-semibold text-gray-800">
-                      Subtotal:
-                    </span>
-                    <span className="text-2xl font-semibold text-blue-600">
-                      ${formatWithSeparator(subtotal)}
-                    </span>
+                    <div className="flex justify-between items-center mb-2 mt-2">
+                      <span className="font-semibold text-lg text-gray-700">
+                        {room.title} total:
+                      </span>
+                      <span className="font-semibold text-lg text-gray-700 mr-2">
+                        ${formatWithSeparator(roomSubtotal)}
+                      </span>
+                    </div>
                   </div>
+                );
+              })}
 
-                  {/* TimeCoefficient, tax, total */}
-                  <div className="pt-4 mt-4">
-                    {timeCoefficient !== 1 && (
-                      <div className="flex justify-between mb-2">
-                        <span className="text-gray-600">
-                          {timeCoefficient > 1 ? "Surcharge" : "Discount"}
-                        </span>
-                        <span
-                          className={`font-semibold text-lg ${
-                            timeCoefficient > 1
-                              ? "text-red-600"
-                              : "text-green-600"
-                          }`}
-                        >
-                          {timeCoefficient > 1 ? "+" : "-"}$
-                          {formatWithSeparator(Math.abs(subtotal * (timeCoefficient - 1)))}
-                        </span>
-                      </div>
-                    )}
+              {/* Overall summary */}
+              <div className="pt-4 mt-4 border-t">
+                <div className="flex justify-between mb-2">
+                  <span className="font-semibold text-lg text-gray-600">
+                    Labor total:
+                  </span>
+                  <span className="font-semibold text-lg text-gray-600">
+                    ${formatWithSeparator(laborSubtotal)}
+                  </span>
+                </div>
 
-                    <div className="flex justify-between mb-2">
-                      <span className="font-semibold text-lg text-gray-800">
-                        Subtotal
-                      </span>
-                      <span className="font-semibold text-lg text-gray-800">
-                        ${formatWithSeparator(adjustedSubtotal)}
-                      </span>
-                    </div>
+                <div className="flex justify-between mb-2">
+                  <span className="font-semibold text-lg text-gray-600">
+                    Materials, tools and equipment:
+                  </span>
+                  <span className="font-semibold text-lg text-gray-600">
+                    ${formatWithSeparator(materialsSubtotal)}
+                  </span>
+                </div>
 
-                    <div className="flex justify-between mb-4">
-                      <span className="text-gray-600">Sales tax (8.25%)</span>
-                      <span>${formatWithSeparator(salesTax)}</span>
-                    </div>
-
-                    {/* Time picker button */}
-                    <button
-                      onClick={() => setShowModal(true)}
-                      className={`w-full py-3 rounded-lg font-medium mt-4 border ${
-                        selectedTime
-                          ? "text-red-500 border-red-500"
-                          : "text-brand border-brand"
+                {timeCoefficient !== 1 && (
+                  <div className="flex justify-between mb-2">
+                    <span className="text-gray-600">
+                      {timeCoefficient > 1
+                        ? "Surcharge (date selection)"
+                        : "Discount (day selection)"}
+                    </span>
+                    <span
+                      className={`font-semibold text-lg ${
+                        timeCoefficient > 1 ? "text-red-600" : "text-green-600"
                       }`}
                     >
-                      {selectedTime ? "Change Date" : "Select Available Time"}
-                    </button>
-
-                    {selectedTime && (
-                      <p className="mt-2 text-gray-700 text-center font-medium">
-                        Selected Date:{" "}
-                        <span className="text-blue-600">{selectedTime}</span>
-                      </p>
-                    )}
-
-                    {showModal && (
-                      <ServiceTimePicker
-                        subtotal={subtotal}
-                        onClose={() => setShowModal(false)}
-                        onConfirm={(date, coefficient) => {
-                          setSelectedTime(date);
-                          setTimeCoefficient(coefficient);
-                          setShowModal(false);
-                        }}
-                      />
-                    )}
-
-                    <div className="flex justify-between text-2xl font-semibold mt-4">
-                      <span>Total</span>
-                      <span>${formatWithSeparator(total)}</span>
-                    </div>
+                      {timeCoefficient > 1 ? "+" : "-"}$
+                      {formatWithSeparator(Math.abs(finalLabor - laborSubtotal))}
+                    </span>
                   </div>
-                </>
-              )}
+                )}
+
+                <div className="flex justify-between mb-2">
+                  <span className="text-gray-600">
+                    Service Fee (15% on labor)
+                  </span>
+                  <span className="font-semibold text-lg text-gray-800">
+                    ${formatWithSeparator(serviceFeeOnLabor)}
+                  </span>
+                </div>
+                <div className="flex justify-between mb-2">
+                  <span className="text-gray-600">
+                    Delivery &amp; Processing (5% on materials)
+                  </span>
+                  <span className="font-semibold text-lg text-gray-800">
+                    ${formatWithSeparator(serviceFeeOnMaterials)}
+                  </span>
+                </div>
+
+                <div className="flex justify-between mb-2">
+                  <span className="font-semibold text-xl text-gray-800">
+                    Subtotal
+                  </span>
+                  <span className="font-semibold text-xl text-gray-800">
+                    ${formatWithSeparator(sumBeforeTax)}
+                  </span>
+                </div>
+
+                <div className="flex justify-between mb-2">
+                  <span className="text-gray-600">
+                    Sales tax
+                    {stateName ? ` (${stateName})` : ""}
+                    {taxRatePercent > 0 ? ` (${taxRatePercent.toFixed(2)}%)` : ""}
+                  </span>
+                  <span>${formatWithSeparator(taxAmount)}</span>
+                </div>
+
+                <div className="flex justify-between text-2xl font-semibold mt-4">
+                  <span>Total</span>
+                  <span>${formatWithSeparator(finalTotal)}</span>
+                </div>
+              </div>
 
               {/* Address */}
               <div className="mt-6">
-                <h3 className="font-semibold text-xl text-gray-800">Address</h3>
+                <h3 className="font-semibold text-xl text-gray-800">
+                  Address
+                </h3>
                 <p className="text-gray-500 mt-2">
-                  {address || "No address provided"}
+                  {constructedAddress.trim() || "No address provided"}
                 </p>
               </div>
 
@@ -449,25 +575,35 @@ export default function RoomsEstimate() {
                 </p>
               </div>
 
-              {/* Buttons: Proceed or add more */}
+              {/* Buttons */}
               <div className="mt-6 space-y-4">
                 <button
                   className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium"
                   onClick={handleProceedToCheckout}
                 >
-                  Proceed to Checkout &nbsp;→
+                  Proceed to Checkout →
                 </button>
                 <button
-                  onClick={() => router.push("/rooms/details")}
+                  onClick={() => router.push("/calculate/details")}
                   className="w-full text-brand border border-brand py-3 rounded-lg font-medium"
                 >
-                  Add more services &nbsp;→
+                  Add more services →
                 </button>
               </div>
             </div>
           </div>
 
-          {/* (Optional) RIGHT COLUMN: Additional panel or empty */}
+          {/* RIGHT column => a 500px-wide container with ServiceTimePicker */}
+          <div className="w-[500px]">
+            <ServiceTimePicker
+              subtotal={laborSubtotal}
+              // On confirm => store date and coefficient locally
+              onConfirm={(date, coefficient) => {
+                setSelectedTime(date);
+                setTimeCoefficient(coefficient);
+              }}
+            />
+          </div>
         </div>
       </div>
     </main>

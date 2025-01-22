@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, ChangeEvent } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import BreadCrumb from "@/components/ui/BreadCrumb";
 import SearchServices from "@/components/SearchServices";
@@ -13,101 +14,204 @@ import { ALL_SERVICES } from "@/constants/services";
 import { ROOMS } from "@/constants/rooms";
 import { useLocation } from "@/context/LocationContext";
 import { ChevronDown } from "lucide-react";
+import AddressSection from "@/components/ui/AddressSection";
+import PhotosAndDescription from "@/components/ui/PhotosAndDescription";
 
-// Utility function to format numbers nicely for prices
-const formatWithSeparator = (value: number): string =>
-  new Intl.NumberFormat("en-US", { minimumFractionDigits: 2 }).format(value);
+// Unified session utilities
+import { setSessionItem, getSessionItem, clearSession } from "@/utils/session";
 
-// Session storage helpers
-// Save data to sessionStorage as a JSON string (client-side check for safety)
-const saveToSession = (key: string, value: any) => {
-  if (typeof window !== "undefined") {
-    sessionStorage.setItem(key, JSON.stringify(value));
+/**
+ * Interface describing finishing materials returned by /work/finishing_materials
+ */
+interface FinishingMaterial {
+  id: number;
+  image?: string;
+  unit_of_measurement: string;
+  name: string;
+  external_id: string;
+  cost: string;
+}
+
+/** Formats a numeric value with commas and two decimals. */
+function formatWithSeparator(value: number): string {
+  return new Intl.NumberFormat("en-US", { minimumFractionDigits: 2 }).format(
+    value
+  );
+}
+
+/** Replaces hyphens ("1-1-1") with dots ("1.1.1"). */
+function convertServiceIdToApiFormat(serviceId: string) {
+  return serviceId.replaceAll("-", ".");
+}
+
+/** Returns the base API URL from environment variable or uses a default. */
+function getApiBaseUrl(): string {
+  return process.env.NEXT_PUBLIC_API_BASE_URL || "http://dev.thejamb.com";
+}
+
+/**
+ * POST /work/finishing_materials => fetch finishing materials for a given work_code.
+ */
+async function fetchFinishingMaterials(workCode: string) {
+  const baseUrl = getApiBaseUrl();
+  const url = `${baseUrl}/work/finishing_materials`;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({ work_code: workCode }),
+  });
+  if (!res.ok) {
+    throw new Error(
+      `Failed to fetch finishing materials (work_code=${workCode}).`
+    );
   }
-};
+  return res.json();
+}
 
-// Load data from sessionStorage and parse from JSON, safely fallback if any error or server-side
-const loadFromSession = (key: string, defaultValue: any) => {
-  if (typeof window === "undefined") return defaultValue;
-  const savedValue = sessionStorage.getItem(key);
-  try {
-    return savedValue ? JSON.parse(savedValue) : defaultValue;
-  } catch (error) {
-    console.error(`Error parsing sessionStorage for key "${key}"`, error);
-    return defaultValue;
+/**
+ * POST /calculate => compute labor + materials cost for a service.
+ */
+async function calculatePrice(params: {
+  work_code: string;
+  zipcode: string;
+  unit_of_measurement: string;
+  square: number;
+  finishing_materials: string[];
+}) {
+  const baseUrl = getApiBaseUrl();
+  const url = `${baseUrl}/calculate`;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) {
+    throw new Error(
+      `Failed to calculate price (work_code=${params.work_code}).`
+    );
   }
-};
+  return res.json();
+}
+
+/**
+ * Simple component that constructs a direct image URL:
+ *   http://dev.thejamb.com/images/[firstSegment]/[converted].jpg
+ * Then displays it using Next.js <Image /> for optimization.
+ */
+function ServiceImage({ serviceId }: { serviceId: string }) {
+  const [imageSrc, setImageSrc] = useState<string | null>(null);
+
+  useEffect(() => {
+    // The first segment is the part before the first hyphen, e.g. "1" from "1-1-1"
+    const firstSegment = serviceId.split("-")[0];
+    // Convert "1-1-1" => "1.1.1"
+    const code = convertServiceIdToApiFormat(serviceId);
+    // Construct final image URL
+    const url = `http://dev.thejamb.com/images/${firstSegment}/${code}.jpg`;
+    setImageSrc(url);
+  }, [serviceId]);
+
+  if (!imageSrc) return null;
+
+  // Next.js <Image> for automatic optimization. We'll unify all images to e.g. width=600, height=400.
+  // Ensure "dev.thejamb.com" is in next.config.js -> images.domains
+  return (
+    <div className="mb-2 border rounded overflow-hidden">
+      <Image
+        src={imageSrc}
+        alt="Service"
+        width={600}
+        height={400}
+        style={{ objectFit: "cover" }}
+        // optionally, you can specify priority or other props
+      />
+    </div>
+  );
+}
 
 export default function RoomDetails() {
   const router = useRouter();
   const { location } = useLocation();
 
-  // Basic states: searchQuery, address, description, photos
+  // Basic states
   const [searchQuery, setSearchQuery] = useState<string>(
-    loadFromSession("rooms_searchQuery", "")
+    getSessionItem("rooms_searchQuery", "")
   );
-  const [address, setAddress] = useState<string>(
-    loadFromSession("address", "")
+  const [photos, setPhotos] = useState<string[]>(() =>
+    getSessionItem("photos", [])
   );
   const [description, setDescription] = useState<string>(
-    loadFromSession("description", "")
+    getSessionItem("description", "")
   );
-  const [photos, setPhotos] = useState<string[]>(loadFromSession("photos", []));
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
 
-  // The list of room IDs the user selected on the first page
-  const selectedRooms: string[] = loadFromSession("rooms_selectedSections", []);
+  // Address states
+  const [address, setAddress] = useState<string>(getSessionItem("address", ""));
+  const [zip, setZip] = useState<string>(getSessionItem("zip", ""));
+  const [stateName, setStateName] = useState<string>(
+    getSessionItem("stateName", "")
+  );
 
-  // If no rooms were selected, go back
+  // Additional city/country
+  const [city, setCity] = useState<string>(getSessionItem("city", ""));
+  const [country, setCountry] = useState<string>(getSessionItem("country", ""));
+
+  // Keep these in session
+  useEffect(() => setSessionItem("city", city), [city]);
+  useEffect(() => setSessionItem("country", country), [country]);
+  useEffect(
+    () => setSessionItem("rooms_searchQuery", searchQuery),
+    [searchQuery]
+  );
+  useEffect(() => setSessionItem("photos", photos), [photos]);
+  useEffect(() => setSessionItem("description", description), [description]);
+  useEffect(() => setSessionItem("address", address), [address]);
+  useEffect(() => setSessionItem("zip", zip), [zip]);
+  useEffect(() => setSessionItem("stateName", stateName), [stateName]);
+
+  // Rooms selected
+  const selectedRooms: string[] = getSessionItem("rooms_selectedSections", []);
   useEffect(() => {
     if (selectedRooms.length === 0) {
       router.push("/rooms");
     }
   }, [selectedRooms, router]);
 
-  // Save changes to sessionStorage on state updates
-  useEffect(
-    () => saveToSession("rooms_searchQuery", searchQuery),
-    [searchQuery]
-  );
-  useEffect(() => saveToSession("address", address), [address]);
-  useEffect(() => saveToSession("description", description), [description]);
-  useEffect(() => saveToSession("photos", photos), [photos]);
-
-  // Gather all rooms (indoor + outdoor) for quick lookup
+  // Merge indoor/outdoor rooms
   const allRooms = [...ROOMS.indoor, ...ROOMS.outdoor];
-
-  // Filter only the rooms that match the selected IDs
   const chosenRooms = selectedRooms
     .map((roomId) => allRooms.find((r) => r.id === roomId))
     .filter((r): r is Exclude<typeof r, undefined> => r !== undefined);
 
-  // If any selected room wasn't found in ROOMS, redirect back
   useEffect(() => {
     if (chosenRooms.length !== selectedRooms.length) {
       router.push("/rooms");
     }
   }, [chosenRooms, selectedRooms, router]);
 
-  // If still no chosen rooms, show loading or redirect
   if (chosenRooms.length === 0) {
     return <p>Loading...</p>;
   }
 
-  // We'll create a type that holds categoriesBySection and categoryServicesMap for each room
+  // Build structures: categoriesBySection + categoryServicesMap for each chosen room
   type RoomData = {
     categoriesBySection: Record<string, string[]>;
     categoryServicesMap: Record<string, (typeof ALL_SERVICES)[number][]>;
   };
-
-  // We'll store that data in roomsData keyed by room.id
   const roomsData: Record<string, RoomData> = {};
 
-  // Prepare the categories and services for each chosen room
   for (const room of chosenRooms) {
     const chosenRoomServiceIDs = room.services.map((s) => s.id);
 
-    // First, figure out the categories that appear in this room
+    // categories
     const categoriesWithSection = room.services
       .map((s) => {
         const catId = s.id.split("-").slice(0, 2).join("-");
@@ -115,7 +219,6 @@ export default function RoomDetails() {
       })
       .filter(Boolean) as (typeof ALL_CATEGORIES)[number][];
 
-    // Group these categories by their section name
     const categoriesBySection: Record<string, string[]> = {};
     categoriesWithSection.forEach((cat) => {
       if (!categoriesBySection[cat.section]) {
@@ -126,7 +229,7 @@ export default function RoomDetails() {
       }
     });
 
-    // Next, map categories to their actual services (IDs)
+    // cat->services
     const categoryServicesMap: Record<string, (typeof ALL_SERVICES)[number][]> =
       {};
     chosenRoomServiceIDs.forEach((serviceId) => {
@@ -134,208 +237,352 @@ export default function RoomDetails() {
       if (!categoryServicesMap[catId]) {
         categoryServicesMap[catId] = [];
       }
-      const svc = ALL_SERVICES.find((s) => s.id === serviceId);
+      const svc = ALL_SERVICES.find((x) => x.id === serviceId);
       if (svc) {
         categoryServicesMap[catId].push(svc);
       }
     });
 
-    // If there's a search query, filter services by it
+    // apply searchQuery filter
     if (searchQuery) {
       for (const catId in categoryServicesMap) {
         categoryServicesMap[catId] = categoryServicesMap[catId].filter(
           (svc) =>
             svc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            (svc.description &&
-              svc.description.toLowerCase().includes(searchQuery.toLowerCase()))
+            svc.description?.toLowerCase().includes(searchQuery.toLowerCase())
         );
       }
     }
 
-    roomsData[room.id] = {
-      categoriesBySection,
-      categoryServicesMap,
-    };
+    roomsData[room.id] = { categoriesBySection, categoryServicesMap };
   }
 
-  // Our main state for selected services: { [roomId]: { [serviceId]: quantity } }
+  // Main selection => { roomId: { serviceId: quantity } }
   const [selectedServicesState, setSelectedServicesState] = useState<
     Record<string, Record<string, number>>
-  >(() => loadFromSession("rooms_selectedServicesWithQuantity", {}));
+  >(getSessionItem("rooms_selectedServicesWithQuantity", {}));
 
-  // Persist changes to session whenever selectedServicesState changes
   useEffect(() => {
-    saveToSession("rooms_selectedServicesWithQuantity", selectedServicesState);
+    setSessionItem("rooms_selectedServicesWithQuantity", selectedServicesState);
   }, [selectedServicesState]);
 
-  // Store manual input for each service ID. This is global, but we only track input for the currently changed service
+  // For user typed quantity
   const [manualInputValue, setManualInputValue] = useState<
     Record<string, string | null>
   >({});
 
-  // Here we store expansion states for categories on a **per-room** basis:
-  // expandedCategoriesByRoom[roomId] = Set<catId>
+  // finishing materials storage
+  const [finishingMaterialsMapAll, setFinishingMaterialsMapAll] = useState<
+    Record<string, { sections: Record<string, FinishingMaterial[]> }>
+  >({});
+
+  // finishing materials selected => serviceId -> external_ids
+  const [finishingMaterialSelections, setFinishingMaterialSelections] =
+    useState<Record<string, string[]>>({});
+
+  // costs => serviceId -> numeric
+  const [serviceCosts, setServiceCosts] = useState<Record<string, number>>({});
+  // cost breakdown => serviceId -> object
+  const [calculationResultsMap, setCalculationResultsMap] = useState<
+    Record<string, any>
+  >({});
+  useEffect(() => {
+    setSessionItem("calculationResultsMap", calculationResultsMap);
+  }, [calculationResultsMap]);
+
+  // expanded categories => { roomId => Set of catIds }
   const [expandedCategoriesByRoom, setExpandedCategoriesByRoom] = useState<
     Record<string, Set<string>>
   >({});
 
-  // Helper to initialize expansion sets if not present
-  function getRoomExpansions(roomId: string): Set<string> {
-    if (!expandedCategoriesByRoom[roomId]) {
-      expandedCategoriesByRoom[roomId] = new Set<string>();
+  // expanded service details => set of serviceIds
+  const [expandedServiceDetails, setExpandedServiceDetails] = useState<
+    Set<string>
+  >(new Set());
+
+  // user-owned materials => serviceId -> set of externalIds
+  const [clientOwnedMaterials, setClientOwnedMaterials] = useState<
+    Record<string, Set<string>>
+  >({});
+
+  // Helper: load finishing materials for a single service if missing
+  async function ensureFinishingMaterialsLoaded(serviceId: string) {
+    if (!finishingMaterialsMapAll[serviceId]) {
+      try {
+        const dot = convertServiceIdToApiFormat(serviceId);
+        const data = await fetchFinishingMaterials(dot);
+        finishingMaterialsMapAll[serviceId] = data;
+        setFinishingMaterialsMapAll((old) => ({ ...old }));
+      } catch (err) {
+        console.error("Error in ensureFinishingMaterialsLoaded:", err);
+        return; // do not proceed if there's an error
+      }
     }
-    return expandedCategoriesByRoom[roomId];
+    if (!finishingMaterialSelections[serviceId]) {
+      const data = finishingMaterialsMapAll[serviceId];
+      if (!data) return;
+      const picks: string[] = [];
+      for (const arr of Object.values(data.sections || {})) {
+        if (Array.isArray(arr) && arr.length > 0) {
+          picks.push(arr[0].external_id);
+        }
+      }
+      finishingMaterialSelections[serviceId] = picks;
+      setFinishingMaterialSelections((old) => ({ ...old }));
+    }
   }
 
-  // Toggle expanded state for a category in a specific room
+  // Helper: load finishing materials for each service in a category
+  async function fetchFinishingMaterialsForCategory(
+    services: (typeof ALL_SERVICES)[number][]
+  ) {
+    const promises = services.map(async (svc) => {
+      if (!finishingMaterialsMapAll[svc.id]) {
+        try {
+          const dot = convertServiceIdToApiFormat(svc.id);
+          const data = await fetchFinishingMaterials(dot);
+
+          finishingMaterialsMapAll[svc.id] = data;
+          // pick the first from each sub-section if none selected
+          if (!finishingMaterialSelections[svc.id]) {
+            const picks: string[] = [];
+            for (const arr of Object.values(data.sections || {})) {
+              if (Array.isArray(arr) && arr.length > 0) {
+                picks.push(arr[0].external_id);
+              }
+            }
+            finishingMaterialSelections[svc.id] = picks;
+          }
+        } catch (err) {
+          console.error("Error fetching finishing materials:", err);
+        }
+      }
+    });
+
+    try {
+      await Promise.all(promises);
+      setFinishingMaterialsMapAll((old) => ({ ...old }));
+      setFinishingMaterialSelections((old) => ({ ...old }));
+    } catch (err) {
+      console.error("Error fetchFinishingMaterialsForCategory:", err);
+    }
+  }
+
+  // Recompute cost whenever toggles or location changes
+  useEffect(() => {
+    const { zip: userZip, country } = location;
+    if (country !== "United States" || !/^\d{5}$/.test(userZip)) {
+      setWarningMessage(
+        "Currently, our service is only available for US ZIP codes (5 digits)."
+      );
+      return;
+    }
+
+    Object.keys(selectedServicesState).forEach((roomId) => {
+      const roomServices = selectedServicesState[roomId];
+      Object.keys(roomServices).forEach(async (serviceId) => {
+        try {
+          const quantity = roomServices[serviceId];
+          const finishingIds = finishingMaterialSelections[serviceId] || [];
+          const found = ALL_SERVICES.find((s) => s.id === serviceId);
+          if (!found) return;
+
+          // ensure finishing materials
+          await ensureFinishingMaterialsLoaded(serviceId);
+
+          const dot = convertServiceIdToApiFormat(serviceId);
+          const resp = await calculatePrice({
+            work_code: dot,
+            zipcode: userZip,
+            unit_of_measurement: found.unit_of_measurement || "each",
+            square: quantity,
+            finishing_materials: finishingIds,
+          });
+
+          const laborCost = parseFloat(resp.work_cost) || 0;
+          const matCost = parseFloat(resp.material_cost) || 0;
+          setServiceCosts((old) => ({
+            ...old,
+            [serviceId]: laborCost + matCost,
+          }));
+          setCalculationResultsMap((old) => ({ ...old, [serviceId]: resp }));
+        } catch (err) {
+          console.error("Error calculating price:", err);
+        }
+      });
+    });
+  }, [
+    selectedServicesState,
+    finishingMaterialSelections,
+    location,
+    finishingMaterialsMapAll,
+  ]);
+
+  /** Expand/collapse a category panel */
   function toggleCategory(roomId: string, catId: string) {
     setExpandedCategoriesByRoom((prev) => {
-      const newObj = { ...prev };
-      const expansions = newObj[roomId]
-        ? new Set(newObj[roomId])
+      const next = { ...prev };
+      const expansions = next[roomId]
+        ? new Set(next[roomId])
         : new Set<string>();
-      if (expansions.has(catId)) {
-        expansions.delete(catId);
-      } else {
-        expansions.add(catId);
-      }
-      newObj[roomId] = expansions;
-      return newObj;
+      if (expansions.has(catId)) expansions.delete(catId);
+      else expansions.add(catId);
+      next[roomId] = expansions;
+      return next;
     });
   }
 
-  // Helper to retrieve the services object for a room
-  function getRoomServices(roomId: string) {
-    if (!selectedServicesState[roomId]) {
-      selectedServicesState[roomId] = {};
-    }
-    return selectedServicesState[roomId];
-  }
+  /** Turn a service ON/OFF */
+  async function handleServiceToggle(roomId: string, serviceId: string) {
+    const roomServices = { ...(selectedServicesState[roomId] || {}) };
+    const isOn = !!roomServices[serviceId];
 
-  // Helper to set the services object for a room
-  function setRoomServices(roomId: string, services: Record<string, number>) {
-    setSelectedServicesState((prev) => ({
-      ...prev,
-      [roomId]: services,
-    }));
-  }
-
-  // Handler for toggling a service in a specific room
-  const handleServiceToggle = (roomId: string, serviceId: string) => {
-    const roomServices = { ...getRoomServices(roomId) };
-    if (roomServices[serviceId]) {
+    if (isOn) {
+      // Turn off
       delete roomServices[serviceId];
-    } else {
-      roomServices[serviceId] = 1;
-    }
-    setRoomServices(roomId, roomServices);
-    setWarningMessage(null);
-  };
 
-  // Handler for increment/decrement quantity
-  const handleQuantityChange = (
+      const fmCopy = { ...finishingMaterialSelections };
+      delete fmCopy[serviceId];
+      setFinishingMaterialSelections(fmCopy);
+
+      setManualInputValue((old) => {
+        const cpy = { ...old };
+        delete cpy[serviceId];
+        return cpy;
+      });
+
+      setCalculationResultsMap((old) => {
+        const cpy = { ...old };
+        delete cpy[serviceId];
+        return cpy;
+      });
+
+      setServiceCosts((old) => {
+        const cpy = { ...old };
+        delete cpy[serviceId];
+        return cpy;
+      });
+
+      setClientOwnedMaterials((old) => {
+        const cpy = { ...old };
+        delete cpy[serviceId];
+        return cpy;
+      });
+    } else {
+      // Turn on => set quantity = minQ
+      const foundSvc = ALL_SERVICES.find((s) => s.id === serviceId);
+      const minQ = foundSvc?.min_quantity ?? 1;
+      roomServices[serviceId] = minQ;
+
+      // Make sure finishing materials are loaded
+      await ensureFinishingMaterialsLoaded(serviceId);
+      setManualInputValue((mOld) => ({ ...mOld, [serviceId]: String(minQ) }));
+    }
+
+    setSelectedServicesState((old) => ({ ...old, [roomId]: roomServices }));
+    setWarningMessage(null);
+  }
+
+  /** +/- quantity */
+  function handleQuantityChange(
     roomId: string,
     serviceId: string,
     increment: boolean,
     unit: string
-  ) => {
-    const roomServices = { ...getRoomServices(roomId) };
-    const currentValue = roomServices[serviceId] || 1;
-    const updatedValue = increment
-      ? currentValue + 1
-      : Math.max(1, currentValue - 1);
+  ) {
+    const found = ALL_SERVICES.find((x) => x.id === serviceId);
+    if (!found) return;
 
-    roomServices[serviceId] =
-      unit === "each" ? Math.round(updatedValue) : updatedValue;
-    setRoomServices(roomId, roomServices);
+    const minQ = found.min_quantity ?? 1;
+    const maxQ = found.max_quantity ?? 999999;
 
-    // If quantity changed via plus/minus, reset any manual input
-    setManualInputValue((prev) => ({
-      ...prev,
-      [serviceId]: null,
-    }));
-  };
+    const roomServices = { ...(selectedServicesState[roomId] || {}) };
+    const currentVal = roomServices[serviceId] || minQ;
 
-  // Handler for manual quantity changes in the text field
-  const handleManualQuantityChange = (
+    let newVal = increment ? currentVal + 1 : currentVal - 1;
+    if (newVal < minQ) newVal = minQ;
+    if (newVal > maxQ) {
+      newVal = maxQ;
+      setWarningMessage(`Maximum quantity for "${found.title}" is ${maxQ}.`);
+    }
+
+    roomServices[serviceId] = unit === "each" ? Math.round(newVal) : newVal;
+    setSelectedServicesState((old) => ({ ...old, [roomId]: roomServices }));
+    setManualInputValue((old) => ({ ...old, [serviceId]: null }));
+  }
+
+  /** user typed quantity */
+  function handleManualQuantityChange(
     roomId: string,
     serviceId: string,
     value: string,
     unit: string
-  ) => {
-    setManualInputValue((prev) => ({
-      ...prev,
-      [serviceId]: value,
-    }));
+  ) {
+    setManualInputValue((old) => ({ ...old, [serviceId]: value }));
 
-    const numericValue = parseFloat(value.replace(/,/g, "")) || 0;
-    if (!isNaN(numericValue)) {
-      const roomServices = { ...getRoomServices(roomId) };
-      roomServices[serviceId] =
-        unit === "each" ? Math.round(numericValue) : numericValue;
-      setRoomServices(roomId, roomServices);
+    const found = ALL_SERVICES.find((x) => x.id === serviceId);
+    if (!found) return;
+
+    const minQ = found.min_quantity ?? 1;
+    const maxQ = found.max_quantity ?? 999999;
+
+    let parsedVal = parseFloat(value.replace(/,/g, "")) || 0;
+    if (parsedVal < minQ) parsedVal = minQ;
+    if (parsedVal > maxQ) {
+      parsedVal = maxQ;
+      setWarningMessage(`Maximum quantity for "${found.title}" is ${maxQ}.`);
     }
-  };
 
-  // Handler for onBlur event in the manual input
-  const handleBlurInput = (serviceId: string) => {
+    const roomServices = { ...(selectedServicesState[roomId] || {}) };
+    roomServices[serviceId] =
+      unit === "each" ? Math.round(parsedVal) : parsedVal;
+    setSelectedServicesState((old) => ({ ...old, [roomId]: roomServices }));
+  }
+
+  /** if user leaves input empty => revert to null in manualInputValue */
+  function handleBlurInput(serviceId: string) {
     if (!manualInputValue[serviceId]) {
-      setManualInputValue((prev) => ({
-        ...prev,
-        [serviceId]: null,
-      }));
+      setManualInputValue((old) => ({ ...old, [serviceId]: null }));
     }
-  };
+  }
 
-  // Clear all services in all rooms, plus close all categories
-  const handleClearAll = () => {
-    // Confirm the action
-    const confirmed = window.confirm(
-      "Are you sure you want to clear all selections?"
-    );
-    if (!confirmed) return;
+  /** clear all selections */
+  function handleClearAll() {
+    const ok = window.confirm("Are you sure you want to clear all selections?");
+    if (!ok) return;
 
-    // Clear all selected services
     const cleared: Record<string, Record<string, number>> = {};
-    for (const room of chosenRooms) {
-      cleared[room.id] = {};
+    for (const r of chosenRooms) {
+      cleared[r.id] = {};
     }
     setSelectedServicesState(cleared);
-
-    // Reset all expansions
     setExpandedCategoriesByRoom({});
-  };
+    setFinishingMaterialsMapAll({});
+    setFinishingMaterialSelections({});
+    setManualInputValue({});
+    setCalculationResultsMap({});
+    setServiceCosts({});
+    setClientOwnedMaterials({});
+  }
 
-  // Calculate the total for a single room
-  const calculateTotalForRoom = (roomId: string): number => {
-    let total = 0;
-    const roomServices = selectedServicesState[roomId] || {};
-    for (const [serviceId, quantity] of Object.entries(roomServices)) {
-      const svc = ALL_SERVICES.find((s) => s.id === serviceId);
-      if (svc) {
-        total += svc.price * (quantity || 1);
+  /** sums up the final cost of all services in all rooms */
+  function calculateTotalAllRooms() {
+    let sum = 0;
+    for (const cost of Object.values(serviceCosts)) {
+      sum += cost;
+    }
+    return sum;
+  }
+
+  /** on Next => verify and go to /rooms/estimate */
+  function handleNext() {
+    let anySelected = false;
+    for (const roomId of Object.keys(selectedServicesState)) {
+      if (Object.keys(selectedServicesState[roomId]).length > 0) {
+        anySelected = true;
+        break;
       }
     }
-    return total;
-  };
-
-  // Calculate the overall subtotal for all rooms
-  const calculateTotalAllRooms = (): number => {
-    let total = 0;
-    for (const room of chosenRooms) {
-      total += calculateTotalForRoom(room.id);
-    }
-    return total;
-  };
-
-  // Handler for Next → button
-  const handleNext = () => {
-    // Check if there's at least one service selected
-    const anySelected = chosenRooms.some((room) => {
-      const roomServices = selectedServicesState[room.id] || {};
-      return Object.keys(roomServices).length > 0;
-    });
-
     if (!anySelected) {
       setWarningMessage(
         "Please select at least one service before proceeding."
@@ -346,53 +593,98 @@ export default function RoomDetails() {
       setWarningMessage("Please enter your address before proceeding.");
       return;
     }
-
-    // Collect all selected service IDs across all rooms
-    const allSelectedServices: string[] = [];
-    for (const room of chosenRooms) {
-      const roomServices = selectedServicesState[room.id] || {};
-      allSelectedServices.push(...Object.keys(roomServices));
+    if (!stateName.trim()) {
+      setWarningMessage("Please enter your state before proceeding.");
+      return;
     }
-    saveToSession("rooms_selectedServices", allSelectedServices);
+    if (!zip.trim()) {
+      setWarningMessage("Please enter your ZIP code before proceeding.");
+      return;
+    }
 
-    // Go to the estimate page
+    // flatten
+    const allSelected: string[] = [];
+    for (const rId of Object.keys(selectedServicesState)) {
+      allSelected.push(...Object.keys(selectedServicesState[rId]));
+    }
+    setSessionItem("rooms_selectedServices", allSelected);
+    setSessionItem("city", city);
+    setSessionItem("country", country);
+
     router.push("/rooms/estimate");
-  };
-
-  // For display of category name
-  function getCategoryNameById(catId: string) {
-    const categoryObj = ALL_CATEGORIES.find((c) => c.id === catId);
-    return categoryObj ? categoryObj.title : catId;
   }
 
-  // For address changes
-  const handleAddressChange = (e: ChangeEvent<HTMLInputElement>) =>
-    setAddress(e.target.value);
-  const handleDescriptionChange = (e: ChangeEvent<HTMLTextAreaElement>) =>
-    setDescription(e.target.value);
+  /** toggles "Details" for a single service cost breakdown */
+  function toggleServiceDetails(serviceId: string) {
+    setExpandedServiceDetails((old) => {
+      const copy = new Set(old);
+      if (copy.has(serviceId)) copy.delete(serviceId);
+      else copy.add(serviceId);
+      return copy;
+    });
+  }
 
-  // Attempt using location data if available
-  const handleUseMyLocation = () => {
-    if (location?.city && location?.zip) {
-      setAddress(
-        `${location.city}, ${location.zip}, ${location.country || ""}`
-      );
-    } else {
-      setWarningMessage("Location data is unavailable. Please enter manually.");
+  /** find finishing material by external_id */
+  function findFinishingMaterialObj(
+    serviceId: string,
+    externalId: string
+  ): FinishingMaterial | null {
+    const data = finishingMaterialsMapAll[serviceId];
+    if (!data) return null;
+    for (const arr of Object.values(data.sections || {})) {
+      if (Array.isArray(arr)) {
+        const found = arr.find((fm) => fm.external_id === externalId);
+        if (found) return found;
+      }
     }
-  };
+    return null;
+  }
 
-  // Remove a photo from the list
-  const handleRemovePhoto = (index: number) => {
-    setPhotos((prev) => prev.filter((_, i) => i !== index));
-  };
+  /** pick a new finishing material => finishingMaterialSelections[serviceId] = [externalId] */
+  function pickMaterial(serviceId: string, externalId: string) {
+    finishingMaterialSelections[serviceId] = [externalId];
+    setFinishingMaterialSelections((old) => ({ ...old }));
+  }
+
+  /** user has own material => highlight in red */
+  function userHasOwnMaterial(serviceId: string, externalId: string) {
+    if (!clientOwnedMaterials[serviceId]) {
+      clientOwnedMaterials[serviceId] = new Set();
+    }
+    clientOwnedMaterials[serviceId].add(externalId);
+    setClientOwnedMaterials((old) => ({ ...old }));
+  }
+
+  // finishing-material modal states
+  const [showModalServiceId, setShowModalServiceId] = useState<string | null>(
+    null
+  );
+  const [showModalSectionName, setShowModalSectionName] = useState<
+    string | null
+  >(null);
+
+  function closeModal() {
+    setShowModalServiceId(null);
+    setShowModalSectionName(null);
+  }
+
+  // keep cost breakdown in session
+  useEffect(() => {
+    setSessionItem("calculationResultsMap", calculationResultsMap);
+  }, [calculationResultsMap]);
+
+  /** getCategoryNameById => returns cat.title from ALL_CATEGORIES */
+  function getCategoryNameById(catId: string) {
+    const found = ALL_CATEGORIES.find((x) => x.id === catId);
+    return found ? found.title : catId;
+  }
 
   return (
     <main className="min-h-screen pt-24 pb-16">
       <div className="container mx-auto">
-        {/* Breadcrumb for the rooms flow */}
         <BreadCrumb items={ROOMS_STEPS} />
 
+        {/* Top row */}
         <div className="flex justify-between items-start mt-8">
           {chosenRooms.length > 1 ? (
             <SectionBoxTitle>Select Services and Quantity</SectionBoxTitle>
@@ -404,7 +696,7 @@ export default function RoomDetails() {
           <Button onClick={handleNext}>Next →</Button>
         </div>
 
-        {/* Clear button with confirmation */}
+        {/* Clear / No service */}
         <div className="flex justify-between items-center text-sm text-gray-500 mt-8 w-full max-w-[600px]">
           <span>
             No service?{" "}
@@ -423,12 +715,12 @@ export default function RoomDetails() {
           </button>
         </div>
 
-        {/* Warning message if any */}
+        {/* Warning */}
         <div className="h-6 mt-4 text-left">
           {warningMessage && <p className="text-red-500">{warningMessage}</p>}
         </div>
 
-        {/* Search Bar for services */}
+        {/* Search */}
         <div className="w-full max-w-[600px] mt-8 mb-4">
           <SearchServices
             value={searchQuery}
@@ -440,7 +732,7 @@ export default function RoomDetails() {
         </div>
 
         <div className="container mx-auto relative flex mt-8">
-          {/* Left column: one section for each chosen room */}
+          {/* LEFT column: the chosen rooms */}
           <div className="flex-1 space-y-8">
             {chosenRooms.map((room) => {
               const { categoriesBySection, categoryServicesMap } =
@@ -449,7 +741,7 @@ export default function RoomDetails() {
 
               return (
                 <div key={room.id}>
-                  {/* Background image header with room title */}
+                  {/* Banner for the room */}
                   <div className="max-w-[600px] mx-auto">
                     <div
                       className="relative overflow-hidden rounded-xl border border-gray-300 h-32 bg-center bg-cover"
@@ -459,14 +751,12 @@ export default function RoomDetails() {
                     >
                       <div className="absolute inset-0 bg-black bg-opacity-30"></div>
                       <div className="relative z-10 flex items-center justify-center h-full">
-                        {/* Room title over the image */}
                         <SectionBoxTitle className="text-white">
                           {room.title}
                         </SectionBoxTitle>
                       </div>
                     </div>
 
-                    {/* Display each section of categories for this room */}
                     {Object.entries(categoriesBySection).map(
                       ([sectionName, catIds]) => (
                         <div key={sectionName} className="mb-8 mt-4">
@@ -477,27 +767,26 @@ export default function RoomDetails() {
                                 categoryServicesMap[catId] || [];
                               if (servicesForCategory.length === 0) return null;
 
-                              const selectedInThisCategory =
-                                servicesForCategory.filter((svc) =>
+                              // how many in this category are selected
+                              const selectedCount = servicesForCategory.filter(
+                                (svc) =>
                                   Object.keys(roomServices).includes(svc.id)
-                                ).length;
+                              ).length;
 
-                              const categoryName = getCategoryNameById(catId);
-
-                              // Check if this category is expanded for this specific room
-                              const expandedSet = getRoomExpansions(room.id);
-                              const isExpanded = expandedSet.has(catId);
+                              const catName = getCategoryNameById(catId);
+                              const expansions =
+                                expandedCategoriesByRoom[room.id] || new Set();
+                              const isExpanded = expansions.has(catId);
 
                               return (
                                 <div
                                   key={catId}
                                   className={`p-4 border rounded-xl bg-white ${
-                                    selectedInThisCategory > 0
+                                    selectedCount > 0
                                       ? "border-blue-500"
                                       : "border-gray-300"
                                   }`}
                                 >
-                                  {/* Toggle expansion for this catId in this specific room */}
                                   <button
                                     onClick={() =>
                                       toggleCategory(room.id, catId)
@@ -506,15 +795,15 @@ export default function RoomDetails() {
                                   >
                                     <h3
                                       className={`font-medium text-2xl ${
-                                        selectedInThisCategory > 0
+                                        selectedCount > 0
                                           ? "text-blue-600"
                                           : "text-black"
                                       }`}
                                     >
-                                      {categoryName}
-                                      {selectedInThisCategory > 0 && (
+                                      {catName}
+                                      {selectedCount > 0 && (
                                         <span className="text-sm text-gray-500 ml-2">
-                                          ({selectedInThisCategory} selected)
+                                          ({selectedCount} selected)
                                         </span>
                                       )}
                                     </h3>
@@ -527,153 +816,353 @@ export default function RoomDetails() {
 
                                   {isExpanded && (
                                     <div className="mt-4 flex flex-col gap-3">
-                                      {servicesForCategory.map(
-                                        (svc, svcIndex) => {
-                                          const isSelected =
-                                            roomServices[svc.id] !== undefined;
-                                          const quantity =
-                                            roomServices[svc.id] || 1;
-                                          const manualValue =
-                                            manualInputValue[svc.id] !== null
-                                              ? manualInputValue[svc.id] || ""
-                                              : quantity.toString();
+                                      {servicesForCategory.map((svc) => {
+                                        const isSelected =
+                                          roomServices[svc.id] != null;
+                                        const quantity =
+                                          roomServices[svc.id] || 1;
+                                        const rawVal = manualInputValue[svc.id];
+                                        const manualVal =
+                                          rawVal !== null
+                                            ? rawVal || ""
+                                            : quantity.toString();
+                                        const foundSvc = ALL_SERVICES.find(
+                                          (x) => x.id === svc.id
+                                        );
+                                        const minQ =
+                                          foundSvc?.min_quantity ?? 1;
 
-                                          return (
-                                            <div
-                                              key={svc.id}
-                                              className="space-y-2"
-                                            >
-                                              {/* Row for a single service */}
-                                              <div className="flex justify-between items-center">
-                                                <span
-                                                  className={`text-lg transition-colors duration-300 ${
-                                                    isSelected
-                                                      ? "text-blue-600"
-                                                      : "text-gray-800"
-                                                  }`}
-                                                >
-                                                  {svc.title}
-                                                </span>
-                                                <label className="relative inline-flex items-center cursor-pointer">
-                                                  <input
-                                                    type="checkbox"
-                                                    checked={isSelected}
-                                                    onChange={() =>
-                                                      handleServiceToggle(
-                                                        room.id,
-                                                        svc.id
-                                                      )
-                                                    }
-                                                    className="sr-only peer"
-                                                  />
-                                                  <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
-                                                  <div className="absolute top-[2px] left-[2px] w-[22px] h-[22px] bg-white rounded-full shadow-md peer-checked:translate-x-[24px] transform transition-transform duration-300"></div>
-                                                </label>
-                                              </div>
+                                        const finalCost =
+                                          serviceCosts[svc.id] || 0;
+                                        const calcResult =
+                                          calculationResultsMap[svc.id];
+                                        const detailsExpanded =
+                                          expandedServiceDetails.has(svc.id);
 
-                                              {isSelected && (
-                                                <>
-                                                  {/* Service description */}
-                                                  {svc.description && (
-                                                    <p className="text-sm text-gray-500 pr-16">
-                                                      {svc.description}
-                                                    </p>
-                                                  )}
-                                                  {/* Quantity controls */}
-                                                  <div className="flex justify-between items-center">
-                                                    <div className="flex items-center gap-1">
-                                                      <button
-                                                        onClick={() =>
-                                                          handleQuantityChange(
-                                                            room.id,
-                                                            svc.id,
-                                                            false,
-                                                            svc.unit_of_measurement
-                                                          )
-                                                        }
-                                                        className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
-                                                      >
-                                                        −
-                                                      </button>
-                                                      <input
-                                                        type="text"
-                                                        value={manualValue}
-                                                        onClick={() =>
-                                                          setManualInputValue(
-                                                            (prev) => ({
-                                                              ...prev,
-                                                              [svc.id]: "",
-                                                            })
-                                                          )
-                                                        }
-                                                        onBlur={() =>
-                                                          handleBlurInput(
-                                                            svc.id
-                                                          )
-                                                        }
-                                                        onChange={(e) =>
-                                                          handleManualQuantityChange(
-                                                            room.id,
-                                                            svc.id,
-                                                            e.target.value,
-                                                            svc.unit_of_measurement
-                                                          )
-                                                        }
-                                                        className="w-20 text-center px-2 py-1 border rounded"
-                                                        placeholder="1"
-                                                      />
-                                                      <button
-                                                        onClick={() =>
-                                                          handleQuantityChange(
-                                                            room.id,
-                                                            svc.id,
-                                                            true,
-                                                            svc.unit_of_measurement
-                                                          )
-                                                        }
-                                                        className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
-                                                      >
-                                                        +
-                                                      </button>
-                                                      <span className="text-sm text-gray-600">
-                                                        {
+                                        return (
+                                          <div
+                                            key={svc.id}
+                                            className="space-y-2"
+                                          >
+                                            <div className="flex justify-between items-center">
+                                              <span
+                                                className={`text-lg transition-colors duration-300 ${
+                                                  isSelected
+                                                    ? "text-blue-600"
+                                                    : "text-gray-800"
+                                                }`}
+                                              >
+                                                {svc.title}
+                                              </span>
+                                              <label className="relative inline-flex items-center cursor-pointer">
+                                                <input
+                                                  type="checkbox"
+                                                  checked={isSelected}
+                                                  onChange={() =>
+                                                    handleServiceToggle(
+                                                      room.id,
+                                                      svc.id
+                                                    )
+                                                  }
+                                                  className="sr-only peer"
+                                                />
+                                                <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
+                                                <div className="absolute top-[2px] left-[2px] w-[22px] h-[22px] bg-white rounded-full shadow-md peer-checked:translate-x-[24px] transform transition-transform duration-300"></div>
+                                              </label>
+                                            </div>
+
+                                            {isSelected && (
+                                              <>
+                                                {/* Use Next.js Image-based component */}
+                                                <ServiceImage
+                                                  serviceId={svc.id}
+                                                />
+
+                                                {svc.description && (
+                                                  <p className="text-sm text-gray-500 pr-16">
+                                                    {svc.description}
+                                                  </p>
+                                                )}
+                                                <div className="flex justify-between items-center">
+                                                  <div className="flex items-center gap-1">
+                                                    <button
+                                                      onClick={() =>
+                                                        handleQuantityChange(
+                                                          room.id,
+                                                          svc.id,
+                                                          false,
                                                           svc.unit_of_measurement
-                                                        }
-                                                      </span>
-                                                    </div>
+                                                        )
+                                                      }
+                                                      className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
+                                                    >
+                                                      −
+                                                    </button>
+                                                    <input
+                                                      type="text"
+                                                      value={manualVal}
+                                                      placeholder={String(minQ)}
+                                                      onClick={() =>
+                                                        setManualInputValue(
+                                                          (old) => ({
+                                                            ...old,
+                                                            [svc.id]: "",
+                                                          })
+                                                        )
+                                                      }
+                                                      onBlur={() =>
+                                                        handleBlurInput(svc.id)
+                                                      }
+                                                      onChange={(e) =>
+                                                        handleManualQuantityChange(
+                                                          room.id,
+                                                          svc.id,
+                                                          e.target.value,
+                                                          svc.unit_of_measurement
+                                                        )
+                                                      }
+                                                      className="w-20 text-center px-2 py-1 border rounded"
+                                                    />
+                                                    <button
+                                                      onClick={() =>
+                                                        handleQuantityChange(
+                                                          room.id,
+                                                          svc.id,
+                                                          true,
+                                                          svc.unit_of_measurement
+                                                        )
+                                                      }
+                                                      className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
+                                                    >
+                                                      +
+                                                    </button>
+                                                    <span className="text-sm text-gray-600">
+                                                      {svc.unit_of_measurement}
+                                                    </span>
+                                                  </div>
+                                                  <div className="flex items-center gap-2">
                                                     <span className="text-lg text-blue-600 font-medium text-right">
                                                       $
                                                       {formatWithSeparator(
-                                                        svc.price * quantity
+                                                        finalCost
                                                       )}
                                                     </span>
+                                                    <button
+                                                      onClick={() =>
+                                                        toggleServiceDetails(
+                                                          svc.id
+                                                        )
+                                                      }
+                                                      className={`text-blue-500 text-sm ml-2 ${
+                                                        detailsExpanded
+                                                          ? ""
+                                                          : "underline"
+                                                      }`}
+                                                    >
+                                                      Details
+                                                    </button>
                                                   </div>
-                                                  {/* Divider if not the last chosen service in this category */}
-                                                  {isSelected &&
-                                                    (() => {
-                                                      const chosenInThisCat =
-                                                        servicesForCategory.filter(
-                                                          (s) =>
-                                                            roomServices[
-                                                              s.id
-                                                            ] !== undefined
-                                                        );
-                                                      const currentIndex =
-                                                        chosenInThisCat.findIndex(
-                                                          (s) => s.id === svc.id
-                                                        );
-                                                      return currentIndex !==
-                                                        chosenInThisCat.length -
-                                                          1 ? (
-                                                        <hr className="mt-4 border-gray-200" />
-                                                      ) : null;
-                                                    })()}
-                                                </>
-                                              )}
-                                            </div>
-                                          );
-                                        }
-                                      )}
+                                                </div>
+
+                                                {calcResult &&
+                                                  detailsExpanded && (
+                                                    <div className="mt-4 p-4 bg-gray-50 border rounded">
+                                                      <h4 className="text-lg font-semibold text-gray-800 mb-3">
+                                                        Cost Breakdown
+                                                      </h4>
+                                                      <div className="flex flex-col gap-2 mb-4">
+                                                        <div className="flex justify-between">
+                                                          <span className="text-md font-medium text-gray-700">
+                                                            Labor
+                                                          </span>
+                                                          <span className="text-md font-medium text-gray-700">
+                                                            {calcResult.work_cost
+                                                              ? `$${calcResult.work_cost}`
+                                                              : "—"}
+                                                          </span>
+                                                        </div>
+                                                        <div className="flex justify-between">
+                                                          <span className="text-md font-medium text-gray-700">
+                                                            Material, tools and
+                                                            equipment
+                                                          </span>
+                                                          <span className="text-md font-medium text-gray-700">
+                                                            {calcResult.material_cost
+                                                              ? `$${calcResult.material_cost}`
+                                                              : "—"}
+                                                          </span>
+                                                        </div>
+                                                      </div>
+
+                                                      {Array.isArray(
+                                                        calcResult.materials
+                                                      ) &&
+                                                        calcResult.materials
+                                                          .length > 0 && (
+                                                          <div className="mt-2">
+                                                            <table className="table-auto w-full text-sm text-left text-gray-700">
+                                                              <thead>
+                                                                <tr className="border-b">
+                                                                  <th className="py-2 px-1">
+                                                                    Name
+                                                                  </th>
+                                                                  <th className="py-2 px-1">
+                                                                    Price
+                                                                  </th>
+                                                                  <th className="py-2 px-1">
+                                                                    Qty
+                                                                  </th>
+                                                                  <th className="py-2 px-1">
+                                                                    Subtotal
+                                                                  </th>
+                                                                </tr>
+                                                              </thead>
+                                                              <tbody className="divide-y divide-gray-200">
+                                                                {calcResult.materials.map(
+                                                                  (
+                                                                    m: any,
+                                                                    i: number
+                                                                  ) => {
+                                                                    const fmObj =
+                                                                      findFinishingMaterialObj(
+                                                                        svc.id,
+                                                                        m.external_id
+                                                                      );
+                                                                    const hasImage =
+                                                                      fmObj
+                                                                        ?.image
+                                                                        ?.length
+                                                                        ? true
+                                                                        : false;
+                                                                    const isClientOwned =
+                                                                      clientOwnedMaterials[
+                                                                        svc.id
+                                                                      ]?.has(
+                                                                        m.external_id
+                                                                      );
+
+                                                                    let rowClass =
+                                                                      "";
+                                                                    if (
+                                                                      isClientOwned
+                                                                    ) {
+                                                                      rowClass =
+                                                                        "border border-red-500 bg-red-50";
+                                                                    } else if (
+                                                                      hasImage
+                                                                    ) {
+                                                                      rowClass =
+                                                                        "border bg-white cursor-pointer";
+                                                                    }
+
+                                                                    return (
+                                                                      <tr
+                                                                        key={`${m.external_id}-${i}`}
+                                                                        className={`last:border-0 ${rowClass}`}
+                                                                        onClick={() => {
+                                                                          if (
+                                                                            !isClientOwned &&
+                                                                            hasImage
+                                                                          ) {
+                                                                            let foundSection:
+                                                                              | string
+                                                                              | null =
+                                                                              null;
+                                                                            const fmData =
+                                                                              finishingMaterialsMapAll[
+                                                                                svc
+                                                                                  .id
+                                                                              ];
+                                                                            if (
+                                                                              fmData?.sections
+                                                                            ) {
+                                                                              for (const [
+                                                                                secName,
+                                                                                list,
+                                                                              ] of Object.entries(
+                                                                                fmData.sections
+                                                                              )) {
+                                                                                if (
+                                                                                  Array.isArray(
+                                                                                    list
+                                                                                  ) &&
+                                                                                  list.some(
+                                                                                    (
+                                                                                      xx
+                                                                                    ) =>
+                                                                                      xx.external_id ===
+                                                                                      m.external_id
+                                                                                  )
+                                                                                ) {
+                                                                                  foundSection =
+                                                                                    secName;
+                                                                                  break;
+                                                                                }
+                                                                              }
+                                                                            }
+                                                                            setShowModalServiceId(
+                                                                              svc.id
+                                                                            );
+                                                                            setShowModalSectionName(
+                                                                              foundSection
+                                                                            );
+                                                                          }
+                                                                        }}
+                                                                      >
+                                                                        <td className="py-3 px-1">
+                                                                          {hasImage ? (
+                                                                            <div className="flex items-center gap-2">
+                                                                              <img
+                                                                                src={
+                                                                                  fmObj?.image
+                                                                                }
+                                                                                alt={
+                                                                                  m.name
+                                                                                }
+                                                                                className="w-8 h-8 object-cover rounded"
+                                                                              />
+                                                                              <span>
+                                                                                {
+                                                                                  m.name
+                                                                                }
+                                                                              </span>
+                                                                            </div>
+                                                                          ) : (
+                                                                            m.name
+                                                                          )}
+                                                                        </td>
+                                                                        <td className="py-3 px-1">
+                                                                          $
+                                                                          {
+                                                                            m.cost_per_unit
+                                                                          }
+                                                                        </td>
+                                                                        <td className="py-3 px-3">
+                                                                          {
+                                                                            m.quantity
+                                                                          }
+                                                                        </td>
+                                                                        <td className="py-3 px-3">
+                                                                          $
+                                                                          {
+                                                                            m.cost
+                                                                          }
+                                                                        </td>
+                                                                      </tr>
+                                                                    );
+                                                                  }
+                                                                )}
+                                                              </tbody>
+                                                            </table>
+                                                          </div>
+                                                        )}
+                                                    </div>
+                                                  )}
+                                              </>
+                                            )}
+                                          </div>
+                                        );
+                                      })}
                                     </div>
                                   )}
                                 </div>
@@ -689,247 +1178,320 @@ export default function RoomDetails() {
             })}
           </div>
 
-          {/* Right column: summary, address, photos/description */}
+          {/* RIGHT column => summary, address, photos, description */}
           <div className="w-1/2 ml-auto pt-0 space-y-6">
             {/* Summary */}
             <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden">
               <SectionBoxSubtitle>Summary</SectionBoxSubtitle>
-              {chosenRooms.every((room) => {
-                const roomServices = selectedServicesState[room.id] || {};
-                return Object.keys(roomServices).length === 0;
-              }) ? (
-                <div className="text-left text-gray-500 text-medium mt-4">
-                  No services selected
-                </div>
-              ) : (
-                <>
-                  {chosenRooms.map((room) => {
-                    const { categoriesBySection, categoryServicesMap } =
-                      roomsData[room.id];
-                    const roomServices = selectedServicesState[room.id] || {};
-                    const hasSelectedInRoom =
-                      Object.keys(roomServices).length > 0;
-                    if (!hasSelectedInRoom) return null;
+              {(() => {
+                let anythingSelected = false;
+                for (const roomId of Object.keys(selectedServicesState)) {
+                  if (Object.keys(selectedServicesState[roomId]).length > 0) {
+                    anythingSelected = true;
+                    break;
+                  }
+                }
+                if (!anythingSelected) {
+                  return (
+                    <div className="text-left text-gray-500 text-medium mt-4">
+                      No services selected
+                    </div>
+                  );
+                }
 
-                    // Calculate this room's total
-                    const roomTotal = Object.entries(roomServices).reduce(
-                      (sum, [serviceId, qty]) => {
-                        const svc = ALL_SERVICES.find(
-                          (s) => s.id === serviceId
-                        );
-                        return svc ? sum + svc.price * qty : sum;
-                      },
-                      0
-                    );
+                let totalAll = 0;
+                return (
+                  <>
+                    {chosenRooms.map((room) => {
+                      const { categoriesBySection, categoryServicesMap } =
+                        roomsData[room.id];
+                      const roomServices = selectedServicesState[room.id] || {};
+                      const hasAny = Object.keys(roomServices).length > 0;
+                      if (!hasAny) return null;
 
-                    return (
-                      <div key={room.id} className="mb-6">
-                        {/* Always display room title */}
-                        <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                          {room.title}
-                        </h3>
-                        {Object.entries(categoriesBySection).map(
-                          ([sectionName, catIds]) => {
-                            const categoriesWithSelected = catIds.filter(
-                              (catId) =>
-                                (categoryServicesMap[catId] || []).some(
-                                  (svc) => roomServices[svc.id] !== undefined
-                                )
-                            );
-                            if (categoriesWithSelected.length === 0)
-                              return null;
+                      let roomTotal = 0;
+                      Object.keys(roomServices).forEach((svcId) => {
+                        roomTotal += serviceCosts[svcId] || 0;
+                      });
+                      totalAll += roomTotal;
 
-                            return (
-                              <div key={sectionName} className="mb-4 ml-2">
-                                <h4 className="text-lg font-medium text-gray-700 mb-2">
-                                  {sectionName}
-                                </h4>
-                                {categoriesWithSelected.map((catId) => {
-                                  const servicesForCategory =
-                                    categoryServicesMap[catId] || [];
-                                  const chosenServices =
-                                    servicesForCategory.filter(
-                                      (svc) =>
-                                        roomServices[svc.id] !== undefined
+                      return (
+                        <div key={room.id} className="mb-6">
+                          <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                            {room.title}
+                          </h3>
+                          {Object.entries(categoriesBySection).map(
+                            ([secName, catIds]) => {
+                              const relevantCats = catIds.filter((catId) => {
+                                const arr = categoryServicesMap[catId] || [];
+                                return arr.some(
+                                  (svc) => roomServices[svc.id] != null
+                                );
+                              });
+                              if (relevantCats.length === 0) return null;
+
+                              return (
+                                <div key={secName} className="mb-4 ml-2">
+                                  <h4 className="text-lg font-medium text-gray-700 mb-2">
+                                    {secName}
+                                  </h4>
+                                  {relevantCats.map((catId) => {
+                                    const catObj = ALL_CATEGORIES.find(
+                                      (x) => x.id === catId
                                     );
-                                  if (chosenServices.length === 0) return null;
+                                    const catName = catObj
+                                      ? catObj.title
+                                      : catId;
+                                    const arr =
+                                      categoryServicesMap[catId] || [];
+                                    const chosenServices = arr.filter(
+                                      (svc) => roomServices[svc.id]
+                                    );
+                                    if (chosenServices.length === 0)
+                                      return null;
 
-                                  const catObj = ALL_CATEGORIES.find(
-                                    (c) => c.id === catId
-                                  );
-                                  const catName = catObj ? catObj.title : catId;
-
-                                  return (
-                                    <div key={catId} className="mb-4 ml-4">
-                                      <h5 className="text-md font-medium text-gray-700 mb-2">
-                                        {catName}
-                                      </h5>
-                                      <ul className="space-y-2 pb-4">
-                                        {chosenServices.map((svc) => {
-                                          const quantity =
-                                            roomServices[svc.id] || 1;
-                                          return (
-                                            <li
-                                              key={svc.id}
-                                              className="grid grid-cols-3 gap-2 text-sm text-gray-600"
-                                              style={{
-                                                gridTemplateColumns:
-                                                  "40% 30% 25%",
-                                                width: "100%",
-                                              }}
-                                            >
-                                              <span className="truncate overflow-hidden">
-                                                {svc.title}
-                                              </span>
-                                              <span className="text-right">
-                                                {quantity}{" "}
-                                                {svc.unit_of_measurement} x $
-                                                {formatWithSeparator(svc.price)}
-                                              </span>
-                                              <span className="text-right">
-                                                $
-                                                {formatWithSeparator(
-                                                  svc.price * quantity
-                                                )}
-                                              </span>
-                                            </li>
-                                          );
-                                        })}
-                                      </ul>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            );
-                          }
-                        )}
-
-                        {/* Here is where we do {room.title} Total: */}
-                        <div className="flex justify-between items-center mb-2 ml-2">
-                          <span className="font-medium text-gray-800">
-                            {room.title} Total:
-                          </span>
-                          <span className="font-medium text-blue-600">
-                            ${formatWithSeparator(roomTotal)}
-                          </span>
+                                    return (
+                                      <div key={catId} className="mb-4 ml-4">
+                                        <h5 className="text-md font-medium text-gray-700 mb-2">
+                                          {catName}
+                                        </h5>
+                                        <ul className="space-y-2 pb-4">
+                                          {chosenServices.map((svc) => {
+                                            const cost =
+                                              serviceCosts[svc.id] || 0;
+                                            const qty = roomServices[svc.id];
+                                            return (
+                                              <li
+                                                key={svc.id}
+                                                className="grid grid-cols-3 gap-2 text-sm text-gray-600"
+                                                style={{
+                                                  gridTemplateColumns:
+                                                    "40% 30% 25%",
+                                                }}
+                                              >
+                                                <span>{svc.title}</span>
+                                                <span className="text-right">
+                                                  {qty}{" "}
+                                                  {svc.unit_of_measurement}
+                                                </span>
+                                                <span className="text-right">
+                                                  ${formatWithSeparator(cost)}
+                                                </span>
+                                              </li>
+                                            );
+                                          })}
+                                        </ul>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              );
+                            }
+                          )}
+                          <div className="flex justify-between items-center mb-2 ml-2">
+                            <span className="font-medium text-gray-800">
+                              {room.title} Total:
+                            </span>
+                            <span className="font-medium text-blue-600">
+                              ${formatWithSeparator(roomTotal)}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-2xl font-semibold text-gray-800">
-                      Subtotal:
-                    </span>
-                    <span className="text-2xl font-semibold text-blue-600">
-                      ${formatWithSeparator(calculateTotalAllRooms())}
-                    </span>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Address section */}
-            <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden">
-              <h2 className="text-2xl font-medium text-gray-800 mb-4">
-                We Need Your Address
-              </h2>
-              <div className="flex flex-col gap-4">
-                <input
-                  type="text"
-                  value={address}
-                  onChange={handleAddressChange}
-                  onFocus={(e) => (e.target.placeholder = "")}
-                  onBlur={(e) => (e.target.placeholder = "Enter your address")}
-                  placeholder="Enter your address"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <button
-                  onClick={handleUseMyLocation}
-                  className="text-blue-600 text-left"
-                >
-                  Use my location
-                </button>
-              </div>
-            </div>
-
-            {/* Upload Photos & Description section */}
-            <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden">
-              <h2 className="text-2xl font-medium text-gray-800 mb-4">
-                Upload Photos & Description
-              </h2>
-              <div className="flex flex-col gap-4">
-                <div>
-                  <label
-                    htmlFor="photo-upload"
-                    className="block w-full px-4 py-2 text-center bg-blue-500 text-white rounded-md cursor-pointer hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                  >
-                    Choose Files
-                  </label>
-                  <input
-                    type="file"
-                    id="photo-upload"
-                    accept="image/*"
-                    multiple
-                    onChange={(e) => {
-                      const files = Array.from(e.target.files || []);
-                      if (
-                        files.length > 12 ||
-                        photos.length + files.length > 12
-                      ) {
-                        alert("You can upload up to 12 photos total.");
-                        e.target.value = "";
-                        return;
-                      }
-                      const fileUrls = files.map((file) =>
-                        URL.createObjectURL(file)
                       );
-                      setPhotos((prev) => [...prev, ...fileUrls]);
-                    }}
-                    className="hidden"
-                  />
-                  <p className="text-sm text-gray-500 mt-1">
-                    Maximum 12 images. Supported formats: JPG, PNG.
-                  </p>
-
-                  <div className="mt-4 grid grid-cols-3 gap-4">
-                    {photos.map((photo, index) => (
-                      <div key={index} className="relative group">
-                        <img
-                          src={photo}
-                          alt={`Uploaded preview ${index + 1}`}
-                          className="w-full h-24 object-cover rounded-md border border-gray-300"
-                        />
-                        <button
-                          onClick={() => {
-                            setPhotos((prev) =>
-                              prev.filter((_, i) => i !== index)
-                            );
-                          }}
-                          className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                          aria-label="Remove photo"
-                        >
-                          <span className="text-sm">✕</span>
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <textarea
-                    id="details"
-                    rows={5}
-                    value={description}
-                    onChange={handleDescriptionChange}
-                    placeholder="Please provide more details about your issue (optional)..."
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  ></textarea>
-                </div>
-              </div>
+                    })}
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-2xl font-semibold text-gray-800">
+                        Subtotal:
+                      </span>
+                      <span className="text-2xl font-semibold text-blue-600">
+                        ${formatWithSeparator(totalAll)}
+                      </span>
+                    </div>
+                  </>
+                );
+              })()}
             </div>
+
+            {/* Address */}
+            <AddressSection
+              address={address}
+              onAddressChange={(e) => setAddress(e.target.value)}
+              zip={zip}
+              onZipChange={(e) => setZip(e.target.value)}
+              stateName={stateName}
+              onStateChange={(e) => setStateName(e.target.value)}
+              onUseMyLocation={() => {
+                if (location?.city && location?.state && location?.zip) {
+                  setAddress(location.city);
+                  setCity(location.city || "");
+                  setStateName(location.state);
+                  setCountry(location.country || "");
+                  setZip(location.zip);
+                } else {
+                  setWarningMessage(
+                    "Location data is unavailable. Please enter manually."
+                  );
+                }
+              }}
+            />
+
+            {/* Photos & description */}
+            <PhotosAndDescription
+              photos={photos}
+              description={description}
+              onSetPhotos={setPhotos}
+              onSetDescription={setDescription}
+            />
           </div>
         </div>
       </div>
+
+      {/* Modal for finishing materials */}
+      {showModalServiceId &&
+        showModalSectionName &&
+        finishingMaterialsMapAll[showModalServiceId] &&
+        finishingMaterialsMapAll[showModalServiceId].sections[
+          showModalSectionName
+        ] && (
+          <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-lg w-[700px] h-[750px] overflow-hidden relative flex flex-col">
+              {/* Header */}
+              <div className="p-4 border-b flex items-center justify-between sticky top-0 bg-white z-10">
+                <h2 className="text-xl font-semibold">
+                  Choose a finishing material (section {showModalSectionName})
+                </h2>
+                <button
+                  onClick={closeModal}
+                  className="text-red-500 border border-red-500 px-2 py-1 rounded"
+                >
+                  Close
+                </button>
+              </div>
+
+              {(() => {
+                const currentSel =
+                  finishingMaterialSelections[showModalServiceId] || [];
+                if (currentSel.length === 0) return null;
+                const currentExtId = currentSel[0];
+                const curMat = findFinishingMaterialObj(
+                  showModalServiceId,
+                  currentExtId
+                );
+                if (!curMat) return null;
+
+                const curCost = parseFloat(curMat.cost || "0") || 0;
+                return (
+                  <div className="text-sm text-gray-600 border-b p-4 bg-white sticky top-[61px] z-10">
+                    Current material: <strong>{curMat.name}</strong> ($
+                    {formatWithSeparator(curCost)})
+                    <button
+                      onClick={() =>
+                        userHasOwnMaterial(showModalServiceId, currentExtId)
+                      }
+                      className="ml-4 text-xs text-red-500 border border-red-500 px-2 py-1 rounded"
+                    >
+                      I have my own (Remove later)
+                    </button>
+                  </div>
+                );
+              })()}
+
+              <div className="overflow-auto p-4 flex-1">
+                {(() => {
+                  const data = finishingMaterialsMapAll[showModalServiceId];
+                  if (!data)
+                    return (
+                      <p className="text-sm text-gray-500">No data found</p>
+                    );
+
+                  const arr = data.sections[showModalSectionName] || [];
+                  if (!Array.isArray(arr) || arr.length === 0) {
+                    return (
+                      <p className="text-sm text-gray-500">
+                        No finishing materials in section {showModalSectionName}
+                      </p>
+                    );
+                  }
+
+                  const curSel =
+                    finishingMaterialSelections[showModalServiceId] || [];
+                  const currentExtId = curSel[0] || null;
+                  let currentBaseCost = 0;
+                  if (currentExtId) {
+                    const fmObj = findFinishingMaterialObj(
+                      showModalServiceId,
+                      currentExtId
+                    );
+                    if (fmObj)
+                      currentBaseCost = parseFloat(fmObj.cost || "0") || 0;
+                  }
+
+                  return (
+                    <div className="grid grid-cols-2 gap-4 mt-4">
+                      {arr.map((material, i) => {
+                        if (!material.image) return null;
+                        const costNum = parseFloat(material.cost || "0") || 0;
+                        const isSelected =
+                          currentExtId === material.external_id;
+                        const diff = costNum - currentBaseCost;
+                        let diffStr = "";
+                        let diffColor = "";
+                        if (diff > 0) {
+                          diffStr = `+${formatWithSeparator(diff)}`;
+                          diffColor = "text-red-500";
+                        } else if (diff < 0) {
+                          diffStr = `-${formatWithSeparator(Math.abs(diff))}`;
+                          diffColor = "text-green-600";
+                        }
+
+                        return (
+                          <div
+                            key={`${material.external_id}-${i}`}
+                            className={`border rounded p-3 flex flex-col items-center cursor-pointer ${
+                              isSelected ? "border-blue-500" : "border-gray-300"
+                            }`}
+                            onClick={() => {
+                              finishingMaterialSelections[showModalServiceId!] =
+                                [material.external_id];
+                              setFinishingMaterialSelections((old) => ({
+                                ...old,
+                              }));
+                            }}
+                          >
+                            <img
+                              src={material.image}
+                              alt={material.name}
+                              className="w-32 h-32 object-cover rounded"
+                            />
+                            <h3 className="text-sm font-medium mt-2 text-center line-clamp-2">
+                              {material.name}
+                            </h3>
+                            <p className="text-xs text-gray-700">
+                              ${formatWithSeparator(costNum)} /{" "}
+                              {material.unit_of_measurement}
+                            </p>
+                            {diff !== 0 && (
+                              <p
+                                className={`text-xs mt-1 font-medium ${diffColor}`}
+                              >
+                                {diffStr}
+                              </p>
+                            )}
+                            {isSelected && (
+                              <span className="text-xs text-blue-600 font-semibold mt-1">
+                                Currently Selected
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+          </div>
+        )}
     </main>
   );
 }

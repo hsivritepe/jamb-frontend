@@ -7,126 +7,208 @@ import { SectionBoxTitle } from "@/components/ui/SectionBoxTitle";
 import { SectionBoxSubtitle } from "@/components/ui/SectionBoxSubtitle";
 import ActionIconsBar from "@/components/ui/ActionIconsBar";
 import { CALCULATE_STEPS } from "@/constants/navigation";
-import { ALL_SERVICES } from "@/constants/services";
 import { ALL_CATEGORIES } from "@/constants/categories";
+import { ALL_SERVICES } from "@/constants/services";
+import { taxRatesUSA } from "@/constants/taxRatesUSA";
+import { useLocation } from "@/context/LocationContext";
+import { getSessionItem, setSessionItem } from "@/utils/session";
 
-// Session storage helpers
-const saveToSession = (key: string, value: any) => {
-  if (typeof window !== "undefined") {
-    sessionStorage.setItem(key, JSON.stringify(value));
-  }
-};
-
-const loadFromSession = (key: string, defaultValue: any = null) => {
-  if (typeof window === "undefined") return defaultValue;
-  const savedValue = sessionStorage.getItem(key);
-  try {
-    return savedValue ? JSON.parse(savedValue) : defaultValue;
-  } catch {
-    return defaultValue;
-  }
-};
-
-// Utility function to format numeric values with commas and exactly two decimal places
-const formatWithSeparator = (value: number): string =>
-  new Intl.NumberFormat("en-US", {
+/**
+ * Formats a numeric value with commas and exactly two decimals.
+ */
+function formatWithSeparator(value: number): string {
+  return new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value);
+}
 
 /**
- * Builds a "temporary estimate number" from the address + current date/time.
- * Format: AAA-ZZZZZ-YYYYDDMM-HHMM
- *  - AAA = first 3 uppercase letters of city (or fallback)
- *  - ZZZZZ = zip from second part of address (or fallback)
- *  - YYYYDDMM (year + day + month)
- *  - HHMM (hour + minute)
+ * Returns the tax rate (e.g. 8.85) from taxRatesUSA by matching
+ * the two-letter state code. If not found, returns 0.
  */
-function buildEstimateNumber(address: string): string {
-  let city = "NOC"; // fallback
-  let zip = "00000"; // fallback
+function getTaxRateForState(stateCode: string): number {
+  if (!stateCode) return 0;
+  const row = taxRatesUSA.taxRates.find(
+    (t) => t.state.toLowerCase() === stateCode.toLowerCase()
+  );
+  return row ? row.combinedStateAndLocalTaxRate : 0;
+}
 
-  if (address) {
-    const parts = address.split(",").map((p) => p.trim());
-    if (parts.length > 0) {
-      city = parts[0].slice(0, 3).toUpperCase(); // e.g. "New" in "New York"
-    }
-    if (parts.length > 1) {
-      // often the 2nd element is zip code
-      zip = parts[1].replace(/\D/g, "") || "00000";
-    }
+/**
+ * Builds an estimate number in the format:
+ * SS-ZZZZZ-YYYYMMDD-HHMM
+ */
+function buildEstimateNumber(stateCode: string, zip: string): string {
+  let stateZipBlock = "??-00000";
+  if (stateCode && zip) {
+    stateZipBlock = `${stateCode}-${zip}`;
   }
 
   const now = new Date();
   const yyyy = String(now.getFullYear());
-  const dd = String(now.getDate()).padStart(2, "0");
   const mm = String(now.getMonth() + 1).padStart(2, "0");
-
-  // user wants "ГГГГДДММ" => year + day + month
-  const dateString = `${yyyy}${dd}${mm}`;
-
-  // HHMM
+  const dd = String(now.getDate()).padStart(2, "0");
   const hh = String(now.getHours()).padStart(2, "0");
   const mins = String(now.getMinutes()).padStart(2, "0");
-  const timeString = hh + mins;
 
-  return `${city}-${zip}-${dateString}-${timeString}`;
+  return `${stateZipBlock}-${yyyy}${mm}${dd}-${hh}${mins}`;
+}
+
+/**
+ * Converts a numeric USD amount into spelled-out words (simplified).
+ */
+function numberToWordsUSD(amount: number): string {
+  // We'll split into whole dollars + cents
+  const wholeDollars = Math.floor(amount);
+  const cents = Math.round((amount - wholeDollars) * 100);
+
+  // Helper function for 0..999
+  function threeDigitToWords(n: number): string {
+    const ones = [
+      "",
+      "one",
+      "two",
+      "three",
+      "four",
+      "five",
+      "six",
+      "seven",
+      "eight",
+      "nine",
+    ];
+    const teens = [
+      "ten",
+      "eleven",
+      "twelve",
+      "thirteen",
+      "fourteen",
+      "fifteen",
+      "sixteen",
+      "seventeen",
+      "eighteen",
+      "nineteen",
+    ];
+    const tensWords = [
+      "",
+      "",
+      "twenty",
+      "thirty",
+      "forty",
+      "fifty",
+      "sixty",
+      "seventy",
+      "eighty",
+      "ninety",
+    ];
+
+    let str = "";
+    const hundred = Math.floor(n / 100);
+    const remainder = n % 100;
+
+    if (hundred > 0) {
+      str += ones[hundred] + " hundred";
+      if (remainder > 0) str += " ";
+    }
+    if (remainder >= 10 && remainder <= 19) {
+      str += teens[remainder - 10];
+    } else {
+      const t = Math.floor(remainder / 10);
+      const o = remainder % 10;
+      if (t > 1) {
+        str += tensWords[t];
+        if (o > 0) str += "-" + ones[o];
+      } else if (t === 1) {
+        // handle '10..19' if not used teens above
+        str += teens[o];
+      } else if (o > 0) {
+        str += ones[o];
+      }
+    }
+    return str.trim();
+  }
+
+  // For thousands, etc.
+  function numberToWords(num: number): string {
+    if (num === 0) return "zero";
+    let words = "";
+
+    // handle thousands
+    const thousands = Math.floor(num / 1000);
+    const remainder = num % 1000;
+    if (thousands > 0) {
+      words += threeDigitToWords(thousands) + " thousand";
+      if (remainder > 0) words += " ";
+    }
+    if (remainder > 0) {
+      words += threeDigitToWords(remainder);
+    }
+    return words || "zero";
+  }
+
+  const dollarsPart = numberToWords(wholeDollars);
+  const centsPart = cents < 10 ? `0${cents}` : `${cents}`;
+
+  // Combine final => "one thousand two hundred... and 45/100 dollars"
+  return `${dollarsPart} and ${centsPart}/100 dollars`.trim();
+}
+
+/**
+ * getCategoryNameById:
+ * Finds a category by its ID from ALL_CATEGORIES and returns its title,
+ * or returns the ID itself if not found.
+ */
+function getCategoryNameById(catId: string): string {
+  const found = ALL_CATEGORIES.find((cat) => cat.id === catId);
+  return found ? found.title : catId;
 }
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const { location } = useLocation();
 
-  // 1) Load required data from session
-  const selectedServicesState: Record<string, number> = loadFromSession(
+  // 1) userStateCode, userZip from context
+  const userStateCode = location.state || "";
+  const userZip = location.zip || "00000";
+
+  // 2) get session data
+  const selectedServicesState: Record<string, number> = getSessionItem(
     "selectedServicesWithQuantity",
     {}
   );
-  const address: string = loadFromSession("address", "");
-  const photos: string[] = loadFromSession("photos", []);
-  const description: string = loadFromSession("description", "");
-  const selectedTime: string | null = loadFromSession("selectedTime", null);
-  const timeCoefficient: number = loadFromSession("timeCoefficient", 1);
+  const calculationResultsMap: Record<string, any> = getSessionItem(
+    "calculationResultsMap",
+    {}
+  );
+  const address = getSessionItem("address", "");
+  const photos = getSessionItem<string[]>("photos", []);
+  const description = getSessionItem("description", "");
+  const selectedTime: string | null = getSessionItem("selectedTime", null);
+  const timeCoefficient: number = getSessionItem("timeCoefficient", 1);
 
-  // If no essential data, go back
+  // 3) store location to session if valid
+  useEffect(() => {
+    if (userStateCode && userZip) {
+      sessionStorage.setItem("location_state", JSON.stringify(userStateCode));
+      sessionStorage.setItem("location_zip", JSON.stringify(userZip));
+    }
+  }, [userStateCode, userZip]);
+
+  // If no essential data => redirect
   useEffect(() => {
     if (Object.keys(selectedServicesState).length === 0 || !address) {
       router.push("/calculate/estimate");
     }
   }, [selectedServicesState, address, router]);
 
-  // Calculate subtotal
-  const calculateSubtotal = (): number => {
-    let total = 0;
-    for (const [serviceId, quantity] of Object.entries(selectedServicesState)) {
-      const svc = ALL_SERVICES.find((s) => s.id === serviceId);
-      if (svc) {
-        total += svc.price * (quantity || 1);
-      }
-    }
-    return total;
-  };
+  // Build the same grouping used in Estimate
+  const selectedCategories: string[] = getSessionItem("services_selectedCategories", []);
+  const searchQuery: string = getSessionItem("services_searchQuery", "");
 
-  const subtotal = calculateSubtotal();
-  const adjustedSubtotal = subtotal * timeCoefficient;
-  const salesTax = adjustedSubtotal * 0.0825;
-  const total = adjustedSubtotal + salesTax;
-
-  const hasSurchargeOrDiscount = timeCoefficient !== 1;
-  const surchargeOrDiscountAmount = hasSurchargeOrDiscount
-    ? Math.abs(subtotal * (timeCoefficient - 1))
-    : 0;
-
-  // For grouping services by section/category
-  const selectedCategories: string[] = loadFromSession(
-    "services_selectedCategories",
-    []
-  );
-  const searchQuery: string = loadFromSession("services_searchQuery", "");
-
-  // Build the category -> section structure
+  // categoriesBySection
   const categoriesWithSection = selectedCategories
     .map((catId) => ALL_CATEGORIES.find((c) => c.id === catId) || null)
-    .filter(Boolean) as typeof ALL_CATEGORIES[number][];
+    .filter(Boolean) as (typeof ALL_CATEGORIES)[number][];
 
   const categoriesBySection: Record<string, string[]> = {};
   categoriesWithSection.forEach((cat) => {
@@ -136,41 +218,76 @@ export default function CheckoutPage() {
     categoriesBySection[cat.section].push(cat.id);
   });
 
-  const categoryServicesMap: Record<string, typeof ALL_SERVICES[number][]> = {};
+  // categoryServicesMap => catId => services
+  const categoryServicesMap: Record<string, (typeof ALL_SERVICES)[number][]> = {};
   selectedCategories.forEach((catId) => {
-    let matchedServices = ALL_SERVICES.filter((svc) =>
-      svc.id.startsWith(`${catId}-`)
-    );
+    let matched = ALL_SERVICES.filter((svc) => svc.id.startsWith(`${catId}-`));
     if (searchQuery) {
-      matchedServices = matchedServices.filter((svc) =>
+      matched = matched.filter((svc) =>
         svc.title.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
-    categoryServicesMap[catId] = matchedServices;
+    categoryServicesMap[catId] = matched;
   });
 
-  const getCategoryNameById = (catId: string): string => {
-    const categoryObj = ALL_CATEGORIES.find((c) => c.id === catId);
-    return categoryObj ? categoryObj.title : catId;
-  };
+  // Summation
+  function calculateLaborSubtotal(): number {
+    let total = 0;
+    for (const svcId of Object.keys(selectedServicesState)) {
+      const cr = calculationResultsMap[svcId];
+      if (cr && cr.work_cost) {
+        total += parseFloat(cr.work_cost);
+      }
+    }
+    return total;
+  }
 
-  const handlePlaceOrder = () => {
+  function calculateMaterialsSubtotal(): number {
+    let total = 0;
+    for (const svcId of Object.keys(selectedServicesState)) {
+      const cr = calculationResultsMap[svcId];
+      if (cr && cr.material_cost) {
+        total += parseFloat(cr.material_cost);
+      }
+    }
+    return total;
+  }
+
+  const laborSubtotal = calculateLaborSubtotal();
+  const materialsSubtotal = calculateMaterialsSubtotal();
+
+  const finalLabor = laborSubtotal * timeCoefficient;
+
+  const serviceFeeOnLabor = getSessionItem("serviceFeeOnLabor", 0);
+  const serviceFeeOnMaterials = getSessionItem("serviceFeeOnMaterials", 0);
+
+  const sumBeforeTax = finalLabor + materialsSubtotal + serviceFeeOnLabor + serviceFeeOnMaterials;
+
+  // tax
+  const taxRatePercent = getTaxRateForState(userStateCode);
+  const taxAmount = sumBeforeTax * (taxRatePercent / 100);
+  const finalTotal = sumBeforeTax + taxAmount;
+
+  // estimate number
+  const estimateNumber = buildEstimateNumber(userStateCode, userZip);
+
+  // place order
+  function handlePlaceOrder() {
     alert("Your order has been placed!");
-  };
+  }
 
-  // Optionally, handle Print, Share, Save (like the rooms page)
-  const handlePrint = () => {
+  // icons
+  function handlePrint() {
     router.push("/calculate/checkout/print");
-  };
-  const handleShare = () => {
+  }
+  function handleShare() {
     alert("Sharing your estimate...");
-  };
-  const handleSave = () => {
+  }
+  function handleSave() {
     alert("Saving your estimate as a PDF...");
-  };
+  }
 
-  // Build a "temporary estimate number"
-  const estimateNumber = buildEstimateNumber(address);
+  const finalTotalWords = numberToWordsUSD(finalTotal);
 
   return (
     <main className="min-h-screen py-24">
@@ -179,12 +296,9 @@ export default function CheckoutPage() {
       </div>
 
       <div className="container mx-auto">
-        {/* Top bar with back link + place order button */}
+        {/* Top bar */}
         <div className="flex justify-between items-center mt-8">
-          <span
-            className="text-blue-600 cursor-pointer"
-            onClick={() => router.back()}
-          >
+          <span className="text-blue-600 cursor-pointer" onClick={() => router.back()}>
             ← Back
           </span>
           <button
@@ -195,114 +309,196 @@ export default function CheckoutPage() {
           </button>
         </div>
 
-        {/* Title and icon bar, just like rooms */}
         <div className="flex items-center justify-between mt-8">
           <SectionBoxTitle>Checkout</SectionBoxTitle>
-          {/* If you want the ActionIconsBar here */}
-          <ActionIconsBar
-            onPrint={handlePrint}
-            onShare={handleShare}
-            onSave={handleSave}
-          />
+          <ActionIconsBar onPrint={handlePrint} onShare={handleShare} onSave={handleSave} />
         </div>
 
         <div className="bg-white border-gray-300 mt-8 p-6 rounded-lg space-y-6 border">
-          {/* Final Estimate Section */}
+          {/* Estimate info */}
           <div>
             <SectionBoxSubtitle>
-              Estimate{" "}
-              <span className="ml-2 text-sm text-gray-500">
-                ({estimateNumber})
-              </span>
+              Estimate for Selected Services <span className="ml-2 text-sm text-gray-500">({estimateNumber})</span>
             </SectionBoxSubtitle>
             <p className="text-xs text-gray-400 -mt-2 ml-1">
-              *This number is temporary and will be replaced with a permanent
-              order number after confirmation.
+              *This number is temporary and will be replaced with a permanent order number after confirmation.
             </p>
+
+            {/* Group by section -> category -> services with numbering */}
             <div className="mt-4 space-y-4">
-              {/* Display services grouped by section and category */}
-              {Object.entries(categoriesBySection).map(
-                ([sectionName, catIds]) => {
-                  const categoriesWithSelected = catIds.filter((catId) => {
-                    const servicesForCategory = categoryServicesMap[catId] || [];
-                    return servicesForCategory.some(
-                      (svc) => selectedServicesState[svc.id] !== undefined
-                    );
-                  });
-                  if (categoriesWithSelected.length === 0) return null;
+              {Object.entries(categoriesBySection).map(([sectionName, catIds], i) => {
+                const sectionIndex = i + 1;
+                const catsWithSelected = catIds.filter((catId) => {
+                  const arr = categoryServicesMap[catId] || [];
+                  return arr.some((svc) => selectedServicesState[svc.id] != null);
+                });
+                if (catsWithSelected.length === 0) return null;
 
-                  return (
-                    <div key={sectionName} className="space-y-4">
-                      <h3 className="text-xl font-semibold text-gray-800">
-                        {sectionName}
-                      </h3>
-                      {categoriesWithSelected.map((catId) => {
-                        const categoryName = getCategoryNameById(catId);
-                        const servicesForCategory =
-                          categoryServicesMap[catId] || [];
-                        const chosenServices = servicesForCategory.filter(
-                          (svc) => selectedServicesState[svc.id] !== undefined
-                        );
+                return (
+                  <div key={sectionName} className="space-y-4">
+                    <h3 className="text-2xl font-semibold text-gray-700">
+                      {sectionIndex}. {sectionName}
+                    </h3>
 
-                        if (chosenServices.length === 0) return null;
+                    {catsWithSelected.map((catId, j) => {
+                      const catIndex = j + 1;
+                      const servicesInCat = categoryServicesMap[catId] || [];
+                      const chosenServices = servicesInCat.filter(
+                        (svc) => selectedServicesState[svc.id] != null
+                      );
+                      if (chosenServices.length === 0) return null;
 
-                        return (
-                          <div key={catId} className="ml-4 space-y-4">
-                            <h4 className="text-lg font-medium text-gray-700">
-                              {categoryName}
-                            </h4>
-                            {chosenServices.map((activity) => {
-                              const quantity =
-                                selectedServicesState[activity.id] || 1;
-                              return (
-                                <div
-                                  key={activity.id}
-                                  className="flex justify-between items-start gap-4 border-b pb-2"
-                                >
-                                  <div>
-                                    <h3 className="font-medium text-lg text-gray-800">
-                                      {activity.title}
-                                    </h3>
-                                    {activity.description && (
-                                      <div className="text-sm text-gray-500 mt-1">
-                                        <span>{activity.description}</span>
-                                      </div>
-                                    )}
-                                    <div className="text-medium font-medium text-gray-800 mt-2">
-                                      <span>
-                                        {quantity.toLocaleString("en-US")}{" "}
+                      const foundCatName = getCategoryNameById(catId);
+
+                      return (
+                        <div key={catId} className="ml-4 space-y-4">
+                          <h4 className="text-xl font-medium text-gray-700">
+                            {sectionIndex}.{catIndex}. {foundCatName}
+                          </h4>
+
+                          {chosenServices.map((svc, svcIdx) => {
+                            const svcIndex = svcIdx + 1;
+                            const quantity = selectedServicesState[svc.id] || 1;
+                            const calcResult = calculationResultsMap[svc.id];
+                            const finalCost = calcResult
+                              ? parseFloat(calcResult.total) || 0
+                              : 0;
+
+                            return (
+                              <div
+                                key={svc.id}
+                                className="flex flex-col gap-2 mb-4"
+                              >
+                                <div>
+                                  <h3 className="font-medium text-lg text-gray-700">
+                                    {sectionIndex}.{catIndex}.{svcIndex}. {svc.title}
+                                  </h3>
+                                  {svc.description && (
+                                    <div className="text-sm text-gray-500 mt-1">
+                                      {svc.description}
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* quantity + cost */}
+                                <div className="flex items-center justify-between mt-2">
+                                  <div className="text-lg font-medium text-gray-700">
+                                    {quantity} {svc.unit_of_measurement}
+                                  </div>
+                                  <span className="text-gray-700 font-medium text-lg mr-4">
+                                    ${formatWithSeparator(finalCost)}
+                                  </span>
+                                </div>
+
+                                {/* cost breakdown => labor/materials */}
+                                {calcResult && (
+                                  <div className="mt-2 p-4 bg-gray-50 border rounded">
+                                    <div className="flex justify-between mb-4">
+                                      <span className="text-md font-medium text-gray-700">
+                                        Labor
                                       </span>
-                                      <span>
-                                        {activity.unit_of_measurement}
+                                      <span className="text-md font-medium text-gray-700">
+                                        {calcResult.work_cost
+                                          ? `$${formatWithSeparator(
+                                              parseFloat(calcResult.work_cost)
+                                            )}`
+                                          : "—"}
                                       </span>
                                     </div>
-                                  </div>
-                                  <div className="text-right mt-auto">
-                                    <span className="block text-gray-800 font-medium">
-                                      $
-                                      {formatWithSeparator(
-                                        activity.price * quantity
+                                    <div className="flex justify-between mb-3">
+                                      <span className="text-md font-medium text-gray-800">
+                                        Materials, tools and equipment
+                                      </span>
+                                      <span className="text-md font-medium text-gray-700">
+                                        {calcResult.material_cost
+                                          ? `$${formatWithSeparator(
+                                              parseFloat(calcResult.material_cost)
+                                            )}`
+                                          : "—"}
+                                      </span>
+                                    </div>
+
+                                    {Array.isArray(calcResult.materials) &&
+                                      calcResult.materials.length > 0 && (
+                                        <div>
+                                          <table className="table-auto w-full text-sm text-left text-gray-700">
+                                            <thead>
+                                              <tr className="border-b">
+                                                <th className="py-2 px-1">Name</th>
+                                                <th className="py-2 px-1">Price</th>
+                                                <th className="py-2 px-1">Qty</th>
+                                                <th className="py-2 px-1">Subtotal</th>
+                                              </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-gray-200">
+                                              {calcResult.materials.map(
+                                                (m: any, idx2: number) => (
+                                                  <tr
+                                                    key={`${m.external_id}-${idx2}`}
+                                                    className="align-top"
+                                                  >
+                                                    <td className="py-3 px-1">
+                                                      {m.name}
+                                                    </td>
+                                                    <td className="py-3 px-1">
+                                                      $
+                                                      {formatWithSeparator(
+                                                        parseFloat(m.cost_per_unit)
+                                                      )}
+                                                    </td>
+                                                    <td className="py-3 px-3">
+                                                      {m.quantity}
+                                                    </td>
+                                                    <td className="py-3 px-3">
+                                                      $
+                                                      {formatWithSeparator(
+                                                        parseFloat(m.cost)
+                                                      )}
+                                                    </td>
+                                                  </tr>
+                                                )
+                                              )}
+                                            </tbody>
+                                          </table>
+                                        </div>
                                       )}
-                                    </span>
                                   </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                }
-              )}
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
             </div>
 
-            {/* Summary of costs */}
-            <div className="pt-4 mt-4">
+            {/* Summary => labor/materials/tax/fees */}
+            <div className="pt-4 mt-4 border-t">
+              <div className="flex justify-between mb-2">
+                <span className="font-semibold text-lg text-gray-600">Labor total</span>
+                <span className="font-semibold text-lg text-gray-600">
+                  ${formatWithSeparator(laborSubtotal)}
+                </span>
+              </div>
+
+              <div className="flex justify-between mb-2">
+                <span className="font-semibold text-lg text-gray-600">
+                  Materials, tools and equipment
+                </span>
+                <span className="font-semibold text-lg text-gray-600">
+                  ${formatWithSeparator(materialsSubtotal)}
+                </span>
+              </div>
+
               {timeCoefficient !== 1 && (
                 <div className="flex justify-between mb-2">
                   <span className="text-gray-600">
-                    {timeCoefficient > 1 ? "Surcharge" : "Discount"}
+                    {timeCoefficient > 1
+                      ? "Surcharge (date selection)"
+                      : "Discount (day selection)"}
                   </span>
                   <span
                     className={`font-semibold text-lg ${
@@ -310,52 +506,71 @@ export default function CheckoutPage() {
                     }`}
                   >
                     {timeCoefficient > 1 ? "+" : "-"}$
-                    {formatWithSeparator(
-                      Math.abs(subtotal * (timeCoefficient - 1))
-                    )}
+                    {formatWithSeparator(Math.abs(finalLabor - laborSubtotal))}
                   </span>
                 </div>
               )}
 
               <div className="flex justify-between mb-2">
+                <span className="text-gray-600">Service Fee (15% on labor)</span>
                 <span className="font-semibold text-lg text-gray-800">
-                  Subtotal
+                  ${formatWithSeparator(serviceFeeOnLabor)}
+                </span>
+              </div>
+              <div className="flex justify-between mb-2">
+                <span className="text-gray-600">
+                  Delivery &amp; Processing (5% on materials)
                 </span>
                 <span className="font-semibold text-lg text-gray-800">
-                  ${formatWithSeparator(adjustedSubtotal)}
+                  ${formatWithSeparator(serviceFeeOnMaterials)}
                 </span>
               </div>
 
-              <div className="flex justify-between mb-4">
-                <span className="text-gray-600">Sales tax (8.25%)</span>
-                <span>${formatWithSeparator(salesTax)}</span>
+              <div className="flex justify-between mb-2">
+                <span className="font-semibold text-xl text-gray-800">
+                  Subtotal
+                </span>
+                <span className="font-semibold text-xl text-gray-800">
+                  ${formatWithSeparator(sumBeforeTax)}
+                </span>
+              </div>
+
+              <div className="flex justify-between mb-2">
+                <span className="text-gray-600">
+                  Sales tax
+                  {userStateCode ? ` (${userStateCode})` : ""}
+                  {taxRatePercent > 0 ? ` (${taxRatePercent.toFixed(2)}%)` : ""}
+                </span>
+                <span>${formatWithSeparator(taxAmount)}</span>
               </div>
 
               <div className="flex justify-between text-2xl font-semibold mt-4">
                 <span>Total</span>
-                <span>${formatWithSeparator(total)}</span>
+                <span>${formatWithSeparator(finalTotal)}</span>
               </div>
+
+              <span className="block text-right my-2 text-gray-600">
+                ({finalTotalWords})
+              </span>
             </div>
           </div>
 
           <hr className="my-6 border-gray-200" />
 
-          {/* Selected Date */}
+          {/* Selected date/time */}
           <div>
             <SectionBoxSubtitle>Date of Service</SectionBoxSubtitle>
-            <p className="text-gray-800">
+            <p className="text-gray-600">
               {selectedTime || "No date selected"}
             </p>
           </div>
 
           <hr className="my-6 border-gray-200" />
 
-          {/* Problem Description */}
+          {/* Problem description */}
           <div>
             <SectionBoxSubtitle>Problem Description</SectionBoxSubtitle>
-            <p className="text-gray-700">
-              {description || "No details provided"}
-            </p>
+            <p className="text-gray-600">{description || "No details provided"}</p>
           </div>
 
           <hr className="my-6 border-gray-200" />
@@ -363,12 +578,12 @@ export default function CheckoutPage() {
           {/* Address */}
           <div>
             <SectionBoxSubtitle>Address</SectionBoxSubtitle>
-            <p className="text-gray-800">{address || "No address provided"}</p>
+            <p className="text-gray-600">{address || "No address provided"}</p>
           </div>
 
           <hr className="my-6 border-gray-200" />
 
-          {/* Uploaded Photos */}
+          {/* Photos */}
           <div>
             <SectionBoxSubtitle>Uploaded Photos</SectionBoxSubtitle>
             <div className="grid grid-cols-6 gap-2">
@@ -382,7 +597,7 @@ export default function CheckoutPage() {
               ))}
             </div>
             {photos.length === 0 && (
-              <p className="text-gray-500 mt-2">No photos uploaded</p>
+              <p className="text-gray-600 mt-2">No photos uploaded</p>
             )}
           </div>
         </div>

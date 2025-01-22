@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import BreadCrumb from "@/components/ui/BreadCrumb";
 import Button from "@/components/ui/Button";
@@ -11,207 +12,449 @@ import { useLocation } from "@/context/LocationContext";
 import { ALL_CATEGORIES } from "@/constants/categories";
 import { ALL_SERVICES } from "@/constants/services";
 import { ChevronDown } from "lucide-react";
+import { setSessionItem, getSessionItem } from "@/utils/session";
+import RecommendedActivities from "@/components/RecommendedActivities";
 
-// Utility to format numbers nicely
-const formatWithSeparator = (value: number): string =>
-  new Intl.NumberFormat("en-US", { minimumFractionDigits: 2 }).format(value);
+interface FinishingMaterial {
+  id: number;
+  image?: string;
+  unit_of_measurement: string;
+  name: string;
+  external_id: string;
+  cost: string;
+}
 
-// Session helpers with environment check
-/**
- * saveToSession: Saves a value to sessionStorage as JSON (only when window is available).
- */
-const saveToSession = (key: string, value: any) => {
-  if (typeof window !== 'undefined') {
-    sessionStorage.setItem(key, JSON.stringify(value));
+/** Helper to format numbers with commas and two decimals. */
+function formatWithSeparator(value: number): string {
+  return new Intl.NumberFormat("en-US", { minimumFractionDigits: 2 }).format(value);
+}
+
+/** Converts "1-1-1" => "1.1.1". */
+function convertServiceIdToApiFormat(serviceId: string): string {
+  return serviceId.replaceAll("-", ".");
+}
+
+/** Returns the base API URL or fallback. */
+function getApiBaseUrl(): string {
+  return process.env.NEXT_PUBLIC_API_BASE_URL || "http://dev.thejamb.com";
+}
+
+/** POST /work/finishing_materials => fetch finishing materials. */
+async function fetchFinishingMaterials(workCode: string) {
+  const url = `${getApiBaseUrl()}/work/finishing_materials`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify({ work_code: workCode }),
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to fetch finishing materials (work_code=${workCode}).`);
   }
-};
+  return res.json();
+}
+
+/** POST /calculate => compute labor+materials cost. */
+async function calculatePrice(params: {
+  work_code: string;
+  zipcode: string;
+  unit_of_measurement: string;
+  square: number;
+  finishing_materials: string[];
+}) {
+  const url = `${getApiBaseUrl()}/calculate`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to calculate price (work_code=${params.work_code}).`);
+  }
+  return res.json();
+}
+
+/** Simple image component for a service ID. */
+function ServiceImage({ serviceId }: { serviceId: string }) {
+  const [imageSrc, setImageSrc] = useState<string | null>(null);
+
+  useEffect(() => {
+    const firstSegment = serviceId.split("-")[0];
+    const code = convertServiceIdToApiFormat(serviceId);
+    const url = `http://dev.thejamb.com/images/${firstSegment}/${code}.jpg`;
+    setImageSrc(url);
+  }, [serviceId]);
+
+  if (!imageSrc) return null;
+
+  return (
+    <Image
+      src={imageSrc}
+      alt="Service"
+      width={600}
+      height={400}
+      className="w-full h-full object-cover"
+    />
+  );
+}
 
 /**
- * loadFromSession: Loads and parses a value from sessionStorage or returns defaultValue if not found/SSR.
+ * The main "Details" page component, which uses
+ * `RecommendedActivities` for the right-side recommended items.
  */
-const loadFromSession = (key: string, defaultValue: any) => {
-  if (typeof window === 'undefined') return defaultValue;
-  const savedValue = sessionStorage.getItem(key);
-  try {
-    return savedValue ? JSON.parse(savedValue) : defaultValue;
-  } catch (error) {
-    console.error(`Error parsing sessionStorage for key "${key}"`, error);
-    return defaultValue;
-  }
-};
-
 export default function Details() {
   const router = useRouter();
   const { location } = useLocation();
 
-  // Load chosen categories and other data from session
-  const selectedCategories: string[] = loadFromSession("services_selectedCategories", []);
-  const address: string = loadFromSession("address", "");
-  const description: string = loadFromSession("description", "");
-  const photos: string[] = loadFromSession("photos", []);
-  const searchQuery: string = loadFromSession("services_searchQuery", "");
+  // 1) Load from session
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(
+    () => getSessionItem("services_selectedCategories", [])
+  );
+  const [address, setAddress] = useState<string>(() => getSessionItem("address", ""));
+  const description = getSessionItem<string>("description", "");
+  const photos = getSessionItem<string[]>("photos", []);
+  const searchQuery = getSessionItem<string>("services_searchQuery", "");
 
-  const [warningMessage, setWarningMessage] = useState<string | null>(null);
-
-  // If no categories or no address, redirect back
   useEffect(() => {
     if (selectedCategories.length === 0 || !address) {
       router.push("/calculate");
     }
   }, [selectedCategories, address, router]);
 
-  // Track which categories (by ID) are expanded
+  // Keep address updated if location changes
+  useEffect(() => {
+    const newAddr = [location.city, location.state, location.zip, location.country]
+      .filter(Boolean)
+      .join(", ");
+    if (newAddr.trim()) {
+      setAddress(newAddr);
+      setSessionItem("address", newAddr);
+    }
+  }, [location]);
+
+  // For warnings or errors
+  const [warningMessage, setWarningMessage] = useState<string | null>(null);
+  // For expand/collapse categories
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
-  // Build data structures: categories -> sections, etc.
-  const categoriesWithSection = selectedCategories
-    .map((catId) => ALL_CATEGORIES.find((c) => c.id === catId) || null)
-    .filter(Boolean) as (typeof ALL_CATEGORIES)[number][];
+  // Build categories by section
+  const categoriesWithSection = useMemo(() => {
+    return selectedCategories
+      .map((id) => ALL_CATEGORIES.find((x) => x.id === id) || null)
+      .filter(Boolean) as (typeof ALL_CATEGORIES)[number][];
+  }, [selectedCategories]);
 
-  const categoriesBySection: Record<string, string[]> = {};
-  categoriesWithSection.forEach((cat) => {
-    if (!categoriesBySection[cat.section]) {
-      categoriesBySection[cat.section] = [];
+  const categoriesBySection: Record<string, string[]> = useMemo(() => {
+    const out: Record<string, string[]> = {};
+    for (const cat of categoriesWithSection) {
+      if (!out[cat.section]) {
+        out[cat.section] = [];
+      }
+      out[cat.section].push(cat.id);
     }
-    categoriesBySection[cat.section].push(cat.id);
-  });
+    return out;
+  }, [categoriesWithSection]);
 
-  const categoryServicesMap: Record<string, (typeof ALL_SERVICES)[number][]> = {};
-  selectedCategories.forEach((catId) => {
-    let matchedServices = ALL_SERVICES.filter((svc) =>
-      svc.id.startsWith(`${catId}-`)
-    );
-    if (searchQuery) {
-      matchedServices = matchedServices.filter((svc) =>
-        svc.title.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+  // category => array of services
+  const categoryServicesMap: Record<string, (typeof ALL_SERVICES)[number][]> = useMemo(() => {
+    const map: Record<string, (typeof ALL_SERVICES)[number][]> = {};
+    for (const catId of selectedCategories) {
+      let arr = ALL_SERVICES.filter((svc) => svc.id.startsWith(`${catId}-`));
+      if (searchQuery) {
+        arr = arr.filter((svc) =>
+          (svc.title || "").toLowerCase().includes(searchQuery.toLowerCase())
+        );
+      }
+      map[catId] = arr;
     }
-    categoryServicesMap[catId] = matchedServices;
-  });
+    return map;
+  }, [selectedCategories, searchQuery]);
 
-  // Load previously chosen services with quantity
+  // 2) selectedServices => serviceId => quantity
   const [selectedServicesState, setSelectedServicesState] = useState<Record<string, number>>(
-    () => loadFromSession("selectedServicesWithQuantity", {})
+    () => getSessionItem("selectedServicesWithQuantity", {})
   );
-
-  // Track manual input for numeric quantities
-  const [manualInputValue, setManualInputValue] = useState<Record<string, string | null>>({});
-
-  // Save changes to session whenever selectedServicesState changes
   useEffect(() => {
-    saveToSession("selectedServicesWithQuantity", selectedServicesState);
+    setSessionItem("selectedServicesWithQuantity", selectedServicesState);
   }, [selectedServicesState]);
 
-  /**
-   * Toggle expand/collapse for a given category ID.
-   */
-  const toggleCategory = (catId: string) => {
-    setExpandedCategories((prev) => {
-      const next = new Set(prev);
-      next.has(catId) ? next.delete(catId) : next.add(catId);
+  // finishing materials => serviceId => data
+  const [finishingMaterialsMapAll, setFinishingMaterialsMapAll] = useState<
+    Record<string, { sections: Record<string, FinishingMaterial[]> }>
+  >({});
+  // finishingMaterialSelections => serviceId => array of ext IDs
+  const [finishingMaterialSelections, setFinishingMaterialSelections] = useState<
+    Record<string, string[]>
+  >({});
+
+  // typed input => serviceId => string|null
+  const [manualInputValue, setManualInputValue] = useState<Record<string, string | null>>({});
+  // cost => serviceId => number
+  const [serviceCosts, setServiceCosts] = useState<Record<string, number>>({});
+  // breakdown => serviceId => data from /calculate
+  const [calculationResultsMap, setCalculationResultsMap] = useState<Record<string, any>>({});
+  // expanded details => set of service IDs
+  const [expandedServiceDetails, setExpandedServiceDetails] = useState<Set<string>>(new Set());
+  // user-owned => serviceId => set of external IDs
+  const [clientOwnedMaterials, setClientOwnedMaterials] = useState<Record<string, Set<string>>>({});
+
+  // finishing-material modal
+  const [showModalServiceId, setShowModalServiceId] = useState<string | null>(null);
+  const [showModalSectionName, setShowModalSectionName] = useState<string | null>(null);
+
+  // save breakdown to session
+  useEffect(() => {
+    setSessionItem("calculationResultsMap", calculationResultsMap);
+  }, [calculationResultsMap]);
+
+  /** Expand/collapse a category => fetch finishing materials if expanded. */
+  function toggleCategory(catId: string) {
+    setExpandedCategories((old) => {
+      const next = new Set(old);
+      if (next.has(catId)) {
+        next.delete(catId);
+      } else {
+        next.add(catId);
+        const arr = categoryServicesMap[catId] || [];
+        fetchFinishingMaterialsForCategory(arr);
+      }
       return next;
     });
-  };
+  }
 
-  /**
-   * Select or deselect an individual service.
-   */
-  const handleServiceToggle = (serviceId: string) => {
-    setSelectedServicesState((prev) => {
-      if (prev[serviceId]) {
-        const updated = { ...prev };
-        delete updated[serviceId];
-        return updated;
+  /** Toggle a service in the left side. */
+  function handleServiceToggle(serviceId: string) {
+    setSelectedServicesState((old) => {
+      const isOn = old[serviceId] != null;
+      if (isOn) {
+        // remove
+        const copy = { ...old };
+        delete copy[serviceId];
+
+        const fmCopy = { ...finishingMaterialSelections };
+        delete fmCopy[serviceId];
+
+        const muCopy = { ...manualInputValue };
+        delete muCopy[serviceId];
+
+        const crCopy = { ...calculationResultsMap };
+        delete crCopy[serviceId];
+
+        const scCopy = { ...serviceCosts };
+        delete scCopy[serviceId];
+
+        const coCopy = { ...clientOwnedMaterials };
+        delete coCopy[serviceId];
+
+        setSelectedServicesState(copy);
+        setFinishingMaterialSelections(fmCopy);
+        setManualInputValue(muCopy);
+        setCalculationResultsMap(crCopy);
+        setServiceCosts(scCopy);
+        setClientOwnedMaterials(coCopy);
+
+        return copy;
+      } else {
+        // add
+        const found = ALL_SERVICES.find((x) => x.id === serviceId);
+        const minQ = found?.min_quantity ?? 1;
+        const newObj = { ...old, [serviceId]: minQ };
+
+        // ensure the typed input is a string, not undefined
+        setManualInputValue((prev) => ({ ...prev, [serviceId]: String(minQ) }));
+
+        ensureFinishingMaterialsLoaded(serviceId);
+        return newObj;
       }
-      return { ...prev, [serviceId]: 1 };
     });
     setWarningMessage(null);
-  };
+  }
 
-  /**
-   * Increment/decrement the quantity for a given service.
-   */
-  const handleQuantityChange = (serviceId: string, increment: boolean, unit: string) => {
-    setSelectedServicesState((prev) => {
-      const currentValue = prev[serviceId] || 1;
-      const updatedValue = increment ? currentValue + 1 : Math.max(1, currentValue - 1);
+  /** +/- quantity on left side. */
+  function handleQuantityChange(serviceId: string, increment: boolean, unit: string) {
+    const found = ALL_SERVICES.find((x) => x.id === serviceId);
+    if (!found) return;
+    const minQ = found.min_quantity ?? 1;
+    const maxQ = found.max_quantity ?? 999999;
 
+    setSelectedServicesState((old) => {
+      const curVal = old[serviceId] ?? minQ;
+      let newVal = increment ? curVal + 1 : curVal - 1;
+      if (newVal < minQ) newVal = minQ;
+      if (newVal > maxQ) {
+        newVal = maxQ;
+        setWarningMessage(`Maximum quantity for "${found.title}" is ${maxQ}.`);
+      }
       return {
-        ...prev,
-        [serviceId]: unit === "each" ? Math.round(updatedValue) : updatedValue,
+        ...old,
+        [serviceId]: unit === "each" ? Math.round(newVal) : newVal,
       };
     });
-    // Reset manual input if user used the +/- buttons
-    setManualInputValue((prev) => ({
-      ...prev,
-      [serviceId]: null,
-    }));
-  };
 
-  /**
-   * Handle manual quantity input changes.
-   */
-  const handleManualQuantityChange = (serviceId: string, value: string, unit: string) => {
-    setManualInputValue((prev) => ({
-      ...prev,
-      [serviceId]: value,
-    }));
+    // Clear typed input
+    setManualInputValue((old) => ({ ...old, [serviceId]: null }));
+  }
 
-    const numericValue = parseFloat(value.replace(/,/g, "")) || 0;
-    if (!isNaN(numericValue)) {
-      setSelectedServicesState((prev) => ({
-        ...prev,
-        [serviceId]: unit === "each" ? Math.round(numericValue) : numericValue,
-      }));
+  /** typed quantity on left side. */
+  function handleManualQuantityChange(serviceId: string, val: string, unit: string) {
+    const found = ALL_SERVICES.find((x) => x.id === serviceId);
+    if (!found) return;
+
+    const minQ = found.min_quantity ?? 1;
+    const maxQ = found.max_quantity ?? 999999;
+
+    setManualInputValue((old) => ({ ...old, [serviceId]: val }));
+
+    let numericVal = parseFloat(val.replace(/,/g, "")) || 0;
+    if (numericVal < minQ) numericVal = minQ;
+    if (numericVal > maxQ) {
+      numericVal = maxQ;
+      setWarningMessage(`Maximum quantity for "${found.title}" is ${maxQ}.`);
     }
-  };
 
-  /**
-   * If user leaves the input field with an empty string, reset manual input to null
-   */
-  const handleBlurInput = (serviceId: string) => {
+    setSelectedServicesState((old) => ({
+      ...old,
+      [serviceId]: unit === "each" ? Math.round(numericVal) : numericVal,
+    }));
+  }
+
+  /** onBlur => if empty string => revert to numeric on next render. */
+  function handleBlurInput(serviceId: string) {
     if (!manualInputValue[serviceId]) {
-      setManualInputValue((prev) => ({
-        ...prev,
-        [serviceId]: null,
-      }));
+      setManualInputValue((old) => ({ ...old, [serviceId]: null }));
     }
-  };
+  }
 
-  /**
-   * Confirmation prompt and clearing all selected services and expanded categories.
-   */
-  const clearAllSelections = () => {
-    const confirmed = window.confirm(
-      "Are you sure you want to clear all selected services? This will also collapse all expanded categories."
-    );
-    if (!confirmed) {
-      return;
-    }
-    // Clear all selections
+  /** Clear all selected services. */
+  function clearAllSelections() {
+    if (!window.confirm("Are you sure you want to clear all services?")) return;
+
     setSelectedServicesState({});
-    // Reset expanded categories
     setExpandedCategories(new Set());
-  };
+    setFinishingMaterialsMapAll({});
+    setFinishingMaterialSelections({});
+    setManualInputValue({});
+    setCalculationResultsMap({});
+    setServiceCosts({});
+    setClientOwnedMaterials({});
+  }
 
-  /**
-   * Calculate the total cost of all selected services.
-   */
-  const calculateTotal = (): number => {
-    let total = 0;
-    for (const [serviceId, quantity] of Object.entries(selectedServicesState)) {
-      const svc = ALL_SERVICES.find((s) => s.id === serviceId);
-      if (svc) {
-        total += svc.price * (quantity || 1);
+  /** Ensure finishing materials are loaded for a service. */
+  async function ensureFinishingMaterialsLoaded(serviceId: string) {
+    try {
+      if (!finishingMaterialsMapAll[serviceId]) {
+        const dot = convertServiceIdToApiFormat(serviceId);
+        const data = await fetchFinishingMaterials(dot);
+        finishingMaterialsMapAll[serviceId] = data;
+        setFinishingMaterialsMapAll({ ...finishingMaterialsMapAll });
       }
+      if (!finishingMaterialSelections[serviceId]) {
+        const fmData = finishingMaterialsMapAll[serviceId];
+        if (fmData?.sections) {
+          const picks: string[] = [];
+          for (const arr of Object.values(fmData.sections)) {
+            if (Array.isArray(arr) && arr.length > 0) {
+              picks.push(arr[0].external_id);
+            }
+          }
+          finishingMaterialSelections[serviceId] = picks;
+          setFinishingMaterialSelections({ ...finishingMaterialSelections });
+        }
+      }
+    } catch (err) {
+      console.error("Error ensuring finishing materials for:", serviceId, err);
     }
-    return total;
-  };
+  }
 
-  /**
-   * Validate and proceed to the next page (Estimate).
-   */
-  const handleNext = () => {
+  /** Fetch finishing materials for all services in a category. */
+  async function fetchFinishingMaterialsForCategory(servicesArr: (typeof ALL_SERVICES)[number][]) {
+    try {
+      await Promise.all(
+        servicesArr.map(async (svc) => {
+          if (!finishingMaterialsMapAll[svc.id]) {
+            const dot = convertServiceIdToApiFormat(svc.id);
+            const data = await fetchFinishingMaterials(dot);
+            finishingMaterialsMapAll[svc.id] = data;
+            if (!finishingMaterialSelections[svc.id]) {
+              const picks: string[] = [];
+              for (const arr of Object.values(data.sections || {})) {
+                if (Array.isArray(arr) && arr.length > 0) {
+                  picks.push(arr[0].external_id);
+                }
+              }
+              finishingMaterialSelections[svc.id] = picks;
+            }
+          }
+        })
+      );
+      setFinishingMaterialsMapAll({ ...finishingMaterialsMapAll });
+      setFinishingMaterialSelections({ ...finishingMaterialSelections });
+    } catch (err) {
+      console.error("Error in fetchFinishingMaterialsForCategory:", err);
+    }
+  }
+
+  /** Recompute cost whenever user changes selected services or ZIP changes. */
+  useEffect(() => {
+    async function recalcAll() {
+      const svcIds = Object.keys(selectedServicesState);
+      if (svcIds.length === 0) {
+        setServiceCosts({});
+        setCalculationResultsMap({});
+        return;
+      }
+
+      const { zip, country } = location;
+      if (!/^\d{5}$/.test(zip) || country !== "United States") {
+        setWarningMessage("Currently, our service is only available for US ZIP codes (5 digits).");
+        return;
+      }
+
+      const nextCosts: Record<string, number> = {};
+      const nextCalc: Record<string, any> = {};
+
+      await Promise.all(
+        svcIds.map(async (svcId) => {
+          try {
+            await ensureFinishingMaterialsLoaded(svcId);
+
+            const quantity = selectedServicesState[svcId];
+            const finishingIds = finishingMaterialSelections[svcId] || [];
+            const foundSvc = ALL_SERVICES.find((x) => x.id === svcId);
+            if (!foundSvc) return;
+
+            const dot = convertServiceIdToApiFormat(svcId);
+            const resp = await calculatePrice({
+              work_code: dot,
+              zipcode: location.zip,
+              unit_of_measurement: foundSvc.unit_of_measurement ?? "each",
+              square: quantity,
+              finishing_materials: finishingIds,
+            });
+
+            const labor = parseFloat(resp.work_cost) || 0;
+            const mat = parseFloat(resp.material_cost) || 0;
+            nextCosts[svcId] = labor + mat;
+            nextCalc[svcId] = resp;
+          } catch (err) {
+            console.error("Error computing cost for service:", svcId, err);
+          }
+        })
+      );
+
+      setServiceCosts(nextCosts);
+      setCalculationResultsMap(nextCalc);
+    }
+
+    recalcAll();
+  }, [selectedServicesState, finishingMaterialSelections, location]);
+
+  /** Summation of serviceCosts. */
+  function calculateTotal() {
+    return Object.values(serviceCosts).reduce((a, b) => a + b, 0);
+  }
+
+  /** Next button => check if there's at least one service and an address. */
+  function handleNext() {
     if (Object.keys(selectedServicesState).length === 0) {
       setWarningMessage("Please select at least one service before proceeding.");
       return;
@@ -220,28 +463,70 @@ export default function Details() {
       setWarningMessage("Please enter your address before proceeding.");
       return;
     }
-
     router.push("/calculate/estimate");
-  };
+  }
 
-  /**
-   * Get a category name by its ID (fallback to catId if not found).
-   */
-  const getCategoryNameById = (catId: string): string => {
-    const categoryObj = ALL_CATEGORIES.find((c) => c.id === catId);
-    return categoryObj ? categoryObj.title : catId;
-  };
+  /** Toggle expanded service details on left side. */
+  function toggleServiceDetails(serviceId: string) {
+    setExpandedServiceDetails((old) => {
+      const copy = new Set(old);
+      if (copy.has(serviceId)) {
+        copy.delete(serviceId);
+      } else {
+        copy.add(serviceId);
+      }
+      return copy;
+    });
+  }
+
+  /** Find finishing material object for cost breakdown. */
+  function findFinishingMaterialObj(serviceId: string, extId: string): FinishingMaterial | null {
+    const data = finishingMaterialsMapAll[serviceId];
+    if (!data) return null;
+    for (const arr of Object.values(data.sections || {})) {
+      if (Array.isArray(arr)) {
+        const found = arr.find((xx) => xx.external_id === extId);
+        if (found) return found;
+      }
+    }
+    return null;
+  }
+
+  /** If user picks a different finishing item. */
+  function pickMaterial(serviceId: string, newExtId: string) {
+    finishingMaterialSelections[serviceId] = [newExtId];
+    setFinishingMaterialSelections({ ...finishingMaterialSelections });
+  }
+
+  /** If user owns the finishing item. */
+  function userHasOwnMaterial(serviceId: string, extId: string) {
+    if (!clientOwnedMaterials[serviceId]) {
+      clientOwnedMaterials[serviceId] = new Set();
+    }
+    clientOwnedMaterials[serviceId].add(extId);
+    setClientOwnedMaterials({ ...clientOwnedMaterials });
+  }
+
+  /** Close finishing-material modal. */
+  function closeModal() {
+    setShowModalServiceId(null);
+    setShowModalSectionName(null);
+  }
 
   return (
     <main className="min-h-screen pt-24 pb-16">
       <div className="container mx-auto">
         <BreadCrumb items={CALCULATE_STEPS} />
+      </div>
 
+      <div className="container mx-auto">
+        {/* Top row */}
         <div className="flex justify-between items-start mt-8">
           <SectionBoxTitle>Choose a Service and Quantity</SectionBoxTitle>
           <Button onClick={handleNext}>Next →</Button>
         </div>
 
+        {/* "No service?" + "Clear" */}
         <div className="flex justify-between items-center text-sm text-gray-500 mt-8 w-full max-w-[600px]">
           <span>
             No service?{" "}
@@ -249,58 +534,52 @@ export default function Details() {
               Contact support
             </a>
           </span>
-          {/* Clear all button triggers confirmation */}
-          <button
-            onClick={clearAllSelections}
-            className="text-blue-600 hover:underline focus:outline-none"
-          >
+          <button onClick={clearAllSelections} className="text-blue-600 hover:underline focus:outline-none">
             Clear
           </button>
         </div>
 
-        {/* Possible warning messages */}
+        {/* Warnings */}
         <div className="h-6 mt-4 text-left">
           {warningMessage && <p className="text-red-500">{warningMessage}</p>}
         </div>
 
         <div className="container mx-auto relative flex mt-8">
-          {/* Left side: categories & services */}
+          {/* LEFT column => categories + services */}
           <div className="flex-1">
             {Object.entries(categoriesBySection).map(([sectionName, catIds]) => (
               <div key={sectionName} className="mb-8">
                 <SectionBoxSubtitle>{sectionName}</SectionBoxSubtitle>
                 <div className="flex flex-col gap-4 mt-4 w-full max-w-[600px]">
                   {catIds.map((catId) => {
-                    // List of services in this category
-                    const servicesForCategory = categoryServicesMap[catId] || [];
-                    // Count how many are selected in this category
-                    const selectedInThisCategory = servicesForCategory.filter((svc) =>
-                      Object.keys(selectedServicesState).includes(svc.id)
+                    const servicesArr = categoryServicesMap[catId] || [];
+                    const selectedInCat = servicesArr.filter(
+                      (svc) => selectedServicesState[svc.id] != null
                     ).length;
-
-                    const categoryName = getCategoryNameById(catId);
+                    const catTitle =
+                      ALL_CATEGORIES.find((x) => x.id === catId)?.title || catId;
 
                     return (
                       <div
                         key={catId}
                         className={`p-4 border rounded-xl bg-white ${
-                          selectedInThisCategory > 0 ? "border-blue-500" : "border-gray-300"
+                          selectedInCat > 0 ? "border-blue-500" : "border-gray-300"
                         }`}
                       >
-                        {/* Category header toggler */}
+                        {/* Category toggler */}
                         <button
                           onClick={() => toggleCategory(catId)}
                           className="flex justify-between items-center w-full"
                         >
                           <h3
                             className={`font-medium text-2xl ${
-                              selectedInThisCategory > 0 ? "text-blue-600" : "text-black"
+                              selectedInCat > 0 ? "text-blue-600" : "text-black"
                             }`}
                           >
-                            {categoryName}
-                            {selectedInThisCategory > 0 && (
+                            {catTitle}
+                            {selectedInCat > 0 && (
                               <span className="text-sm text-gray-500 ml-2">
-                                ({selectedInThisCategory} selected)
+                                ({selectedInCat} selected)
                               </span>
                             )}
                           </h3>
@@ -311,20 +590,21 @@ export default function Details() {
                           />
                         </button>
 
-                        {/* If category is expanded, list all services */}
                         {expandedCategories.has(catId) && (
                           <div className="mt-4 flex flex-col gap-3">
-                            {servicesForCategory.map((svc) => {
-                              const isSelected = selectedServicesState[svc.id] !== undefined;
-                              const quantity = selectedServicesState[svc.id] || 1;
-                              const manualValue =
-                                manualInputValue[svc.id] !== null
-                                  ? manualInputValue[svc.id] || ""
-                                  : quantity.toString();
+                            {servicesArr.map((svc) => {
+                              const isSelected = selectedServicesState[svc.id] != null;
+                              const q = selectedServicesState[svc.id] ?? svc.min_quantity ?? 1;
+                              // Ensure manual input is string or null
+                              const rawVal = manualInputValue[svc.id] ?? null;
+                              const displayVal = rawVal !== null ? rawVal : String(q);
+
+                              const finalCost = serviceCosts[svc.id] || 0;
+                              const calcResult = calculationResultsMap[svc.id];
+                              const detailsExpanded = expandedServiceDetails.has(svc.id);
 
                               return (
                                 <div key={svc.id} className="space-y-2">
-                                  {/* Service Title Toggle */}
                                   <div className="flex justify-between items-center">
                                     <span
                                       className={`text-lg transition-colors duration-300 ${
@@ -345,17 +625,18 @@ export default function Details() {
                                     </label>
                                   </div>
 
-                                  {/* If service is selected, show description, quantity controls, and price */}
                                   {isSelected && (
                                     <>
+                                      <ServiceImage serviceId={svc.id} />
                                       {svc.description && (
                                         <p className="text-sm text-gray-500 pr-16">
                                           {svc.description}
                                         </p>
                                       )}
+
+                                      {/* Quantity input row */}
                                       <div className="flex justify-between items-center">
                                         <div className="flex items-center gap-1">
-                                          {/* Decrement button */}
                                           <button
                                             onClick={() =>
                                               handleQuantityChange(
@@ -368,13 +649,12 @@ export default function Details() {
                                           >
                                             −
                                           </button>
-                                          {/* Manual input field */}
                                           <input
                                             type="text"
-                                            value={manualValue}
+                                            value={displayVal}
                                             onClick={() =>
-                                              setManualInputValue((prev) => ({
-                                                ...prev,
+                                              setManualInputValue((old) => ({
+                                                ...old,
                                                 [svc.id]: "",
                                               }))
                                             }
@@ -387,9 +667,7 @@ export default function Details() {
                                               )
                                             }
                                             className="w-20 text-center px-2 py-1 border rounded"
-                                            placeholder="1"
                                           />
-                                          {/* Increment button */}
                                           <button
                                             onClick={() =>
                                               handleQuantityChange(
@@ -406,23 +684,172 @@ export default function Details() {
                                             {svc.unit_of_measurement}
                                           </span>
                                         </div>
-                                        <span className="text-lg text-blue-600 font-medium text-right">
-                                          ${formatWithSeparator(svc.price * quantity)}
-                                        </span>
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-lg text-blue-600 font-medium text-right">
+                                            ${formatWithSeparator(finalCost)}
+                                          </span>
+                                          <button
+                                            onClick={() => {
+                                              if (detailsExpanded) {
+                                                setExpandedServiceDetails((old) => {
+                                                  const copy = new Set(old);
+                                                  copy.delete(svc.id);
+                                                  return copy;
+                                                });
+                                              } else {
+                                                setExpandedServiceDetails((old) => {
+                                                  const copy = new Set(old);
+                                                  copy.add(svc.id);
+                                                  return copy;
+                                                });
+                                              }
+                                            }}
+                                            className={`text-blue-500 text-sm ml-2 ${
+                                              detailsExpanded ? "" : "underline"
+                                            }`}
+                                          >
+                                            Details
+                                          </button>
+                                        </div>
                                       </div>
-                                      {/* Separator if not the last chosen service in this category */}
-                                      {(() => {
-                                        const chosenServices = servicesForCategory.filter(
-                                          (s) => selectedServicesState[s.id] !== undefined
-                                        );
-                                        const currentIndex = chosenServices.findIndex(
-                                          (s) => s.id === svc.id
-                                        );
-                                        if (currentIndex !== chosenServices.length - 1) {
-                                          return <hr className="mt-4 border-gray-200" />;
-                                        }
-                                        return null;
-                                      })()}
+
+                                      {/* If details expanded => cost breakdown */}
+                                      {calcResult && detailsExpanded && (
+                                        <div className="mt-4 p-4 bg-gray-50 border rounded">
+                                          <h4 className="text-lg font-semibold text-gray-800 mb-3">
+                                            Cost Breakdown
+                                          </h4>
+                                          <div className="flex flex-col gap-2 mb-4">
+                                            <div className="flex justify-between">
+                                              <span className="text-md font-medium text-gray-700">
+                                                Labor
+                                              </span>
+                                              <span className="text-md font-medium text-gray-700">
+                                                {calcResult.work_cost
+                                                  ? `$${calcResult.work_cost}`
+                                                  : "—"}
+                                              </span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                              <span className="text-md font-medium text-gray-700">
+                                                Materials, tools and equipment
+                                              </span>
+                                              <span className="text-md font-medium text-gray-700">
+                                                {calcResult.material_cost
+                                                  ? `$${calcResult.material_cost}`
+                                                  : "—"}
+                                              </span>
+                                            </div>
+                                          </div>
+
+                                          {Array.isArray(calcResult.materials) &&
+                                            calcResult.materials.length > 0 && (
+                                              <div className="mt-2">
+                                                <table className="table-auto w-full text-sm text-left text-gray-700">
+                                                  <thead>
+                                                    <tr className="border-b">
+                                                      <th className="py-2 px-1">Name</th>
+                                                      <th className="py-2 px-1">Price</th>
+                                                      <th className="py-2 px-1">Qty</th>
+                                                      <th className="py-2 px-1">Subtotal</th>
+                                                    </tr>
+                                                  </thead>
+                                                  <tbody className="divide-y divide-gray-200">
+                                                    {calcResult.materials.map(
+                                                      (m: any, i: number) => {
+                                                        const fmObj = findFinishingMaterialObj(
+                                                          svc.id,
+                                                          m.external_id
+                                                        );
+                                                        const hasImage = fmObj?.image?.length
+                                                          ? true
+                                                          : false;
+                                                        const isClientOwned =
+                                                          clientOwnedMaterials[svc.id]?.has(
+                                                            m.external_id
+                                                          );
+
+                                                        let rowClass = "";
+                                                        if (isClientOwned) {
+                                                          rowClass =
+                                                            "border border-red-500 bg-red-50";
+                                                        } else if (hasImage) {
+                                                          rowClass =
+                                                            "border border-blue-300 bg-white cursor-pointer";
+                                                        }
+
+                                                        return (
+                                                          <tr
+                                                            key={`${m.external_id}-${i}`}
+                                                            className={`last:border-0 ${rowClass}`}
+                                                            onClick={() => {
+                                                              if (!isClientOwned && hasImage) {
+                                                                let foundSection: string | null =
+                                                                  null;
+                                                                const fmData =
+                                                                  finishingMaterialsMapAll[
+                                                                    svc.id
+                                                                  ];
+                                                                if (fmData?.sections) {
+                                                                  for (const [
+                                                                    sKey,
+                                                                    sArr,
+                                                                  ] of Object.entries(
+                                                                    fmData.sections
+                                                                  )) {
+                                                                    if (
+                                                                      Array.isArray(sArr) &&
+                                                                      sArr.some(
+                                                                        (xx) =>
+                                                                          xx.external_id ===
+                                                                          m.external_id
+                                                                      )
+                                                                    ) {
+                                                                      foundSection = sKey;
+                                                                      break;
+                                                                    }
+                                                                  }
+                                                                }
+                                                                setShowModalServiceId(svc.id);
+                                                                setShowModalSectionName(
+                                                                  foundSection || null
+                                                                );
+                                                              }
+                                                            }}
+                                                          >
+                                                            <td className="py-3 px-1">
+                                                              {hasImage ? (
+                                                                <div className="flex items-center gap-2">
+                                                                  <img
+                                                                    src={fmObj?.image}
+                                                                    alt={m.name}
+                                                                    className="w-8 h-8 object-cover rounded"
+                                                                  />
+                                                                  <span>{m.name}</span>
+                                                                </div>
+                                                              ) : (
+                                                                m.name
+                                                              )}
+                                                            </td>
+                                                            <td className="py-3 px-1">
+                                                              ${m.cost_per_unit}
+                                                            </td>
+                                                            <td className="py-3 px-3">
+                                                              {m.quantity}
+                                                            </td>
+                                                            <td className="py-3 px-3">
+                                                              ${m.cost}
+                                                            </td>
+                                                          </tr>
+                                                        );
+                                                      }
+                                                    )}
+                                                  </tbody>
+                                                </table>
+                                              </div>
+                                            )}
+                                        </div>
+                                      )}
                                     </>
                                   )}
                                 </div>
@@ -438,8 +865,9 @@ export default function Details() {
             ))}
           </div>
 
-          {/* Right Section: Summary, Address, Photos, and Description */}
+          {/* RIGHT column => summary + recommended */}
           <div className="w-1/2 ml-auto mt-14 pt-1">
+            {/* Summary */}
             <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden">
               <SectionBoxSubtitle>Summary</SectionBoxSubtitle>
               {Object.keys(selectedServicesState).length === 0 ? (
@@ -448,59 +876,49 @@ export default function Details() {
                 </div>
               ) : (
                 <>
-                  {Object.entries(categoriesBySection).map(([sectionName, catIds]) => {
-                    // Filter categories that actually have selected services
-                    const categoriesWithSelectedServices = catIds.filter((catId) => {
-                      const servicesForCategory = categoryServicesMap[catId] || [];
-                      return servicesForCategory.some(
-                        (svc) => selectedServicesState[svc.id] !== undefined
-                      );
+                  {Object.entries(categoriesBySection).map(([secName, catIds]) => {
+                    // Only show categories that actually have selected items
+                    const relevantCatIds = catIds.filter((catId) => {
+                      const arr = categoryServicesMap[catId] || [];
+                      return arr.some((svc) => selectedServicesState[svc.id] != null);
                     });
-
-                    if (categoriesWithSelectedServices.length === 0) return null;
+                    if (relevantCatIds.length === 0) return null;
 
                     return (
-                      <div key={sectionName} className="mb-6">
+                      <div key={secName} className="mb-6">
                         <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                          {sectionName}
+                          {secName}
                         </h3>
-                        {categoriesWithSelectedServices.map((catId) => {
-                          const categoryObj = ALL_CATEGORIES.find((c) => c.id === catId);
-                          const categoryName = categoryObj ? categoryObj.title : catId;
-
-                          const servicesForCategory = categoryServicesMap[catId] || [];
-                          const chosenServices = servicesForCategory.filter(
-                            (svc) => selectedServicesState[svc.id] !== undefined
+                        {relevantCatIds.map((catId) => {
+                          const catObj = ALL_CATEGORIES.find((c) => c.id === catId);
+                          const catTitle = catObj ? catObj.title : catId;
+                          const arr = categoryServicesMap[catId] || [];
+                          const chosenServices = arr.filter(
+                            (svc) => selectedServicesState[svc.id] != null
                           );
-
                           if (chosenServices.length === 0) return null;
 
                           return (
                             <div key={catId} className="mb-4 ml-4">
                               <h4 className="text-lg font-medium text-gray-700 mb-2">
-                                {categoryName}
+                                {catTitle}
                               </h4>
                               <ul className="space-y-2 pb-4">
                                 {chosenServices.map((svc) => {
-                                  const quantity = selectedServicesState[svc.id] || 1;
+                                  const qty = selectedServicesState[svc.id] || 1;
+                                  const cost = serviceCosts[svc.id] || 0;
                                   return (
                                     <li
                                       key={svc.id}
                                       className="grid grid-cols-3 gap-2 text-sm text-gray-600"
-                                      style={{
-                                        gridTemplateColumns: "40% 30% 25%",
-                                        width: "100%",
-                                      }}
+                                      style={{ gridTemplateColumns: "40% 30% 25%" }}
                                     >
-                                      <span className="truncate overflow-hidden">
-                                        {svc.title}
+                                      <span>{svc.title}</span>
+                                      <span className="text-right">
+                                        {qty} {svc.unit_of_measurement}
                                       </span>
                                       <span className="text-right">
-                                        {quantity} {svc.unit_of_measurement} x $
-                                        {formatWithSeparator(svc.price)}
-                                      </span>
-                                      <span className="text-right">
-                                        ${formatWithSeparator(svc.price * quantity)}
+                                        ${formatWithSeparator(cost)}
                                       </span>
                                     </li>
                                   );
@@ -513,9 +931,7 @@ export default function Details() {
                     );
                   })}
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-2xl font-semibold text-gray-800">
-                      Subtotal:
-                    </span>
+                    <span className="text-2xl font-semibold text-gray-800">Subtotal:</span>
                     <span className="text-2xl font-semibold text-blue-600">
                       ${formatWithSeparator(calculateTotal())}
                     </span>
@@ -524,49 +940,186 @@ export default function Details() {
               )}
             </div>
 
-            {/* Address */}
+            {/* Address block */}
             <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
               <h2 className="text-2xl font-medium text-gray-800 mb-4">Address</h2>
-              <p className="text-gray-500 text-medium">
-                {address || "No address provided"}
-              </p>
+              <p className="text-gray-500 text-medium">{address || "No address provided"}</p>
             </div>
 
-            {/* Photos */}
+            {/* Photos block */}
             <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
-              <h2 className="text-2xl font-medium text-gray-800 mb-4">
-                Uploaded Photos
-              </h2>
+              <h2 className="text-2xl font-medium text-gray-800 mb-4">Uploaded Photos</h2>
               <div className="grid grid-cols-2 gap-4">
-                {photos.map((photo: string, index: number) => (
-                  <div key={index} className="relative group">
+                {photos.map((ph, i) => (
+                  <div key={i} className="relative group">
                     <img
-                      src={photo}
-                      alt={`Uploaded photo ${index + 1}`}
+                      src={ph}
+                      alt={`Uploaded photo ${i + 1}`}
                       className="w-full h-32 object-cover rounded-lg"
                     />
                   </div>
                 ))}
               </div>
               {photos.length === 0 && (
-                <p className="text-medium text-gray-500 mt-2">
-                  No photos uploaded
-                </p>
+                <p className="text-medium text-gray-500 mt-2">No photos uploaded</p>
               )}
             </div>
 
             {/* Additional details */}
             <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
-              <h2 className="text-2xl font-medium text-gray-800 mb-4">
-                Additional details
-              </h2>
+              <h2 className="text-2xl font-medium text-gray-800 mb-4">Additional details</h2>
               <p className="text-gray-500 text-medium whitespace-pre-wrap">
                 {description || "No details provided"}
               </p>
             </div>
+
+            {/* Recommended Activities component */}
+            <RecommendedActivities
+              selectedServicesState={selectedServicesState}
+              onUpdateSelectedServicesState={setSelectedServicesState}
+              selectedCategories={selectedCategories}
+              setSelectedCategories={setSelectedCategories}
+            />
           </div>
         </div>
       </div>
+
+      {/* Finishing-material modal if user clicks an item w/ image */}
+      {showModalServiceId &&
+        showModalSectionName &&
+        finishingMaterialsMapAll[showModalServiceId] &&
+        finishingMaterialsMapAll[showModalServiceId].sections[showModalSectionName] && (
+          <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-lg w-[700px] h-[750px] overflow-hidden relative flex flex-col">
+              {/* Sticky header */}
+              <div className="p-4 border-b flex items-center justify-between sticky top-0 bg-white z-10">
+                <h2 className="text-xl font-semibold">
+                  Choose a finishing material (section {showModalSectionName})
+                </h2>
+                <button onClick={closeModal} className="text-red-500 border border-red-500 px-2 py-1 rounded">
+                  Close
+                </button>
+              </div>
+
+              {/* Info about currently selected finishing material */}
+              {(() => {
+                const currentSel = finishingMaterialSelections[showModalServiceId] || [];
+                if (currentSel.length === 0) return null;
+                const currentExtId = currentSel[0];
+                const fmData = finishingMaterialsMapAll[showModalServiceId];
+                if (!fmData) return null;
+
+                const allMats = Object.values(fmData.sections || {}).flat() as FinishingMaterial[];
+                const curMat = allMats.find((x) => x.external_id === currentExtId);
+                if (!curMat) return null;
+
+                const curCost = parseFloat(curMat.cost || "0") || 0;
+                return (
+                  <div className="text-sm text-gray-600 border-b p-4 bg-white sticky top-[61px] z-10">
+                    Current material:{" "}
+                    <strong>
+                      {curMat.name} (${formatWithSeparator(curCost)})
+                    </strong>
+                    <button
+                      onClick={() => userHasOwnMaterial(showModalServiceId!, currentExtId)}
+                      className="ml-4 text-xs text-red-500 border border-red-500 px-2 py-1 rounded"
+                    >
+                      I have my own (Remove later)
+                    </button>
+                  </div>
+                );
+              })()}
+
+              {/* Scrollable body */}
+              <div className="overflow-auto p-4 flex-1">
+                {(() => {
+                  const data = finishingMaterialsMapAll[showModalServiceId];
+                  if (!data) {
+                    return <p className="text-sm text-gray-500">No data found</p>;
+                  }
+
+                  const arr = data.sections[showModalSectionName] || [];
+                  if (!Array.isArray(arr) || arr.length === 0) {
+                    return (
+                      <p className="text-sm text-gray-500">
+                        No finishing materials in section {showModalSectionName}
+                      </p>
+                    );
+                  }
+
+                  const curSel = finishingMaterialSelections[showModalServiceId] || [];
+                  const currentExtId = curSel[0] || null;
+                  let currentCost = 0;
+                  if (currentExtId) {
+                    const matObj = arr.find((m) => m.external_id === currentExtId);
+                    if (matObj) {
+                      currentCost = parseFloat(matObj.cost || "0") || 0;
+                    }
+                  }
+
+                  return (
+                    <div className="grid grid-cols-2 gap-4 mt-4">
+                      {arr.map((material, i) => {
+                        if (!material.image) return null;
+                        const costNum = parseFloat(material.cost || "0") || 0;
+                        const isSelected = currentExtId === material.external_id;
+                        const diff = costNum - currentCost;
+                        let diffStr = "";
+                        let diffColor = "";
+                        if (diff > 0) {
+                          diffStr = `+${formatWithSeparator(diff)}`;
+                          diffColor = "text-red-500";
+                        } else if (diff < 0) {
+                          diffStr = `-${formatWithSeparator(Math.abs(diff))}`;
+                          diffColor = "text-green-600";
+                        }
+
+                        return (
+                          <div
+                            key={`${material.external_id}-${i}`}
+                            className={`border rounded p-3 flex flex-col items-center cursor-pointer ${
+                              isSelected ? "border-blue-500" : "border-gray-300"
+                            }`}
+                            onClick={() => {
+                              finishingMaterialSelections[showModalServiceId!] = [
+                                material.external_id,
+                              ];
+                              setFinishingMaterialSelections({
+                                ...finishingMaterialSelections,
+                              });
+                            }}
+                          >
+                            <img
+                              src={material.image}
+                              alt={material.name}
+                              className="w-32 h-32 object-cover rounded"
+                            />
+                            <h3 className="text-sm font-medium mt-2 text-center line-clamp-2">
+                              {material.name}
+                            </h3>
+                            <p className="text-xs text-gray-700">
+                              ${formatWithSeparator(costNum)} / {material.unit_of_measurement}
+                            </p>
+                            {diff !== 0 && (
+                              <p className={`text-xs mt-1 font-medium ${diffColor}`}>
+                                {diffStr}
+                              </p>
+                            )}
+                            {isSelected && (
+                              <span className="text-xs text-blue-600 font-semibold mt-1">
+                                Currently Selected
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+          </div>
+        )}
     </main>
   );
 }

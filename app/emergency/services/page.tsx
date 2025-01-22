@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, ChangeEvent, useEffect } from "react";
+import { useState, useEffect, ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
 import BreadCrumb from "@/components/ui/BreadCrumb";
 import SearchServices from "@/components/SearchServices";
@@ -14,207 +14,230 @@ import { ChevronDown } from "lucide-react";
 import { SectionBoxTitle } from "@/components/ui/SectionBoxTitle";
 import { useLocation } from "@/context/LocationContext";
 
-// Helper functions for saving and loading data from sessionStorage
-// These functions allow us to persist state between page navigations.
-const saveToSession = (key: string, value: any) => {
-  sessionStorage.setItem(key, JSON.stringify(value));
-};
+// New imports from your session utils
+import {
+  setSessionItem,
+  getSessionItem,
+  clearSession,
+} from "@/utils/session";
 
-const loadFromSession = (key: string, defaultValue: any) => {
-  const savedValue = sessionStorage.getItem(key);
-  try {
-    return savedValue ? JSON.parse(savedValue) : defaultValue;
-  } catch (error) {
-    console.error(`Error parsing sessionStorage for key "${key}"`, error);
-    return defaultValue;
-  }
-};
+import AddressSection from "@/components/ui/AddressSection";
+import PhotosAndDescription from "@/components/ui/PhotosAndDescription";
 
 /**
- * This component is the first page of the "Emergency" flow.
- * Users select one or more emergency services, then provide an address,
- * optional photos, and optional description before continuing.
+ * EmergencyServices is the first step in the "Emergency" flow.
+ * The user selects one or more services, enters address details,
+ * optionally uploads photos, and provides a short description
+ * before continuing to the next page.
  */
 export default function EmergencyServices() {
   const router = useRouter();
-
-  // Clear sessionStorage on first load to start fresh
-  useEffect(() => {
-    sessionStorage.clear();
-  }, []);
-
-  // Keep track of user-selected services:
-  // The structure is { [categoryName]: [arrayOfSelectedServices] }
-  const [selectedServices, setSelectedServices] = useState<Record<string, string[]>>(
-    loadFromSession("selectedServices", {})
-  );
-
-  // Maintain expanded/collapsed state for each category:
-  // A Set of category keys that are currently expanded
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
-
-  // The user's search query for filtering displayed services
-  const [searchQuery, setSearchQuery] = useState<string>(
-    loadFromSession("searchQuery", "")
-  );
-
-  // Potential warning message displayed above the content
-  const [warningMessage, setWarningMessage] = useState<string | null>(null);
-
-  // The address of where services are needed
-  const [address, setAddress] = useState<string>(loadFromSession("address", ""));
-
-  // Optional description of the user's emergency or problem
-  const [description, setDescription] = useState<string>(
-    loadFromSession("description", "")
-  );
-
-  // Photos uploaded by the user (array of URLs)
-  const [photos, setPhotos] = useState<string[]>(loadFromSession("photos", []));
-
-  // Access user location from context (if available)
   const { location } = useLocation();
 
-  // Persist our states to sessionStorage whenever they change
-  useEffect(() => saveToSession("selectedServices", selectedServices), [selectedServices]);
-  useEffect(() => saveToSession("searchQuery", searchQuery), [searchQuery]);
-  useEffect(() => saveToSession("address", address), [address]);
-  useEffect(() => saveToSession("description", description), [description]);
-  useEffect(() => saveToSession("photos", photos), [photos]);
+  /**
+   * Clear session data on initial render to ensure a fresh start.
+   * Remove if you want to preserve data across visits.
+   */
+  useEffect(() => {
+    clearSession();
+  }, []);
 
-  // Calculate total number of services to mention in the search placeholder
+  /**
+   * State for selected services, expanded categories, search query, warnings, etc.
+   */
+  const [selectedServices, setSelectedServices] = useState<Record<string, string[]>>(
+    getSessionItem("selectedServices", {})
+  );
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState<string>(
+    getSessionItem("searchQuery", "")
+  );
+  const [warningMessage, setWarningMessage] = useState<string | null>(null);
+
+  /**
+   * Address section states: address, stateName, zip
+   */
+  const [address, setAddress] = useState<string>(getSessionItem("address", ""));
+  const [zip, setZip] = useState<string>(getSessionItem("zip", ""));
+  const [stateName, setStateName] = useState<string>(
+    getSessionItem("stateName", "")
+  );
+
+  /**
+   * Description and photos (both optional)
+   */
+  const [description, setDescription] = useState<string>(
+    getSessionItem("description", "")
+  );
+  const [photos, setPhotos] = useState<string[]>(getSessionItem("photos", []));
+
+  /**
+   * Keep these states in sync with session storage whenever they change
+   */
+  useEffect(() => {
+    setSessionItem("selectedServices", selectedServices);
+  }, [selectedServices]);
+
+  useEffect(() => {
+    setSessionItem("searchQuery", searchQuery);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    setSessionItem("address", address);
+  }, [address]);
+
+  useEffect(() => {
+    setSessionItem("zip", zip);
+  }, [zip]);
+
+  useEffect(() => {
+    setSessionItem("stateName", stateName);
+  }, [stateName]);
+
+  useEffect(() => {
+    setSessionItem("description", description);
+  }, [description]);
+
+  useEffect(() => {
+    setSessionItem("photos", photos);
+  }, [photos]);
+
+  /**
+   * Combine address, stateName, and zip into a single "fullAddress" in session
+   * This is optional.
+   */
+  useEffect(() => {
+    const combinedAddress = [address, stateName, zip].filter(Boolean).join(", ");
+    setSessionItem("fullAddress", combinedAddress);
+  }, [address, stateName, zip]);
+
+  /**
+   * Count total number of possible emergency services for the search placeholder
+   */
   const totalServices = Object.values(EMERGENCY_SERVICES).flatMap(
     ({ services }) => Object.keys(services)
   ).length;
 
   /**
-   * Toggle a specific service in a category.
-   * If it's currently selected, remove it; otherwise add it.
-   */
-  const handleServiceSelect = (category: string, serviceKey: string) => {
-    setSelectedServices((prev) => {
-      const currentCategoryServices = prev[category] || [];
-      const isSelected = currentCategoryServices.includes(serviceKey);
-
-      if (!isSelected) {
-        // If newly selected, clear any warnings
-        setWarningMessage(null);
-      }
-
-      // Update the array for this category
-      return {
-        ...prev,
-        [category]: isSelected
-          ? currentCategoryServices.filter((item) => item !== serviceKey)
-          : [...currentCategoryServices, serviceKey],
-      };
-    });
-  };
-
-  /**
-   * Expand or collapse a category by toggling its presence in expandedCategories set.
+   * Expand or collapse a category in the UI
    */
   const toggleCategory = (category: string) => {
     setExpandedCategories((prev) => {
       const next = new Set(prev);
-      if (next.has(category)) {
-        next.delete(category);
-      } else {
-        next.add(category);
-      }
+      next.has(category) ? next.delete(category) : next.add(category);
       return next;
     });
   };
 
   /**
-   * Clear all currently selected services and also reset expanded categories.
+   * Toggle a service within a category as selected or unselected
+   * Clear the warning if the user selects a new service
+   */
+  const handleServiceSelect = (category: string, serviceKey: string) => {
+    setSelectedServices((prev) => {
+      const current = prev[category] || [];
+      const isSelected = current.includes(serviceKey);
+
+      if (!isSelected) {
+        setWarningMessage(null);
+      }
+
+      return {
+        ...prev,
+        [category]: isSelected
+          ? current.filter((item) => item !== serviceKey)
+          : [...current, serviceKey],
+      };
+    });
+  };
+
+  /**
+   * Clear all selected services and collapse all categories
    */
   const handleClearSelection = () => {
     const confirmed = window.confirm(
-      "Are you sure you want to clear all selected services? This will also collapse all expanded categories."
+      "Are you sure you want to clear all selected services? This will also collapse all categories."
     );
-    if (!confirmed) {
-      return;
-    }
-    // Reset services and collapse all categories
+    if (!confirmed) return;
+
     setSelectedServices({});
     setExpandedCategories(new Set());
   };
 
   /**
-   * Proceed to the next page of the flow if at least one service is selected
-   * and an address is provided.
+   * On "Next", ensure at least one service is selected,
+   * and that address/stateName/zip are non-empty
    */
   const handleNextClick = () => {
-    // Check that at least one service was selected
-    if (Object.values(selectedServices).flat().length === 0) {
+    const anyServiceSelected = Object.values(selectedServices).some(
+      (list) => list.length > 0
+    );
+    if (!anyServiceSelected) {
       setWarningMessage("Please select at least one service before proceeding.");
       return;
     }
-    // Check for address
-    if (!address.trim()) {
-      setWarningMessage("Please enter your address before proceeding.");
+    if (!address.trim() || !stateName.trim() || !zip.trim()) {
+      setWarningMessage("Please enter your address, state, and zip before proceeding.");
       return;
     }
-    // Everything is okay; navigate to the details page
     router.push("/emergency/details");
   };
 
-  // Update address state from user input
+  /**
+   * Handlers for updating address, stateName, and zip
+   */
   const handleAddressChange = (e: ChangeEvent<HTMLInputElement>) => {
     setAddress(e.target.value);
   };
-
-  // Update problem description from user input
-  const handleDescriptionChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
-    setDescription(e.target.value);
+  const handleStateChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setStateName(e.target.value);
+  };
+  const handleZipChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setZip(e.target.value);
   };
 
-  // Attempt to fill address using the location context
+  /**
+   * Use location context to fill address fields if available
+   * You could combine city + state + zip into a single address, if preferred
+   */
   const handleUseMyLocation = () => {
-    if (location?.city && location?.zip) {
-      setAddress(`${location.city}, ${location.zip}, ${location.country || ""}`);
+    if (location?.city && location?.state && location?.zip) {
+      setAddress(location.city);
+      setStateName(location.state);
+      setZip(location.zip);
     } else {
       setWarningMessage("Location data is unavailable. Please enter manually.");
     }
   };
 
-  // Remove a photo by index
-  const handleRemovePhoto = (index: number) => {
-    setPhotos((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  // Filter the EMERGENCY_SERVICES data based on the search query
+  /**
+   * Filter EMERGENCY_SERVICES by the current search query
+   */
   const filteredServices: EmergencyServicesType = searchQuery
-    ? Object.entries(EMERGENCY_SERVICES).reduce(
-        (acc, [category, { services }]) => {
-          const matchingServices = Object.entries(services).filter(([serviceKey]) =>
-            serviceKey.toLowerCase().includes(searchQuery.toLowerCase())
-          );
-          if (matchingServices.length > 0) {
-            acc[category] = { services: Object.fromEntries(matchingServices) };
-          }
-          return acc;
-        },
-        {} as EmergencyServicesType
-      )
+    ? Object.entries(EMERGENCY_SERVICES).reduce((acc, [category, { services }]) => {
+        const matching = Object.entries(services).filter(([serviceKey]) =>
+          serviceKey.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+        if (matching.length > 0) {
+          acc[category] = { services: Object.fromEntries(matching) };
+        }
+        return acc;
+      }, {} as EmergencyServicesType)
     : EMERGENCY_SERVICES;
 
   return (
     <main className="min-h-screen pt-24 pb-16">
       <div className="container mx-auto">
-        {/* Breadcrumb navigation at the top */}
+        {/* Breadcrumb navigation for the multi-step Emergency flow */}
         <BreadCrumb items={EMERGENCY_STEPS} />
 
-        {/* Page Title and Next Button */}
+        {/* Top row: page title + Next button */}
         <div className="flex justify-between items-start mt-8">
-          <SectionBoxTitle>
-            Let's Quickly Find the Help You Need
-          </SectionBoxTitle>
+          <SectionBoxTitle>Let's Quickly Find the Help You Need</SectionBoxTitle>
           <Button onClick={handleNextClick}>Next →</Button>
         </div>
 
-        {/* Search field and Clear button */}
+        {/* Search bar + Clear button */}
         <div className="flex flex-col gap-4 mt-8 w-full max-w-[600px]">
           <SearchServices
             value={searchQuery}
@@ -224,10 +247,7 @@ export default function EmergencyServices() {
           <div className="flex justify-between items-center text-sm text-gray-500 mt-2">
             <span>
               No service?{" "}
-              <a
-                href="#"
-                className="text-blue-600 hover:underline focus:outline-none"
-              >
+              <a href="#" className="text-blue-600 hover:underline focus:outline-none">
                 Contact emergency support
               </a>
             </span>
@@ -240,23 +260,20 @@ export default function EmergencyServices() {
           </div>
         </div>
 
-        {/* Potential warning message display */}
+        {/* Warning message */}
         <div className="h-6 mt-4 text-left">
           {warningMessage && <p className="text-red-500">{warningMessage}</p>}
         </div>
 
+        {/* Main content row: left = services, right = address + photos + description */}
         <div className="container mx-auto relative flex">
-          {/* Left Section: Displaying categories and their services */}
+          {/* LEFT side: categories + services */}
           <div className="flex-1">
             <div className="flex flex-col gap-3 mt-5 w-full max-w-[600px]">
               {Object.entries(filteredServices).map(([category, { services }]) => {
-                // Determine how many services are currently selected in this category
                 const categorySelectedCount = selectedServices[category]?.length || 0;
-
-                // Convert category name from e.g. "plumbing" to "Plumbing"
-                const categoryLabel = category
-                  .replace(/([A-Z])/g, " $1")
-                  .trim();
+                // Basic transform for the category label
+                const categoryLabel = category.replace(/([A-Z])/g, " $1").trim();
 
                 return (
                   <div
@@ -265,7 +282,7 @@ export default function EmergencyServices() {
                       categorySelectedCount > 0 ? "border-blue-500" : "border-gray-300"
                     }`}
                   >
-                    {/* Category title with expand/collapse toggle */}
+                    {/* Expand/collapse heading */}
                     <button
                       onClick={() => toggleCategory(category)}
                       className="flex justify-between items-center w-full"
@@ -289,19 +306,17 @@ export default function EmergencyServices() {
                       />
                     </button>
 
-                    {/* If this category is expanded, show the services under it */}
+                    {/* If expanded => show list of services */}
                     {expandedCategories.has(category) && (
                       <div className="mt-4 flex flex-col gap-3">
                         {Object.entries(services).map(([serviceKey]) => {
-                          // Convert serviceKey to a more user-friendly label
+                          // Basic transform for the service label
                           const serviceLabel = serviceKey
                             .replace(/([A-Z])/g, " $1")
-                            .replace(/^./, (str) => str.toUpperCase())
+                            .replace(/^./, (char) => char.toUpperCase())
                             .trim();
 
-                          // Check if this service is selected
-                          const isSelected =
-                            selectedServices[category]?.includes(serviceKey) || false;
+                          const isSelected = selectedServices[category]?.includes(serviceKey) || false;
 
                           return (
                             <div
@@ -315,7 +330,6 @@ export default function EmergencyServices() {
                               >
                                 {serviceLabel}
                               </span>
-                              {/* Toggle switch for this service */}
                               <label className="relative inline-flex items-center cursor-pointer">
                                 <input
                                   type="checkbox"
@@ -337,104 +351,24 @@ export default function EmergencyServices() {
             </div>
           </div>
 
-          {/* Right Section: Address, Photos, and Description */}
+          {/* RIGHT side: address, photos, description */}
           <div className="w-1/2 ml-auto mt-4 pt-0">
-            {/* Address Section */}
-            <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mb-6">
-              <h2 className="text-2xl font-medium text-gray-800 mb-4">
-                We Need Your Address
-              </h2>
-              <div className="flex flex-col gap-4">
-                <input
-                  type="text"
-                  value={address}
-                  onChange={handleAddressChange}
-                  onFocus={(e) => (e.target.placeholder = "")}
-                  onBlur={(e) => (e.target.placeholder = "Enter your address")}
-                  placeholder="Enter your address"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <button
-                  onClick={handleUseMyLocation}
-                  className="text-blue-600 text-left"
-                >
-                  Use my location
-                </button>
-              </div>
-            </div>
+            <AddressSection
+              address={address}
+              onAddressChange={handleAddressChange}
+              zip={zip}
+              onZipChange={handleZipChange}
+              stateName={stateName}
+              onStateChange={handleStateChange}
+              onUseMyLocation={handleUseMyLocation}
+            />
 
-            {/* Photos & Description Section */}
-            <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden">
-              <h2 className="text-2xl font-medium text-gray-800 mb-4">
-                Upload Photos & Description
-              </h2>
-              <div className="flex flex-col gap-4">
-                {/* Photo Uploader */}
-                <div>
-                  <label
-                    htmlFor="photo-upload"
-                    className="block w-full px-4 py-2 text-center bg-blue-500 text-white rounded-md cursor-pointer hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                  >
-                    Choose Files
-                  </label>
-                  <input
-                    type="file"
-                    id="photo-upload"
-                    accept="image/*"
-                    multiple
-                    onChange={(e) => {
-                      const files = Array.from(e.target.files || []);
-                      // Restrict total number of photos to 12
-                      if (files.length > 12 || photos.length + files.length > 12) {
-                        alert("You can upload up to 12 photos total.");
-                        e.target.value = "";
-                        return;
-                      }
-                      const fileUrls = files.map((file) =>
-                        URL.createObjectURL(file)
-                      );
-                      setPhotos((prev) => [...prev, ...fileUrls]);
-                    }}
-                    className="hidden"
-                  />
-                  <p className="text-sm text-gray-500 mt-1">
-                    Maximum 12 images. Supported formats: JPG, PNG.
-                  </p>
-
-                  {/* Display preview of uploaded photos */}
-                  <div className="mt-4 grid grid-cols-3 gap-4">
-                    {photos.map((photo, index) => (
-                      <div key={index} className="relative group">
-                        <img
-                          src={photo}
-                          alt={`Uploaded preview ${index + 1}`}
-                          className="w-full h-24 object-cover rounded-md border border-gray-300"
-                        />
-                        <button
-                          onClick={() => handleRemovePhoto(index)}
-                          className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                          aria-label="Remove photo"
-                        >
-                          <span className="text-sm">✕</span>
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Description textarea */}
-                <div>
-                  <textarea
-                    id="problem-description"
-                    rows={5}
-                    value={description}
-                    onChange={handleDescriptionChange}
-                    placeholder="Please, describe your problem (optional)..."
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  ></textarea>
-                </div>
-              </div>
-            </div>
+            <PhotosAndDescription
+              photos={photos}
+              description={description}
+              onSetPhotos={setPhotos}
+              onSetDescription={setDescription}
+            />
           </div>
         </div>
       </div>

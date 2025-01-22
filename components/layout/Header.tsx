@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Menu, X, ChevronDown } from "lucide-react";
 import { NavigationItem } from "@/types/common";
 import { useLocation } from "@/context/LocationContext";
+import PreferencesModal from "@/components/ui/PreferencesModal";
 
 // Example array for top navigation
 const navigation: NavigationItem[] = [
@@ -15,51 +16,106 @@ const navigation: NavigationItem[] = [
   { name: "About", href: "/about" },
 ];
 
-// Mapping language codes to localized display text
 const languageMap: Record<string, string> = {
-  ENG: "English",
-  FRA: "Français",
-  ESP: "Español",
-  CHN: "中文",
-  RUS: "Русский",
-  KOR: "한국어",
-  TUR: "Türkçe",
-  POR: "Português",
-  JPN: "日本語",
-  GER: "Deutsch",
-  HEB: "עברית",
-  ARB: "العربية",
+  ENG: "ENG",
+  FRA: "FRA",
+  ESP: "ESP",
+  GER: "GER",
+  ITA: "ITA",
+  RUS: "RUS",
+  JPN: "JPN",
+  CHN: "CHN",
+  IND: "IND",
+  TUR: "TUR",
+  KOR: "KOR",
+  POR: "POR"
+
 };
 
-// Helper: truncates text to a max length
+// Helper function to truncate text if it exceeds a maximum length
 function truncateText(text: string, maxLength: number) {
   return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
+}
+
+/**
+ * Utility functions to parse the city and state from the Google Geocoding "address_components".
+ */
+function parseCityFromComponents(components: any[]): string {
+  let cityObj = components.find((c: any) => c.types.includes("locality"));
+  if (cityObj) return cityObj.long_name;
+
+  cityObj = components.find((c: any) =>
+    c.types.includes("administrative_area_level_2")
+  );
+  if (cityObj) return cityObj.long_name;
+
+  return "Unknown City";
+}
+
+function parseStateFromComponents(components: any[]): string {
+  const stateObj = components.find((c: any) =>
+    c.types.includes("administrative_area_level_1")
+  );
+  return stateObj?.short_name || "??";
 }
 
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // ---------- LOCATION ----------
+  // LOCATION from our custom context
   const { location, setLocation } = useLocation();
+
+  // Location modal state
   const [showLocationModal, setShowLocationModal] = useState(false);
   const locationModalRef = useRef<HTMLDivElement>(null);
 
-  // For the location input fields
-  const [manualLocation, setManualLocation] = useState({ city: "", zip: "" });
+  // Local state for manual city/zip/state input
+  const [manualLocation, setManualLocation] = useState({
+    city: "",
+    zip: "",
+    state: "",
+  });
 
-  // ---------- PREFERENCES MODAL (LANGUAGE, UNITS, CURRENCY) ----------
+  // Preferences modal state (не трогаем!)
   const [showPreferencesModal, setShowPreferencesModal] = useState(false);
   const preferencesModalRef = useRef<HTMLDivElement>(null);
+
+  // Language, units, currency
+  const [selectedLanguage, setSelectedLanguage] = useState("ENG");
+  const [selectedUnit, setSelectedUnit] = useState("Feet");
+  const [selectedCurrency, setSelectedCurrency] = useState("US");
+  const languages = Object.keys(languageMap);
+  const units = ["Feet", "Meters"];
+  const currencies = ["US", "CAD", "GBP", "EUR", "JPY", "CNY"];
+
+  /**
+   * Saves user preferences (language, units, currency).
+   */
+  const handlePreferencesSave = () => {
+    console.log("Saved preferences:", {
+      language: selectedLanguage,
+      unit: selectedUnit,
+      currency: selectedCurrency,
+    });
+    setShowPreferencesModal(false);
+  };
 
   const pathname = usePathname();
   const isEmergencyActive = pathname.startsWith("/emergency");
 
-  // ---------- LOCATION HANDLERS ----------
+  /**
+   * Called when the user clicks "Save" in the location modal.
+   */
   const handleManualLocationSave = () => {
-    setLocation({
-      city: manualLocation.city || "Enter City",
-      zip: manualLocation.zip.trim() || "and ZIP",
-    });
+    const newLoc = {
+      city: manualLocation.city || "City",
+      zip: manualLocation.zip.trim() || "00000",
+      country: "United States",
+      state: manualLocation.state || "",
+    };
+
+    setLocation(newLoc);
+    localStorage.setItem("userLocation", JSON.stringify(newLoc));
     setShowLocationModal(false);
   };
 
@@ -69,49 +125,64 @@ export default function Header() {
       if (!response.ok) throw new Error("Failed to fetch location data");
 
       const data = await response.json();
-      const fullZip = data.postal || "0000000";
+      const city = data.city || "City";
+      const zip = data.postal || "00000";
+      const st = data.region_code || ""; // ipapi.co can provide state code (e.g. CA)
 
-      setManualLocation({
-        city: data.city || "City",
-        zip: fullZip,
-      });
-      setLocation({
-        city: data.city || "City",
-        zip: fullZip,
-      });
+      setManualLocation({ city, zip, state: st });
+      setLocation({ city, zip, state: st, country: data.country_name || "USA" });
+
+      localStorage.setItem(
+        "userLocation",
+        JSON.stringify({ city, zip, state: st, country: data.country_name || "USA" })
+      );
     } catch (error) {
       console.error("Error fetching location:", error);
       alert("Failed to fetch location automatically.");
     }
   };
 
+  const handleZipLookup = async () => {
+    if (!manualLocation.zip.trim()) {
+      alert("Please enter a ZIP code");
+      return;
+    }
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    if (!apiKey) {
+      console.error("Missing Google Maps API key");
+      return;
+    }
+    const zip = manualLocation.zip.trim();
+    try {
+      const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${zip}&components=country:US&key=${apiKey}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.results && data.results.length > 0) {
+        const comps = data.results[0].address_components;
+        const cityFound = parseCityFromComponents(comps);
+        const stateFound = parseStateFromComponents(comps);
+        setManualLocation((prev) => ({
+          ...prev,
+          city: cityFound,
+          state: stateFound,
+        }));
+      } else {
+        alert("No city/state found for this ZIP in the US.");
+      }
+    } catch (err) {
+      console.error("Error in handleZipLookup:", err);
+      alert("Failed to look up city and state from ZIP.");
+    }
+  };
+
   const handleClearLocation = () => {
-    setManualLocation({ city: "", zip: "" });
+    setManualLocation({ city: "", zip: "", state: "" });
   };
 
-  // ---------- PREFERENCES STATE & HANDLERS ----------
-  const [selectedLanguage, setSelectedLanguage] = useState("ENG");
-  const [selectedUnit, setSelectedUnit] = useState("Feet");
-  const [selectedCurrency, setSelectedCurrency] = useState("US");
-
-  // Example arrays
-  const languages = Object.keys(languageMap); // e.g. ["ENG","FRA","ESP" ...]
-  const units = ["Feet", "Meters"];
-  const currencies = ["US", "CAD", "GBP", "EUR", "JPY", "CNY"];
-
-  const handlePreferencesSave = () => {
-    // You could store these in sessionStorage, context, or user profile
-    console.log("Saved preferences:", {
-      language: selectedLanguage,
-      unit: selectedUnit,
-      currency: selectedCurrency,
-    });
-    setShowPreferencesModal(false);
-  };
-
-  // ---------- OUTSIDE CLICK HANDLER FOR MODALS ----------
+  /**
+   * Closes modals if user clicks outside of them.
+   */
   const handleOutsideClick = (e: MouseEvent) => {
-    // Location modal
     if (
       showLocationModal &&
       locationModalRef.current &&
@@ -119,7 +190,6 @@ export default function Header() {
     ) {
       setShowLocationModal(false);
     }
-    // Preferences modal
     if (
       showPreferencesModal &&
       preferencesModalRef.current &&
@@ -140,7 +210,6 @@ export default function Header() {
     };
   }, [showLocationModal, showPreferencesModal]);
 
-  // ---------- RENDER ----------
   return (
     <>
       <header className="fixed w-full z-50 bg-gray-100/50 backdrop-blur-sm shadow-sm">
@@ -149,16 +218,12 @@ export default function Header() {
             <div className="flex justify-between items-center h-16 px-6">
               {/* Logo */}
               <Link href="/" prefetch={false} className="flex-shrink-0">
-                <img
-                  src="/images/logo.png"
-                  alt="Jamb"
-                  className="h-8 w-auto"
-                />
+                <img src="/images/logo.png" alt="Jamb" className="h-8 w-auto" />
               </Link>
 
-              {/* Location chunk */}
+              {/* Location: city, zip, state */}
               <div
-                className="flex flex-col items-start w-[200px] overflow-hidden text-ellipsis whitespace-normal"
+                className="flex flex-col items-start w-[220px] overflow-hidden text-ellipsis whitespace-normal"
                 title="Click to change location"
               >
                 <span className="text-sm font-medium text-gray-500">
@@ -168,7 +233,7 @@ export default function Header() {
                   onClick={() => setShowLocationModal(true)}
                   className="text-[1.15rem] font-medium text-black cursor-pointer transition-colors duration-200 hover:text-blue-600"
                 >
-                  {truncateText(location.city, 10)},{" "}
+                  {truncateText(location.city, 10)}, {location.state ?? "--"},{" "}
                   {truncateText(location.zip, 10)}
                 </strong>
               </div>
@@ -176,7 +241,7 @@ export default function Header() {
               {/* Desktop navigation */}
               <div className="hidden md:flex items-center gap-8">
                 {navigation.map((item) => {
-                  const isActive = pathname.startsWith(item.href);
+                  const isActive = usePathname().startsWith(item.href);
                   return (
                     <Link
                       key={item.name}
@@ -194,29 +259,29 @@ export default function Header() {
                 })}
               </div>
 
-              {/* Right side (desktop) */}
+              {/* Right side of the header */}
               <div className="hidden md:flex items-center gap-4">
-                {/* Emergency */}
+                {/* Emergency link */}
                 <Link
                   href="/emergency"
                   prefetch={false}
-                  className={`flex items-center gap-2 text-red-600 font-medium px-4 py-2 rounded-lg transition-colors duration-200 bg-red-50 hover:bg-red-100
-                    border-2 ${
-                      isEmergencyActive ? "border-red-600" : "border-transparent"
+                  className={`flex items-center gap-2 text-red-600 font-medium px-4 py-2 rounded-lg 
+                    transition-colors duration-200 bg-red-50 hover:bg-red-100 border-2 ${
+                      usePathname().startsWith("/emergency")
+                        ? "border-red-600"
+                        : "border-transparent"
                     }`}
                 >
                   <span>🚨</span>
                   Emergency
                 </Link>
 
-                {/* Preferences button: fixed width so it doesn't resize */}
+                {/* Preferences button */}
                 <button
                   onClick={() => setShowPreferencesModal(true)}
-                  className="w-[110px] inline-flex items-center justify-between gap-1 text-gray-700 bg-[rgba(0,0,0,0.03)] px-3 py-2 rounded-lg transition-colors duration-200 hover:bg-[rgba(0,0,0,0.08)]"
+                  className="w-[80px] inline-flex items-center justify-between gap-1 text-gray-700 bg-[rgba(0,0,0,0.03)] px-3 py-2 rounded-lg transition-colors duration-200 hover:bg-[rgba(0,0,0,0.08)]"
                 >
-                  <span className="truncate">
-                    {languageMap[selectedLanguage] ?? "English"}
-                  </span>
+                  <span className="truncate">{languageMap[selectedLanguage] ?? "English"}</span>
                   <ChevronDown className="w-4 h-4 shrink-0" />
                 </button>
               </div>
@@ -224,7 +289,7 @@ export default function Header() {
               {/* Mobile menu button */}
               <div className="md:hidden">
                 <button
-                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                  onClick={() => setIsMobileMenuOpen((prev) => !prev)}
                   className="text-gray-700 p-2"
                 >
                   {isMobileMenuOpen ? (
@@ -241,7 +306,7 @@ export default function Header() {
               <div className="md:hidden py-4 px-6 border-t">
                 <div className="flex flex-col gap-4">
                   {navigation.map((item) => {
-                    const isActive = pathname.startsWith(item.href);
+                    const isActive = usePathname().startsWith(item.href);
                     return (
                       <Link
                         key={item.name}
@@ -264,7 +329,9 @@ export default function Header() {
                     href="/emergency"
                     prefetch={false}
                     className={`flex items-center gap-2 text-red-600 font-medium border-2 ${
-                      isEmergencyActive ? "border-red-600" : "border-transparent"
+                      usePathname().startsWith("/emergency")
+                        ? "border-red-600"
+                        : "border-transparent"
                     }`}
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
@@ -274,15 +341,14 @@ export default function Header() {
 
                   {/* Preferences link for mobile */}
                   <button
-                    className="w-[110px] inline-flex items-center justify-between gap-1 text-gray-700 bg-[rgba(0,0,0,0.03)] px-3 py-2 rounded-lg hover:bg-[rgba(0,0,0,0.08)]"
+                    className="w-[110px] inline-flex items-center justify-between gap-1 text-gray-700 
+                    bg-[rgba(0,0,0,0.03)] px-3 py-2 rounded-lg hover:bg-[rgba(0,0,0,0.08)]"
                     onClick={() => {
                       setIsMobileMenuOpen(false);
                       setShowPreferencesModal(true);
                     }}
                   >
-                    <span className="truncate">
-                      {languageMap[selectedLanguage] ?? "English"}
-                    </span>
+                    <span className="truncate">{languageMap[selectedLanguage] ?? "English"}</span>
                     <ChevronDown className="w-4 h-4 shrink-0" />
                   </button>
                 </div>
@@ -292,7 +358,7 @@ export default function Header() {
         </div>
       </header>
 
-      {/* ---------- LOCATION MODAL ---------- */}
+      {/* LOCATION MODAL*/}
       {showLocationModal && (
         <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-[9999]">
           <div
@@ -303,7 +369,7 @@ export default function Header() {
               Set Your Location
             </h2>
 
-            {/* City */}
+            {/* City field */}
             <label
               htmlFor="city-input"
               className="block text-left text-sm font-medium text-gray-600 mb-1"
@@ -322,7 +388,7 @@ export default function Header() {
               className="w-full max-w-[360px] p-3 mb-4 border border-gray-300 rounded-lg text-base"
             />
 
-            {/* ZIP */}
+            {/* ZIP field */}
             <label
               htmlFor="zip-input"
               className="block text-left text-sm font-medium text-gray-600 mb-1"
@@ -341,19 +407,47 @@ export default function Header() {
               className="w-full max-w-[360px] p-3 mb-4 border border-gray-300 rounded-lg text-base"
             />
 
-            <div className="flex justify-between gap-4 mt-6">
+            {/* State (short code) */}
+            <label
+              htmlFor="state-input"
+              className="block text-left text-sm font-medium text-gray-600 mb-1"
+            >
+              State
+            </label>
+            <input
+              id="state-input"
+              name="state"
+              type="text"
+              placeholder="CA, TX, NY..."
+              value={manualLocation.state}
+              onChange={(e) =>
+                setManualLocation({ ...manualLocation, state: e.target.value })
+              }
+              className="w-full max-w-[360px] p-3 mb-4 border border-gray-300 rounded-lg text-base"
+            />
+
+            <div className="flex flex-wrap justify-between gap-4 mt-6">
               <button
                 className="flex-1 p-3 font-medium border rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-800 border-gray-300"
                 onClick={handleAutoFill}
               >
                 Auto
               </button>
+
+              <button
+                className="flex-1 p-3 font-medium border rounded-lg bg-green-100 text-green-700 border-green-300 hover:bg-green-200"
+                onClick={handleZipLookup}
+              >
+                ZIP
+              </button>
+
               <button
                 className="flex-1 p-3 font-medium border rounded-lg bg-red-100 text-red-700 border-red-300 hover:bg-red-200"
                 onClick={handleClearLocation}
               >
                 Clear
               </button>
+
               <button
                 className="flex-1 p-3 font-medium border-none rounded-lg bg-blue-600 text-white hover:bg-blue-700"
                 onClick={handleManualLocationSave}
@@ -365,103 +459,23 @@ export default function Header() {
         </div>
       )}
 
-      {/* ---------- PREFERENCES MODAL ---------- */}
-      {showPreferencesModal && (
-        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-[9999]">
-          <div
-            ref={preferencesModalRef}
-            className="bg-white p-6 rounded-xl shadow-lg max-w-[500px] w-[90%]"
-          >
-            <h2 className="text-2xl font-bold mb-4 text-gray-800">
-              Preferences
-            </h2>
-
-            {/* Language */}
-            <div className="mb-6">
-              <h3 className="font-medium text-gray-700 mb-2">Language</h3>
-              <div className="flex flex-wrap gap-2">
-                {languages.map((langCode) => {
-                  const label = languageMap[langCode];
-                  return (
-                    <button
-                      key={langCode}
-                      onClick={() => setSelectedLanguage(langCode)}
-                      className={`px-3 py-1 rounded border transition-colors 
-                      ${
-                        selectedLanguage === langCode
-                          ? "bg-blue-600 text-white border-blue-600"
-                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Units */}
-            <div className="mb-6">
-              <h3 className="font-medium text-gray-700 mb-2">
-                Measurement Units
-              </h3>
-              <div className="flex gap-4">
-                {units.map((u) => (
-                  <button
-                    key={u}
-                    onClick={() => setSelectedUnit(u)}
-                    className={`px-3 py-1 rounded border transition-colors 
-                      ${
-                        selectedUnit === u
-                          ? "bg-blue-600 text-white border-blue-600"
-                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-                      }`}
-                  >
-                    {u}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Currency */}
-            <div className="mb-6">
-              <h3 className="font-medium text-gray-700 mb-2">Currency</h3>
-              <div className="flex flex-wrap gap-2">
-                {currencies.map((cur) => (
-                  <button
-                    key={cur}
-                    onClick={() => setSelectedCurrency(cur)}
-                    className={`px-3 py-1 rounded border transition-colors 
-                      ${
-                        selectedCurrency === cur
-                          ? "bg-blue-600 text-white border-blue-600"
-                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-                      }`}
-                  >
-                    {cur}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Action buttons */}
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                onClick={() => setShowPreferencesModal(false)}
-                className="px-4 py-2 rounded bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handlePreferencesSave}
-                className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors"
-              >
-                Save
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* PREFERENCES MODAL */}
+      <PreferencesModal
+        show={showPreferencesModal}
+        onClose={() => setShowPreferencesModal(false)}
+        onSave={handlePreferencesSave}
+        preferencesModalRef={preferencesModalRef}
+        selectedLanguage={selectedLanguage}
+        setSelectedLanguage={setSelectedLanguage}
+        selectedUnit={selectedUnit}
+        setSelectedUnit={setSelectedUnit}
+        selectedCurrency={selectedCurrency}
+        setSelectedCurrency={setSelectedCurrency}
+        languages={languages}
+        units={units}
+        currencies={currencies}
+        languageMap={languageMap}
+      />
     </>
   );
 }

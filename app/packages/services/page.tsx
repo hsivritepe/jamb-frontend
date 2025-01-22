@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image"; // 1) Import from next/image
 import React, { useState, useEffect, ChangeEvent } from "react";
 import BreadCrumb from "@/components/ui/BreadCrumb";
 import SearchServices from "@/components/SearchServices";
@@ -19,25 +20,10 @@ import {
 
 import { ChevronDown } from "lucide-react";
 
-/** Save data to sessionStorage as JSON */
-function saveToSession(key: string, value: any) {
-  if (typeof window !== "undefined") {
-    sessionStorage.setItem(key, JSON.stringify(value));
-  }
-}
+// Use session.ts
+import { getSessionItem, setSessionItem } from "@/utils/session";
 
-/** Load data from sessionStorage or return defaultValue if SSR/not found. */
-function loadFromSession<T>(key: string, defaultValue: T): T {
-  if (typeof window === "undefined") return defaultValue;
-  const stored = sessionStorage.getItem(key);
-  try {
-    return stored ? JSON.parse(stored) : defaultValue;
-  } catch {
-    return defaultValue;
-  }
-}
-
-/** Formats a numeric value with 2 decimals and comma separators. */
+/** Formats a numeric value with two decimals and comma separators. */
 function formatWithSeparator(num: number): string {
   return new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 2,
@@ -68,12 +54,16 @@ function formatHouseType(ht: string): string {
 
 /** Check if the section is an indoor one. */
 function isIndoorSection(sectionValue: string): boolean {
-  return (Object.values(INDOOR_SERVICE_SECTIONS) as string[]).includes(sectionValue);
+  return (Object.values(INDOOR_SERVICE_SECTIONS) as string[]).includes(
+    sectionValue
+  );
 }
 
 /** Check if the section is an outdoor one. */
 function isOutdoorSection(sectionValue: string): boolean {
-  return (Object.values(OUTDOOR_SERVICE_SECTIONS) as string[]).includes(sectionValue);
+  return (Object.values(OUTDOOR_SERVICE_SECTIONS) as string[]).includes(
+    sectionValue
+  );
 }
 
 /** Return a shorter label for each package ID (for the toggler). */
@@ -92,37 +82,161 @@ function getShortTitle(pkgId: string): string {
   }
 }
 
+/** Convert "1-1-2" => "1.1.2" so the backend recognizes it. */
+function convertServiceIdToApiFormat(serviceId: string) {
+  return serviceId.replaceAll("-", ".");
+}
+
+/** Fetch finishing materials (POST /work/finishing_materials). */
+async function fetchFinishingMaterials(workCode: string) {
+  const baseUrl =
+    process.env.NEXT_PUBLIC_API_BASE_URL || "https://your-api.example.com";
+  const url = `${baseUrl}/work/finishing_materials`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({ work_code: workCode }),
+  });
+  if (!res.ok) {
+    throw new Error(
+      `Failed to fetch finishing materials (work_code=${workCode}).`
+    );
+  }
+  return res.json();
+}
+
+/** Calculate cost breakdown (POST /calculate). */
+async function calculatePrice(params: {
+  work_code: string;
+  zipcode: string;
+  unit_of_measurement: string;
+  square: number;
+  finishing_materials: string[];
+}) {
+  const baseUrl =
+    process.env.NEXT_PUBLIC_API_BASE_URL || "https://your-api.example.com";
+  const url = `${baseUrl}/calculate`;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) {
+    throw new Error(
+      `Failed to calculate price (work_code=${params.work_code}).`
+    );
+  }
+  return res.json();
+}
+
+/**
+ * Simple component that constructs a direct image URL:
+ *   http://dev.thejamb.com/images/[firstSegment]/[converted].
+ */
+function ServiceImage({ serviceId }: { serviceId: string }) {
+  const [imageSrc, setImageSrc] = useState<string | null>(null);
+
+  useEffect(() => {
+    // The first segment is the part before the first hyphen, e.g. "1" from "1-1-1"
+    const firstSegment = serviceId.split("-")[0];
+    // Convert "1-1-1" => "1.1.1"
+    const code = convertServiceIdToApiFormat(serviceId);
+    // Construct final image URL
+    const url = `http://dev.thejamb.com/images/${firstSegment}/${code}.jpg`;
+    setImageSrc(url);
+  }, [serviceId]);
+
+  if (!imageSrc) return null;
+
+  // Next.js <Image> for automatic optimization. We'll unify all images to e.g. width=600, height=400.
+  // Ensure "dev.thejamb.com" is in next.config.js -> images.domains
+  return (
+    <div className="mb-2 border rounded overflow-hidden">
+      <Image
+        src={imageSrc}
+        alt="Service"
+        width={600}
+        height={400}
+        style={{ objectFit: "cover" }}
+        // optionally, you can specify priority or other props
+      />
+    </div>
+  );
+}
+
+/** Ensure finishing materials for a service are loaded. */
+async function ensureFinishingMaterialsLoaded(
+  serviceId: string,
+  finishingMaterialsMap: Record<string, any>,
+  setFinishingMaterialsMap: React.Dispatch<
+    React.SetStateAction<Record<string, any>>
+  >,
+  finishingMaterialSelections: Record<string, string[]>,
+  setFinishingMaterialSelections: React.Dispatch<
+    React.SetStateAction<Record<string, string[]>>
+  >
+) {
+  try {
+    if (!finishingMaterialsMap[serviceId]) {
+      const dot = convertServiceIdToApiFormat(serviceId);
+      const data = await fetchFinishingMaterials(dot);
+      finishingMaterialsMap[serviceId] = data;
+      setFinishingMaterialsMap({ ...finishingMaterialsMap });
+    }
+    // If no selection for this service => pick default in each sub-section
+    if (!finishingMaterialSelections[serviceId]) {
+      const data = finishingMaterialsMap[serviceId];
+      if (!data) return;
+      const picks: string[] = [];
+      const sections = data.sections || {};
+      for (const arr of Object.values(sections)) {
+        if (Array.isArray(arr) && arr.length > 0) {
+          picks.push(arr[0].external_id);
+        }
+      }
+      finishingMaterialSelections[serviceId] = picks;
+      setFinishingMaterialSelections({ ...finishingMaterialSelections });
+    }
+  } catch (err) {
+    console.error("Error ensureFinishingMaterialsLoaded:", err);
+  }
+}
+
 export default function PackageServicesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // 1) Determine the packageId from the query. If invalid, show a loading or handle error
+  // Identify the package
   const packageId = searchParams.get("packageId");
-  const chosenPackage = PACKAGES.find((pkg) => pkg.id === packageId) || null;
-  if (!packageId || !chosenPackage) {
+  const chosenPackageRaw = PACKAGES.find((pkg) => pkg.id === packageId) || null;
+
+  if (!packageId || !chosenPackageRaw) {
     return <p>Loading package...</p>;
   }
-  const safePackage = chosenPackage;
+  const chosenPackage = chosenPackageRaw;
 
-  // Store the current packageId in session so that the next page (Estimate) knows about it
-  useEffect(() => {
-    saveToSession("packages_currentPackageId", packageId);
-  }, [packageId]);
-
-  // 2) Load existing selected services from session, or create default
+  // Selected services: { indoor: { svcId: qty }, outdoor: { svcId: qty } }
   const [selectedServices, setSelectedServices] = useState<{
     indoor: Record<string, number>;
     outdoor: Record<string, number>;
   }>(() =>
-    loadFromSession("packages_selectedServices", {
-      indoor: {},
-      outdoor: {},
-    })
+    getSessionItem("packages_selectedServices", { indoor: {}, outdoor: {} })
   );
 
-  // 3) Also load houseInfo to display on the summary side, if needed
+  useEffect(() => {
+    setSessionItem("packages_selectedServices", selectedServices);
+  }, [selectedServices]);
+
+  // House info
   const [houseInfo] = useState(() =>
-    loadFromSession("packages_houseInfo", {
+    getSessionItem("packages_houseInfo", {
       country: "",
       city: "",
       zip: "",
@@ -145,58 +259,278 @@ export default function PackageServicesPage() {
     })
   );
 
-  // 4) Manage a search filter to quickly find services by name or description
-  const [searchQuery, setSearchQuery] = useState<string>(() =>
-    loadFromSession("packages_searchQuery", "")
+  // Search query
+  const [searchQuery, setSearchQuery] = useState(() =>
+    getSessionItem("packages_searchQuery", "")
   );
-  // Keep search query in session so user doesn't lose it on refresh
   useEffect(() => {
-    saveToSession("packages_searchQuery", searchQuery);
+    setSessionItem("packages_searchQuery", searchQuery);
   }, [searchQuery]);
 
-  // 5) Whenever selectedServices changes, save it to session
+  // Expanded categories
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
+    new Set()
+  );
+  function toggleCategory(catId: string) {
+    setExpandedCategories((prev) => {
+      const copy = new Set(prev);
+      copy.has(catId) ? copy.delete(catId) : copy.add(catId);
+      return copy;
+    });
+  }
+
+  // Materials & cost breakdown
+  const [finishingMaterialsMap, setFinishingMaterialsMap] = useState<
+    Record<string, any>
+  >({});
+  const [finishingMaterialSelections, setFinishingMaterialSelections] =
+    useState<Record<string, string[]>>({});
+
+  // calculationResultsMap => server response for each service
+  const [calculationResultsMap, setCalculationResultsMap] = useState<
+    Record<string, any>
+  >({});
+  // serviceCosts => final numeric cost (labor + materials) for each service
+  const [serviceCosts, setServiceCosts] = useState<Record<string, number>>({});
+
+  // For toggling cost breakdown UI
+  const [expandedCostBreakdown, setExpandedCostBreakdown] = useState<
+    Set<string>
+  >(new Set());
+  function toggleCostBreakdown(svcId: string) {
+    setExpandedCostBreakdown((old) => {
+      const copy = new Set(old);
+      copy.has(svcId) ? copy.delete(svcId) : copy.add(svcId);
+      return copy;
+    });
+  }
+
+  // Manual input for quantity
+  const [manualInputValue, setManualInputValue] = useState<
+    Record<string, string>
+  >({});
+
+  // Keep packageId in session
   useEffect(() => {
-    saveToSession("packages_selectedServices", selectedServices);
-  }, [selectedServices]);
+    setSessionItem("packages_currentPackageId", packageId);
+  }, [packageId]);
 
-  // 6) For quantity inputs that user might type into manually
-  const [manualInputValue, setManualInputValue] = useState<Record<string, string>>({});
+  // "Select all" and "Clear all"
+  function handleClearAll() {
+    const sure = window.confirm(
+      "Are you sure you want to clear all selections?"
+    );
+    if (!sure) return;
 
-  // 7) Track which categories are expanded
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+    setSelectedServices({ indoor: {}, outdoor: {} });
+    setExpandedCategories(new Set());
+    setFinishingMaterialsMap({});
+    setFinishingMaterialSelections({});
+    setCalculationResultsMap({});
+    setServiceCosts({});
+    setManualInputValue({});
+  }
 
-  // Combine all services from the chosen package (indoor + outdoor) into a single array for filtering
+  // Select all services from the chosen package
+  async function handleSelectAll() {
+    const sure = window.confirm("Select all services from this package?");
+    if (!sure) return;
+
+    const allCatIds = new Set<string>();
+    // We'll add catIds from indoor + outdoor to expand them visually
+    chosenPackage.services.indoor.forEach((it) => {
+      const catId = it.id.split("-").slice(0, 2).join("-");
+      allCatIds.add(catId);
+    });
+    chosenPackage.services.outdoor.forEach((it) => {
+      const catId = it.id.split("-").slice(0, 2).join("-");
+      allCatIds.add(catId);
+    });
+
+    const nextIndoor: Record<string, number> = {};
+    const nextOutdoor: Record<string, number> = {};
+
+    async function selectServiceWithMinQuantity(
+      serviceId: string,
+      isIndoor: boolean
+    ) {
+      const found = ALL_SERVICES.find((s) => s.id === serviceId);
+      const minQ = found?.min_quantity || 1;
+      if (isIndoor) {
+        nextIndoor[serviceId] = minQ;
+      } else {
+        nextOutdoor[serviceId] = minQ;
+      }
+      // load finishing materials
+      await ensureFinishingMaterialsLoaded(
+        serviceId,
+        finishingMaterialsMap,
+        setFinishingMaterialsMap,
+        finishingMaterialSelections,
+        setFinishingMaterialSelections
+      );
+      // set manual input
+      setManualInputValue((prev) => ({ ...prev, [serviceId]: String(minQ) }));
+    }
+
+    // Select all indoor
+    for (const it of chosenPackage.services.indoor) {
+      await selectServiceWithMinQuantity(it.id, true);
+    }
+    // Select all outdoor
+    for (const it of chosenPackage.services.outdoor) {
+      await selectServiceWithMinQuantity(it.id, false);
+    }
+
+    // Update state
+    setSelectedServices({ indoor: nextIndoor, outdoor: nextOutdoor });
+
+    // Expand categories
+    setExpandedCategories((prev) => {
+      const merged = new Set(prev);
+      allCatIds.forEach((catId) => merged.add(catId));
+      return merged;
+    });
+  }
+
+  // Toggle a service on/off
+  async function toggleService(serviceId: string) {
+    // Determine isIndoor by checking if the service is in .indoor array
+    const isIndoor = !!chosenPackage.services.indoor.find(
+      (x) => x.id === serviceId
+    );
+    const sideKey = isIndoor ? "indoor" : "outdoor";
+    const copy = { ...selectedServices[sideKey] };
+    const isOn = !!copy[serviceId];
+
+    if (isOn) {
+      // Turn off => remove from selected
+      delete copy[serviceId];
+      // Also clear cost breakdown, finishing materials, etc.
+      setCalculationResultsMap((old) => {
+        const c = { ...old };
+        delete c[serviceId];
+        return c;
+      });
+      setServiceCosts((old) => {
+        const c = { ...old };
+        delete c[serviceId];
+        return c;
+      });
+      setFinishingMaterialSelections((old) => {
+        const c = { ...old };
+        delete c[serviceId];
+        return c;
+      });
+      setManualInputValue((old) => {
+        const c = { ...old };
+        delete c[serviceId];
+        return c;
+      });
+    } else {
+      // Turn on => use minQ
+      const foundSvc = ALL_SERVICES.find((s) => s.id === serviceId);
+      const minQ = foundSvc?.min_quantity || 1;
+      copy[serviceId] = minQ;
+      // load finishing materials
+      await ensureFinishingMaterialsLoaded(
+        serviceId,
+        finishingMaterialsMap,
+        setFinishingMaterialsMap,
+        finishingMaterialSelections,
+        setFinishingMaterialSelections
+      );
+      // set manual input
+      setManualInputValue((m) => ({ ...m, [serviceId]: String(minQ) }));
+    }
+    setSelectedServices((prev) => ({ ...prev, [sideKey]: copy }));
+  }
+
+  // increment/decrement for the quantity
+  function handleQuantityChange(
+    serviceId: string,
+    increment: boolean,
+    unit: string
+  ) {
+    // isIndoor => check chosenPackage.services.indoor
+    const isIndoor = !!chosenPackage.services.indoor.find(
+      (x) => x.id === serviceId
+    );
+    const sideKey = isIndoor ? "indoor" : "outdoor";
+    const copy = { ...selectedServices[sideKey] };
+    const oldVal = copy[serviceId] || 1;
+
+    const foundSvc = ALL_SERVICES.find((s) => s.id === serviceId);
+    const minQ = foundSvc?.min_quantity || 1;
+
+    let newVal = increment ? oldVal + 1 : oldVal - 1;
+    if (newVal < minQ) newVal = minQ;
+    // If unit is "each", we might want to keep it integer
+    copy[serviceId] = unit === "each" ? Math.round(newVal) : newVal;
+    setSelectedServices((prev) => ({ ...prev, [sideKey]: copy }));
+    setManualInputValue((old) => ({
+      ...old,
+      [serviceId]: String(copy[serviceId]),
+    }));
+  }
+
+  // Manually typed quantity
+  function handleManualQuantityChange(
+    serviceId: string,
+    value: string,
+    unit: string
+  ) {
+    setManualInputValue((old) => ({ ...old, [serviceId]: value }));
+  }
+  function handleBlurInput(serviceId: string, unit: string) {
+    // isIndoor => check chosenPackage
+    const isIndoor = !!chosenPackage.services.indoor.find(
+      (x) => x.id === serviceId
+    );
+    const sideKey = isIndoor ? "indoor" : "outdoor";
+    const copy = { ...selectedServices[sideKey] };
+
+    const valStr = manualInputValue[serviceId] || "1";
+    let parsed = parsePositiveNumber(valStr);
+
+    const foundSvc = ALL_SERVICES.find((s) => s.id === serviceId);
+    const minQ = foundSvc?.min_quantity || 1;
+    if (parsed < minQ) {
+      parsed = minQ;
+    }
+    copy[serviceId] = unit === "each" ? Math.round(parsed) : parsed;
+    setSelectedServices((prev) => ({ ...prev, [sideKey]: copy }));
+    setManualInputValue((old) => ({
+      ...old,
+      [serviceId]: String(copy[serviceId]),
+    }));
+  }
+
+  // Build a combined list of services from chosenPackage, apply search filter
   const combinedServices: (typeof ALL_SERVICES)[number][] = [];
-
-  // Helper function to process indoor or outdoor from the chosen package
   function processSide(isIndoor: boolean) {
     const sideKey = isIndoor ? "indoor" : "outdoor";
-    safePackage.services[sideKey].forEach((pkgItem) => {
+    chosenPackage.services[sideKey].forEach((pkgItem) => {
       const svcObj = ALL_SERVICES.find((s) => s.id === pkgItem.id);
       if (!svcObj) return;
-
-      // If there's a search query, match against title or description
+      // If there's a search query => filter by title/desc
       if (searchQuery) {
         const lower = searchQuery.toLowerCase();
         const matchTitle = svcObj.title.toLowerCase().includes(lower);
-        const matchDesc =
-          svcObj.description && svcObj.description.toLowerCase().includes(lower);
+        const matchDesc = svcObj.description?.toLowerCase().includes(lower);
         if (!matchTitle && !matchDesc) return;
       }
       combinedServices.push(svcObj);
     });
   }
-  // Process indoor
   processSide(true);
-  // Process outdoor
   processSide(false);
 
-  // Build up sets of category IDs for "For Home" (indoor) or "For Garden" (outdoor)
+  // Group by section => cat => ...
   const homeSectionsMap: Record<string, Set<string>> = {};
   const gardenSectionsMap: Record<string, Set<string>> = {};
 
   for (const svc of combinedServices) {
-    // The category ID might be something like "indoor-kitchen"
     const catId = svc.id.split("-").slice(0, 2).join("-");
     const catObj = ALL_CATEGORIES.find((c) => c.id === catId);
     if (!catObj) continue;
@@ -215,7 +549,7 @@ export default function PackageServicesPage() {
     }
   }
 
-  // Create a map of catId => array of services
+  // catServicesMap => catId -> array of services
   const catServicesMap: Record<string, (typeof ALL_SERVICES)[number][]> = {};
   for (const svc of combinedServices) {
     const catId = svc.id.split("-").slice(0, 2).join("-");
@@ -225,155 +559,94 @@ export default function PackageServicesPage() {
     catServicesMap[catId].push(svc);
   }
 
-  // Expand/collapse a category
-  function toggleCategory(catId: string) {
-    setExpandedCategories((prev) => {
-      const next = new Set(prev);
-      if (next.has(catId)) next.delete(catId);
-      else next.add(catId);
-      return next;
-    });
-  }
-
-  // Toggle whether a service is selected or not
-  function toggleService(serviceId: string) {
-    // Determine whether it's an indoor or outdoor service by searching the chosen package
-    const isIndoor = !!safePackage.services.indoor.find((it) => it.id === serviceId);
-    const sideKey = isIndoor ? "indoor" : "outdoor";
-
-    const copy = { ...selectedServices[sideKey] };
-    if (copy[serviceId]) {
-      // If it was selected, unselect it
-      delete copy[serviceId];
-    } else {
-      // If it wasn't, set a default quantity
-      copy[serviceId] = 1;
+  // After each selection change => recalc
+  const userZip = houseInfo?.zip || "";
+  useEffect(() => {
+    async function recalcAll() {
+      const merged = {
+        ...selectedServices.indoor,
+        ...selectedServices.outdoor,
+      };
+      for (const [svcId, qty] of Object.entries(merged)) {
+        // Ensure finishing materials loaded
+        await ensureFinishingMaterialsLoaded(
+          svcId,
+          finishingMaterialsMap,
+          setFinishingMaterialsMap,
+          finishingMaterialSelections,
+          setFinishingMaterialSelections
+        );
+        // Then call /calculate
+        const svcObj = ALL_SERVICES.find((s) => s.id === svcId);
+        if (!svcObj) continue;
+        const finishingIds = finishingMaterialSelections[svcId] || [];
+        try {
+          const result = await calculatePrice({
+            work_code: convertServiceIdToApiFormat(svcId),
+            zipcode: userZip,
+            unit_of_measurement: svcObj.unit_of_measurement || "each",
+            square: qty,
+            finishing_materials: finishingIds,
+          });
+          const labor = parseFloat(result.work_cost) || 0;
+          const mat = parseFloat(result.material_cost) || 0;
+          setCalculationResultsMap((old) => ({ ...old, [svcId]: result }));
+          setServiceCosts((old) => ({ ...old, [svcId]: labor + mat }));
+        } catch (err) {
+          console.error("Error in recalcAll =>", err);
+        }
+      }
     }
-    setSelectedServices((prev) => ({ ...prev, [sideKey]: copy }));
-  }
+    recalcAll();
+  }, [
+    selectedServices,
+    finishingMaterialSelections,
+    userZip,
+    finishingMaterialsMap,
+    setFinishingMaterialsMap,
+    setFinishingMaterialSelections,
+  ]);
 
-  // Handle increment/decrement of the quantity for a service
-  function handleQuantityChange(serviceId: string, increment: boolean, unit: string) {
-    const isIndoor = !!safePackage.services.indoor.find((it) => it.id === serviceId);
-    const sideKey = isIndoor ? "indoor" : "outdoor";
-    const copy = { ...selectedServices[sideKey] };
+  // Save to session so Estimate page can read
+  useEffect(() => {
+    setSessionItem("packages_calculationResultsMap", calculationResultsMap);
+    setSessionItem("packages_serviceCosts", serviceCosts);
+  }, [calculationResultsMap, serviceCosts]);
 
-    const oldVal = copy[serviceId] || 1;
-    // If incrementing, add 1. If decrementing, sub 1 but not below 1
-    let newVal = increment ? oldVal + 1 : Math.max(1, oldVal - 1);
-
-    // If the unit is "each", keep it an integer
-    if (unit === "each") {
-      newVal = Math.round(newVal);
-    }
-
-    // Update state
-    copy[serviceId] = newVal;
-    setSelectedServices((prev) => ({ ...prev, [sideKey]: copy }));
-    setManualInputValue((prev) => ({ ...prev, [serviceId]: String(newVal) }));
-  }
-
-  // Handle the user manually typing a quantity in an input
-  function handleManualQuantityChange(serviceId: string, value: string, unit: string) {
-    setManualInputValue((prev) => ({ ...prev, [serviceId]: value }));
-  }
-
-  // On blur, parse the typed quantity and update the state
-  function handleBlurInput(serviceId: string, unit: string) {
-    const isIndoor = !!safePackage.services.indoor.find((it) => it.id === serviceId);
-    const sideKey = isIndoor ? "indoor" : "outdoor";
-    const copy = { ...selectedServices[sideKey] };
-
-    const currentVal = manualInputValue[serviceId] ?? "";
-    const parsed = parsePositiveNumber(currentVal);
-
-    copy[serviceId] = unit === "each" ? Math.round(parsed) : parsed;
-
-    setSelectedServices((prev) => ({ ...prev, [sideKey]: copy }));
-    setManualInputValue((prev) => ({
-      ...prev,
-      [serviceId]: String(copy[serviceId]),
-    }));
-  }
-
-  // Calculate the annual price from all selected services
-  function calculateAnnualPrice(): number {
-    let total = 0;
-    for (const [svcId, qty] of Object.entries(selectedServices.indoor)) {
-      const svcObj = ALL_SERVICES.find((s) => s.id === svcId);
-      if (svcObj) total += svcObj.price * qty;
-    }
-    for (const [svcId, qty] of Object.entries(selectedServices.outdoor)) {
-      const svcObj = ALL_SERVICES.find((s) => s.id === svcId);
-      if (svcObj) total += svcObj.price * qty;
-    }
-    return total;
-  }
-  const annualPrice = calculateAnnualPrice();
-
-  // Move on to the next page (estimate)
+  // "Next" => go to /packages/estimate
   function handleNext() {
-    const hasAnySelected = Object.keys(mergedSelected).length > 0;
-    if (!hasAnySelected) {
-      alert("You haven't selected any services. Please choose at least one before continuing.");
-      return; 
+    const anyIndoor = Object.keys(selectedServices.indoor).length > 0;
+    const anyOutdoor = Object.keys(selectedServices.outdoor).length > 0;
+    if (!anyIndoor && !anyOutdoor) {
+      alert("Please select at least one service before continuing.");
+      return;
     }
     router.push("/packages/estimate");
   }
 
-  // Clear all selections
-  function handleClearAll() {
-    const confirmed = window.confirm("Are you sure you want to clear all selections?");
-    if (!confirmed) return;
-    setSelectedServices({ indoor: {}, outdoor: {} });
-    setExpandedCategories(new Set());
-  }
-
-  // Select all available services in this package
-  function handleSelectAll() {
-    const confirmed = window.confirm("Are you sure you want to select all services?");
-    if (!confirmed) return;
-
-    const nextIndoor: Record<string, number> = {};
-    for (const it of safePackage.services.indoor) {
-      nextIndoor[it.id] = 1;
+  // Compute total
+  function calculateAnnualPrice(): number {
+    let sum = 0;
+    for (const cost of Object.values(serviceCosts)) {
+      sum += cost;
     }
-    const nextOutdoor: Record<string, number> = {};
-    for (const it of safePackage.services.outdoor) {
-      nextOutdoor[it.id] = 1;
-    }
-    setSelectedServices({ indoor: nextIndoor, outdoor: nextOutdoor });
+    return sum;
   }
+  const annualPrice = calculateAnnualPrice();
 
-  // Toggle package from the top toggler
-  function handlePackageToggle(pkgId: string) {
-    // If user selects a different package, navigate there
-    router.push(`/packages/services?packageId=${pkgId}`);
-  }
-  const packageIdsInOrder = [
-    "basic_package",
-    "enhanced_package",
-    "all_inclusive_package",
-    "configure_your_own_package",
-  ];
-
-  // Combine both indoor & outdoor into one object for summary
+  // Merge indoor+outdoor
   const mergedSelected: Record<string, number> = {
     ...selectedServices.indoor,
     ...selectedServices.outdoor,
   };
 
-  // We'll build a structure grouped by: section -> category -> [services]
-  type ServiceItem = {
-    svcObj: (typeof ALL_SERVICES)[number];
-    qty: number;
-  };
+  // Build summary structure => section -> catId -> array of {svcObj, qty}
+  type ServiceItem = { svcObj: (typeof ALL_SERVICES)[number]; qty: number };
   const summaryStructure: Record<string, Record<string, ServiceItem[]>> = {};
 
   for (const [svcId, qty] of Object.entries(mergedSelected)) {
     const svcObj = ALL_SERVICES.find((s) => s.id === svcId);
     if (!svcObj) continue;
-
     const catId = svcObj.id.split("-").slice(0, 2).join("-");
     const catObj = ALL_CATEGORIES.find((c) => c.id === catId);
     if (!catObj) continue;
@@ -388,6 +661,18 @@ export default function PackageServicesPage() {
     summaryStructure[sectionName][catId].push({ svcObj, qty });
   }
 
+  // Toggle package (the 4-button switch)
+  function handlePackageToggle(newPkgId: string) {
+    router.push(`/packages/services?packageId=${newPkgId}`);
+  }
+
+  const packageIdsInOrder = [
+    "basic_package",
+    "enhanced_package",
+    "all_inclusive_package",
+    "configure_your_own_package",
+  ];
+
   return (
     <main className="min-h-screen pt-24 pb-16">
       <div className="container mx-auto">
@@ -395,10 +680,9 @@ export default function PackageServicesPage() {
       </div>
 
       <div className="container mx-auto">
-        {/* Top row: package toggler + Next button */}
+        {/* Toggler + Next */}
         <div className="flex justify-between items-center mt-11">
-          {/* Package toggler: Basic | Enhanced | All-inclusive | Custom */}
-          <div className="inline-flex rounded-lg p-1 w-full max-w-[624px] h-14 border border-gray-200">
+          <div className="inline-flex rounded-lg p-1 w-full max-w-[624px] h-14 border border-gray-300 bg-white">
             {packageIdsInOrder.map((pkgId) => {
               const pkgObj = PACKAGES.find((p) => p.id === pkgId);
               if (!pkgObj) return null;
@@ -425,7 +709,7 @@ export default function PackageServicesPage() {
           </Button>
         </div>
 
-        {/* Search bar */}
+        {/* Search */}
         <div className="w-full max-w-[624px] mt-6 mb-4">
           <SearchServices
             value={searchQuery}
@@ -436,11 +720,14 @@ export default function PackageServicesPage() {
           />
         </div>
 
-        {/* "Select all" and "Clear" buttons, plus a link for missing services */}
+        {/* "Select all" / "Clear" */}
         <div className="flex justify-between items-center text-sm text-gray-500 mt-6 w-full max-w-[624px]">
           <span>
             No service?{" "}
-            <a href="#" className="text-blue-600 hover:underline focus:outline-none">
+            <a
+              href="#"
+              className="text-blue-600 hover:underline focus:outline-none"
+            >
               Contact support
             </a>
           </span>
@@ -460,11 +747,11 @@ export default function PackageServicesPage() {
           </div>
         </div>
 
-        {/* Layout: left column (services) + right column (summary) */}
+        {/* Left=services, Right=summary */}
         <div className="container mx-auto relative flex mt-8">
-          {/* LEFT COLUMN */}
+          {/* LEFT column: services grouped by indoor/outdoor => by section => by category */}
           <div className="flex-1 space-y-12">
-            {/* For Home (if any indoor sections exist) */}
+            {/* For Home */}
             {Object.keys(homeSectionsMap).length > 0 && (
               <div>
                 <div className="w-full max-w-[624px] mx-auto">
@@ -474,7 +761,9 @@ export default function PackageServicesPage() {
                   >
                     <div className="absolute inset-0 bg-black bg-opacity-30"></div>
                     <div className="relative z-10 flex items-center justify-center h-full">
-                      <SectionBoxTitle className="text-white">For Home</SectionBoxTitle>
+                      <SectionBoxTitle className="text-white">
+                        For Home
+                      </SectionBoxTitle>
                     </div>
                   </div>
                 </div>
@@ -482,7 +771,7 @@ export default function PackageServicesPage() {
                 <div className="mt-6 space-y-6">
                   {Object.keys(homeSectionsMap).map((sectionName) => {
                     const catIdsSet = homeSectionsMap[sectionName];
-                    if (!catIdsSet || catIdsSet.size === 0) return null;
+                    if (!catIdsSet?.size) return null;
                     const catIdsArray = Array.from(catIdsSet);
 
                     return (
@@ -492,33 +781,38 @@ export default function PackageServicesPage() {
                         {catIdsArray.map((catId) => {
                           const servicesForCat = catServicesMap[catId] || [];
                           let selectedInCat = 0;
-                          for (const svc of servicesForCat) {
+                          servicesForCat.forEach((svc) => {
                             if (
                               selectedServices.indoor[svc.id] ||
                               selectedServices.outdoor[svc.id]
                             ) {
                               selectedInCat++;
                             }
-                          }
+                          });
 
-                          const catObj = ALL_CATEGORIES.find((c) => c.id === catId);
+                          const catObj = ALL_CATEGORIES.find(
+                            (c) => c.id === catId
+                          );
                           const catName = catObj ? catObj.title : catId;
 
                           return (
                             <div
                               key={catId}
                               className={`p-4 border rounded-xl bg-white mt-4 ${
-                                selectedInCat > 0 ? "border-blue-500" : "border-gray-300"
+                                selectedInCat > 0
+                                  ? "border-blue-500"
+                                  : "border-gray-300"
                               }`}
                             >
-                              {/* Category header (clickable to expand/collapse) */}
                               <button
                                 onClick={() => toggleCategory(catId)}
                                 className="flex justify-between items-center w-full"
                               >
                                 <h3
                                   className={`font-medium text-2xl ${
-                                    selectedInCat > 0 ? "text-blue-600" : "text-black"
+                                    selectedInCat > 0
+                                      ? "text-blue-600"
+                                      : "text-black"
                                   }`}
                                 >
                                   {catName}
@@ -530,18 +824,22 @@ export default function PackageServicesPage() {
                                 </h3>
                                 <ChevronDown
                                   className={`h-5 w-5 transform transition-transform ${
-                                    expandedCategories.has(catId) ? "rotate-180" : ""
+                                    expandedCategories.has(catId)
+                                      ? "rotate-180"
+                                      : ""
                                   }`}
                                 />
                               </button>
 
-                              {/* Render the services if expanded */}
                               {expandedCategories.has(catId) && (
                                 <div className="mt-4 flex flex-col gap-3">
                                   {servicesForCat.map((svc) => {
-                                    const isIndoorSelected = !!selectedServices.indoor[svc.id];
-                                    const isOutdoorSelected = !!selectedServices.outdoor[svc.id];
-                                    const isSelected = isIndoorSelected || isOutdoorSelected;
+                                    const isIndoorSelected =
+                                      selectedServices.indoor[svc.id] != null;
+                                    const isOutdoorSelected =
+                                      selectedServices.outdoor[svc.id] != null;
+                                    const isSelected =
+                                      isIndoorSelected || isOutdoorSelected;
 
                                     const quantity = isIndoorSelected
                                       ? selectedServices.indoor[svc.id]
@@ -554,203 +852,11 @@ export default function PackageServicesPage() {
                                         ? manualInputValue[svc.id]
                                         : String(quantity);
 
-                                    return (
-                                      <div key={svc.id} className="space-y-2">
-                                        {/* Service title + toggle */}
-                                        <div className="flex justify-between items-center">
-                                          <span
-                                            className={`text-lg transition-colors duration-300 ${
-                                              isSelected ? "text-blue-600" : "text-gray-800"
-                                            }`}
-                                          >
-                                            {svc.title}
-                                          </span>
-                                          <label className="relative inline-flex items-center cursor-pointer">
-                                            <input
-                                              type="checkbox"
-                                              checked={isSelected}
-                                              onChange={() => toggleService(svc.id)}
-                                              className="sr-only peer"
-                                            />
-                                            <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
-                                            <div className="absolute top-[2px] left-[2px] w-[22px] h-[22px] bg-white rounded-full shadow-md peer-checked:translate-x-[24px] transform transition-transform duration-300"></div>
-                                          </label>
-                                        </div>
-
-                                        {/* If selected, show details: description, quantity, price */}
-                                        {isSelected && (
-                                          <>
-                                            {svc.description && (
-                                              <p className="text-sm text-gray-500 pr-16">
-                                                {svc.description}
-                                              </p>
-                                            )}
-                                            <div className="flex justify-between items-center">
-                                              <div className="flex items-center gap-1">
-                                                {/* Decrement button */}
-                                                <button
-                                                  onClick={() =>
-                                                    handleQuantityChange(
-                                                      svc.id,
-                                                      false,
-                                                      svc.unit_of_measurement
-                                                    )
-                                                  }
-                                                  className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
-                                                >
-                                                  −
-                                                </button>
-                                                {/* Text input for manual quantity */}
-                                                <input
-                                                  type="text"
-                                                  value={inputValue}
-                                                  onClick={() =>
-                                                    setManualInputValue((prev) => ({
-                                                      ...prev,
-                                                      [svc.id]: "",
-                                                    }))
-                                                  }
-                                                  onBlur={() =>
-                                                    handleBlurInput(svc.id, svc.unit_of_measurement)
-                                                  }
-                                                  onChange={(e) =>
-                                                    handleManualQuantityChange(
-                                                      svc.id,
-                                                      e.target.value,
-                                                      svc.unit_of_measurement
-                                                    )
-                                                  }
-                                                  className="w-20 text-center px-2 py-1 border rounded"
-                                                  placeholder="1"
-                                                />
-                                                {/* Increment button */}
-                                                <button
-                                                  onClick={() =>
-                                                    handleQuantityChange(
-                                                      svc.id,
-                                                      true,
-                                                      svc.unit_of_measurement
-                                                    )
-                                                  }
-                                                  className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
-                                                >
-                                                  +
-                                                </button>
-                                                <span className="text-sm text-gray-600">
-                                                  {svc.unit_of_measurement}
-                                                </span>
-                                              </div>
-                                              <span className="text-lg text-blue-600 font-medium text-right">
-                                                ${formatWithSeparator(svc.price * quantity)}
-                                              </span>
-                                            </div>
-                                          </>
-                                        )}
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* For Garden (if any outdoor sections exist) */}
-            {Object.keys(gardenSectionsMap).length > 0 && (
-              <div>
-                <div className="w-full max-w-[624px] mx-auto">
-                  <div
-                    className="relative overflow-hidden rounded-xl border border-gray-300 h-32 bg-center bg-cover"
-                    style={{ backgroundImage: `url(/images/rooms/landscape.jpg)` }}
-                  >
-                    <div className="absolute inset-0 bg-black bg-opacity-30"></div>
-                    <div className="relative z-10 flex items-center justify-center h-full">
-                      <SectionBoxTitle className="text-white">For Garden</SectionBoxTitle>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-6 space-y-6">
-                  {Object.keys(gardenSectionsMap).map((sectionName) => {
-                    const catIdsSet = gardenSectionsMap[sectionName];
-                    if (!catIdsSet?.size) return null;
-
-                    const catIdsArray = Array.from(catIdsSet);
-
-                    return (
-                      <div key={sectionName} className="mt-4">
-                        <SectionBoxSubtitle>{sectionName}</SectionBoxSubtitle>
-
-                        {catIdsArray.map((catId) => {
-                          const servicesForCat = catServicesMap[catId] || [];
-                          let selectedInCat = 0;
-                          for (const svc of servicesForCat) {
-                            if (
-                              selectedServices.indoor[svc.id] ||
-                              selectedServices.outdoor[svc.id]
-                            ) {
-                              selectedInCat++;
-                            }
-                          }
-
-                          const catObj = ALL_CATEGORIES.find((c) => c.id === catId);
-                          const catName = catObj ? catObj.title : catId;
-
-                          return (
-                            <div
-                              key={catId}
-                              className={`p-4 border rounded-xl bg-white mt-4 ${
-                                selectedInCat > 0 ? "border-blue-500" : "border-gray-300"
-                              }`}
-                            >
-                              {/* Category header (clickable to expand/collapse) */}
-                              <button
-                                onClick={() => toggleCategory(catId)}
-                                className="flex justify-between items-center w-full"
-                              >
-                                <h3
-                                  className={`font-medium text-2xl ${
-                                    selectedInCat > 0 ? "text-blue-600" : "text-black"
-                                  }`}
-                                >
-                                  {catName}
-                                  {selectedInCat > 0 && (
-                                    <span className="text-sm text-gray-500 ml-2">
-                                      ({selectedInCat} selected)
-                                    </span>
-                                  )}
-                                </h3>
-                                <ChevronDown
-                                  className={`h-5 w-5 transform transition-transform ${
-                                    expandedCategories.has(catId) ? "rotate-180" : ""
-                                  }`}
-                                />
-                              </button>
-
-                              {/* Render services if expanded */}
-                              {expandedCategories.has(catId) && (
-                                <div className="mt-4 flex flex-col gap-3">
-                                  {servicesForCat.map((svc) => {
-                                    const inIndoor = selectedServices.indoor[svc.id];
-                                    const inOutdoor = selectedServices.outdoor[svc.id];
-                                    const isSelected = !!inIndoor || !!inOutdoor;
-
-                                    const quantity = inIndoor
-                                      ? inIndoor
-                                      : inOutdoor
-                                      ? inOutdoor
-                                      : 1;
-
-                                    const inputValue =
-                                      manualInputValue[svc.id] !== undefined
-                                        ? manualInputValue[svc.id]
-                                        : String(quantity);
+                                    const calcResult =
+                                      calculationResultsMap[svc.id];
+                                    const finalCost = serviceCosts[svc.id] || 0;
+                                    const isBreakdownOpen =
+                                      expandedCostBreakdown.has(svc.id);
 
                                     return (
                                       <div key={svc.id} className="space-y-2">
@@ -768,7 +874,9 @@ export default function PackageServicesPage() {
                                             <input
                                               type="checkbox"
                                               checked={isSelected}
-                                              onChange={() => toggleService(svc.id)}
+                                              onChange={() =>
+                                                toggleService(svc.id)
+                                              }
                                               className="sr-only peer"
                                             />
                                             <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
@@ -778,6 +886,8 @@ export default function PackageServicesPage() {
 
                                         {isSelected && (
                                           <>
+                                            {/* Use Next.js Image-based component */}
+                                            <ServiceImage serviceId={svc.id} />
                                             {svc.description && (
                                               <p className="text-sm text-gray-500 pr-16">
                                                 {svc.description}
@@ -785,7 +895,6 @@ export default function PackageServicesPage() {
                                             )}
                                             <div className="flex justify-between items-center">
                                               <div className="flex items-center gap-1">
-                                                {/* Decrement */}
                                                 <button
                                                   onClick={() =>
                                                     handleQuantityChange(
@@ -798,18 +907,22 @@ export default function PackageServicesPage() {
                                                 >
                                                   −
                                                 </button>
-                                                {/* Text input */}
                                                 <input
                                                   type="text"
                                                   value={inputValue}
                                                   onClick={() =>
-                                                    setManualInputValue((prev) => ({
-                                                      ...prev,
-                                                      [svc.id]: "",
-                                                    }))
+                                                    setManualInputValue(
+                                                      (prev) => ({
+                                                        ...prev,
+                                                        [svc.id]: "",
+                                                      })
+                                                    )
                                                   }
                                                   onBlur={() =>
-                                                    handleBlurInput(svc.id, svc.unit_of_measurement)
+                                                    handleBlurInput(
+                                                      svc.id,
+                                                      svc.unit_of_measurement
+                                                    )
                                                   }
                                                   onChange={(e) =>
                                                     handleManualQuantityChange(
@@ -821,7 +934,6 @@ export default function PackageServicesPage() {
                                                   className="w-20 text-center px-2 py-1 border rounded"
                                                   placeholder="1"
                                                 />
-                                                {/* Increment */}
                                                 <button
                                                   onClick={() =>
                                                     handleQuantityChange(
@@ -838,10 +950,440 @@ export default function PackageServicesPage() {
                                                   {svc.unit_of_measurement}
                                                 </span>
                                               </div>
-                                              <span className="text-lg text-blue-600 font-medium text-right">
-                                                ${formatWithSeparator(svc.price * quantity)}
-                                              </span>
+                                              {/* cost + breakdown toggle */}
+                                              <div className="flex items-center gap-2">
+                                                <span className="text-lg text-blue-600 font-medium text-right">
+                                                  $
+                                                  {formatWithSeparator(
+                                                    finalCost
+                                                  )}
+                                                </span>
+                                                <button
+                                                  onClick={() =>
+                                                    toggleCostBreakdown(svc.id)
+                                                  }
+                                                  className={`text-blue-500 text-sm ml-2 ${
+                                                    isBreakdownOpen
+                                                      ? ""
+                                                      : "underline"
+                                                  }`}
+                                                >
+                                                  Details
+                                                </button>
+                                              </div>
                                             </div>
+
+                                            {isBreakdownOpen && calcResult && (
+                                              <div className="mt-4 p-4 bg-gray-50 border rounded">
+                                                <h4 className="text-md font-semibold text-gray-800 mb-3">
+                                                  Cost Breakdown
+                                                </h4>
+                                                <div className="flex flex-col gap-2 mb-2">
+                                                  <div className="flex justify-between">
+                                                    <span className="text-md font-medium text-gray-700">
+                                                      Labor
+                                                    </span>
+                                                    <span>
+                                                      {calcResult.work_cost
+                                                        ? `$${calcResult.work_cost}`
+                                                        : "—"}
+                                                    </span>
+                                                  </div>
+                                                  <div className="flex justify-between">
+                                                    <span className="text-md font-medium text-gray-700">
+                                                      Materials, tools, &amp;
+                                                      equipment
+                                                    </span>
+                                                    <span>
+                                                      {calcResult.material_cost
+                                                        ? `$${calcResult.material_cost}`
+                                                        : "—"}
+                                                    </span>
+                                                  </div>
+                                                </div>
+
+                                                {Array.isArray(
+                                                  calcResult.materials
+                                                ) &&
+                                                  calcResult.materials.length >
+                                                    0 && (
+                                                    <div className="mt-2">
+                                                      <table className="table-auto w-full text-sm text-left text-gray-700">
+                                                        <thead>
+                                                          <tr className="border-b">
+                                                            <th className="py-2 px-1 text-left">
+                                                              Name
+                                                            </th>
+                                                            <th className="py-2 px-1">
+                                                              Price
+                                                            </th>
+                                                            <th className="py-2 px-1">
+                                                              Qty
+                                                            </th>
+                                                            <th className="py-2 px-1">
+                                                              Subtotal
+                                                            </th>
+                                                          </tr>
+                                                        </thead>
+                                                        <tbody className="divide-y divide-gray-200">
+                                                          {calcResult.materials.map(
+                                                            (
+                                                              m: any,
+                                                              idx2: number
+                                                            ) => (
+                                                              <tr
+                                                                key={`${m.external_id}-${idx2}`}
+                                                              >
+                                                                <td className="py-3 px-1">
+                                                                  {m.name}
+                                                                </td>
+                                                                <td className="py-3 px-1">
+                                                                  $
+                                                                  {
+                                                                    m.cost_per_unit
+                                                                  }
+                                                                </td>
+                                                                <td className="py-3 px-3">
+                                                                  {m.quantity}
+                                                                </td>
+                                                                <td className="py-3 px-3">
+                                                                  ${m.cost}
+                                                                </td>
+                                                              </tr>
+                                                            )
+                                                          )}
+                                                        </tbody>
+                                                      </table>
+                                                    </div>
+                                                  )}
+                                              </div>
+                                            )}
+                                          </>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* For Garden */}
+            {Object.keys(gardenSectionsMap).length > 0 && (
+              <div>
+                <div className="w-full max-w-[624px] mx-auto">
+                  <div
+                    className="relative overflow-hidden rounded-xl border border-gray-300 h-32 bg-center bg-cover"
+                    style={{
+                      backgroundImage: `url(/images/rooms/landscape.jpg)`,
+                    }}
+                  >
+                    <div className="absolute inset-0 bg-black bg-opacity-30"></div>
+                    <div className="relative z-10 flex items-center justify-center h-full">
+                      <SectionBoxTitle className="text-white">
+                        For Garden
+                      </SectionBoxTitle>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-6 space-y-6">
+                  {Object.keys(gardenSectionsMap).map((sectionName) => {
+                    const catIdsSet = gardenSectionsMap[sectionName];
+                    if (!catIdsSet?.size) return null;
+                    const catIdsArr = Array.from(catIdsSet);
+
+                    return (
+                      <div key={sectionName} className="mt-4">
+                        <SectionBoxSubtitle>{sectionName}</SectionBoxSubtitle>
+
+                        {catIdsArr.map((catId) => {
+                          const servicesForCat = catServicesMap[catId] || [];
+                          let selectedInCat = 0;
+                          servicesForCat.forEach((svc) => {
+                            if (
+                              selectedServices.indoor[svc.id] ||
+                              selectedServices.outdoor[svc.id]
+                            ) {
+                              selectedInCat++;
+                            }
+                          });
+
+                          const catObj = ALL_CATEGORIES.find(
+                            (c) => c.id === catId
+                          );
+                          const catName = catObj ? catObj.title : catId;
+
+                          return (
+                            <div
+                              key={catId}
+                              className={`p-4 border rounded-xl bg-white mt-4 ${
+                                selectedInCat > 0
+                                  ? "border-blue-500"
+                                  : "border-gray-300"
+                              }`}
+                            >
+                              <button
+                                onClick={() => toggleCategory(catId)}
+                                className="flex justify-between items-center w-full"
+                              >
+                                <h3
+                                  className={`font-medium text-2xl ${
+                                    selectedInCat > 0
+                                      ? "text-blue-600"
+                                      : "text-black"
+                                  }`}
+                                >
+                                  {catName}
+                                  {selectedInCat > 0 && (
+                                    <span className="text-sm text-gray-500 ml-2">
+                                      ({selectedInCat} selected)
+                                    </span>
+                                  )}
+                                </h3>
+                                <ChevronDown
+                                  className={`h-5 w-5 transform transition-transform ${
+                                    expandedCategories.has(catId)
+                                      ? "rotate-180"
+                                      : ""
+                                  }`}
+                                />
+                              </button>
+
+                              {expandedCategories.has(catId) && (
+                                <div className="mt-4 flex flex-col gap-3">
+                                  {servicesForCat.map((svc) => {
+                                    const isIndoorSelected =
+                                      selectedServices.indoor[svc.id] != null;
+                                    const isOutdoorSelected =
+                                      selectedServices.outdoor[svc.id] != null;
+                                    const isSelected =
+                                      isIndoorSelected || isOutdoorSelected;
+
+                                    const quantity = isIndoorSelected
+                                      ? selectedServices.indoor[svc.id]
+                                      : isOutdoorSelected
+                                      ? selectedServices.outdoor[svc.id]
+                                      : 1;
+
+                                    const inputVal =
+                                      manualInputValue[svc.id] !== undefined
+                                        ? manualInputValue[svc.id]
+                                        : String(quantity);
+
+                                    const calcResult =
+                                      calculationResultsMap[svc.id];
+                                    const finalCost = serviceCosts[svc.id] || 0;
+                                    const isBreakdownOpen =
+                                      expandedCostBreakdown.has(svc.id);
+
+                                    return (
+                                      <div key={svc.id} className="space-y-2">
+                                        <div className="flex justify-between items-center">
+                                          <span
+                                            className={`text-lg transition-colors duration-300 ${
+                                              isSelected
+                                                ? "text-blue-600"
+                                                : "text-gray-800"
+                                            }`}
+                                          >
+                                            {svc.title}
+                                          </span>
+                                          <label className="relative inline-flex items-center cursor-pointer">
+                                            <input
+                                              type="checkbox"
+                                              checked={isSelected}
+                                              onChange={() =>
+                                                toggleService(svc.id)
+                                              }
+                                              className="sr-only peer"
+                                            />
+                                            <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
+                                            <div className="absolute top-[2px] left-[2px] w-[22px] h-[22px] bg-white rounded-full shadow-md peer-checked:translate-x-[24px] transform transition-transform duration-300"></div>
+                                          </label>
+                                        </div>
+
+                                        {isSelected && (
+                                          <>
+                                            {/* Use Next.js Image-based component */}
+                                            <ServiceImage serviceId={svc.id} />                                          
+                                            {svc.description && (
+                                              <p className="text-sm text-gray-500 pr-16">
+                                                {svc.description}
+                                              </p>
+                                            )}
+                                            <div className="flex justify-between items-center">
+                                              <div className="flex items-center gap-1">
+                                                <button
+                                                  onClick={() =>
+                                                    handleQuantityChange(
+                                                      svc.id,
+                                                      false,
+                                                      svc.unit_of_measurement
+                                                    )
+                                                  }
+                                                  className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
+                                                >
+                                                  −
+                                                </button>
+                                                <input
+                                                  type="text"
+                                                  value={inputVal}
+                                                  onClick={() =>
+                                                    setManualInputValue(
+                                                      (old) => ({
+                                                        ...old,
+                                                        [svc.id]: "",
+                                                      })
+                                                    )
+                                                  }
+                                                  onBlur={() =>
+                                                    handleBlurInput(
+                                                      svc.id,
+                                                      svc.unit_of_measurement
+                                                    )
+                                                  }
+                                                  onChange={(e) =>
+                                                    handleManualQuantityChange(
+                                                      svc.id,
+                                                      e.target.value,
+                                                      svc.unit_of_measurement
+                                                    )
+                                                  }
+                                                  className="w-20 text-center px-2 py-1 border rounded"
+                                                  placeholder="1"
+                                                />
+                                                <button
+                                                  onClick={() =>
+                                                    handleQuantityChange(
+                                                      svc.id,
+                                                      true,
+                                                      svc.unit_of_measurement
+                                                    )
+                                                  }
+                                                  className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
+                                                >
+                                                  +
+                                                </button>
+                                                <span className="text-sm text-gray-600">
+                                                  {svc.unit_of_measurement}
+                                                </span>
+                                              </div>
+                                              {/* cost + breakdown toggle */}
+                                              <div className="flex items-center gap-2">
+                                                <span className="text-lg text-blue-600 font-medium text-right">
+                                                  $
+                                                  {formatWithSeparator(
+                                                    finalCost
+                                                  )}
+                                                </span>
+                                                <button
+                                                  onClick={() =>
+                                                    toggleCostBreakdown(svc.id)
+                                                  }
+                                                  className={`text-blue-500 text-sm ml-2 ${
+                                                    isBreakdownOpen
+                                                      ? ""
+                                                      : "underline"
+                                                  }`}
+                                                >
+                                                  Details
+                                                </button>
+                                              </div>
+                                            </div>
+
+                                            {isBreakdownOpen && calcResult && (
+                                              <div className="mt-4 p-4 bg-gray-50 border rounded">
+                                                <h4 className="text-md font-semibold text-gray-800 mb-3">
+                                                  Cost Breakdown
+                                                </h4>
+                                                <div className="flex flex-col gap-2 mb-2">
+                                                  <div className="flex justify-between">
+                                                    <span className="text-md font-medium text-gray-700">
+                                                      Labor
+                                                    </span>
+                                                    <span>
+                                                      {calcResult.work_cost
+                                                        ? `$${calcResult.work_cost}`
+                                                        : "—"}
+                                                    </span>
+                                                  </div>
+                                                  <div className="flex justify-between">
+                                                    <span className="text-md font-medium text-gray-700">
+                                                      Materials, tools, &amp;
+                                                      equipment
+                                                    </span>
+                                                    <span>
+                                                      {calcResult.material_cost
+                                                        ? `$${calcResult.material_cost}`
+                                                        : "—"}
+                                                    </span>
+                                                  </div>
+                                                </div>
+
+                                                {Array.isArray(
+                                                  calcResult.materials
+                                                ) &&
+                                                  calcResult.materials.length >
+                                                    0 && (
+                                                    <div className="mt-2">
+                                                      <table className="table-auto w-full text-sm text-left text-gray-700">
+                                                        <thead>
+                                                          <tr className="border-b">
+                                                            <th className="py-2 px-1">
+                                                              Name
+                                                            </th>
+                                                            <th className="py-2 px-1">
+                                                              Price
+                                                            </th>
+                                                            <th className="py-2 px-1">
+                                                              Qty
+                                                            </th>
+                                                            <th className="py-2 px-1">
+                                                              Subtotal
+                                                            </th>
+                                                          </tr>
+                                                        </thead>
+                                                        <tbody className="divide-y divide-gray-200">
+                                                          {calcResult.materials.map(
+                                                            (
+                                                              m: any,
+                                                              idx2: number
+                                                            ) => (
+                                                              <tr
+                                                                key={`${m.external_id}-${idx2}`}
+                                                              >
+                                                                <td className="py-3 px-1">
+                                                                  {m.name}
+                                                                </td>
+                                                                <td className="py-3 px-1">
+                                                                  $
+                                                                  {
+                                                                    m.cost_per_unit
+                                                                  }
+                                                                </td>
+                                                                <td className="py-3 px-1">
+                                                                  {m.quantity}
+                                                                </td>
+                                                                <td className="py-3 px-1">
+                                                                  ${m.cost}
+                                                                </td>
+                                                              </tr>
+                                                            )
+                                                          )}
+                                                        </tbody>
+                                                      </table>
+                                                    </div>
+                                                  )}
+                                              </div>
+                                            )}
                                           </>
                                         )}
                                       </div>
@@ -860,10 +1402,13 @@ export default function PackageServicesPage() {
             )}
           </div>
 
-          {/* RIGHT COLUMN: summary of selected services + house info */}
+          {/* RIGHT column => summary */}
           <div className="w-1/2 ml-auto pt-0 space-y-6">
-            <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden">
-              <SectionBoxSubtitle>Your {safePackage.title}</SectionBoxSubtitle>
+            {/* Summary Card */}
+            <div className="max-w-[500px] ml-auto bg-white p-4 rounded-lg border border-gray-300 overflow-hidden">
+              <SectionBoxSubtitle>
+                Your {chosenPackage.title}
+              </SectionBoxSubtitle>
 
               {Object.keys(mergedSelected).length === 0 ? (
                 <div className="text-left text-gray-500 text-medium mt-4">
@@ -872,58 +1417,66 @@ export default function PackageServicesPage() {
               ) : (
                 <>
                   <p className="text-gray-700 mb-4">
-                    These are the services you selected, grouped by section &amp; category:
+                    These are the services you selected, grouped by section
+                    &amp; category:
                   </p>
 
+                  {/* Build a local summary structure */}
                   <div className="space-y-6">
-                    {Object.entries(summaryStructure).map(([sectionName, cats]) => {
-                      if (!Object.keys(cats).length) return null;
-                      return (
-                        <div key={sectionName}>
-                          <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                            {sectionName}
-                          </h3>
+                    {Object.entries(summaryStructure).map(
+                      ([sectionName, cats]) => {
+                        if (!Object.keys(cats).length) return null;
+                        return (
+                          <div key={sectionName}>
+                            <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                              {sectionName}
+                            </h3>
+                            {Object.entries(cats).map(([catId, arr]) => {
+                              const catObj = ALL_CATEGORIES.find(
+                                (c) => c.id === catId
+                              );
+                              const catName = catObj ? catObj.title : catId;
+                              if (!arr.length) return null;
 
-                          {Object.entries(cats).map(([catId, arr]) => {
-                            const catObj = ALL_CATEGORIES.find((c) => c.id === catId);
-                            const catName = catObj ? catObj.title : catId;
-                            if (!arr.length) return null;
-
-                            return (
-                              <div key={catId} className="ml-4 mb-4">
-                                <h4 className="text-lg font-medium text-gray-700 mb-2">
-                                  {catName}
-                                </h4>
-                                <ul className="space-y-1">
-                                  {arr.map(({ svcObj, qty }) => (
-                                    <li
-                                      key={svcObj.id}
-                                      className="flex justify-between items-center text-sm text-gray-600"
-                                    >
-                                      <span className="truncate w-1/2 pr-2">
-                                        {svcObj.title}
-                                      </span>
-                                      <span>
-                                        {qty} x ${formatWithSeparator(svcObj.price)}
-                                      </span>
-                                      <span className="text-right w-1/4">
-                                        ${formatWithSeparator(svcObj.price * qty)}
-                                      </span>
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      );
-                    })}
+                              return (
+                                <div key={catId} className="ml-4 mb-4">
+                                  <h4 className="text-lg font-medium text-gray-700 mb-2">
+                                    {catName}
+                                  </h4>
+                                  <ul className="space-y-1">
+                                    {arr.map(({ svcObj, qty }) => {
+                                      const cost = serviceCosts[svcObj.id] || 0;
+                                      return (
+                                        <li
+                                          key={svcObj.id}
+                                          className="flex justify-between items-center text-sm text-gray-600"
+                                        >
+                                          <span className="truncate w-1/2 pr-2">
+                                            {svcObj.title}
+                                          </span>
+                                          <span>
+                                            {qty} {svcObj.unit_of_measurement}
+                                          </span>
+                                          <span className="text-right w-1/4">
+                                            ${formatWithSeparator(cost)}
+                                          </span>
+                                        </li>
+                                      );
+                                    })}
+                                  </ul>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        );
+                      }
+                    )}
                   </div>
 
-                  {/* Price totals */}
+                  {/* Price total */}
                   <div className="flex flex-col gap-2 items-end mt-6">
                     <div className="flex justify-between w-full">
-                      <span className="text-2xl font-semibold text-gray-800">
+                      <span className="text-2xl font-semibold text-gray-700">
                         Annual price:
                       </span>
                       <span className="text-2xl font-semibold text-blue-600">
@@ -931,7 +1484,7 @@ export default function PackageServicesPage() {
                       </span>
                     </div>
                     <div className="flex justify-between w-full">
-                      <span className="text-lg font-medium text-gray-700">
+                      <span className="text-lg font-medium text-gray-600">
                         Monthly payment:
                       </span>
                       <span className="text-lg font-medium text-blue-600">
@@ -943,14 +1496,12 @@ export default function PackageServicesPage() {
               )}
             </div>
 
-            {/* House info summary */}
-            <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden">
+            {/* House info */}
+            <div className="max-w-[500px] ml-auto bg-white p-4 rounded-lg border border-gray-300 overflow-hidden">
               <SectionBoxSubtitle>Home Details</SectionBoxSubtitle>
-
               <div className="mt-2 space-y-1 text-sm text-gray-700">
                 <p>
-                  <strong>Address:</strong>{" "}
-                  {houseInfo.addressLine ? houseInfo.addressLine : "N/A"}
+                  <strong>Address:</strong> {houseInfo.addressLine || "N/A"}
                 </p>
                 <p>
                   <strong>City / Zip:</strong> {houseInfo.city || "?"},{" "}
@@ -960,9 +1511,9 @@ export default function PackageServicesPage() {
                   <strong>Country:</strong> {houseInfo.country || "?"}
                 </p>
                 <hr className="my-2" />
-
                 <p>
-                  <strong>House Type:</strong> {formatHouseType(houseInfo.houseType)}
+                  <strong>House Type:</strong>{" "}
+                  {formatHouseType(houseInfo.houseType)}
                 </p>
                 <p>
                   <strong>Floors:</strong> {houseInfo.floors}
@@ -990,7 +1541,6 @@ export default function PackageServicesPage() {
                     : "No / None"}
                 </p>
                 <hr className="my-2" />
-
                 <p>
                   <strong>Garage:</strong>{" "}
                   {houseInfo.hasGarage ? houseInfo.garageCount : "No"}

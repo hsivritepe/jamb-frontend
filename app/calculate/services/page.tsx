@@ -11,55 +11,47 @@ import { ChevronDown } from "lucide-react";
 import { useLocation } from "@/context/LocationContext";
 import { ALL_CATEGORIES } from "@/constants/categories";
 
-/**
- * Saves a value to sessionStorage as JSON (only works in the browser).
- */
-const saveToSession = (key: string, value: any) => {
-  if (typeof window !== "undefined") {
-    sessionStorage.setItem(key, JSON.stringify(value));
-  }
-};
+// Address and Photos components
+import AddressSection from "@/components/ui/AddressSection";
+import PhotosAndDescription from "@/components/ui/PhotosAndDescription";
 
-/**
- * Loads a JSON-parsed value from sessionStorage or returns defaultValue if none/SSR/parse error.
- */
-const loadFromSession = (key: string, defaultValue: any) => {
-  if (typeof window === "undefined") return defaultValue;
-  const savedValue = sessionStorage.getItem(key);
-  try {
-    return savedValue ? JSON.parse(savedValue) : defaultValue;
-  } catch (error) {
-    console.error(`Error parsing sessionStorage for key "${key}"`, error);
-    return defaultValue;
-  }
-};
+// Unified session utilities
+import { setSessionItem, getSessionItem } from "@/utils/session";
 
 export default function Services() {
   const router = useRouter();
   const { location } = useLocation();
 
-  // Load previously chosen "sections" (like Electrical, Plumbing, etc.)
-  const selectedSections: string[] = loadFromSession("services_selectedSections", []);
-
-  // If no sections are chosen, redirect back
+  // 1) Load chosen "sections" from session
+  const selectedSections: string[] = getSessionItem("services_selectedSections", []);
   useEffect(() => {
     if (selectedSections.length === 0) {
       router.push("/calculate");
     }
   }, [selectedSections, router]);
 
-  // Load states from session
+  // 2) Various states restored from session
   const [searchQuery, setSearchQuery] = useState<string>(
-    loadFromSession("services_searchQuery", "")
+    getSessionItem("services_searchQuery", "")
   );
-  const [address, setAddress] = useState<string>(loadFromSession("address", ""));
+  const [address, setAddress] = useState<string>(
+    getSessionItem("address", "")
+  );
+  const [zip, setZip] = useState<string>(
+    getSessionItem("zip", "")
+  );
+  const [stateName, setStateName] = useState<string>(
+    getSessionItem("stateName", "")
+  );
   const [description, setDescription] = useState<string>(
-    loadFromSession("description", "")
+    getSessionItem("description", "")
   );
-  const [photos, setPhotos] = useState<string[]>(loadFromSession("photos", []));
+  const [photos, setPhotos] = useState<string[]>(
+    getSessionItem("photos", [])
+  );
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
 
-  // Build map: section -> categories, from ALL_CATEGORIES
+  // 3) Build a map: section -> categories
   const categoriesBySection: Record<string, { id: string; title: string }[]> = {};
   ALL_CATEGORIES.forEach((cat) => {
     if (!categoriesBySection[cat.section]) {
@@ -68,12 +60,11 @@ export default function Services() {
     categoriesBySection[cat.section].push({ id: cat.id, title: cat.title });
   });
 
-  // Initialize selectedCategories from session or from selectedSections
-  const storedSelectedCategories = loadFromSession("selectedCategoriesMap", null);
+  // 4) Restore selected categories from session
+  const storedSelectedCategories = getSessionItem("selectedCategoriesMap", null);
   const initialSelectedCategories: Record<string, string[]> =
     storedSelectedCategories ||
     (() => {
-      // If none stored, create empty arrays for each section
       const init: Record<string, string[]> = {};
       selectedSections.forEach((section) => {
         init[section] = [];
@@ -81,136 +72,130 @@ export default function Services() {
       return init;
     })();
 
-  const [selectedCategories, setSelectedCategories] = useState<
+  const [selectedCategoriesMap, setSelectedCategoriesMap] = useState<
     Record<string, string[]>
   >(initialSelectedCategories);
 
-  // Save changes to session
-  useEffect(() => saveToSession("services_searchQuery", searchQuery), [searchQuery]);
-  useEffect(() => saveToSession("address", address), [address]);
-  useEffect(() => saveToSession("description", description), [description]);
-  useEffect(() => saveToSession("photos", photos), [photos]);
-  useEffect(
-    () => saveToSession("selectedCategoriesMap", selectedCategories),
-    [selectedCategories]
-  );
+  // 5) Persist states to session
+  useEffect(() => setSessionItem("services_searchQuery", searchQuery), [searchQuery]);
+  useEffect(() => setSessionItem("address", address), [address]);
+  useEffect(() => setSessionItem("zip", zip), [zip]);
+  useEffect(() => setSessionItem("stateName", stateName), [stateName]);
+  useEffect(() => setSessionItem("description", description), [description]);
+  useEffect(() => setSessionItem("photos", photos), [photos]);
+  useEffect(() => setSessionItem("selectedCategoriesMap", selectedCategoriesMap), [selectedCategoriesMap]);
 
-  // Filter categories by search query, but only within the sections user selected
+  // 6) Combine address/state/zip into one string
+  useEffect(() => {
+    const combined = [address, stateName, zip].filter(Boolean).join(", ");
+    setSessionItem("fullAddress", combined);
+  }, [address, stateName, zip]);
+
+  // 7) Filter categories by search query
   const filteredCategoriesBySection = Object.fromEntries(
     selectedSections.map((section) => {
       const allCats = categoriesBySection[section] || [];
       const filtered = searchQuery
-        ? allCats.filter((c) =>
-            c.title.toLowerCase().includes(searchQuery.toLowerCase())
+        ? allCats.filter((cat) =>
+            cat.title.toLowerCase().includes(searchQuery.toLowerCase())
           )
         : allCats;
       return [section, filtered];
     })
   ) as Record<string, { id: string; title: string }[]>;
 
-  // Track which sections are expanded/collapsed
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
-
-  /**
-   * Toggle expand/collapse for a given section
-   */
-  const toggleCategory = (section: string) => {
-    setExpandedCategories((prev) => {
+  // Expand/collapse sections
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
+  const toggleSection = (section: string) => {
+    setExpandedSections((prev) => {
       const next = new Set(prev);
-      if (next.has(section)) {
-        next.delete(section);
-      } else {
-        next.add(section);
-      }
+      next.has(section) ? next.delete(section) : next.add(section);
       return next;
     });
   };
 
-  /**
-   * Toggle a specific category in a given section
-   */
+  // Handle category toggle
   const handleCategorySelect = (section: string, catId: string) => {
-    setSelectedCategories((prev) => {
-      const currentCatIds = prev[section] || [];
-      const isSelected = currentCatIds.includes(catId);
-
-      // Clear any warning
-      if (!isSelected) setWarningMessage(null);
-
+    setSelectedCategoriesMap((prev) => {
+      const current = prev[section] || [];
+      const isSelected = current.includes(catId);
+      if (!isSelected) {
+        setWarningMessage(null);
+      }
       return {
         ...prev,
         [section]: isSelected
-          ? currentCatIds.filter((id) => id !== catId)
-          : [...currentCatIds, catId],
+          ? current.filter((id) => id !== catId)
+          : [...current, catId],
       };
     });
   };
 
-  /**
-   * Confirm and clear all selected categories; also reset expandedCategories
-   */
+  // Clear all selections
   const handleClearSelection = () => {
-    // Show a confirmation prompt:
     const userConfirmed = window.confirm(
-      "Are you sure you want to clear all selections? This will also collapse all categories."
+      "Are you sure you want to clear all selections? This will also collapse all sections."
     );
-    if (!userConfirmed) {
-      return;
-    }
+    if (!userConfirmed) return;
 
-    // If confirmed, reset everything
     const cleared: Record<string, string[]> = {};
     selectedSections.forEach((section) => {
       cleared[section] = [];
     });
-    setSelectedCategories(cleared);
-
-    // Reset expanded categories
-    setExpandedCategories(new Set());
+    setSelectedCategoriesMap(cleared);
+    setExpandedSections(new Set());
   };
 
-  /**
-   * Proceed to next step: validate user input, then store final arrays
-   */
+  // Next step
   const handleNext = () => {
-    const totalChosen = Object.values(selectedCategories).flat().length;
+    const totalChosen = Object.values(selectedCategoriesMap).flat().length;
     if (totalChosen === 0) {
       setWarningMessage("Please select at least one category before proceeding.");
       return;
     }
     if (!address.trim()) {
-      setWarningMessage("Please enter your address before proceeding.");
+      setWarningMessage("Please enter your city name before proceeding.");
+      return;
+    }
+    if (!stateName.trim()) {
+      setWarningMessage("Please enter your state before proceeding.");
+      return;
+    }
+    if (!zip.trim()) {
+      setWarningMessage("Please enter your ZIP code before proceeding.");
       return;
     }
 
-    // Flatten all chosen category IDs
-    const chosenCategoryIDs = Object.values(selectedCategories).flat();
-    saveToSession("services_selectedCategories", chosenCategoryIDs);
+    // Flatten user's final chosen categories
+    const chosenCategoryIDs = Object.values(selectedCategoriesMap).flat();
+    setSessionItem("services_selectedCategories", chosenCategoryIDs);
 
-    // Move to details page
     router.push("/calculate/details");
   };
 
-  // Handle address changes
+  // Address handlers
   const handleAddressChange = (e: ChangeEvent<HTMLInputElement>) => {
     setAddress(e.target.value);
   };
-
-  // Handle additional description changes
-  const handleDescriptionChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
-    setDescription(e.target.value);
+  const handleZipChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setZip(e.target.value);
+  };
+  const handleStateChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setStateName(e.target.value);
   };
 
-  // Attempt to auto-fill address from geolocation
+  // "Use My Location"
   const handleUseMyLocation = () => {
-    if (location?.city && location?.zip) {
-      setAddress(`${location.city}, ${location.zip}, ${location.country || ""}`);
+    if (location?.city && location?.zip && location?.state) {
+      setAddress(location.city);
+      setStateName(location.state);
+      setZip(location.zip);
     } else {
       setWarningMessage("Location data is unavailable. Please enter manually.");
     }
   };
 
-  // Remove one photo from state
+  // Photo removal (optional, if you handle it that way)
   const handleRemovePhoto = (index: number) => {
     setPhotos((prev) => prev.filter((_, i) => i !== index));
   };
@@ -218,10 +203,8 @@ export default function Services() {
   return (
     <main className="min-h-screen pt-24 pb-16">
       <div className="container mx-auto">
-        {/* Breadcrumb navigation */}
         <BreadCrumb items={CALCULATE_STEPS} />
 
-        {/* Page title & Next button */}
         <div className="flex justify-between items-start mt-8">
           <SectionBoxTitle>Select Your Categories</SectionBoxTitle>
           <Button onClick={handleNext}>Next →</Button>
@@ -255,14 +238,13 @@ export default function Services() {
           {warningMessage && <p className="text-red-500">{warningMessage}</p>}
         </div>
 
-        {/* Main content */}
-        <div className="flex container mx-auto relative">
-          {/* Left side: sections & categories */}
+        <div className="container mx-auto flex mt-8">
+          {/* Left side: selected sections with categories */}
           <div className="flex-1">
             <div className="flex flex-col gap-3 mt-5 w-full max-w-[600px]">
               {selectedSections.map((section) => {
                 const allCats = filteredCategoriesBySection[section] || [];
-                const selectedCount = (selectedCategories[section] || []).length;
+                const selectedCount = (selectedCategoriesMap[section] || []).length;
 
                 return (
                   <div
@@ -272,7 +254,7 @@ export default function Services() {
                     }`}
                   >
                     <button
-                      onClick={() => toggleCategory(section)}
+                      onClick={() => toggleSection(section)}
                       className="flex justify-between items-center w-full"
                     >
                       <h3
@@ -289,12 +271,12 @@ export default function Services() {
                       </h3>
                       <ChevronDown
                         className={`h-5 w-5 transform transition-transform ${
-                          expandedCategories.has(section) ? "rotate-180" : ""
+                          expandedSections.has(section) ? "rotate-180" : ""
                         }`}
                       />
                     </button>
 
-                    {expandedCategories.has(section) && (
+                    {expandedSections.has(section) && (
                       <div className="mt-4 flex flex-col gap-3">
                         {allCats.length === 0 ? (
                           <p className="text-sm text-gray-500">
@@ -303,15 +285,15 @@ export default function Services() {
                         ) : (
                           allCats.map((cat) => {
                             const isSelected =
-                              selectedCategories[section]?.includes(cat.id) ||
-                              false;
+                              selectedCategoriesMap[section]?.includes(cat.id) || false;
                             return (
-                              <div key={cat.id} className="flex justify-between items-center">
+                              <div
+                                key={cat.id}
+                                className="flex justify-between items-center"
+                              >
                                 <span
                                   className={`text-lg transition-colors duration-300 ${
-                                    isSelected
-                                      ? "text-blue-600"
-                                      : "text-gray-800"
+                                    isSelected ? "text-blue-600" : "text-gray-800"
                                   }`}
                                 >
                                   {cat.title}
@@ -320,9 +302,7 @@ export default function Services() {
                                   <input
                                     type="checkbox"
                                     checked={isSelected}
-                                    onChange={() =>
-                                      handleCategorySelect(section, cat.id)
-                                    }
+                                    onChange={() => handleCategorySelect(section, cat.id)}
                                     className="sr-only peer"
                                   />
                                   <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
@@ -340,95 +320,24 @@ export default function Services() {
             </div>
           </div>
 
-          {/* Right side: Address & Photos */}
+          {/* Right side: address, photos, description */}
           <div className="w-1/2 ml-auto mt-4 pt-0">
-            <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mb-6">
-              <h2 className="text-2xl font-medium text-gray-800 mb-4">
-                We Need Your Address
-              </h2>
-              <div className="flex flex-col gap-4">
-                <input
-                  type="text"
-                  value={address}
-                  onChange={handleAddressChange}
-                  onFocus={(e) => (e.target.placeholder = "")}
-                  onBlur={(e) => (e.target.placeholder = "Enter your address")}
-                  placeholder="Enter your address"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <button onClick={handleUseMyLocation} className="text-blue-600 text-left">
-                  Use my location
-                </button>
-              </div>
-            </div>
+            <AddressSection
+              address={address}
+              onAddressChange={handleAddressChange}
+              zip={zip}
+              onZipChange={handleZipChange}
+              stateName={stateName}
+              onStateChange={handleStateChange}
+              onUseMyLocation={handleUseMyLocation}
+            />
 
-            <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden">
-              <h2 className="text-2xl font-medium text-gray-800 mb-4">
-                Upload Photos & Description
-              </h2>
-              <div className="flex flex-col gap-4">
-                <div>
-                  <label
-                    htmlFor="photo-upload"
-                    className="block w-full px-4 py-2 text-center bg-blue-500 text-white rounded-md cursor-pointer hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                  >
-                    Choose Files
-                  </label>
-                  <input
-                    type="file"
-                    id="photo-upload"
-                    accept="image/*"
-                    multiple
-                    onChange={(e) => {
-                      const files = Array.from(e.target.files || []);
-                      if (files.length > 12 || photos.length + files.length > 12) {
-                        alert("You can upload up to 12 photos total.");
-                        e.target.value = "";
-                        return;
-                      }
-                      const fileUrls = files.map((file) =>
-                        URL.createObjectURL(file)
-                      );
-                      setPhotos((prev) => [...prev, ...fileUrls]);
-                    }}
-                    className="hidden"
-                  />
-                  <p className="text-sm text-gray-500 mt-1">
-                    Maximum 12 images. Supported formats: JPG, PNG.
-                  </p>
-
-                  <div className="mt-4 grid grid-cols-3 gap-4">
-                    {photos.map((photo, index) => (
-                      <div key={index} className="relative group">
-                        <img
-                          src={photo}
-                          alt={`Uploaded preview ${index + 1}`}
-                          className="w-full h-24 object-cover rounded-md border border-gray-300"
-                        />
-                        <button
-                          onClick={() => handleRemovePhoto(index)}
-                          className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                          aria-label="Remove photo"
-                        >
-                          <span className="text-sm">✕</span>
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <textarea
-                    id="details"
-                    rows={5}
-                    value={description}
-                    onChange={handleDescriptionChange}
-                    placeholder="Please provide more details about your issue (optional)..."
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  ></textarea>
-                </div>
-              </div>
-            </div>
+            <PhotosAndDescription
+              photos={photos}
+              description={description}
+              onSetPhotos={setPhotos}
+              onSetDescription={setDescription}
+            />
           </div>
         </div>
       </div>

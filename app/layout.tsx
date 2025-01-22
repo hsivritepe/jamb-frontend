@@ -8,6 +8,7 @@ import { LocationProvider } from '@/context/LocationContext';
 const manrope = Manrope({
     subsets: ['latin'],
     weight: ['400', '500', '600', '700'],
+    preload: false, // remove error while the resource was preloaded using link preload but not used within a few seconds
 });
 
 export const metadata = {
