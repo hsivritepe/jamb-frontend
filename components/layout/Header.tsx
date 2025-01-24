@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, ChevronDown } from "lucide-react";
+import { Menu, X, ChevronDown, User } from "lucide-react";
 import { NavigationItem } from "@/types/common";
 import { useLocation } from "@/context/LocationContext";
 import PreferencesModal from "@/components/ui/PreferencesModal";
@@ -28,18 +28,14 @@ const languageMap: Record<string, string> = {
   IND: "IND",
   TUR: "TUR",
   KOR: "KOR",
-  POR: "POR"
-
+  POR: "POR",
 };
 
-// Helper function to truncate text if it exceeds a maximum length
+// Helper to truncate text if it exceeds max length
 function truncateText(text: string, maxLength: number) {
   return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
 }
 
-/**
- * Utility functions to parse the city and state from the Google Geocoding "address_components".
- */
 function parseCityFromComponents(components: any[]): string {
   let cityObj = components.find((c: any) => c.types.includes("locality"));
   if (cityObj) return cityObj.long_name;
@@ -65,18 +61,22 @@ export default function Header() {
   // LOCATION from our custom context
   const { location, setLocation } = useLocation();
 
+  // For demonstration, let's say we have a boolean for auth state:
+  // In a real project, you'd get this from an AuthContext, Redux, or check a token
+  const isLoggedIn = false;
+
   // Location modal state
   const [showLocationModal, setShowLocationModal] = useState(false);
   const locationModalRef = useRef<HTMLDivElement>(null);
 
-  // Local state for manual city/zip/state input
+  // State for manual city/zip/state input
   const [manualLocation, setManualLocation] = useState({
     city: "",
     zip: "",
     state: "",
   });
 
-  // Preferences modal state (не трогаем!)
+  // Preferences modal state
   const [showPreferencesModal, setShowPreferencesModal] = useState(false);
   const preferencesModalRef = useRef<HTMLDivElement>(null);
 
@@ -84,13 +84,11 @@ export default function Header() {
   const [selectedLanguage, setSelectedLanguage] = useState("ENG");
   const [selectedUnit, setSelectedUnit] = useState("Feet");
   const [selectedCurrency, setSelectedCurrency] = useState("US");
+
   const languages = Object.keys(languageMap);
   const units = ["Feet", "Meters"];
   const currencies = ["US", "CAD", "GBP", "EUR", "JPY", "CNY"];
 
-  /**
-   * Saves user preferences (language, units, currency).
-   */
   const handlePreferencesSave = () => {
     console.log("Saved preferences:", {
       language: selectedLanguage,
@@ -103,9 +101,6 @@ export default function Header() {
   const pathname = usePathname();
   const isEmergencyActive = pathname.startsWith("/emergency");
 
-  /**
-   * Called when the user clicks "Save" in the location modal.
-   */
   const handleManualLocationSave = () => {
     const newLoc = {
       city: manualLocation.city || "City",
@@ -113,7 +108,6 @@ export default function Header() {
       country: "United States",
       state: manualLocation.state || "",
     };
-
     setLocation(newLoc);
     localStorage.setItem("userLocation", JSON.stringify(newLoc));
     setShowLocationModal(false);
@@ -127,7 +121,7 @@ export default function Header() {
       const data = await response.json();
       const city = data.city || "City";
       const zip = data.postal || "00000";
-      const st = data.region_code || ""; // ipapi.co can provide state code (e.g. CA)
+      const st = data.region_code || "";
 
       setManualLocation({ city, zip, state: st });
       setLocation({ city, zip, state: st, country: data.country_name || "USA" });
@@ -179,9 +173,6 @@ export default function Header() {
     setManualLocation({ city: "", zip: "", state: "" });
   };
 
-  /**
-   * Closes modals if user clicks outside of them.
-   */
   const handleOutsideClick = (e: MouseEvent) => {
     if (
       showLocationModal &&
@@ -281,9 +272,30 @@ export default function Header() {
                   onClick={() => setShowPreferencesModal(true)}
                   className="w-[80px] inline-flex items-center justify-between gap-1 text-gray-700 bg-[rgba(0,0,0,0.03)] px-3 py-2 rounded-lg transition-colors duration-200 hover:bg-[rgba(0,0,0,0.08)]"
                 >
-                  <span className="truncate">{languageMap[selectedLanguage] ?? "English"}</span>
+                  <span className="truncate">
+                    {languageMap[selectedLanguage] ?? "ENG"}
+                  </span>
                   <ChevronDown className="w-4 h-4 shrink-0" />
                 </button>
+
+                {/* Personal Account icon / link */}
+                {isLoggedIn ? (
+                  <Link
+                    href="/account"
+                    className="text-gray-700 hover:text-blue-600"
+                    title="Go to your account"
+                  >
+                    <User className="w-5 h-5" />
+                  </Link>
+                ) : (
+                  <Link
+                    href="/login"
+                    className="text-gray-700 hover:text-blue-600"
+                    title="Login / Register"
+                  >
+                    <User className="w-5 h-5" />
+                  </Link>
+                )}
               </div>
 
               {/* Mobile menu button */}
@@ -342,15 +354,40 @@ export default function Header() {
                   {/* Preferences link for mobile */}
                   <button
                     className="w-[110px] inline-flex items-center justify-between gap-1 text-gray-700 
-                    bg-[rgba(0,0,0,0.03)] px-3 py-2 rounded-lg hover:bg-[rgba(0,0,0,0.08)]"
+                      bg-[rgba(0,0,0,0.03)] px-3 py-2 rounded-lg hover:bg-[rgba(0,0,0,0.08)]"
                     onClick={() => {
                       setIsMobileMenuOpen(false);
                       setShowPreferencesModal(true);
                     }}
                   >
-                    <span className="truncate">{languageMap[selectedLanguage] ?? "English"}</span>
+                    <span className="truncate">
+                      {languageMap[selectedLanguage] ?? "ENG"}
+                    </span>
                     <ChevronDown className="w-4 h-4 shrink-0" />
                   </button>
+
+                  {/* Personal Account link for mobile */}
+                  {isLoggedIn ? (
+                    <Link
+                      href="/account"
+                      className="text-gray-700 hover:text-blue-600 flex items-center gap-2"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      title="Go to your account"
+                    >
+                      <User className="w-5 h-5" />
+                      <span>My Account</span>
+                    </Link>
+                  ) : (
+                    <Link
+                      href="/login"
+                      className="text-gray-700 hover:text-blue-600 flex items-center gap-2"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      title="Login / Register"
+                    >
+                      <User className="w-5 h-5" />
+                      <span>Login</span>
+                    </Link>
+                  )}
                 </div>
               </div>
             )}
@@ -358,7 +395,7 @@ export default function Header() {
         </div>
       </header>
 
-      {/* LOCATION MODAL*/}
+      {/* LOCATION MODAL */}
       {showLocationModal && (
         <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-[9999]">
           <div
@@ -368,8 +405,7 @@ export default function Header() {
             <h2 className="text-xl font-semibold mb-4 text-gray-800">
               Set Your Location
             </h2>
-
-            {/* City field */}
+            {/* City */}
             <label
               htmlFor="city-input"
               className="block text-left text-sm font-medium text-gray-600 mb-1"
@@ -387,8 +423,7 @@ export default function Header() {
               }
               className="w-full max-w-[360px] p-3 mb-4 border border-gray-300 rounded-lg text-base"
             />
-
-            {/* ZIP field */}
+            {/* ZIP */}
             <label
               htmlFor="zip-input"
               className="block text-left text-sm font-medium text-gray-600 mb-1"
@@ -406,8 +441,7 @@ export default function Header() {
               }
               className="w-full max-w-[360px] p-3 mb-4 border border-gray-300 rounded-lg text-base"
             />
-
-            {/* State (short code) */}
+            {/* State */}
             <label
               htmlFor="state-input"
               className="block text-left text-sm font-medium text-gray-600 mb-1"
@@ -433,21 +467,18 @@ export default function Header() {
               >
                 Auto
               </button>
-
               <button
                 className="flex-1 p-3 font-medium border rounded-lg bg-green-100 text-green-700 border-green-300 hover:bg-green-200"
                 onClick={handleZipLookup}
               >
                 ZIP
               </button>
-
               <button
                 className="flex-1 p-3 font-medium border rounded-lg bg-red-100 text-red-700 border-red-300 hover:bg-red-200"
                 onClick={handleClearLocation}
               >
                 Clear
               </button>
-
               <button
                 className="flex-1 p-3 font-medium border-none rounded-lg bg-blue-600 text-white hover:bg-blue-700"
                 onClick={handleManualLocationSave}
