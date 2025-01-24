@@ -10,7 +10,7 @@ import { SectionBoxSubtitle } from "@/components/ui/SectionBoxSubtitle";
 import { taxRatesUSA } from "@/constants/taxRatesUSA";
 import { taxRatesCanada } from "@/constants/taxRatesCanada";
 
-// If you have your new session utility:
+// New session utility
 import { getSessionItem, setSessionItem } from "@/utils/session";
 
 /** Safely parse a string to a number. If invalid, return 0. */
@@ -184,9 +184,9 @@ export default function PackagesDetailsHomePage() {
     }));
   }
 
-  // We'll show the US states if user selected "USA"
+  // US states if user selected "USA"
   const isUS = houseInfo.country === "USA";
-  // We'll show the provinces if user selected "Canada"
+  // Provinces if user selected "Canada"
   const isCanada = houseInfo.country === "Canada";
 
   return (

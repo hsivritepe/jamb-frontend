@@ -8,8 +8,8 @@ import { SectionBoxSubtitle } from "@/components/ui/SectionBoxSubtitle";
 import { EMERGENCY_SERVICES } from "@/constants/emergency";
 import { ALL_SERVICES } from "@/constants/services";
 import ServiceTimePicker from "@/components/ui/ServiceTimePicker";
-import { useLocation } from "@/context/LocationContext"; // for userState
-import { taxRatesUSA } from "@/constants/taxRatesUSA"; // table with { state, combinedStateAndLocalTaxRate }[]
+import { useLocation } from "@/context/LocationContext";
+import { taxRatesUSA } from "@/constants/taxRatesUSA";
 
 // session utils
 import { getSessionItem, setSessionItem } from "@/utils/session";
@@ -43,7 +43,7 @@ export default function EmergencyEstimate() {
 
   // Grab the userState from location context if available
   const { location } = useLocation();
-  const userState = location?.state || ""; // e.g. "Texas", "California", etc.
+  const userState = location?.state || "";
 
   // Track the user-selected time and its coefficient (no modal needed now)
   const [selectedTime, setSelectedTime] = useState<string | null>(() =>

@@ -239,7 +239,7 @@ export default function PrintServicesEstimate() {
     };
   }, [estimateNumber]);
 
-  // We'll also build a materials breakdown, plus labor-by-section
+  // Materials breakdown, plus labor-by-section
   interface MaterialSpec {
     name: string;
     totalQuantity: number;

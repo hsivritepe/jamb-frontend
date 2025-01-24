@@ -7,7 +7,7 @@ import { SectionBoxSubtitle } from "@/components/ui/SectionBoxSubtitle";
 import { CALCULATE_STEPS } from "@/constants/navigation";
 import { ALL_CATEGORIES } from "@/constants/categories";
 import { ALL_SERVICES } from "@/constants/services";
-import ServiceTimePicker from "@/components/ui/ServiceTimePicker"; // We'll embed the component on the right
+import ServiceTimePicker from "@/components/ui/ServiceTimePicker";
 import { useLocation } from "@/context/LocationContext"; 
 import { taxRatesUSA } from "@/constants/taxRatesUSA";
 import { setSessionItem, getSessionItem } from "@/utils/session";

@@ -14,7 +14,7 @@ import { ChevronDown } from "lucide-react";
 import { SectionBoxTitle } from "@/components/ui/SectionBoxTitle";
 import { useLocation } from "@/context/LocationContext";
 
-// New imports from your session utils
+// New imports from session utils
 import {
   setSessionItem,
   getSessionItem,
@@ -104,7 +104,6 @@ export default function EmergencyServices() {
 
   /**
    * Combine address, stateName, and zip into a single "fullAddress" in session
-   * This is optional.
    */
   useEffect(() => {
     const combinedAddress = [address, stateName, zip].filter(Boolean).join(", ");
@@ -198,7 +197,7 @@ export default function EmergencyServices() {
 
   /**
    * Use location context to fill address fields if available
-   * You could combine city + state + zip into a single address, if preferred
+   * Combine city + state + zip into a single address, if preferred
    */
   const handleUseMyLocation = () => {
     if (location?.city && location?.state && location?.zip) {

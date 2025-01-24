@@ -7,7 +7,7 @@ import ActionIconsBar from "@/components/ui/ActionIconsBar";
 import { SectionBoxTitle } from "@/components/ui/SectionBoxTitle";
 import { SectionBoxSubtitle } from "@/components/ui/SectionBoxSubtitle";
 import { EMERGENCY_STEPS } from "@/constants/navigation";
-import { EMERGENCY_SERVICES } from "@/constants/emergency"; // For matching categories
+import { EMERGENCY_SERVICES } from "@/constants/emergency";
 import { ALL_SERVICES } from "@/constants/services";
 
 // session utils

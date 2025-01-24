@@ -108,7 +108,7 @@ async function fetchFinishingMaterials(workCode: string) {
   return res.json();
 }
 
-/** Calculate cost breakdown (POST /calculate). */
+/** Calculate cost breakdown (POST /calculate) */
 async function calculatePrice(params: {
   work_code: string;
   zipcode: string;
