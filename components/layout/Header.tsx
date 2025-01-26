@@ -55,21 +55,124 @@ function parseStateFromComponents(components: any[]): string {
   return stateObj?.short_name || "??";
 }
 
+/**
+ * Subcomponent for mobile menu logic
+ * It receives all necessary props from the parent (Header).
+ */
+function MobileNav({
+  isMobileMenuOpen,
+  setIsMobileMenuOpen,
+  navigation,
+  pathname,
+  languageMap,
+  selectedLanguage,
+  setShowPreferencesModal,
+  isLoggedIn,
+}: {
+  isMobileMenuOpen: boolean;
+  setIsMobileMenuOpen: (arg0: boolean) => void;
+  navigation: NavigationItem[];
+  pathname: string;
+  languageMap: Record<string, string>;
+  selectedLanguage: string;
+  setShowPreferencesModal: (arg0: boolean) => void;
+  isLoggedIn: boolean;
+}) {
+  // If the mobile menu is not open, simply return null (no rendering)
+  if (!isMobileMenuOpen) return null;
+
+  return (
+    <div className="lg:hidden py-4 px-6 border-t">
+      <div className="flex flex-col gap-4 items-center text-center">
+        {navigation.map((item) => {
+          const isActive = pathname.startsWith(item.href);
+          return (
+            <Link
+              key={item.name}
+              href={item.href}
+              className={`font-medium transition-colors duration-200 ${
+                isActive
+                  ? "text-blue-600"
+                  : "text-gray-700 hover:text-blue-600"
+              }`}
+              prefetch={false}
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              {item.name}
+            </Link>
+          );
+        })}
+
+        {/* Emergency link for mobile/tablet */}
+        <Link
+          href="/emergency"
+          prefetch={false}
+          className={`flex items-center gap-2 font-medium text-gray-700 ${
+            pathname.startsWith("/emergency")
+              ? "text-red-600 font-semibold"
+              : "border-transparent"
+          }`}
+          onClick={() => setIsMobileMenuOpen(false)}
+        >
+          Emergency
+        </Link>
+
+        {/* Preferences link for mobile/tablet */}
+        <button
+          className="w-[110px] inline-flex items-center justify-between gap-1 text-gray-700 
+            bg-[rgba(0,0,0,0.03)] px-3 py-2 rounded-lg hover:bg-[rgba(0,0,0,0.08)]"
+          onClick={() => {
+            setIsMobileMenuOpen(false);
+            setShowPreferencesModal(true);
+          }}
+        >
+          <span className="truncate">
+            {languageMap[selectedLanguage] ?? "ENG"}
+          </span>
+          <ChevronDown className="w-4 h-4 shrink-0" />
+        </button>
+
+        {/* Personal Account link for mobile/tablet */}
+        {isLoggedIn ? (
+          <Link
+            href="/account"
+            className="text-gray-700 hover:text-blue-600 flex items-center gap-2"
+            onClick={() => setIsMobileMenuOpen(false)}
+            title="Go to your account"
+          >
+            <User className="w-5 h-5" />
+            <span>My Account</span>
+          </Link>
+        ) : (
+          <Link
+            href="/login"
+            className="text-gray-700 hover:text-blue-600 flex items-center gap-2"
+            onClick={() => setIsMobileMenuOpen(false)}
+            title="Login / Register"
+          >
+            <User className="w-5 h-5" />
+            <span>Login</span>
+          </Link>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // LOCATION from our custom context
   const { location, setLocation } = useLocation();
 
-  // For demonstration, let's say we have a boolean for auth state:
-  // In a real project, you'd get this from an AuthContext, Redux, or check a token
+  // Example: auth state
   const isLoggedIn = false;
 
   // Location modal state
   const [showLocationModal, setShowLocationModal] = useState(false);
   const locationModalRef = useRef<HTMLDivElement>(null);
 
-  // State for manual city/zip/state input
+  // Manual city/zip/state input
   const [manualLocation, setManualLocation] = useState({
     city: "",
     zip: "",
@@ -89,6 +192,7 @@ export default function Header() {
   const units = ["Feet", "Meters"];
   const currencies = ["US", "CAD", "GBP", "EUR", "JPY", "CNY"];
 
+  // Save preferences
   const handlePreferencesSave = () => {
     console.log("Saved preferences:", {
       language: selectedLanguage,
@@ -101,6 +205,7 @@ export default function Header() {
   const pathname = usePathname();
   const isEmergencyActive = pathname.startsWith("/emergency");
 
+  // Save location manually
   const handleManualLocationSave = () => {
     const newLoc = {
       city: manualLocation.city || "City",
@@ -113,6 +218,7 @@ export default function Header() {
     setShowLocationModal(false);
   };
 
+  // Auto-fill user location
   const handleAutoFill = async () => {
     try {
       const response = await fetch("https://ipapi.co/json/");
@@ -136,6 +242,7 @@ export default function Header() {
     }
   };
 
+  // ZIP lookup with Google Maps API
   const handleZipLookup = async () => {
     if (!manualLocation.zip.trim()) {
       alert("Please enter a ZIP code");
@@ -169,10 +276,12 @@ export default function Header() {
     }
   };
 
+  // Clear location input
   const handleClearLocation = () => {
     setManualLocation({ city: "", zip: "", state: "" });
   };
 
+  // Close modals if clicked outside
   const handleOutsideClick = (e: MouseEvent) => {
     if (
       showLocationModal &&
@@ -209,30 +318,53 @@ export default function Header() {
             <div className="flex justify-between items-center h-16 px-6">
               {/* Logo */}
               <Link href="/" prefetch={false} className="flex-shrink-0">
-                <img src="/images/logo.png" alt="Jamb" className="h-8 w-auto" />
+                {/* 
+                  phone < 768px => h-6
+                  tablet ≥768px => h-7
+                  desktop ≥1024px => h-8
+                */}
+                <img
+                  src="/images/logo.png"
+                  alt="Jamb"
+                  className="h-6 w-auto md:h-7 lg:h-8 mr-4"
+                />
               </Link>
 
-              {/* Location: city, zip, state */}
+              {/* Location block */}
               <div
-                className="flex flex-col items-start w-[220px] overflow-hidden text-ellipsis whitespace-normal"
+                className="
+                  flex flex-col items-start
+                  w-[160px]
+                  sm:w-[220px]
+                  overflow-hidden text-ellipsis whitespace-normal
+                "
                 title="Click to change location"
               >
-                <span className="text-sm font-medium text-gray-500">
+                <span className="text-xs font-medium text-gray-500 sm:text-sm">
                   Are you here?
                 </span>
                 <strong
                   onClick={() => setShowLocationModal(true)}
-                  className="text-[1.15rem] font-medium text-black cursor-pointer transition-colors duration-200 hover:text-blue-600"
+                  className="
+                    text-sm
+                    font-medium 
+                    text-black 
+                    cursor-pointer 
+                    transition-colors 
+                    duration-200 
+                    hover:text-blue-600 
+                    sm:text-[1.15rem]
+                  "
                 >
                   {truncateText(location.city, 10)}, {location.state ?? "--"},{" "}
                   {truncateText(location.zip, 10)}
                 </strong>
               </div>
 
-              {/* Desktop navigation */}
-              <div className="hidden md:flex items-center gap-8">
+              {/* Desktop navigation (≥1024px) */}
+              <div className="hidden lg:flex items-center gap-8 mx-2">
                 {navigation.map((item) => {
-                  const isActive = usePathname().startsWith(item.href);
+                  const isActive = pathname.startsWith(item.href);
                   return (
                     <Link
                       key={item.name}
@@ -250,15 +382,15 @@ export default function Header() {
                 })}
               </div>
 
-              {/* Right side of the header */}
-              <div className="hidden md:flex items-center gap-4">
+              {/* Right side of the header (desktop) */}
+              <div className="hidden lg:flex items-center gap-4">
                 {/* Emergency link */}
                 <Link
                   href="/emergency"
                   prefetch={false}
                   className={`flex items-center gap-2 text-red-600 font-medium px-4 py-2 rounded-lg 
                     transition-colors duration-200 bg-red-50 hover:bg-red-100 border-2 ${
-                      usePathname().startsWith("/emergency")
+                      pathname.startsWith("/emergency")
                         ? "border-red-600"
                         : "border-transparent"
                     }`}
@@ -278,7 +410,7 @@ export default function Header() {
                   <ChevronDown className="w-4 h-4 shrink-0" />
                 </button>
 
-                {/* Personal Account icon / link */}
+                {/* Personal Account icon/link */}
                 {isLoggedIn ? (
                   <Link
                     href="/account"
@@ -298,8 +430,8 @@ export default function Header() {
                 )}
               </div>
 
-              {/* Mobile menu button */}
-              <div className="md:hidden">
+              {/* Mobile/Tablet menu button (<1024px) */}
+              <div className="lg:hidden">
                 <button
                   onClick={() => setIsMobileMenuOpen((prev) => !prev)}
                   className="text-gray-700 p-2"
@@ -313,84 +445,17 @@ export default function Header() {
               </div>
             </div>
 
-            {/* Mobile navigation */}
-            {isMobileMenuOpen && (
-              <div className="md:hidden py-4 px-6 border-t">
-                <div className="flex flex-col gap-4">
-                  {navigation.map((item) => {
-                    const isActive = usePathname().startsWith(item.href);
-                    return (
-                      <Link
-                        key={item.name}
-                        href={item.href}
-                        className={`font-medium transition-colors duration-200 ${
-                          isActive
-                            ? "text-blue-600"
-                            : "text-gray-700 hover:text-blue-600"
-                        }`}
-                        prefetch={false}
-                        onClick={() => setIsMobileMenuOpen(false)}
-                      >
-                        {item.name}
-                      </Link>
-                    );
-                  })}
-
-                  {/* Emergency link for mobile */}
-                  <Link
-                    href="/emergency"
-                    prefetch={false}
-                    className={`flex items-center gap-2 text-red-600 font-medium border-2 ${
-                      usePathname().startsWith("/emergency")
-                        ? "border-red-600"
-                        : "border-transparent"
-                    }`}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    <span>🚨</span>
-                    Emergency
-                  </Link>
-
-                  {/* Preferences link for mobile */}
-                  <button
-                    className="w-[110px] inline-flex items-center justify-between gap-1 text-gray-700 
-                      bg-[rgba(0,0,0,0.03)] px-3 py-2 rounded-lg hover:bg-[rgba(0,0,0,0.08)]"
-                    onClick={() => {
-                      setIsMobileMenuOpen(false);
-                      setShowPreferencesModal(true);
-                    }}
-                  >
-                    <span className="truncate">
-                      {languageMap[selectedLanguage] ?? "ENG"}
-                    </span>
-                    <ChevronDown className="w-4 h-4 shrink-0" />
-                  </button>
-
-                  {/* Personal Account link for mobile */}
-                  {isLoggedIn ? (
-                    <Link
-                      href="/account"
-                      className="text-gray-700 hover:text-blue-600 flex items-center gap-2"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      title="Go to your account"
-                    >
-                      <User className="w-5 h-5" />
-                      <span>My Account</span>
-                    </Link>
-                  ) : (
-                    <Link
-                      href="/login"
-                      className="text-gray-700 hover:text-blue-600 flex items-center gap-2"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      title="Login / Register"
-                    >
-                      <User className="w-5 h-5" />
-                      <span>Login</span>
-                    </Link>
-                  )}
-                </div>
-              </div>
-            )}
+            {/* Mobile/Tablet navigation */}
+            <MobileNav
+              isMobileMenuOpen={isMobileMenuOpen}
+              setIsMobileMenuOpen={setIsMobileMenuOpen}
+              navigation={navigation}
+              pathname={pathname}
+              languageMap={languageMap}
+              selectedLanguage={selectedLanguage}
+              setShowPreferencesModal={setShowPreferencesModal}
+              isLoggedIn={isLoggedIn}
+            />
           </nav>
         </div>
       </header>
@@ -400,7 +465,18 @@ export default function Header() {
         <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-[9999]">
           <div
             ref={locationModalRef}
-            className="bg-white p-8 rounded-xl shadow-lg max-w-[400px] w-[90%] text-center"
+            className="
+              bg-white 
+              rounded-xl 
+              shadow-lg 
+              w-[90%]
+              max-w-[90%]
+              p-4 
+              text-center
+              sm:p-6 
+              md:p-8
+              md:max-w-[500px]
+            "
           >
             <h2 className="text-xl font-semibold mb-4 text-gray-800">
               Set Your Location
@@ -421,7 +497,7 @@ export default function Header() {
               onChange={(e) =>
                 setManualLocation({ ...manualLocation, city: e.target.value })
               }
-              className="w-full max-w-[360px] p-3 mb-4 border border-gray-300 rounded-lg text-base"
+              className="w-full p-3 mb-4 border border-gray-300 rounded-lg text-base"
             />
             {/* ZIP */}
             <label
@@ -439,7 +515,7 @@ export default function Header() {
               onChange={(e) =>
                 setManualLocation({ ...manualLocation, zip: e.target.value })
               }
-              className="w-full max-w-[360px] p-3 mb-4 border border-gray-300 rounded-lg text-base"
+              className="w-full p-3 mb-4 border border-gray-300 rounded-lg text-base"
             />
             {/* State */}
             <label
@@ -457,7 +533,7 @@ export default function Header() {
               onChange={(e) =>
                 setManualLocation({ ...manualLocation, state: e.target.value })
               }
-              className="w-full max-w-[360px] p-3 mb-4 border border-gray-300 rounded-lg text-base"
+              className="w-full p-3 mb-4 border border-gray-300 rounded-lg text-base"
             />
 
             <div className="flex flex-wrap justify-between gap-4 mt-6">
