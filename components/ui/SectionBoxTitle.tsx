@@ -1,17 +1,22 @@
 interface SectionBoxTitleProps {
     children: React.ReactNode;
     className?: string;
-}
-
-export function SectionBoxTitle({
+  }
+  
+  export function SectionBoxTitle({
     children,
-    className = '',
-}: SectionBoxTitleProps) {
+    className = "",
+  }: SectionBoxTitleProps) {
     return (
-        <h1
-            className={`text-5xl leading-snug font-semibold text-left mb-3 ${className}`}
-        >
-            {children}
-        </h1>
+      <h1
+        className={`
+          text-3xl leading-snug        /* base: phones */
+          md:text-5xl md:leading-snug  /* md: tablets/desktops */
+          font-semibold text-left mb-3
+          ${className}
+        `}
+      >
+        {children}
+      </h1>
     );
-}
+  }

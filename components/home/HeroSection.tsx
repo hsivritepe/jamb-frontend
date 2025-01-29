@@ -12,7 +12,7 @@ export default function HeroSection() {
   const [results, setResults] = useState<typeof ALL_SEARCH_ITEMS>([]);
   const router = useRouter();
 
-  // Filter items as user types
+  // Filter items as the user types in the search input
   useEffect(() => {
     const query = searchQuery.trim().toLowerCase();
     if (!query) {
@@ -36,14 +36,14 @@ export default function HeroSection() {
     }
   }
 
-  // If there are any search results, we scale the image a bit
+  // If we have results, we'll slightly scale the image
   const hasResults = results.length > 0;
 
   return (
     <section className="pt-4">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">       
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
         {/* Left column */}
-        <div className="bg-white rounded-2xl p-8 flex flex-col justify-between">
+        <div className="bg-white rounded-2xl p-8 flex flex-col justify-between text-sm md:text-base">
           <div>
             <SectionBoxTitle>
               Smart Estimates,
@@ -61,7 +61,7 @@ export default function HeroSection() {
             onChange={(e: ChangeEvent<HTMLInputElement>) =>
               setSearchQuery(e.target.value)
             }
-            placeholder="Search for any service, room, or package..."
+            placeholder="Search for any service, room or package"
           />
 
           {results.length > 0 && (
@@ -85,8 +85,8 @@ export default function HeroSection() {
           )}
         </div>
 
-        {/* Right column*/}
-        <div className="bg-white rounded-2xl overflow-hidden flex min-h-[500px]">
+        {/* Right column (hidden on phones, visible from 768px+) */}
+        <div className="hidden md:flex bg-white rounded-2xl overflow-hidden min-h-[500px]">
           <img
             src="/images/hero-service-professional.jpg"
             alt="Professional service provider"
