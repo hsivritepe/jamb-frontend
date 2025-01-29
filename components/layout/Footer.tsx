@@ -46,6 +46,13 @@ const aboutLinks = [
   // "Become a pro" might be a separate link
 ];
 
+/**
+ * Footer component:
+ * - We only changed the bottom section for tablets (768px–1023px) 
+ *   so elements go in two lines (flex-col).
+ * - For desktop (≥1024px), they're in one line (flex-row).
+ * - For phones (<768px), also in a column by default.
+ */
 export default function Footer() {
   return (
     <footer className="border-t max-w-7xl mx-auto px-4 py-4">
@@ -129,20 +136,26 @@ export default function Footer() {
         </div>
 
         {/* Bottom section */}
-        <div className="mt-12 flex flex-col md:flex-row justify-between items-center border-t pt-8">
-          <div className="flex flex-col md:flex-row items-center gap-2">
+        <div className="mt-12 flex flex-col lg:flex-row justify-between items-center border-t pt-8">
+          {/*
+            First row (phone/tablet => flex-col, desktop => flex-row)
+          */}
+          <div className="flex flex-col lg:flex-row items-center gap-2">
             <span className="text-gray-500">We're Here to Help</span>
-            <a href="tel:+14374601830" className="text-xl font-medium">
+            <a href="tel:+14374601830" className="text-xl font-medium my-2">
               +1 437 460 18 30
             </a>
           </div>
-          <div className="flex flex-col md:flex-row items-center gap-2 text-gray-500">
+
+          {/*
+            Second row (phone/tablet => flex-col, desktop => flex-row)
+          */}
+          <div className="flex flex-col lg:flex-row items-center gap-2 text-gray-500 mt-4 lg:mt-0">
             <span>© 2024-25 Jamb. All Rights Reserved.</span>
             <span>Use of this site is subject to certain</span>
             <Link href="#" className="text-blue-600 hover:text-blue-700">
               Terms Of Use
             </Link>
-            <span>.</span>
           </div>
         </div>
       </div>

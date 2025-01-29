@@ -109,8 +109,8 @@ export function BoxPrice({
                 <SectionBoxSubtitle>
                     From{' '}
                     {numericAmount.toLocaleString('en-US', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
                     })}{' '}
                     $
                 </SectionBoxSubtitle>
@@ -120,8 +120,8 @@ export function BoxPrice({
             </div>
             <div className={cn('text-md', variants[variant])}>
                 {(numericAmount * 12).toLocaleString('en-US', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0,
                 })}{' '}
                 ${' '}
                 <span className={cn(variants[variant])}>/ year</span>
