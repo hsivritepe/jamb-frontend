@@ -7,16 +7,13 @@ interface PhotosAndDescriptionProps {
   description: string;
   onSetPhotos: React.Dispatch<React.SetStateAction<string[]>>;
   onSetDescription: React.Dispatch<React.SetStateAction<string>>;
-  className?: string; 
+  className?: string;
 }
 
 /**
- * A reusable PhotosAndDescription block. 
- * 
- * It displays:
- *  - A "Choose Files" button to upload multiple images
- *  - A grid of previews with a remove button on each
- *  - A textarea for user-provided details
+ * A reusable PhotosAndDescription:
+ * - Phones/tablets (<1280px): w-full.
+ * - Desktops (≥1280px): old style "max-w-[500px] ml-auto".
  */
 export default function PhotosAndDescription({
   photos,
@@ -25,10 +22,8 @@ export default function PhotosAndDescription({
   onSetDescription,
   className,
 }: PhotosAndDescriptionProps) {
-  // Handler for file input
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    // Restrict total number of photos to 12
     if (files.length > 12 || photos.length + files.length > 12) {
       alert("You can upload up to 12 photos total.");
       e.target.value = "";
@@ -38,16 +33,18 @@ export default function PhotosAndDescription({
     onSetPhotos((prev) => [...prev, ...fileUrls]);
   };
 
-  // Handler for removing a single photo from the array
   const handleRemovePhoto = (index: number) => {
     onSetPhotos((prev) => prev.filter((_, i) => i !== index));
   };
 
   return (
     <div
-      className={`max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden ${
-        className ? className : ""
-      }`}
+      className={`
+        w-full
+        xl:max-w-[500px] xl:ml-auto
+        bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden
+        ${className || ""}
+      `}
     >
       <h2 className="text-2xl font-medium text-gray-800 mb-4">
         Upload Photos &amp; Description
@@ -58,7 +55,8 @@ export default function PhotosAndDescription({
         <div>
           <label
             htmlFor="photo-upload"
-            className="block w-full px-4 py-2 text-center bg-blue-500 text-white rounded-md cursor-pointer hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className="block w-full px-4 py-2 text-center bg-blue-500 text-white rounded-md 
+                       cursor-pointer hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400"
           >
             Choose Files
           </label>
@@ -75,7 +73,6 @@ export default function PhotosAndDescription({
             Maximum 12 images. Supported formats: JPG, PNG.
           </p>
 
-          {/* Preview of uploaded photos */}
           <div className="mt-4 grid grid-cols-3 gap-4">
             {photos.map((photo, index) => (
               <div key={index} className="relative group">
@@ -98,10 +95,9 @@ export default function PhotosAndDescription({
           </div>
         </div>
 
-        {/* Textarea for additional details */}
+        {/* Textarea */}
         <div>
           <textarea
-            id="details"
             rows={5}
             value={description}
             onChange={(e) => onSetDescription(e.target.value)}

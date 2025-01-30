@@ -30,28 +30,20 @@ export default function Services() {
     }
   }, [selectedSections, router]);
 
-  // 2) Various states restored from session
+  // 2) Various states
   const [searchQuery, setSearchQuery] = useState<string>(
     getSessionItem("services_searchQuery", "")
   );
-  const [address, setAddress] = useState<string>(
-    getSessionItem("address", "")
-  );
-  const [zip, setZip] = useState<string>(
-    getSessionItem("zip", "")
-  );
-  const [stateName, setStateName] = useState<string>(
-    getSessionItem("stateName", "")
-  );
+  const [address, setAddress] = useState<string>(getSessionItem("address", ""));
+  const [zip, setZip] = useState<string>(getSessionItem("zip", ""));
+  const [stateName, setStateName] = useState<string>(getSessionItem("stateName", ""));
   const [description, setDescription] = useState<string>(
     getSessionItem("description", "")
   );
-  const [photos, setPhotos] = useState<string[]>(
-    getSessionItem("photos", [])
-  );
+  const [photos, setPhotos] = useState<string[]>(getSessionItem("photos", []));
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
 
-  // 3) Build a map: section -> categories
+  // Build categories map
   const categoriesBySection: Record<string, { id: string; title: string }[]> = {};
   ALL_CATEGORIES.forEach((cat) => {
     if (!categoriesBySection[cat.section]) {
@@ -60,7 +52,7 @@ export default function Services() {
     categoriesBySection[cat.section].push({ id: cat.id, title: cat.title });
   });
 
-  // 4) Restore selected categories from session
+  // Restore selected categories
   const storedSelectedCategories = getSessionItem("selectedCategoriesMap", null);
   const initialSelectedCategories: Record<string, string[]> =
     storedSelectedCategories ||
@@ -76,22 +68,25 @@ export default function Services() {
     Record<string, string[]>
   >(initialSelectedCategories);
 
-  // 5) Persist states to session
+  // Persist states to session
   useEffect(() => setSessionItem("services_searchQuery", searchQuery), [searchQuery]);
   useEffect(() => setSessionItem("address", address), [address]);
   useEffect(() => setSessionItem("zip", zip), [zip]);
   useEffect(() => setSessionItem("stateName", stateName), [stateName]);
   useEffect(() => setSessionItem("description", description), [description]);
   useEffect(() => setSessionItem("photos", photos), [photos]);
-  useEffect(() => setSessionItem("selectedCategoriesMap", selectedCategoriesMap), [selectedCategoriesMap]);
+  useEffect(
+    () => setSessionItem("selectedCategoriesMap", selectedCategoriesMap),
+    [selectedCategoriesMap]
+  );
 
-  // 6) Combine address/state/zip into one string
+  // Combine address
   useEffect(() => {
     const combined = [address, stateName, zip].filter(Boolean).join(", ");
     setSessionItem("fullAddress", combined);
   }, [address, stateName, zip]);
 
-  // 7) Filter categories by search query
+  // Filter categories by search query
   const filteredCategoriesBySection = Object.fromEntries(
     selectedSections.map((section) => {
       const allCats = categoriesBySection[section] || [];
@@ -104,7 +99,7 @@ export default function Services() {
     })
   ) as Record<string, { id: string; title: string }[]>;
 
-  // Expand/collapse sections
+  // Expand/collapse
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
   const toggleSection = (section: string) => {
     setExpandedSections((prev) => {
@@ -114,14 +109,12 @@ export default function Services() {
     });
   };
 
-  // Handle category toggle
+  // Category toggle
   const handleCategorySelect = (section: string, catId: string) => {
     setSelectedCategoriesMap((prev) => {
       const current = prev[section] || [];
       const isSelected = current.includes(catId);
-      if (!isSelected) {
-        setWarningMessage(null);
-      }
+      if (!isSelected) setWarningMessage(null);
       return {
         ...prev,
         [section]: isSelected
@@ -131,7 +124,7 @@ export default function Services() {
     });
   };
 
-  // Clear all selections
+  // Clear all
   const handleClearSelection = () => {
     const userConfirmed = window.confirm(
       "Are you sure you want to clear all selections? This will also collapse all sections."
@@ -166,7 +159,6 @@ export default function Services() {
       return;
     }
 
-    // Flatten user's final chosen categories
     const chosenCategoryIDs = Object.values(selectedCategoriesMap).flat();
     setSessionItem("services_selectedCategories", chosenCategoryIDs);
 
@@ -195,7 +187,7 @@ export default function Services() {
     }
   };
 
-  // Photo removal (optional, if you handle it that way)
+  // Photo removal
   const handleRemovePhoto = (index: number) => {
     setPhotos((prev) => prev.filter((_, i) => i !== index));
   };
@@ -205,13 +197,32 @@ export default function Services() {
       <div className="container mx-auto">
         <BreadCrumb items={CALCULATE_STEPS} />
 
-        <div className="flex justify-between items-start mt-8">
-          <SectionBoxTitle>Select Your Categories</SectionBoxTitle>
-          <Button onClick={handleNext}>Next →</Button>
+        {/* 
+          1) Phone (<768px): title & button in column, button on the right 
+             => use "flex-col" + "items-end" for phone
+          2) Tablet (≥768px) and Desktop => keep them in row (justify-between?)
+             => "md:flex-row"
+        */}
+        <div className="mt-8">
+          <div className="flex flex-col md:flex-row justify-between gap-2">
+            {/* 
+              For phone => full width
+              We'll place button on the right using "self-end" 
+              so that it's at the right edge of its own line.
+            */}
+            <SectionBoxTitle className="flex-shrink-0">Select Your Categories</SectionBoxTitle>
+
+            <div className="flex flex-col items-end md:items-center md:flex-row md:justify-end">
+              {/* On phone => .items-end puts the button to the right edge in its column */}
+              <Button onClick={handleNext} className="mt-2 md:mt-0">
+                Next →
+              </Button>
+            </div>
+          </div>
         </div>
 
-        {/* Search bar */}
-        <div className="flex flex-col gap-4 mt-8 w-full max-w-[600px]">
+        {/* Search bar => full width for phone/tablet */}
+        <div className="flex flex-col gap-4 mt-8 w-full">
           <SearchServices
             value={searchQuery}
             onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
@@ -238,10 +249,15 @@ export default function Services() {
           {warningMessage && <p className="text-red-500">{warningMessage}</p>}
         </div>
 
-        <div className="container mx-auto flex mt-8">
-          {/* Left side: selected sections with categories */}
-          <div className="flex-1">
-            <div className="flex flex-col gap-3 mt-5 w-full max-w-[600px]">
+        {/**
+         * 2) For tablets => right side at full width => "md:w-full"
+         *  For phones => also w-full
+         *  For desktops => keep old "lg or xl" logic if needed
+         */}
+        <div className="container mx-auto flex flex-col xl:flex-row mt-8 gap-6">
+          {/* Left side: w-full for phone/tablet, side-by-side only on xl */}
+          <div className="w-full xl:flex-1">
+            <div className="flex flex-col gap-3">
               {selectedSections.map((section) => {
                 const allCats = filteredCategoriesBySection[section] || [];
                 const selectedCount = (selectedCategoriesMap[section] || []).length;
@@ -320,8 +336,10 @@ export default function Services() {
             </div>
           </div>
 
-          {/* Right side: address, photos, description */}
-          <div className="w-1/2 ml-auto mt-4 pt-0">
+          {/* Right side: address, photos => phone & tablet => full width => "md:w-full" 
+             desktop => "xl:w-1/2" 
+          */}
+          <div className="w-full md:w-full xl:w-1/2">
             <AddressSection
               address={address}
               onAddressChange={handleAddressChange}

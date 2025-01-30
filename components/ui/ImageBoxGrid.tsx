@@ -9,23 +9,23 @@ interface Item {
   image: string;
   url: string;
   subcategories: string[];
-  isSelected: boolean; // New prop for selection state
+  isSelected: boolean; // Whether this item is selected
 }
 
 interface ImageBoxGridProps {
   items: Item[];
-  onSectionClick: (sectionId: string) => void; // Callback for section click
+  onSectionClick: (sectionId: string) => void; // Callback for click
   showCount?: boolean;
-  moreText?: string; // Prop to customize "more" text
+  moreText?: string;
 }
 
 /**
  * ImageBoxGrid:
- * - For phone (<768px):
- *   1) 2 columns (instead of 1).
- *   2) Remove side margins (mx-0), no max width.
- *   3) Smaller fonts in the card: text-xl => phone, text-2xl => md.
- *   4) Subcategories: text-xs => phone, text-sm => md.
+ * - phone (<768px): 2 columns, no margins
+ * - tablet (≥768px): 3 columns
+ * - desktop (≥1024px): 4 columns
+ * - For selection: smaller "scale-105" so they don't collide
+ * - Also changed gap-3 => gap-4 to add spacing
  */
 export function ImageBoxGrid({
   items,
@@ -36,17 +36,16 @@ export function ImageBoxGrid({
   return (
     <div
       className="
-        /* 2 columns on phone (<768px), 
-           3 columns from md: (≥768px), 
-           4 columns from lg: (≥1024px) */
-        grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3
+        /* 2 columns on phone, 3 on md, 4 on lg */
+        grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 
+        gap-5
       "
     >
       {items.map((item) => (
         <div
           key={item.id}
           className={`
-            relative group w-full mx-0 /* no side margins on phone */
+            relative group w-full mx-0
             rounded-xl cursor-pointer
             ${
               item.isSelected
@@ -55,7 +54,7 @@ export function ImageBoxGrid({
             }
             transition-all
           `}
-          onClick={() => onSectionClick(item.id)} // Handle click
+          onClick={() => onSectionClick(item.id)}
         >
           <div className="relative overflow-hidden rounded-lg aspect-square w-full">
             {/* Service image */}
@@ -66,16 +65,16 @@ export function ImageBoxGrid({
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               className={`
                 object-cover transition-transform
-                ${item.isSelected ? "scale-110" : "group-hover:scale-105"}
+                ${
+                  item.isSelected
+                    ? "scale-105"      /* less aggressive scale on selected */
+                    : "group-hover:scale-105"
+                }
               `}
             />
 
             {/* Title overlay */}
             <div className="absolute inset-x-0 top-0 p-4 bg-gradient-to-b from-black/50 to-transparent">
-              {/**
-               * text-xl on phones (<768px), 
-               * text-2xl from md: up
-               */}
               <h3
                 className="
                   font-medium text-white
@@ -108,14 +107,8 @@ export function ImageBoxGrid({
                     textShadow: "1px 1px 3px rgba(0, 0, 0, 0.8)",
                   }}
                 >
-                  {/**
-                   * text-xs on phones, text-sm on md:
-                   */}
                   {item.subcategories.slice(0, 6).map((sub, idx) => (
-                    <div
-                      key={idx}
-                      className="text-xs md:text-sm line-clamp-1"
-                    >
+                    <div key={idx} className="text-xs md:text-sm line-clamp-1">
                       {sub}
                     </div>
                   ))}
