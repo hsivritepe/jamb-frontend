@@ -15,6 +15,7 @@ import { ChevronDown } from "lucide-react";
 import { setSessionItem, getSessionItem } from "@/utils/session";
 import RecommendedActivities from "@/components/RecommendedActivities";
 
+/** Interface describing finishing materials returned by /work/finishing_materials. */
 interface FinishingMaterial {
   id: number;
   image?: string;
@@ -24,7 +25,7 @@ interface FinishingMaterial {
   cost: string;
 }
 
-/** Helper to format numbers with commas and two decimals. */
+/** Formats numeric values with commas and two decimals. */
 function formatWithSeparator(value: number): string {
   return new Intl.NumberFormat("en-US", { minimumFractionDigits: 2 }).format(value);
 }
@@ -73,7 +74,7 @@ async function calculatePrice(params: {
   return res.json();
 }
 
-/** Simple image component for a service ID. */
+/** Simple image component for a service ID, adapted for responsiveness up to 1280px. */
 function ServiceImage({ serviceId }: { serviceId: string }) {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
 
@@ -87,25 +88,26 @@ function ServiceImage({ serviceId }: { serviceId: string }) {
   if (!imageSrc) return null;
 
   return (
-    <Image
-      src={imageSrc}
-      alt="Service"
-      width={600}
-      height={400}
-      className="w-full h-full object-cover"
-    />
+    <div className="mb-2 border rounded overflow-hidden w-full">
+      <Image
+        src={imageSrc}
+        alt="Service"
+        width={600}
+        height={400}
+        className="w-full h-auto object-cover"
+      />
+    </div>
   );
 }
 
 /**
- * The main "Details" page component, which uses
- * `RecommendedActivities` for the right-side recommended items.
+ * The main "Details" page component
  */
 export default function Details() {
   const router = useRouter();
   const { location } = useLocation();
 
-  // 1) Load from session
+  // Load from session
   const [selectedCategories, setSelectedCategories] = useState<string[]>(
     () => getSessionItem("services_selectedCategories", [])
   );
@@ -115,12 +117,13 @@ export default function Details() {
   const searchQuery = getSessionItem<string>("services_searchQuery", "");
 
   useEffect(() => {
+    // If no selected categories or no address => redirect
     if (selectedCategories.length === 0 || !address) {
       router.push("/calculate");
     }
   }, [selectedCategories, address, router]);
 
-  // Keep address updated if location changes
+  // Update address if location changes
   useEffect(() => {
     const newAddr = [location.city, location.state, location.zip, location.country]
       .filter(Boolean)
@@ -131,9 +134,7 @@ export default function Details() {
     }
   }, [location]);
 
-  // For warnings or errors
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
-  // For expand/collapse categories
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
   // Build categories by section
@@ -169,7 +170,7 @@ export default function Details() {
     return map;
   }, [selectedCategories, searchQuery]);
 
-  // 2) selectedServices => serviceId => quantity
+  // selectedServices => { [serviceId]: quantity }
   const [selectedServicesState, setSelectedServicesState] = useState<Record<string, number>>(
     () => getSessionItem("selectedServicesWithQuantity", {})
   );
@@ -177,36 +178,31 @@ export default function Details() {
     setSessionItem("selectedServicesWithQuantity", selectedServicesState);
   }, [selectedServicesState]);
 
-  // finishing materials => serviceId => data
+  // finishingMaterialsMapAll => data from /work/finishing_materials
   const [finishingMaterialsMapAll, setFinishingMaterialsMapAll] = useState<
     Record<string, { sections: Record<string, FinishingMaterial[]> }>
   >({});
-  // finishingMaterialSelections => serviceId => array of ext IDs
+
+  // finishingMaterialSelections => { [serviceId]: { [sectionName]: external_id } }
   const [finishingMaterialSelections, setFinishingMaterialSelections] = useState<
-    Record<string, string[]>
+    Record<string, Record<string, string>>
   >({});
 
-  // typed input => serviceId => string|null
   const [manualInputValue, setManualInputValue] = useState<Record<string, string | null>>({});
-  // cost => serviceId => number
   const [serviceCosts, setServiceCosts] = useState<Record<string, number>>({});
-  // breakdown => serviceId => data from /calculate
   const [calculationResultsMap, setCalculationResultsMap] = useState<Record<string, any>>({});
-  // expanded details => set of service IDs
   const [expandedServiceDetails, setExpandedServiceDetails] = useState<Set<string>>(new Set());
-  // user-owned => serviceId => set of external IDs
   const [clientOwnedMaterials, setClientOwnedMaterials] = useState<Record<string, Set<string>>>({});
 
-  // finishing-material modal
+  // modal for finishing material
   const [showModalServiceId, setShowModalServiceId] = useState<string | null>(null);
   const [showModalSectionName, setShowModalSectionName] = useState<string | null>(null);
 
-  // save breakdown to session
   useEffect(() => {
     setSessionItem("calculationResultsMap", calculationResultsMap);
   }, [calculationResultsMap]);
 
-  /** Expand/collapse a category => fetch finishing materials if expanded. */
+  // Expand/collapse a category => possibly fetch finishing materials
   function toggleCategory(catId: string) {
     setExpandedCategories((old) => {
       const next = new Set(old);
@@ -221,7 +217,7 @@ export default function Details() {
     });
   }
 
-  /** Toggle a service in the left side. */
+  // Toggle a service in the left side
   function handleServiceToggle(serviceId: string) {
     setSelectedServicesState((old) => {
       const isOn = old[serviceId] != null;
@@ -259,7 +255,6 @@ export default function Details() {
         const minQ = found?.min_quantity ?? 1;
         const newObj = { ...old, [serviceId]: minQ };
 
-        // ensure the typed input is a string, not undefined
         setManualInputValue((prev) => ({ ...prev, [serviceId]: String(minQ) }));
 
         ensureFinishingMaterialsLoaded(serviceId);
@@ -269,7 +264,7 @@ export default function Details() {
     setWarningMessage(null);
   }
 
-  /** +/- quantity on left side. */
+  // +/- quantity
   function handleQuantityChange(serviceId: string, increment: boolean, unit: string) {
     const found = ALL_SERVICES.find((x) => x.id === serviceId);
     if (!found) return;
@@ -290,11 +285,10 @@ export default function Details() {
       };
     });
 
-    // Clear typed input
     setManualInputValue((old) => ({ ...old, [serviceId]: null }));
   }
 
-  /** typed quantity on left side. */
+  // typed quantity
   function handleManualQuantityChange(serviceId: string, val: string, unit: string) {
     const found = ALL_SERVICES.find((x) => x.id === serviceId);
     if (!found) return;
@@ -317,14 +311,14 @@ export default function Details() {
     }));
   }
 
-  /** onBlur => if empty string => revert to numeric on next render. */
+  // onBlur => if empty => revert to numeric
   function handleBlurInput(serviceId: string) {
     if (!manualInputValue[serviceId]) {
       setManualInputValue((old) => ({ ...old, [serviceId]: null }));
     }
   }
 
-  /** Clear all selected services. */
+  // Clear all selected
   function clearAllSelections() {
     if (!window.confirm("Are you sure you want to clear all services?")) return;
 
@@ -338,7 +332,7 @@ export default function Details() {
     setClientOwnedMaterials({});
   }
 
-  /** Ensure finishing materials are loaded for a service. */
+  // Load finishing materials for a single service
   async function ensureFinishingMaterialsLoaded(serviceId: string) {
     try {
       if (!finishingMaterialsMapAll[serviceId]) {
@@ -347,16 +341,18 @@ export default function Details() {
         finishingMaterialsMapAll[serviceId] = data;
         setFinishingMaterialsMapAll({ ...finishingMaterialsMapAll });
       }
+      // Initialize finishingMaterialSelections[serviceId] if missing
       if (!finishingMaterialSelections[serviceId]) {
         const fmData = finishingMaterialsMapAll[serviceId];
         if (fmData?.sections) {
-          const picks: string[] = [];
-          for (const arr of Object.values(fmData.sections)) {
+          // we store an object keyed by each sectionName => external_id
+          const picksObj: Record<string, string> = {};
+          for (const [secName, arr] of Object.entries(fmData.sections)) {
             if (Array.isArray(arr) && arr.length > 0) {
-              picks.push(arr[0].external_id);
+              picksObj[secName] = arr[0].external_id;
             }
           }
-          finishingMaterialSelections[serviceId] = picks;
+          finishingMaterialSelections[serviceId] = picksObj;
           setFinishingMaterialSelections({ ...finishingMaterialSelections });
         }
       }
@@ -365,8 +361,10 @@ export default function Details() {
     }
   }
 
-  /** Fetch finishing materials for all services in a category. */
-  async function fetchFinishingMaterialsForCategory(servicesArr: (typeof ALL_SERVICES)[number][]) {
+  // Load finishing materials for all services in a category
+  async function fetchFinishingMaterialsForCategory(
+    servicesArr: (typeof ALL_SERVICES)[number][]
+  ) {
     try {
       await Promise.all(
         servicesArr.map(async (svc) => {
@@ -374,14 +372,18 @@ export default function Details() {
             const dot = convertServiceIdToApiFormat(svc.id);
             const data = await fetchFinishingMaterials(dot);
             finishingMaterialsMapAll[svc.id] = data;
+
+            // initialize picks if missing
             if (!finishingMaterialSelections[svc.id]) {
-              const picks: string[] = [];
-              for (const arr of Object.values(data.sections || {})) {
-                if (Array.isArray(arr) && arr.length > 0) {
-                  picks.push(arr[0].external_id);
+              if (data?.sections) {
+                const picksObj: Record<string, string> = {};
+                for (const [secName, arr] of Object.entries(data.sections)) {
+                  if (Array.isArray(arr) && arr.length > 0) {
+                    picksObj[secName] = arr[0].external_id;
+                  }
                 }
+                finishingMaterialSelections[svc.id] = picksObj;
               }
-              finishingMaterialSelections[svc.id] = picks;
             }
           }
         })
@@ -393,7 +395,7 @@ export default function Details() {
     }
   }
 
-  /** Recompute cost whenever user changes selected services or ZIP changes. */
+  // Recompute cost whenever user changes selected services or ZIP changes
   useEffect(() => {
     async function recalcAll() {
       const svcIds = Object.keys(selectedServicesState);
@@ -418,7 +420,10 @@ export default function Details() {
             await ensureFinishingMaterialsLoaded(svcId);
 
             const quantity = selectedServicesState[svcId];
-            const finishingIds = finishingMaterialSelections[svcId] || [];
+            // gather all external_id from finishingMaterialSelections[svcId] (by section)
+            const picksObj = finishingMaterialSelections[svcId] || {};
+            const finishingIds = Object.values(picksObj);
+
             const foundSvc = ALL_SERVICES.find((x) => x.id === svcId);
             if (!foundSvc) return;
 
@@ -448,12 +453,12 @@ export default function Details() {
     recalcAll();
   }, [selectedServicesState, finishingMaterialSelections, location]);
 
-  /** Summation of serviceCosts. */
+  // Summation of serviceCosts
   function calculateTotal() {
     return Object.values(serviceCosts).reduce((a, b) => a + b, 0);
   }
 
-  /** Next button => check if there's at least one service and an address. */
+  // Next button => check if there's at least one service and an address
   function handleNext() {
     if (Object.keys(selectedServicesState).length === 0) {
       setWarningMessage("Please select at least one service before proceeding.");
@@ -466,7 +471,7 @@ export default function Details() {
     router.push("/calculate/estimate");
   }
 
-  /** Toggle expanded service details on left side. */
+  // Toggle expanded service details
   function toggleServiceDetails(serviceId: string) {
     setExpandedServiceDetails((old) => {
       const copy = new Set(old);
@@ -479,8 +484,11 @@ export default function Details() {
     });
   }
 
-  /** Find finishing material object for cost breakdown. */
-  function findFinishingMaterialObj(serviceId: string, extId: string): FinishingMaterial | null {
+  // Find finishing material object
+  function findFinishingMaterialObj(
+    serviceId: string,
+    extId: string
+  ): FinishingMaterial | null {
     const data = finishingMaterialsMapAll[serviceId];
     if (!data) return null;
     for (const arr of Object.values(data.sections || {})) {
@@ -492,13 +500,15 @@ export default function Details() {
     return null;
   }
 
-  /** If user picks a different finishing item. */
-  function pickMaterial(serviceId: string, newExtId: string) {
-    finishingMaterialSelections[serviceId] = [newExtId];
+  // pick a new finishing material => finishingMaterialSelections[serviceId][sectionName] = externalId
+  function pickMaterial(serviceId: string, sectionName: string, externalId: string) {
+    const serviceObj = finishingMaterialSelections[serviceId] || {};
+    serviceObj[sectionName] = externalId;
+    finishingMaterialSelections[serviceId] = serviceObj;
     setFinishingMaterialSelections({ ...finishingMaterialSelections });
   }
 
-  /** If user owns the finishing item. */
+  // userHasOwnMaterial
   function userHasOwnMaterial(serviceId: string, extId: string) {
     if (!clientOwnedMaterials[serviceId]) {
       clientOwnedMaterials[serviceId] = new Set();
@@ -507,7 +517,7 @@ export default function Details() {
     setClientOwnedMaterials({ ...clientOwnedMaterials });
   }
 
-  /** Close finishing-material modal. */
+  // close modal
   function closeModal() {
     setShowModalServiceId(null);
     setShowModalSectionName(null);
@@ -521,13 +531,17 @@ export default function Details() {
 
       <div className="container mx-auto">
         {/* Top row */}
-        <div className="flex justify-between items-start mt-8">
-          <SectionBoxTitle>Choose a Service and Quantity</SectionBoxTitle>
-          <Button onClick={handleNext}>Next →</Button>
+        <div className="flex flex-col xl:flex-row justify-between items-start mt-8">
+          <div className="w-full xl:w-auto">
+            <SectionBoxTitle>Choose a Service and Quantity</SectionBoxTitle>
+          </div>
+          <div className="w-full xl:w-auto flex justify-end mt-2 xl:mt-0">
+            <Button onClick={handleNext}>Next →</Button>
+          </div>
         </div>
 
         {/* "No service?" + "Clear" */}
-        <div className="flex justify-between items-center text-sm text-gray-500 mt-8 w-full max-w-[600px]">
+        <div className="flex justify-between items-center text-sm text-gray-500 mt-8 w-full xl:max-w-[600px]">
           <span>
             No service?{" "}
             <a href="#" className="text-blue-600 hover:underline focus:outline-none">
@@ -544,13 +558,14 @@ export default function Details() {
           {warningMessage && <p className="text-red-500">{warningMessage}</p>}
         </div>
 
-        <div className="container mx-auto relative flex mt-8">
-          {/* LEFT column => categories + services */}
-          <div className="flex-1">
+        {/* Main layout */}
+        <div className="container mx-auto relative flex flex-col xl:flex-row mt-8">
+          {/* LEFT column */}
+          <div className="w-full xl:flex-1">
             {Object.entries(categoriesBySection).map(([sectionName, catIds]) => (
               <div key={sectionName} className="mb-8">
                 <SectionBoxSubtitle>{sectionName}</SectionBoxSubtitle>
-                <div className="flex flex-col gap-4 mt-4 w-full max-w-[600px]">
+                <div className="flex flex-col gap-4 mt-4 w-full xl:max-w-[600px]">
                   {catIds.map((catId) => {
                     const servicesArr = categoryServicesMap[catId] || [];
                     const selectedInCat = servicesArr.filter(
@@ -595,7 +610,6 @@ export default function Details() {
                             {servicesArr.map((svc) => {
                               const isSelected = selectedServicesState[svc.id] != null;
                               const q = selectedServicesState[svc.id] ?? svc.min_quantity ?? 1;
-                              // Ensure manual input is string or null
                               const rawVal = manualInputValue[svc.id] ?? null;
                               const displayVal = rawVal !== null ? rawVal : String(q);
 
@@ -628,13 +642,14 @@ export default function Details() {
                                   {isSelected && (
                                     <>
                                       <ServiceImage serviceId={svc.id} />
+
                                       {svc.description && (
                                         <p className="text-sm text-gray-500 pr-16">
                                           {svc.description}
                                         </p>
                                       )}
 
-                                      {/* Quantity input row */}
+                                      {/* Quantity row */}
                                       <div className="flex justify-between items-center">
                                         <div className="flex items-center gap-1">
                                           <button
@@ -688,23 +703,10 @@ export default function Details() {
                                           <span className="text-lg text-blue-600 font-medium text-right">
                                             ${formatWithSeparator(finalCost)}
                                           </span>
+                                          {/* Desktop "Details" */}
                                           <button
-                                            onClick={() => {
-                                              if (detailsExpanded) {
-                                                setExpandedServiceDetails((old) => {
-                                                  const copy = new Set(old);
-                                                  copy.delete(svc.id);
-                                                  return copy;
-                                                });
-                                              } else {
-                                                setExpandedServiceDetails((old) => {
-                                                  const copy = new Set(old);
-                                                  copy.add(svc.id);
-                                                  return copy;
-                                                });
-                                              }
-                                            }}
-                                            className={`text-blue-500 text-sm ml-2 ${
+                                            onClick={() => toggleServiceDetails(svc.id)}
+                                            className={`text-blue-500 text-sm ml-2 hidden xl:block ${
                                               detailsExpanded ? "" : "underline"
                                             }`}
                                           >
@@ -713,7 +715,19 @@ export default function Details() {
                                         </div>
                                       </div>
 
-                                      {/* If details expanded => cost breakdown */}
+                                      {/* Mobile "Details" button */}
+                                      <div className="mt-2 flex justify-end xl:hidden">
+                                        <button
+                                          onClick={() => toggleServiceDetails(svc.id)}
+                                          className={`text-blue-500 text-sm ${
+                                            detailsExpanded ? "" : "underline"
+                                          }`}
+                                        >
+                                          Details
+                                        </button>
+                                      </div>
+
+                                      {/* Cost breakdown */}
                                       {calcResult && detailsExpanded && (
                                         <div className="mt-4 p-4 bg-gray-50 border rounded">
                                           <h4 className="text-lg font-semibold text-gray-800 mb-3">
@@ -761,9 +775,10 @@ export default function Details() {
                                                           svc.id,
                                                           m.external_id
                                                         );
-                                                        const hasImage = fmObj?.image?.length
-                                                          ? true
-                                                          : false;
+                                                        const hasImage =
+                                                          fmObj?.image?.length
+                                                            ? true
+                                                            : false;
                                                         const isClientOwned =
                                                           clientOwnedMaterials[svc.id]?.has(
                                                             m.external_id
@@ -812,7 +827,7 @@ export default function Details() {
                                                                 }
                                                                 setShowModalServiceId(svc.id);
                                                                 setShowModalSectionName(
-                                                                  foundSection || null
+                                                                  foundSection
                                                                 );
                                                               }
                                                             }}
@@ -866,9 +881,9 @@ export default function Details() {
           </div>
 
           {/* RIGHT column => summary + recommended */}
-          <div className="w-1/2 ml-auto mt-14 pt-1">
+          <div className="w-full xl:w-1/2 xl:ml-auto mt-8 xl:mt-0">
             {/* Summary */}
-            <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden">
+            <div className="w-full xl:max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden">
               <SectionBoxSubtitle>Summary</SectionBoxSubtitle>
               {Object.keys(selectedServicesState).length === 0 ? (
                 <div className="text-left text-gray-500 text-medium mt-4">
@@ -877,7 +892,6 @@ export default function Details() {
               ) : (
                 <>
                   {Object.entries(categoriesBySection).map(([secName, catIds]) => {
-                    // Only show categories that actually have selected items
                     const relevantCatIds = catIds.filter((catId) => {
                       const arr = categoryServicesMap[catId] || [];
                       return arr.some((svc) => selectedServicesState[svc.id] != null);
@@ -930,6 +944,7 @@ export default function Details() {
                       </div>
                     );
                   })}
+
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-2xl font-semibold text-gray-800">Subtotal:</span>
                     <span className="text-2xl font-semibold text-blue-600">
@@ -941,13 +956,13 @@ export default function Details() {
             </div>
 
             {/* Address block */}
-            <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
+            <div className="w-full xl:max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
               <h2 className="text-2xl font-medium text-gray-800 mb-4">Address</h2>
               <p className="text-gray-500 text-medium">{address || "No address provided"}</p>
             </div>
 
             {/* Photos block */}
-            <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
+            <div className="w-full xl:max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
               <h2 className="text-2xl font-medium text-gray-800 mb-4">Uploaded Photos</h2>
               <div className="grid grid-cols-2 gap-4">
                 {photos.map((ph, i) => (
@@ -966,14 +981,14 @@ export default function Details() {
             </div>
 
             {/* Additional details */}
-            <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
+            <div className="w-full xl:max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
               <h2 className="text-2xl font-medium text-gray-800 mb-4">Additional details</h2>
               <p className="text-gray-500 text-medium whitespace-pre-wrap">
                 {description || "No details provided"}
               </p>
             </div>
 
-            {/* Recommended Activities component */}
+            {/* RecommendedActivities */}
             <RecommendedActivities
               selectedServicesState={selectedServicesState}
               onUpdateSelectedServicesState={setSelectedServicesState}
@@ -984,13 +999,13 @@ export default function Details() {
         </div>
       </div>
 
-      {/* Finishing-material modal if user clicks an item w/ image */}
+      {/* Finishing-material modal */}
       {showModalServiceId &&
         showModalSectionName &&
         finishingMaterialsMapAll[showModalServiceId] &&
         finishingMaterialsMapAll[showModalServiceId].sections[showModalSectionName] && (
           <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-lg w-[700px] h-[750px] overflow-hidden relative flex flex-col">
+            <div className="bg-white rounded-lg w-[90vw] h-[90vh] md:w-[80vw] md:h-[80vh] xl:w-[70vw] xl:h-[70vh] overflow-hidden relative flex flex-col">
               {/* Sticky header */}
               <div className="p-4 border-b flex items-center justify-between sticky top-0 bg-white z-10">
                 <h2 className="text-xl font-semibold">
@@ -1001,11 +1016,11 @@ export default function Details() {
                 </button>
               </div>
 
-              {/* Info about currently selected finishing material */}
               {(() => {
-                const currentSel = finishingMaterialSelections[showModalServiceId] || [];
-                if (currentSel.length === 0) return null;
-                const currentExtId = currentSel[0];
+                const picksObj = finishingMaterialSelections[showModalServiceId] || {};
+                const currentExtId = picksObj[showModalSectionName] || null;
+                if (!currentExtId) return null;
+
                 const fmData = finishingMaterialsMapAll[showModalServiceId];
                 if (!fmData) return null;
 
@@ -1016,10 +1031,7 @@ export default function Details() {
                 const curCost = parseFloat(curMat.cost || "0") || 0;
                 return (
                   <div className="text-sm text-gray-600 border-b p-4 bg-white sticky top-[61px] z-10">
-                    Current material:{" "}
-                    <strong>
-                      {curMat.name} (${formatWithSeparator(curCost)})
-                    </strong>
+                    Current material: <strong>{curMat.name}</strong> (${formatWithSeparator(curCost)})
                     <button
                       onClick={() => userHasOwnMaterial(showModalServiceId!, currentExtId)}
                       className="ml-4 text-xs text-red-500 border border-red-500 px-2 py-1 rounded"
@@ -1030,15 +1042,14 @@ export default function Details() {
                 );
               })()}
 
-              {/* Scrollable body */}
               <div className="overflow-auto p-4 flex-1">
                 {(() => {
-                  const data = finishingMaterialsMapAll[showModalServiceId];
-                  if (!data) {
+                  const fmData = finishingMaterialsMapAll[showModalServiceId];
+                  if (!fmData) {
                     return <p className="text-sm text-gray-500">No data found</p>;
                   }
 
-                  const arr = data.sections[showModalSectionName] || [];
+                  const arr = fmData.sections[showModalSectionName] || [];
                   if (!Array.isArray(arr) || arr.length === 0) {
                     return (
                       <p className="text-sm text-gray-500">
@@ -1047,13 +1058,13 @@ export default function Details() {
                     );
                   }
 
-                  const curSel = finishingMaterialSelections[showModalServiceId] || [];
-                  const currentExtId = curSel[0] || null;
-                  let currentCost = 0;
+                  const picksObj = finishingMaterialSelections[showModalServiceId] || {};
+                  const currentExtId = picksObj[showModalSectionName] || null;
+                  let currentBaseCost = 0;
                   if (currentExtId) {
                     const matObj = arr.find((m) => m.external_id === currentExtId);
                     if (matObj) {
-                      currentCost = parseFloat(matObj.cost || "0") || 0;
+                      currentBaseCost = parseFloat(matObj.cost || "0") || 0;
                     }
                   }
 
@@ -1063,7 +1074,7 @@ export default function Details() {
                         if (!material.image) return null;
                         const costNum = parseFloat(material.cost || "0") || 0;
                         const isSelected = currentExtId === material.external_id;
-                        const diff = costNum - currentCost;
+                        const diff = costNum - currentBaseCost;
                         let diffStr = "";
                         let diffColor = "";
                         if (diff > 0) {
@@ -1081,9 +1092,12 @@ export default function Details() {
                               isSelected ? "border-blue-500" : "border-gray-300"
                             }`}
                             onClick={() => {
-                              finishingMaterialSelections[showModalServiceId!] = [
-                                material.external_id,
-                              ];
+                              const serviceObj =
+                                finishingMaterialSelections[showModalServiceId!] || {};
+                              serviceObj[showModalSectionName!] =
+                                material.external_id;
+                              finishingMaterialSelections[showModalServiceId!] =
+                                serviceObj;
                               setFinishingMaterialSelections({
                                 ...finishingMaterialSelections,
                               });
