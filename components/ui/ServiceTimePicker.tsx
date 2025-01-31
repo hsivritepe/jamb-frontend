@@ -16,10 +16,7 @@ import {
   subDays,
 } from "date-fns";
 
-/**
- * These are the "raw" major holidays. We'll expand them to include
- * adjacent days if the holiday is Monday/Friday => "long weekend."
- */
+/** Raw major holidays. */
 const rawHolidays: Record<string, string> = {
   "2025-07-04": "Independence Day",
   "2025-11-27": "Thanksgiving Day",
@@ -27,47 +24,43 @@ const rawHolidays: Record<string, string> = {
 };
 
 /**
- * Build an "extended" holiday map: If the holiday is on a Friday,
- * we also treat Saturday as a holiday; if Monday, we also treat Sunday, etc.
+ * Build extended holiday map: if holiday is Monday => also Sunday, if Friday => also Saturday.
  */
 function buildExtendedHolidays(): Record<string, string> {
   const extended: Record<string, string> = { ...rawHolidays };
-
   for (const dateKey of Object.keys(rawHolidays)) {
     const holidayName = rawHolidays[dateKey];
-    const dateObj = parseISO(dateKey); // e.g. parse "2025-07-04"
-    const dw = getDay(dateObj); // Sunday=0,...,Mon=1,Fri=5,Sat=6
+    const dateObj = parseISO(dateKey);
+    const dw = getDay(dateObj); // 0=Sun,1=Mon,5=Fri,6=Sat
 
-    // If holiday is Monday => treat Sunday as a holiday, too
+    // If Monday => also treat Sunday
     if (dw === 1) {
       const sunday = subDays(dateObj, 1);
-      const sundayKey = format(sunday, "yyyy-MM-dd");
-      extended[sundayKey] = `${holidayName} (long weekend)`;
+      extended[format(sunday, "yyyy-MM-dd")] = `${holidayName} (long weekend)`;
     }
-    // If holiday is Friday => treat Saturday as a holiday, too
+    // If Friday => also treat Saturday
     if (dw === 5) {
       const saturday = addDays(dateObj, 1);
-      const saturdayKey = format(saturday, "yyyy-MM-dd");
-      extended[saturdayKey] = `${holidayName} (long weekend)`;
+      extended[format(saturday, "yyyy-MM-dd")] = `${holidayName} (long weekend)`;
     }
   }
   return extended;
 }
 
-/** Our final holiday map includes official + extended weekend days. */
+// Final holiday map
 const usHolidays = buildExtendedHolidays();
 
 /**
- * Format large values per the rules:
- * - >1,000,000 => "X.YZ M"
- * - >100,000 => "NNN K" (no decimals)
- * - >1,000 => "NNN.NN K" (two decimals)
+ * formatLargeValue for screens >= sm
+ * - >=1,000,000 => X.YZ M
+ * - >=100,000 => NNN K (no decimals)
+ * - >=1,000 => NNN.NN K
  * - else => two decimals
  */
 function formatLargeValue(value: number): string {
   if (value >= 1_000_000) {
     const millions = value / 1_000_000;
-    return `${millions.toFixed(2)}M`; // e.g. 1.55M
+    return `${millions.toFixed(2)}M`; // e.g., 1.55M
   } else if (value >= 100_000) {
     const kVal = Math.round(value / 1000); // e.g. 150 => "150K"
     return `${kVal}K`;
@@ -75,37 +68,54 @@ function formatLargeValue(value: number): string {
     const kVal = value / 1000;
     return `${kVal.toFixed(2)}K`; // e.g. 1.34K
   } else {
-    // below 1,000 => show two decimals
     return value.toFixed(2);
   }
 }
 
 /**
- * Return a Tailwind text color class
- * - red if above base
- * - green if below base
- * - gray if roughly equal
+ * formatMobileValue for screens < sm
+ * - >=1,000,000 => X.X M (одна десятичная)
+ * - >=100,000 => NNN K (целое, без десятичной)
+ * - >=1,000 => X.X K (одна десятичная)
+ * - else => округляем до целого
  */
+function formatMobileValue(value: number): string {
+  if (value >= 1_000_000) {
+    const millions = value / 1_000_000;
+    return `${millions.toFixed(1)}M`;
+  } else if (value >= 100_000) {
+    // >100K => int K
+    const kVal = Math.round(value / 1000);
+    return `${kVal}K`;
+  } else if (value >= 1_000) {
+    // e.g. 34,500 => "34.5K"
+    const kVal = value / 1000;
+    return `${kVal.toFixed(1)}K`;
+  } else {
+    // < 1,000 => integer
+    return Math.round(value).toString();
+  }
+}
+
+/** Determines the text color by comparing to basePrice. */
 function getPriceColor(price: number, basePrice: number): string {
   if (price > basePrice) return "text-red-500";
   if (price < basePrice) return "text-green-500";
   return "text-gray-800";
 }
 
-/** Props for ServiceTimePicker */
 interface ServiceTimePickerProps {
-  /** The labor cost before date-based adjustments. */
+  /** Base labor cost before date-based adjustments. */
   subtotal: number;
-  /** Optional function if parent wants a "close" button. */
+  /** Optional callback if parent wants a "close" button. */
   onClose?: () => void;
   /** Called when user hits "Confirm/Change Date." */
   onConfirm: (selectedDate: string, coefficient: number) => void;
 }
 
 /**
- * A date-selection component for picking a day or "Anytime in a Month",
- * applying surcharges (coefficient) for near/immediate days or weekends,
- * and for US holidays or their extended "long weekend" days => 1.5 max.
+ * A date-selection component applying surcharges/discounts for near/immediate days,
+ * weekends, US holidays => up to 1.5.
  */
 export default function ServiceTimePicker({
   subtotal,
@@ -116,53 +126,42 @@ export default function ServiceTimePicker({
   const [selectedCoefficient, setSelectedCoefficient] = useState<number>(1);
   const [hasConfirmed, setHasConfirmed] = useState<boolean>(false);
 
-  // "Anytime in a Month" button highlight
+  // "Anytime in a Month"
   const [anytimeSelected, setAnytimeSelected] = useState<boolean>(false);
 
-  // Start from tomorrow, do not allow going to previous months
+  // start from tomorrow
   const tomorrow = startOfTomorrow();
   const [currentMonth, setCurrentMonth] = useState<Date>(tomorrow);
 
-  /** Identify if a date is in the extended holiday map. */
+  /** Returns holiday name if date is in usHolidays. */
   function getHolidayName(date: Date): string {
     const dateKey = format(date, "yyyy-MM-dd");
     return usHolidays[dateKey] || "";
   }
 
   /**
-   * Compute the final price & coefficient for a given date:
-   * - If differenceInCalendarDays=0 => 1.5
-   * - If =1 => 1.3
-   * - <=5 => 1.25
-   * - <=14 => 1.0
-   * - <=29 => 0.95
-   * - else => 0.9
-   * Then weekends => if dayDiff>30 => 1.05, else +0.1
-   * If holiday => max(1.5).
+   * Computes final price & coefficient for a given date.
    */
   function getPriceForDate(date: Date) {
     const dayDiff = differenceInCalendarDays(date, tomorrow);
     let c = 1.0;
 
-    // Base day-diff logic
+    // dayDiff=0 => 1.5, =1 =>1.3, <=5 =>1.25, <=14 =>1.0, <=29 =>0.95, else 0.9
     if (dayDiff === 0) c = 1.5;
     else if (dayDiff === 1) c = 1.3;
     else if (dayDiff <= 5) c = 1.25;
     else if (dayDiff <= 14) c = 1.0;
     else if (dayDiff <= 29) c = 0.95;
-    else c = 0.9; // >30
+    else c = 0.9;
 
-    // Weekend or extended weekend => if dayDiff>30 => 1.05, else +0.1
+    // Weekend => +0.1 or 1.05 if dayDiff>30
     const dw = getDay(date); // 0=Sun,6=Sat
     if (dw === 0 || dw === 6) {
-      if (dayDiff > 30) {
-        c = 1.05;
-      } else {
-        c += 0.1;
-      }
+      if (dayDiff > 30) c = 1.05;
+      else c += 0.1;
     }
 
-    // Check if holiday => force up to 1.5
+    // Holiday => force up to 1.5
     const holidayName = getHolidayName(date);
     if (holidayName && c < 1.5) {
       c = 1.5;
@@ -177,9 +176,7 @@ export default function ServiceTimePicker({
     };
   }
 
-  /**
-   * Build 6 weeks of data for the currentMonth
-   */
+  /** Generate 6 weeks of data. */
   function generateCalendar(month: Date) {
     const startDay = startOfMonth(month);
     const endDay = endOfMonth(month);
@@ -188,7 +185,7 @@ export default function ServiceTimePicker({
     const calendar: Array<Array<any>> = [[]];
     let weekIndex = 0;
 
-    // Pad out the first row
+    // pad out first row
     for (let i = 0; i < getDay(startDay); i++) {
       calendar[weekIndex].push(null);
     }
@@ -199,12 +196,11 @@ export default function ServiceTimePicker({
         calendar[weekIndex] = [];
       }
       const isPast = isBefore(d, tomorrow);
-      const { price, priceDisplay, coefficient, holidayName } =
-        getPriceForDate(d);
+      const { price, priceDisplay, coefficient, holidayName } = getPriceForDate(d);
 
       calendar[weekIndex].push({
         date: d,
-        dayNumber: format(d, "d"), // "4"
+        dayNumber: format(d, "d"),
         price,
         priceDisplay,
         coefficient,
@@ -222,7 +218,6 @@ export default function ServiceTimePicker({
 
   const calendarData = generateCalendar(currentMonth);
 
-  /** Clicking on a day cell => update selected date. */
   function selectDayCell(cell: any) {
     if (cell.isPast) return;
     const fmt = format(cell.date, "EEE, d MMM yyyy");
@@ -232,7 +227,6 @@ export default function ServiceTimePicker({
     setAnytimeSelected(false);
   }
 
-  /** "Anytime in a Month" => sets date to that string & c=1. */
   function pickAnytime() {
     setSelectedDate("Anytime in a Month");
     setSelectedCoefficient(1);
@@ -240,7 +234,6 @@ export default function ServiceTimePicker({
     setAnytimeSelected(true);
   }
 
-  /** Confirm => pass to parent => show "Change Date" label. */
   function handleConfirmClick() {
     if (!selectedDate) return;
     onConfirm(selectedDate, selectedCoefficient);
@@ -250,7 +243,7 @@ export default function ServiceTimePicker({
 
   return (
     <div className="bg-white border border-gray-300 rounded-lg p-4 w-full h-auto">
-      {/* Header row */}
+      {/* Header */}
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold text-gray-800">
           Select Available Date{" "}
@@ -288,6 +281,7 @@ export default function ServiceTimePicker({
         <button
           onClick={() => {
             const prev = addMonths(currentMonth, -1);
+            // disallow if it goes before "tomorrow" range
             if (!isBefore(prev, tomorrow)) {
               setCurrentMonth(prev);
             }
@@ -307,7 +301,7 @@ export default function ServiceTimePicker({
         </button>
       </div>
 
-      {/* Weekdays header */}
+      {/* Weekday headers */}
       <div className="grid grid-cols-7 gap-2 text-center text-sm font-medium text-gray-600 mb-2">
         <div>Sun</div>
         <div>Mon</div>
@@ -331,21 +325,16 @@ export default function ServiceTimePicker({
                     disabled={cell.isPast}
                     onClick={() => selectDayCell(cell)}
                     className={`p-2 border rounded-lg w-full h-full flex flex-col justify-center items-center
-                                transition-transform active:scale-95
-                                ${
-                                  cell.isWeekend
-                                    ? "border-red-500"
-                                    : "border-gray-300"
-                                }
-                                ${
-                                  cell.isPast
-                                    ? "opacity-50 cursor-not-allowed"
-                                    : selectedDate ===
-                                      format(cell.date, "EEE, d MMM yyyy")
-                                    ? "border-blue-600 bg-blue-100 scale-105 shadow-lg"
-                                    : "hover:bg-gray-100"
-                                }
-                                ${cell.holidayName ? "bg-red-50" : ""}
+                      transition-transform active:scale-95
+                      ${cell.isWeekend ? "border-red-500" : "border-gray-300"}
+                      ${
+                        cell.isPast
+                          ? "opacity-50 cursor-not-allowed"
+                          : selectedDate === format(cell.date, "EEE, d MMM yyyy")
+                          ? "border-blue-600 bg-blue-100 scale-105 shadow-lg"
+                          : "hover:bg-gray-100"
+                      }
+                      ${cell.holidayName ? "bg-red-50" : ""}
                     `}
                     title={
                       cell.holidayName
@@ -353,7 +342,7 @@ export default function ServiceTimePicker({
                         : undefined
                     }
                   >
-                    {/* Day number (red if holiday) + price */}
+                    {/* Day number */}
                     <span
                       className={`text-lg font-bold ${
                         cell.holidayName ? "text-red-600" : "text-gray-700"
@@ -361,15 +350,29 @@ export default function ServiceTimePicker({
                     >
                       {cell.dayNumber}
                     </span>
+
+                    {/* Price: mobile vs. tablet/desktop */}
                     {!cell.isPast && (
-                      <span
-                        className={`text-sm font-semibold ${getPriceColor(
-                          cell.price,
-                          subtotal
-                        )}`}
-                      >
-                        {cell.priceDisplay}
-                      </span>
+                      <>
+                        {/* Mobile-only => formatMobileValue */}
+                        <span
+                          className={`block sm:hidden text-sm font-semibold ${getPriceColor(
+                            cell.price,
+                            subtotal
+                          )}`}
+                        >
+                          {formatMobileValue(cell.price)}
+                        </span>
+                        {/* sm+ => formatLargeValue (already in cell.priceDisplay) */}
+                        <span
+                          className={`hidden sm:block text-sm font-semibold ${getPriceColor(
+                            cell.price,
+                            subtotal
+                          )}`}
+                        >
+                          {cell.priceDisplay}
+                        </span>
+                      </>
                     )}
                   </button>
                 )}
@@ -379,7 +382,7 @@ export default function ServiceTimePicker({
         ))}
       </div>
 
-      {/* Confirm button */}
+      {/* Confirm date */}
       <button
         onClick={handleConfirmClick}
         disabled={!selectedDate}
@@ -396,15 +399,15 @@ export default function ServiceTimePicker({
         {confirmButtonLabel}
       </button>
 
-      {/* If user selected a date => show details */}
+      {/* Selected date details */}
       {selectedDate && (
         <p className="mt-3 text-center text-md text-gray-700">
           Selected:{" "}
           <span className="font-medium text-blue-600">
             {selectedDate}
-            {/* If it's a holiday => show holiday name in parentheses */}
             {(() => {
               let matchedHoliday = "";
+              // check if holiday
               for (const week of calendarData) {
                 for (const day of week) {
                   if (
@@ -422,8 +425,7 @@ export default function ServiceTimePicker({
             })()}
           </span>
           <br />
-          Coefficient:{" "}
-          <span className="font-medium">{selectedCoefficient.toFixed(2)}</span>
+          Coefficient: <span className="font-medium">{selectedCoefficient.toFixed(2)}</span>
         </p>
       )}
     </div>
