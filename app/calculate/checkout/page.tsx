@@ -314,7 +314,7 @@ export default function CheckoutPage() {
           <ActionIconsBar onPrint={handlePrint} onShare={handleShare} onSave={handleSave} />
         </div>
 
-        <div className="bg-white border-gray-300 mt-8 p-6 rounded-lg space-y-6 border">
+        <div className="bg-white border-gray-300 mt-8 p-4 sm:p-6 rounded-lg space-y-6 border">
           {/* Estimate info */}
           <div>
             <SectionBoxSubtitle>
@@ -351,7 +351,7 @@ export default function CheckoutPage() {
                       const foundCatName = getCategoryNameById(catId);
 
                       return (
-                        <div key={catId} className="ml-4 space-y-4">
+                        <div key={catId} className="ml-0 sm:ml-4 space-y-4">
                           <h4 className="text-xl font-medium text-gray-700">
                             {sectionIndex}.{catIndex}. {foundCatName}
                           </h4>
@@ -392,7 +392,7 @@ export default function CheckoutPage() {
 
                                 {/* cost breakdown => labor/materials */}
                                 {calcResult && (
-                                  <div className="mt-2 p-4 bg-gray-50 border rounded">
+                                  <div className="mt-2 p-2 sm:p-4 bg-gray-50 border rounded">
                                     <div className="flex justify-between mb-4">
                                       <span className="text-md font-medium text-gray-700">
                                         Labor

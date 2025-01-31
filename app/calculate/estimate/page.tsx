@@ -215,7 +215,7 @@ export default function Estimate() {
                     const catName = getCategoryNameById(catId);
 
                     return (
-                      <div key={catId} className="ml-4 space-y-4">
+                      <div key={catId} className="ml-0 sm:ml-4 space-y-4">
                         <h4 className="text-xl font-medium text-gray-700">
                           {sectionIndex}.{catIndex}. {catName}
                         </h4>

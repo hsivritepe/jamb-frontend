@@ -338,7 +338,7 @@ export default function EstimatePage() {
       */}
       <div className="container mx-auto py-12 flex flex-col xl:flex-row gap-12">
         {/* LEFT column => estimate details */}
-        <div className="w-full xl:max-w-[700px] bg-brand-light p-6 rounded-xl border border-gray-300 overflow-hidden lg:mr-auto">
+        <div className="w-full xl:max-w-[700px] bg-brand-light p-4 sm:p-6 rounded-xl border border-gray-300 overflow-hidden lg:mr-auto">
           <SectionBoxSubtitle>
             Estimate for {chosenPackage ? chosenPackage.title : "No package found"}
           </SectionBoxSubtitle>
@@ -361,7 +361,7 @@ export default function EstimatePage() {
                       const catTitle = catObj ? catObj.title : catId;
 
                       return (
-                        <div key={catId} className="ml-4 space-y-4">
+                        <div key={catId} className="ml-0 sm:ml-4 space-y-4">
                           <h4 className="text-lg font-semibold text-gray-700">
                             {catNum}. {catTitle}
                           </h4>

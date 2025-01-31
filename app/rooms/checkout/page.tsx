@@ -48,15 +48,16 @@ function getCategoryNameById(catId: string): string {
 }
 
 /**
- * Returns either the overridden calc results (if user removed finishing materials)
- * or the normal calculation results from the server.
+ * Returns either the overridden calc results or the normal calculation results from the server.
  */
 function getCalcResultFor(
   serviceId: string,
   overrideCalcResults: Record<string, any>,
   calculationResultsMap: Record<string, any>
 ) {
-  return overrideCalcResults[serviceId] || calculationResultsMap[serviceId] || null;
+  return (
+    overrideCalcResults[serviceId] || calculationResultsMap[serviceId] || null
+  );
 }
 
 /**
@@ -165,8 +166,10 @@ export default function RoomsCheckout() {
   const router = useRouter();
 
   // Load data from session
-  const selectedServicesState: Record<string, Record<string, number>> =
-    getSessionItem("rooms_selectedServicesWithQuantity", {});
+  const selectedServicesState: Record<
+    string,
+    Record<string, number>
+  > = getSessionItem("rooms_selectedServicesWithQuantity", {});
   const address: string = getSessionItem("address", "");
   const description: string = getSessionItem("description", "");
   const photos: string[] = getSessionItem("photos", []);
@@ -182,18 +185,30 @@ export default function RoomsCheckout() {
   const timeCoefficient: number = getSessionItem("timeCoefficient", 1);
 
   // Calculation results
-  const calculationResultsMap: Record<string, any> = getSessionItem("calculationResultsMap", {});
-  const overrideCalcResults: Record<string, any> = getSessionItem("rooms_overrideCalcResults", {});
+  const calculationResultsMap: Record<string, any> = getSessionItem(
+    "calculationResultsMap",
+    {}
+  );
+  const overrideCalcResults: Record<string, any> = getSessionItem(
+    "rooms_overrideCalcResults",
+    {}
+  );
 
   // Summaries from the previous step
   const laborSubtotal: number = getSessionItem("rooms_laborSubtotal", 0);
-  const materialsSubtotal: number = getSessionItem("rooms_materialsSubtotal", 0);
+  const materialsSubtotal: number = getSessionItem(
+    "rooms_materialsSubtotal",
+    0
+  );
   const sumBeforeTax: number = getSessionItem("rooms_sumBeforeTax", 0);
   const taxRatePercent: number = getSessionItem("rooms_taxRatePercent", 0);
   const taxAmount: number = getSessionItem("rooms_taxAmount", 0);
   const finalTotal: number = getSessionItem("rooms_estimateFinalTotal", 0);
   const serviceFeeOnLabor: number = getSessionItem("serviceFeeOnLabor", 0);
-  const serviceFeeOnMaterials: number = getSessionItem("serviceFeeOnMaterials", 0);
+  const serviceFeeOnMaterials: number = getSessionItem(
+    "serviceFeeOnMaterials",
+    0
+  );
 
   // If no selected services or no address => redirect
   useEffect(() => {
@@ -259,7 +274,10 @@ export default function RoomsCheckout() {
       <div className="container mx-auto pt-8">
         {/* Top row: back + place order */}
         <div className="flex items-center justify-between mb-6">
-          <span className="text-blue-600 cursor-pointer" onClick={() => router.back()}>
+          <span
+            className="text-blue-600 cursor-pointer"
+            onClick={() => router.back()}
+          >
             ← Back
           </span>
           <button
@@ -273,49 +291,57 @@ export default function RoomsCheckout() {
         {/* Header row: "Checkout" + Action icons */}
         <div className="flex items-center justify-between">
           <SectionBoxTitle>Checkout</SectionBoxTitle>
-          <ActionIconsBar onPrint={handlePrint} onShare={handleShare} onSave={handleSave} />
+          <ActionIconsBar
+            onPrint={handlePrint}
+            onShare={handleShare}
+            onSave={handleSave}
+          />
         </div>
 
-        <div className="bg-white border border-gray-300 mt-8 p-6 rounded-lg space-y-6">
+        <div className="bg-white border border-gray-300 mt-8 p-4 sm:p-6 rounded-lg space-y-6">
+          {/* Title and reference number in a column (always) */}
           <SectionBoxSubtitle>
-            Estimate for Selected Rooms
-            <span className="ml-2 text-sm text-gray-500">({estimateNumber})</span>
+            <div>Estimate for Selected Rooms</div>
+            <div className="text-sm text-gray-500 mt-1">({estimateNumber})</div>
           </SectionBoxSubtitle>
           <p className="text-xs text-gray-400 ml-1">
-            *This number is temporary and will be replaced with a permanent order number after confirmation.
+            *This number is temporary and will be replaced with a permanent
+            order number after confirmation.
           </p>
 
           {/* Rooms breakdown */}
           <div className="space-y-6 mt-4">
             {chosenRoomIds.map((roomId) => {
-              // Find the actual room info for UI
               const roomObj = getRoomById(roomId);
               const roomTitle = roomObj ? roomObj.title : roomId;
 
-              // The services within this room
               const roomServices = selectedServicesState[roomId] || {};
-              // We'll group them by "section -> category -> list of serviceIds"
-              const sectionMap: Record<string, Record<string, string[]>> = {};
 
-              // Summation for the entire room
+              // Summation for entire room
               let roomLabor = 0;
               let roomMat = 0;
               for (const svcId of Object.keys(roomServices)) {
-                const cr = getCalcResultFor(svcId, overrideCalcResults, calculationResultsMap);
+                const cr = getCalcResultFor(
+                  svcId,
+                  overrideCalcResults,
+                  calculationResultsMap
+                );
                 if (!cr) continue;
                 roomLabor += parseFloat(cr.work_cost) || 0;
                 roomMat += parseFloat(cr.material_cost) || 0;
               }
               const roomSubtotal = roomLabor + roomMat;
 
-              // Build the structure
+              // Build structure => { sectionName => { catId => [svcIds] } }
+              const sectionMap: Record<string, Record<string, string[]>> = {};
               Object.keys(roomServices).forEach((svcId) => {
                 const catId = getCategoryIdFromServiceId(svcId);
                 const catObj = ALL_CATEGORIES.find((c) => c.id === catId);
                 const sectionName = catObj ? catObj.section : "Other";
 
                 if (!sectionMap[sectionName]) sectionMap[sectionName] = {};
-                if (!sectionMap[sectionName][catId]) sectionMap[sectionName][catId] = [];
+                if (!sectionMap[sectionName][catId])
+                  sectionMap[sectionName][catId] = [];
                 sectionMap[sectionName][catId].push(svcId);
               });
 
@@ -325,117 +351,183 @@ export default function RoomsCheckout() {
                     {roomTitle}
                   </h3>
 
-                  {Object.entries(sectionMap).map(([sectionName, catObjMap], sectionIdx) => {
-                    const sectionNum = sectionIdx + 1;
-                    return (
-                      <div key={sectionName} className="ml-4 space-y-4">
-                        <h4 className="text-xl font-medium text-gray-700">
-                          {sectionNum}. {sectionName}
-                        </h4>
+                  {Object.entries(sectionMap).map(
+                    ([sectionName, catObjMap], sectionIdx) => {
+                      const sectionNum = sectionIdx + 1;
+                      return (
+                        <div
+                          key={sectionName}
+                          className="ml-0 sm:ml-4 space-y-4"
+                        >
+                          <h4 className="text-xl font-medium text-gray-700">
+                            {sectionNum}. {sectionName}
+                          </h4>
 
-                        {Object.entries(catObjMap).map(([catId, svcList], catIdx) => {
-                          const catNum = `${sectionNum}.${catIdx + 1}`;
-                          const catName = getCategoryNameById(catId);
+                          {Object.entries(catObjMap).map(
+                            ([catId, svcList], catIdx) => {
+                              const catNum = `${sectionNum}.${catIdx + 1}`;
+                              const catName = getCategoryNameById(catId);
 
-                          return (
-                            <div key={catId} className="ml-4 space-y-4">
-                              <h5 className="font-medium text-lg text-gray-700">
-                                {catNum}. {catName}
-                              </h5>
+                              return (
+                                <div
+                                  key={catId}
+                                  className="ml-0 sm:ml-4 space-y-4"
+                                >
+                                  <h5 className="font-medium text-lg text-gray-700">
+                                    {catNum}. {catName}
+                                  </h5>
 
-                              {svcList.map((svcId, svcIdx) => {
-                                const svcNum = `${catNum}.${svcIdx + 1}`;
-                                const foundSvc = ALL_SERVICES.find((s) => s.id === svcId);
-                                const svcTitle = foundSvc ? foundSvc.title : svcId;
-                                const svcDesc = foundSvc?.description || "";
-                                const qty = roomServices[svcId] || 1;
+                                  {svcList.map((svcId, svcIdx) => {
+                                    const svcNum = `${catNum}.${svcIdx + 1}`;
+                                    const foundSvc = ALL_SERVICES.find(
+                                      (s) => s.id === svcId
+                                    );
+                                    const svcTitle = foundSvc
+                                      ? foundSvc.title
+                                      : svcId;
+                                    const svcDesc = foundSvc?.description || "";
+                                    const qty = roomServices[svcId] || 1;
 
-                                const cr = getCalcResultFor(svcId, overrideCalcResults, calculationResultsMap);
-                                const laborCost = cr ? parseFloat(cr.work_cost) || 0 : 0;
-                                const matCost = cr ? parseFloat(cr.material_cost) || 0 : 0;
-                                const totalCost = laborCost + matCost;
+                                    const cr = getCalcResultFor(
+                                      svcId,
+                                      overrideCalcResults,
+                                      calculationResultsMap
+                                    );
+                                    const laborCost = cr
+                                      ? parseFloat(cr.work_cost) || 0
+                                      : 0;
+                                    const matCost = cr
+                                      ? parseFloat(cr.material_cost) || 0
+                                      : 0;
+                                    const totalCost = laborCost + matCost;
 
-                                return (
-                                  <div key={svcId} className="pl-4 border-gray-200 mb-6 space-y-2">
-                                    <h6 className="font-medium text-md text-gray-700">
-                                      {svcNum}. {svcTitle}
-                                    </h6>
+                                    return (
+                                      <div
+                                        key={svcId}
+                                        className="pl-0 sm:pl-4 border-gray-200 mb-6 space-y-2"
+                                      >
+                                        <h6 className="font-medium text-md text-gray-700">
+                                          {svcNum}. {svcTitle}
+                                        </h6>
 
-                                    {svcDesc && (
-                                      <p className="text-sm text-gray-500 mt-1">
-                                        {svcDesc}
-                                      </p>
-                                    )}
+                                        {svcDesc && (
+                                          <p className="text-sm text-gray-500 mt-1">
+                                            {svcDesc}
+                                          </p>
+                                        )}
 
-                                    <div className="flex items-center justify-between mt-1">
-                                      <div className="text-md font-medium text-gray-700">
-                                        {qty} {foundSvc?.unit_of_measurement || "units"}
-                                      </div>
-                                      <div className="text-md font-medium text-gray-700 mr-2">
-                                        ${formatWithSeparator(totalCost)}
-                                      </div>
-                                    </div>
-
-                                    {cr && (
-                                      <div className="mt-2 p-4 bg-gray-50 border rounded">
-                                        <div className="flex justify-between mb-3">
-                                          <span className="text-md font-medium text-gray-700">Labor</span>
-                                          <span className="text-md font-medium text-gray-700">
-                                            {cr.work_cost
-                                              ? `$${formatWithSeparator(parseFloat(cr.work_cost))}`
-                                              : "—"}
-                                          </span>
+                                        <div className="flex items-center justify-between mt-1">
+                                          <div className="text-md font-medium text-gray-700">
+                                            {qty}{" "}
+                                            {foundSvc?.unit_of_measurement ||
+                                              "units"}
+                                          </div>
+                                          <div className="text-md font-medium text-gray-700 mr-2">
+                                            ${formatWithSeparator(totalCost)}
+                                          </div>
                                         </div>
-                                        <div className="flex justify-between mb-3">
-                                          <span className="text-md font-medium text-gray-700">
-                                            Materials, tools and equipment
-                                          </span>
-                                          <span className="text-md font-medium text-gray-700">
-                                            {cr.material_cost
-                                              ? `$${formatWithSeparator(parseFloat(cr.material_cost))}`
-                                              : "—"}
-                                          </span>
-                                        </div>
 
-                                        {Array.isArray(cr.materials) && cr.materials.length > 0 && (
-                                          <div className="mt-4">
-                                            <table className="table-auto w-full text-sm text-left text-gray-700">
-                                              <thead>
-                                                <tr className="border-b">
-                                                  <th className="py-2 px-3">Name</th>
-                                                  <th className="py-2 px-3">Price</th>
-                                                  <th className="py-2 px-3">Qty</th>
-                                                  <th className="py-2 px-3">Subtotal</th>
-                                                </tr>
-                                              </thead>
-                                              <tbody className="divide-y divide-gray-200">
-                                                {cr.materials.map((m: any, i2: number) => (
-                                                  <tr key={`${m.external_id}-${i2}`} className="align-top">
-                                                    <td className="py-3 px-3">{m.name}</td>
-                                                    <td className="py-3 px-3">
-                                                      ${formatWithSeparator(parseFloat(m.cost_per_unit))}
-                                                    </td>
-                                                    <td className="py-3 px-3">{m.quantity}</td>
-                                                    <td className="py-3 px-3">
-                                                      ${formatWithSeparator(parseFloat(m.cost))}
-                                                    </td>
-                                                  </tr>
-                                                ))}
-                                              </tbody>
-                                            </table>
+                                        {cr && (
+                                          <div className="mt-2 p-4 bg-gray-50 border rounded">
+                                            <div className="flex justify-between mb-3">
+                                              <span className="text-md font-medium text-gray-700">
+                                                Labor
+                                              </span>
+                                              <span className="text-md font-medium text-gray-700">
+                                                {cr.work_cost
+                                                  ? `$${formatWithSeparator(
+                                                      parseFloat(cr.work_cost)
+                                                    )}`
+                                                  : "—"}
+                                              </span>
+                                            </div>
+                                            <div className="flex justify-between mb-3">
+                                              <span className="text-md font-medium text-gray-700">
+                                                Materials, tools and equipment
+                                              </span>
+                                              <span className="text-md font-medium text-gray-700">
+                                                {cr.material_cost
+                                                  ? `$${formatWithSeparator(
+                                                      parseFloat(
+                                                        cr.material_cost
+                                                      )
+                                                    )}`
+                                                  : "—"}
+                                              </span>
+                                            </div>
+
+                                            {Array.isArray(cr.materials) &&
+                                              cr.materials.length > 0 && (
+                                                <div className="mt-4">
+                                                  <table className="table-auto w-full text-sm text-left text-gray-700">
+                                                    <thead>
+                                                      <tr className="border-b">
+                                                        <th className="py-2 px-1 sm:px-3">
+                                                          Name
+                                                        </th>
+                                                        <th className="py-2 px-1 sm:px-3">
+                                                          Price
+                                                        </th>
+                                                        <th className="py-2 px-1 sm:px-3">
+                                                          Qty
+                                                        </th>
+                                                        <th className="py-2 px-1 sm:px-3">
+                                                          Subtotal
+                                                        </th>
+                                                      </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-gray-200">
+                                                      {cr.materials.map(
+                                                        (
+                                                          m: any,
+                                                          i2: number
+                                                        ) => (
+                                                          <tr
+                                                            key={`${m.external_id}-${i2}`}
+                                                            className="align-top"
+                                                          >
+                                                            <td className="py-3 px-3">
+                                                              {m.name}
+                                                            </td>
+                                                            <td className="py-3 px-3">
+                                                              $
+                                                              {formatWithSeparator(
+                                                                parseFloat(
+                                                                  m.cost_per_unit
+                                                                )
+                                                              )}
+                                                            </td>
+                                                            <td className="py-3 px-3">
+                                                              {m.quantity}
+                                                            </td>
+                                                            <td className="py-3 px-3">
+                                                              $
+                                                              {formatWithSeparator(
+                                                                parseFloat(
+                                                                  m.cost
+                                                                )
+                                                              )}
+                                                            </td>
+                                                          </tr>
+                                                        )
+                                                      )}
+                                                    </tbody>
+                                                  </table>
+                                                </div>
+                                              )}
                                           </div>
                                         )}
                                       </div>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    );
-                  })}
+                                    );
+                                  })}
+                                </div>
+                              );
+                            }
+                          )}
+                        </div>
+                      );
+                    }
+                  )}
 
                   <div className="flex justify-between items-center mt-2">
                     <span className="font-medium text-xl text-gray-700">
@@ -453,7 +545,9 @@ export default function RoomsCheckout() {
           {/* Overall summary */}
           <div className="pt-4 mt-4 border-t">
             <div className="flex justify-between mb-2">
-              <span className="font-semibold text-lg text-gray-600">Labor total:</span>
+              <span className="font-semibold text-lg text-gray-600">
+                Labor total:
+              </span>
               <span className="font-semibold text-lg text-gray-600">
                 ${formatWithSeparator(laborSubtotal)}
               </span>
@@ -481,7 +575,9 @@ export default function RoomsCheckout() {
                   }`}
                 >
                   {timeCoefficient > 1 ? "+" : "-"}$
-                  {formatWithSeparator(Math.abs(laborSubtotal * timeCoefficient - laborSubtotal))}
+                  {formatWithSeparator(
+                    Math.abs(laborSubtotal * timeCoefficient - laborSubtotal)
+                  )}
                 </span>
               </div>
             )}
@@ -493,14 +589,18 @@ export default function RoomsCheckout() {
               </span>
             </div>
             <div className="flex justify-between mb-2">
-              <span className="text-gray-600">Delivery &amp; Processing (5% on materials)</span>
+              <span className="text-gray-600">
+                Delivery &amp; Processing (5% on materials)
+              </span>
               <span className="font-semibold text-lg text-gray-800">
                 ${formatWithSeparator(serviceFeeOnMaterials)}
               </span>
             </div>
 
             <div className="flex justify-between mb-2">
-              <span className="font-semibold text-xl text-gray-800">Subtotal:</span>
+              <span className="font-semibold text-xl text-gray-800">
+                Subtotal:
+              </span>
               <span className="font-semibold text-xl text-gray-800">
                 ${formatWithSeparator(sumBeforeTax)}
               </span>
@@ -528,14 +628,18 @@ export default function RoomsCheckout() {
           <hr className="my-6 border-gray-200" />
           <div>
             <SectionBoxSubtitle>Work Start Date</SectionBoxSubtitle>
-            <p className="text-gray-700">{selectedTime || "No date selected"}</p>
+            <p className="text-gray-700">
+              {selectedTime || "No date selected"}
+            </p>
           </div>
 
           {/* Additional details */}
           <hr className="my-6 border-gray-200" />
           <div>
             <SectionBoxSubtitle>Additional Details</SectionBoxSubtitle>
-            <p className="text-gray-700">{description || "No details provided"}</p>
+            <p className="text-gray-700">
+              {description || "No details provided"}
+            </p>
           </div>
 
           {/* Address */}
