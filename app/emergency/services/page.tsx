@@ -213,7 +213,7 @@ export default function EmergencyServices() {
       </div>
 
       {/* Main content => categories (left) + address/photos (right) => "xl:flex-row" for desktop */}
-      <div className="container mx-auto flex flex-col xl:flex-row gap-6 w-full mt-2">
+      <div className="container mx-auto flex flex-col xl:flex-row gap-6 w-full mt-4">
         {/* LEFT => full width on phone/tablet, side by side on desktop => "xl:flex-1" */}
         <div className="w-full xl:flex-1">
           <div className="flex flex-col gap-3 mt-3 w-full">
