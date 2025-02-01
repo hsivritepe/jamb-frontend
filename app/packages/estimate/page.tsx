@@ -48,7 +48,7 @@ function formatHouseType(value: string): string {
   }
 }
 
-/** PaymentOptionPanel: the right-side panel (import). */
+/** Right-side payment panel. */
 import PaymentOptionPanel from "@/components/ui/PaymentOptionPanel";
 
 export default function EstimatePage() {
@@ -81,7 +81,7 @@ export default function EstimatePage() {
     }
   }, [mergedSelected, router, storedPackageId]);
 
-  // Calculation data => labor/material for each service
+  // Calculation data from session => labor/material for each service
   const calculationResultsMap = getSessionItem<Record<string, any>>(
     "packages_calculationResultsMap",
     {}
@@ -111,7 +111,7 @@ export default function EstimatePage() {
     airConditioners: 0,
   });
 
-  // Payment option => user picks in PaymentOptionPanel
+  // Payment option: user picks in PaymentOptionPanel
   const [selectedPaymentOption, setSelectedPaymentOption] = useState<string | null>(
     () => getSessionItem("packages_selectedTime", null)
   );
@@ -128,7 +128,7 @@ export default function EstimatePage() {
     setSessionItem("packages_timeCoefficient", paymentCoefficient);
   }, [paymentCoefficient]);
 
-  // Summation => discount only for labor
+  // Summation => discount/surcharge only for labor
   let laborSubtotal = 0;
   let materialsSubtotal = 0;
   for (const svcId of Object.keys(mergedSelected)) {
@@ -188,10 +188,9 @@ export default function EstimatePage() {
     })
     .filter(Boolean) as ServiceItem[];
 
-  // Build a map { sectionName -> { catId -> ServiceItem[] } }
+  // summaryBySection => { [sectionName]: { [catId]: ServiceItem[] } }
   const summaryBySection: Record<string, Record<string, ServiceItem[]>> = {};
   for (const item of servicesArray) {
-    // Identify the category
     const catId = item.svcId.split("-").slice(0, 2).join("-");
     const catObj = ALL_CATEGORIES.find((c) => c.id === catId);
     if (!catObj) continue;
@@ -205,9 +204,8 @@ export default function EstimatePage() {
     summaryBySection[sectionName][catId].push(item);
   }
 
-  // **CRITICAL**: Store these final numbers in session so Checkout can read them
+  // Store final numbers in session so Checkout can read them
   useEffect(() => {
-    // Only do this after we have computed them
     setSessionItem("packages_laborSubtotal", laborSubtotal);
     setSessionItem("packages_materialsSubtotal", materialsSubtotal);
     setSessionItem("serviceFeeOnLabor", serviceFeeOnLabor);
@@ -227,7 +225,7 @@ export default function EstimatePage() {
     finalTotal,
   ]);
 
-  // Tweak breadcrumbs if we have a package ID
+  // Adjust breadcrumbs if we have a package ID
   const modifiedCrumbs = PACKAGES_STEPS.map((step) => {
     if (!storedPackageId) return step;
     if (step.href.startsWith("/packages") && !step.href.includes("?")) {
@@ -236,19 +234,15 @@ export default function EstimatePage() {
     return step;
   });
 
-  /** Renders the monthly/quarterly/100% prepay schedule. */
+  /** Renders payment schedule (monthly, quarterly, or prepayment). */
   function renderPaymentSchedule() {
     if (!selectedPaymentOption) return null;
-
-    // We'll do finalTotal as the total
     const total = finalTotal;
+    const now = new Date();
 
-    // helper => format date as M/D/YYYY
     function fmtDate(d: Date) {
       return format(d, "MM/dd/yyyy");
     }
-
-    const now = new Date();
 
     if (selectedPaymentOption === "100% Prepayment") {
       const payDate = addDays(now, 10);
@@ -319,7 +313,7 @@ export default function EstimatePage() {
   }
 
   function handleProceedToCheckout() {
-    // When user hits "checkout", we *already* have set session items above
+    // Go to Checkout page
     router.push("/packages/checkout");
   }
 
@@ -337,14 +331,19 @@ export default function EstimatePage() {
         <BreadCrumb items={modifiedCrumbs} />
       </div>
 
-      <div className="container mx-auto py-12 flex gap-12">
-        {/* LEFT column => the main estimate content */}
-        <div className="max-w-[700px] bg-brand-light p-6 rounded-xl border border-gray-300 overflow-hidden mr-auto">
+      {/*
+        Main layout:
+        - Use flex-col on small screens, flex-row on lg+ screens
+        - gap-12 to space out the columns
+      */}
+      <div className="container mx-auto py-12 flex flex-col xl:flex-row gap-12">
+        {/* LEFT column => estimate details */}
+        <div className="w-full xl:max-w-[700px] bg-brand-light p-4 sm:p-6 rounded-xl border border-gray-300 overflow-hidden lg:mr-auto">
           <SectionBoxSubtitle>
             Estimate for {chosenPackage ? chosenPackage.title : "No package found"}
           </SectionBoxSubtitle>
 
-          {/* Detailed cost breakdown by section/category */}
+          {/* Detailed breakdown */}
           <div className="mt-4 space-y-6">
             {Object.keys(summaryBySection).length === 0 ? (
               <p className="text-gray-500">No services selected</p>
@@ -356,14 +355,13 @@ export default function EstimatePage() {
                     <h3 className="text-xl font-semibold text-gray-800">
                       {secNum}. {sectionName}
                     </h3>
-
                     {Object.entries(catMap).map(([catId, items], catIdx) => {
                       const catNum = `${secNum}.${catIdx + 1}`;
                       const catObj = ALL_CATEGORIES.find((c) => c.id === catId);
                       const catTitle = catObj ? catObj.title : catId;
 
                       return (
-                        <div key={catId} className="ml-4 space-y-4">
+                        <div key={catId} className="ml-0 sm:ml-4 space-y-4">
                           <h4 className="text-lg font-semibold text-gray-700">
                             {catNum}. {catTitle}
                           </h4>
@@ -391,9 +389,9 @@ export default function EstimatePage() {
                                   </div>
                                 </div>
 
-                                {/* Additional labor/material details */}
+                                {/* Additional breakdown */}
                                 {svc.breakdown && (
-                                  <div className="mt-2 p-4 bg-gray-50 border rounded">
+                                  <div className="mt-2 p-2 sm:p-4 bg-gray-50 border rounded">
                                     <div className="flex justify-between mb-2">
                                       <span className="text-sm font-medium text-gray-700">
                                         Labor
@@ -404,7 +402,7 @@ export default function EstimatePage() {
                                     </div>
                                     <div className="flex justify-between mb-2">
                                       <span className="text-sm font-medium text-gray-700">
-                                        Materials, tools & equipment
+                                        Materials, tools &amp; equipment
                                       </span>
                                       <span className="text-sm font-medium text-gray-700">
                                         ${formatWithSeparator(svc.materials)}
@@ -619,16 +617,18 @@ export default function EstimatePage() {
           </div>
         </div>
 
-        {/* RIGHT column => PaymentOptionPanel (width=500px) */}
-        <PaymentOptionPanel
-          subtotal={laborSubtotal /* base labor */}
-          materialsAndFees={materialsSubtotal + serviceFeeOnLabor + serviceFeeOnMaterials}
-          selectedOption={selectedPaymentOption}
-          onConfirm={(label, coeff) => {
-            setSelectedPaymentOption(label);
-            setPaymentCoefficient(coeff);
-          }}
-        />
+        {/* RIGHT column => PaymentOptionPanel */}
+        <div className="w-full xl:w-[500px]">
+          <PaymentOptionPanel
+            subtotal={laborSubtotal}
+            materialsAndFees={materialsSubtotal + serviceFeeOnLabor + serviceFeeOnMaterials}
+            selectedOption={selectedPaymentOption}
+            onConfirm={(label, coeff) => {
+              setSelectedPaymentOption(label);
+              setPaymentCoefficient(coeff);
+            }}
+          />
+        </div>
       </div>
     </main>
   );

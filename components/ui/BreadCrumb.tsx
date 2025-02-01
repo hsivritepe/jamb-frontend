@@ -1,63 +1,133 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 
 interface BreadCrumbItem {
-  readonly label: string; // The text label for the breadcrumb
-  readonly href: string;  // The base path for that breadcrumb step
+  readonly label: string; // Text label
+  readonly href: string;  // Base path
 }
 
 interface BreadCrumbProps {
   items: ReadonlyArray<BreadCrumbItem>;
 }
 
+/**
+ * BreadCrumb component:
+ * - On phones (<768px), arrows are removed entirely (no ChevronRight).
+ * - On tablets/desktops (≥768px), arrows remain as before (absolute positioned).
+ * - We still do "..." to shorten the chain on mobile if needed,
+ *   and highlight/underline for passed items.
+ */
 export default function BreadCrumb({ items }: BreadCrumbProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  // Build query string if needed
-  const queryString = searchParams.toString(); 
+  // Detect if screen is phone (<768px)
+  const [isMobile, setIsMobile] = useState(false);
 
-  // If you need to append query params, do it here (currently not appending):
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize(); // initial check on mount
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // For potential query params, not used here
   const updatedItems = items.map((item) => item);
 
-  // Find which step is current
+  // Determine "current" step
   const currentIndex = updatedItems.findIndex((item) => {
     const baseHref = item.href.split("?")[0];
     return baseHref === pathname;
   });
 
-  // The set of paths where we want sessionStorage cleared
+  // Some paths require clearing sessionStorage on click
   const pathsToClear = ["/calculate", "/emergency", "/rooms", "/packages"];
 
-  // Handler to clear sessionStorage if the item is in pathsToClear
-  function handleBreadcrumbClick(e: React.MouseEvent<HTMLAnchorElement>, href: string) {
+  function handleBreadcrumbClick(
+    e: React.MouseEvent<HTMLAnchorElement>,
+    href: string
+  ) {
     e.preventDefault();
-    sessionStorage.clear();  // 1) Clear sessionStorage
-    router.push(href);       // 2) Navigate
+    sessionStorage.clear();
+    router.push(href);
   }
+
+  // getMobileItems(): shorten chain for mobile if necessary
+  function getMobileItems(all: BreadCrumbItem[], currIndex: number) {
+    const length = all.length;
+    if (length <= 3) return all;
+
+    const firstItem = all[0];
+    const lastItem = all[length - 1];
+    const currentItem = all[currIndex] ?? lastItem;
+
+    if (currIndex <= 0) {
+      // user on first
+      if (length === 2) return all;
+      return [firstItem, { label: "...", href: "#" }, lastItem];
+    }
+    if (currIndex >= length - 1) {
+      // user on last
+      if (length === 2) return all;
+      return [firstItem, { label: "...", href: "#" }, lastItem];
+    }
+    if (currIndex === 1 && length > 3) {
+      return [firstItem, currentItem, { label: "...", href: "#" }, lastItem];
+    }
+    if (currIndex === length - 2 && length > 3) {
+      return [firstItem, { label: "...", href: "#" }, currentItem, lastItem];
+    }
+    return [
+      firstItem,
+      { label: "...", href: "#" },
+      currentItem,
+      { label: "...", href: "#" },
+      lastItem,
+    ];
+  }
+
+  // Decide mobile vs. desktop array
+  const displayItems = isMobile
+    ? getMobileItems(updatedItems, currentIndex)
+    : updatedItems;
 
   return (
     <nav className="w-full border-b border-gray-200">
       <div className="flex items-center justify-between text-gray-500">
-        {updatedItems.map((item, index) => {
+        {displayItems.map((item, index) => {
           const baseHref = item.href.split("?")[0];
           const isActive = pathname === baseHref;
           const isPassed = index <= currentIndex;
-
-          // Decide if we clear storage on click
+          const isPlaceholder = item.label === "...";
           const shouldClearStorage = pathsToClear.includes(item.href);
 
           return (
             <div
-              key={item.href}
-              className={`flex-1 relative ${isPassed ? "border-b-2 border-brand -mb-[2px]" : ""}`}
+              key={index}
+              className={`flex-1 relative ${
+                isPassed ? "border-b-2 border-brand -mb-[2px]" : ""
+              }`}
             >
-              {isPassed ? (
+              {/**
+               * If "..." => placeholder,
+               * else if passed => link or anchor with onClick (if clear storage),
+               * else => disabled span
+               */}
+              {isPlaceholder ? (
+                <span className="flex items-center justify-center py-4 text-gray-400">
+                  ...
+                </span>
+              ) : isPassed ? (
                 shouldClearStorage ? (
                   <a
                     href={item.href}
@@ -84,8 +154,12 @@ export default function BreadCrumb({ items }: BreadCrumbProps) {
                 </span>
               )}
 
-              {index < updatedItems.length - 1 && (
-                <ChevronRight className="w-5 h-5 absolute top-1/2 -translate-y-1/2 -right-3 text-gray-400" />
+              {/**
+               * If not the last item & not mobile => show arrow
+               * For <768px, no arrow
+               */}
+              {index < displayItems.length - 1 && !isMobile && (
+                <ChevronRight className="w-5 h-5 absolute top-1/2 -translate-y-1/2 -right-2 text-gray-400" />
               )}
             </div>
           );

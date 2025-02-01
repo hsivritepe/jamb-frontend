@@ -1,19 +1,22 @@
-import React from 'react';
-
 interface SectionBoxSubtitleProps {
     children: React.ReactNode;
     className?: string;
-}
-
-export function SectionBoxSubtitle({
+  }
+  
+  export function SectionBoxSubtitle({
     children,
-    className = '',
-}: SectionBoxSubtitleProps) {
+    className = "",
+  }: SectionBoxSubtitleProps) {
     return (
-        <h1
-            className={`text-3xl leading-snug font-semibold text-left mb-3 ${className}`}
-        >
-            {children}
-        </h1>
+      <h2
+        className={`
+          text-xl leading-snug        /* base for phones */
+          md:text-3xl md:leading-snug /* from 768px and above */
+          font-semibold text-left mb-3
+          ${className}
+        `}
+      >
+        {children}
+      </h2>
     );
-}
+  }

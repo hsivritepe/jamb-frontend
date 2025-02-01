@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import Image from "next/image"; // 1) Import from next/image
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import BreadCrumb from "@/components/ui/BreadCrumb";
 import Button from "@/components/ui/Button";
@@ -17,7 +17,6 @@ import { setSessionItem, getSessionItem } from "@/utils/session";
 // Number formatting utility
 import { formatWithSeparator } from "@/utils/format";
 
-/** Inline definition of the FinishingMaterial interface. */
 interface FinishingMaterial {
   id: number;
   image?: string;
@@ -27,23 +26,17 @@ interface FinishingMaterial {
   cost: string;
 }
 
-/**
- * Converts a hyphen-based service ID like "1-1-1" to dotted format "1.1.1"
- */
+/** Converts "1-1-1" to "1.1.1". */
 function convertServiceIdToApiFormat(serviceId: string) {
   return serviceId.replaceAll("-", ".");
 }
 
-/**
- * Returns the base API URL
- */
+/** Returns the base API URL. */
 function getApiBaseUrl(): string {
   return process.env.NEXT_PUBLIC_API_BASE_URL || "http://dev.thejamb.com";
 }
 
-/**
- * Sends a POST /calculate request to the server
- */
+/** Sends a POST /calculate request to the server. */
 async function calculatePrice(params: {
   work_code: string;
   zipcode: string;
@@ -68,10 +61,7 @@ async function calculatePrice(params: {
   return res.json();
 }
 
-/**
- * fetchFinishingMaterials: POST /work/finishing_materials
- * Takes a "work_code" like "1.1.1" and returns an object with "sections".
- */
+/** Sends a POST /work/finishing_materials request to the server. */
 async function fetchFinishingMaterials(workCode: string) {
   const baseUrl = getApiBaseUrl();
   const url = `${baseUrl}/work/finishing_materials`;
@@ -90,46 +80,33 @@ async function fetchFinishingMaterials(workCode: string) {
   return res.json();
 }
 
-/**
- * Simple component that constructs a direct image URL:
- *   http://dev.thejamb.com/images/[firstSegment]/[converted].jpg
- * Then displays it using Next.js <Image /> for optimization.
- */
+/** Renders an image for a given activityKey. */
 function ServiceImage({ activityKey }: { activityKey: string }) {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
 
   useEffect(() => {
-    // The first segment is the part before the first hyphen, e.g. "1" from "1-1-1"
     const firstSegment = activityKey.split("-")[0];
-    // Convert "1-1-1" => "1.1.1"
     const code = convertServiceIdToApiFormat(activityKey);
-    // Construct final image URL
     const url = `http://dev.thejamb.com/images/${firstSegment}/${code}.jpg`;
     setImageSrc(url);
   }, [activityKey]);
 
   if (!imageSrc) return null;
 
-  // Next.js <Image> for automatic optimization. We'll unify all images to e.g. width=600, height=400.
-  // Ensure "dev.thejamb.com" is in next.config.js -> images.domains
   return (
-    <div className="mb-2 border rounded overflow-hidden">
+    <div className="mb-2 border rounded overflow-hidden w-full">
       <Image
         src={imageSrc}
         alt="Service"
         width={600}
         height={400}
-        style={{ objectFit: "cover" }}
-        // optionally, you can specify priority or other props
+        className="w-full h-auto object-cover"
       />
     </div>
   );
 }
 
-/**
- * Capitalize or transform a string from possible camelCase/PascalCase
- * to a spaced, title-style string.
- */
+/** Capitalizes and inserts spaces before uppercase letters. */
 function capitalizeAndTransform(text: string): string {
   return text
     .replace(/([A-Z])/g, " $1")
@@ -140,72 +117,72 @@ function capitalizeAndTransform(text: string): string {
 export default function EmergencyDetails() {
   const router = useRouter();
 
-  // Read from session using your new utility:
+  // Session data
   const selectedServices = getSessionItem<Record<string, string[]>>("selectedServices", {});
   const fullAddress = getSessionItem<string>("fullAddress", "");
   const zip = getSessionItem<string>("zip", "");
   const photos = getSessionItem<string[]>("photos", []);
   const description = getSessionItem<string>("description", "");
 
-  // Activities: each "service" can have multiple "activities"
-  // Example: { plumbing: { "1-1-1": 2 }, ... }
+  // selectedActivities => { [serviceKey]: { [activityKey]: number } }
   const [selectedActivities, setSelectedActivities] = useState<
     Record<string, Record<string, number>>
   >(() => getSessionItem("selectedActivities", {}));
 
-  // Manual input values for the quantity field
+  // Manual input for quantity
   const [manualInputValue, setManualInputValue] = useState<
     Record<string, Record<string, string | null>>
   >({});
 
-  // Expanded service panels
+  // Which service panels are expanded
   const [expandedServices, setExpandedServices] = useState<Set<string>>(new Set());
 
-  // Potential warning message
+  // Warnings
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
 
-  // (activityKey -> final numeric cost) from /calculate
+  // Calculated costs
   const [serviceCosts, setServiceCosts] = useState<Record<string, number>>({});
-
-  // Full JSON from /calculate for each activity, to show cost breakdown
   const [calculationResultsMap, setCalculationResultsMap] = useState<Record<string, any>>({});
 
-  // Data for finishing materials if the user wants to pick them
-  // finishingMaterialsMapAll[activityKey] = { sections: Record<string, FinishingMaterial[]> }
+  // Finishing materials data
+  // finishingMaterialsMapAll[activityKey] = { sections: { [sectionName]: FinishingMaterial[] } }
   const [finishingMaterialsMapAll, setFinishingMaterialsMapAll] = useState<
     Record<string, { sections: Record<string, FinishingMaterial[]> }>
   >({});
 
-  // finishingMaterialSelections[activityKey] = array of external_ids
-  const [finishingMaterialSelections, setFinishingMaterialSelections] = useState<
-    Record<string, string[]>
-  >({});
+  // finishingMaterialSelections[activityKey] = { [sectionName]: externalId }
+  const [finishingMaterialSelections, setFinishingMaterialSelections] =
+    useState<Record<string, Record<string, string>>>({});
 
-  // Track a set of client-owned materials (highlighted in red)
-  // Example: clientOwnedMaterials[activityKey] = Set of external_ids
-  const [clientOwnedMaterials, setClientOwnedMaterials] = useState<
-    Record<string, Set<string>>
-  >({});
+  // Tracks client-owned materials
+  const [clientOwnedMaterials, setClientOwnedMaterials] =
+    useState<Record<string, Set<string>>>({});
 
-  // Show/hide the modal for selecting finishing materials
+  // Modal state
   const [showModalServiceId, setShowModalServiceId] = useState<string | null>(null);
   const [showModalSectionName, setShowModalSectionName] = useState<string | null>(null);
 
-  // Persist selectedActivities to sessionStorage on each change
+  // Expanded cost breakdown per activity
+  const [expandedServiceDetails, setExpandedServiceDetails] = useState<Set<string>>(new Set());
+
+  // Persist selectedActivities to session
   useEffect(() => {
     setSessionItem("selectedActivities", selectedActivities);
   }, [selectedActivities]);
 
-  /**
-   * Whenever activities or ZIP changes => call /calculate for each activity.
-   */
+  // Persist calculationResultsMap if needed
   useEffect(() => {
-    const activityKeys: string[] = [];
-    Object.values(selectedActivities).forEach((svcObj) => {
-      Object.keys(svcObj).forEach((k) => activityKeys.push(k));
+    setSessionItem("calculationResultsMap", calculationResultsMap);
+  }, [calculationResultsMap]);
+
+  // Recalculate costs whenever selected activities or ZIP changes
+  useEffect(() => {
+    const allActivityKeys: string[] = [];
+    Object.values(selectedActivities).forEach((serviceObj) => {
+      Object.keys(serviceObj).forEach((k) => allActivityKeys.push(k));
     });
 
-    if (activityKeys.length === 0) {
+    if (allActivityKeys.length === 0) {
       setServiceCosts({});
       setCalculationResultsMap({});
       return;
@@ -216,76 +193,77 @@ export default function EmergencyDetails() {
       return;
     }
 
-    // For each activity, do a /calculate
-    activityKeys.forEach(async (activityKey) => {
+    // Fetch cost for each activity
+    allActivityKeys.forEach(async (activityKey) => {
       const found = ALL_SERVICES.find((x) => x.id === activityKey);
       if (!found) return;
 
-      const quantity = getQuantityForActivity(activityKey);
+      const qty = getQuantityForActivity(activityKey);
       const dot = convertServiceIdToApiFormat(activityKey);
 
-      // Ensure finishing materials are loaded
       await ensureFinishingMaterialsLoaded(activityKey);
+
+      // Collect finishing materials for this activity from finishingMaterialSelections
+      const fmSelections = finishingMaterialSelections[activityKey] || {};
+      const fmExtIds = Object.values(fmSelections);
 
       try {
         const resp = await calculatePrice({
           work_code: dot,
           zipcode: zip,
           unit_of_measurement: found.unit_of_measurement || "each",
-          square: quantity,
-          finishing_materials: finishingMaterialSelections[activityKey] || [],
+          square: qty,
+          finishing_materials: fmExtIds,
         });
 
         const laborCost = parseFloat(resp.work_cost) || 0;
         const matCost = parseFloat(resp.material_cost) || 0;
-        const total = laborCost + matCost;
-
-        setServiceCosts((old) => ({ ...old, [activityKey]: total }));
+        setServiceCosts((old) => ({ ...old, [activityKey]: laborCost + matCost }));
         setCalculationResultsMap((old) => ({ ...old, [activityKey]: resp }));
       } catch (err) {
-        console.error("Error fetching price for activity:", err);
+        console.error("Error in calculatePrice:", err);
       }
     });
   }, [selectedActivities, zip, finishingMaterialSelections]);
 
-  // Helper to get quantity for a single activityKey
+  /** Gets quantity for a single activityKey. */
   function getQuantityForActivity(activityKey: string): number {
-    for (const srv in selectedActivities) {
-      if (activityKey in selectedActivities[srv]) {
-        return selectedActivities[srv][activityKey] || 1;
+    for (const srvKey in selectedActivities) {
+      if (selectedActivities[srvKey][activityKey] != null) {
+        return selectedActivities[srvKey][activityKey];
       }
     }
     return 1;
   }
 
-  // Ensure finishing materials are loaded for a given activityKey
+  /** Ensures finishing materials for a specific activityKey are loaded. */
   async function ensureFinishingMaterialsLoaded(activityKey: string) {
-    if (finishingMaterialsMapAll[activityKey]) return; // already loaded
+    if (finishingMaterialsMapAll[activityKey]) return;
 
     const dot = convertServiceIdToApiFormat(activityKey);
     try {
       const data = await fetchFinishingMaterials(dot);
       finishingMaterialsMapAll[activityKey] = data;
 
-      // if no finishingMaterialSelections => pick the first from each section
+      // If finishingMaterialSelections[activityKey] is not set, pick the first from each section
       if (!finishingMaterialSelections[activityKey]) {
-        const singleSelections: string[] = [];
-        for (const arr of Object.values(data.sections || {})) {
+        const picks: Record<string, string> = {};
+        for (const [sectionName, arr] of Object.entries(data.sections || {})) {
           if (Array.isArray(arr) && arr.length > 0) {
-            singleSelections.push(arr[0].external_id);
+            picks[sectionName] = arr[0].external_id;
           }
         }
-        finishingMaterialSelections[activityKey] = singleSelections;
+        finishingMaterialSelections[activityKey] = picks;
       }
 
       setFinishingMaterialsMapAll({ ...finishingMaterialsMapAll });
       setFinishingMaterialSelections({ ...finishingMaterialSelections });
     } catch (err) {
-      console.error("ensureFinishingMaterialsLoaded:", err);
+      console.error("Error fetching finishing materials:", err);
     }
   }
 
-  // Toggle expanding a service panel
+  /** Toggles expansion of a service block. */
   function handleToggleExpand(serviceKey: string) {
     setExpandedServices((old) => {
       const next = new Set(old);
@@ -295,7 +273,7 @@ export default function EmergencyDetails() {
     });
   }
 
-  // Toggle an activity ON/OFF => set quantity to its minQ if turning ON
+  /** Toggles a single activity in a service. */
   function handleActivityToggle(serviceKey: string, activityKey: string) {
     const foundActivity = ALL_SERVICES.find((x) => x.id === activityKey);
     const minQ = foundActivity?.min_quantity ?? 1;
@@ -303,18 +281,18 @@ export default function EmergencyDetails() {
     setSelectedActivities((prev) => {
       const current = prev[serviceKey] || {};
 
-      // If this activity is already in selected state => remove it
       if (current[activityKey] != null) {
+        // Unselect activity
         const copy = { ...current };
         delete copy[activityKey];
         return { ...prev, [serviceKey]: copy };
       }
 
-      // Otherwise, turn it ON => set quantity = minQ
+      // Select activity
       return { ...prev, [serviceKey]: { ...current, [activityKey]: minQ } };
     });
 
-    // reset manual input for that activity
+    // Reset manual input
     setManualInputValue((old) => ({
       ...old,
       [serviceKey]: { ...old[serviceKey], [activityKey]: null },
@@ -323,7 +301,7 @@ export default function EmergencyDetails() {
     setWarningMessage(null);
   }
 
-  // Increment or decrement quantity. Enforce min and max.
+  /** Increments or decrements activity quantity. */
   function handleQuantityChange(serviceKey: string, activityKey: string, increment: boolean) {
     const found = ALL_SERVICES.find((x) => x.id === activityKey);
     if (!found) return;
@@ -347,14 +325,13 @@ export default function EmergencyDetails() {
       };
     });
 
-    // clear any manual input
     setManualInputValue((old) => ({
       ...old,
       [serviceKey]: { ...old[serviceKey], [activityKey]: null },
     }));
   }
 
-  // Manually typed quantity. Enforce min and max.
+  /** Handles manual input for quantity. */
   function handleManualQuantityChange(serviceKey: string, activityKey: string, value: string) {
     const found = ALL_SERVICES.find((x) => x.id === activityKey);
     if (!found) return;
@@ -382,9 +359,10 @@ export default function EmergencyDetails() {
     setWarningMessage(null);
   }
 
-  // On blur, if user leaves field empty => reset manual input
+  /** If user leaves input empty, revert to stored quantity. */
   function handleBlurInput(serviceKey: string, activityKey: string) {
-    if (!manualInputValue[serviceKey]?.[activityKey]) {
+    const val = manualInputValue[serviceKey]?.[activityKey];
+    if (!val) {
       setManualInputValue((old) => ({
         ...old,
         [serviceKey]: { ...old[serviceKey], [activityKey]: null },
@@ -392,7 +370,7 @@ export default function EmergencyDetails() {
     }
   }
 
-  // Clear all
+  /** Clears all selections. */
   function handleClearSelection() {
     const c = window.confirm("Are you sure you want to clear all selections?");
     if (!c) return;
@@ -407,16 +385,15 @@ export default function EmergencyDetails() {
     setExpandedServices(new Set());
     setWarningMessage(null);
 
-    // Clear "selectedActivities" from session
     setSessionItem("selectedActivities", {});
   }
 
-  // Calculate total from serviceCosts
+  /** Returns the total of serviceCosts. */
   function calculateTotal() {
     return Object.values(serviceCosts).reduce((acc, v) => acc + v, 0);
   }
 
-  // On Next => check if we have something, also check address
+  /** Navigates to the next step. */
   function handleNext() {
     const hasAny = Object.values(selectedActivities).some(
       (obj) => Object.keys(obj).length > 0
@@ -432,7 +409,7 @@ export default function EmergencyDetails() {
     router.push("/emergency/estimate");
   }
 
-  // Build a list of services from the first step
+  /** Builds a list of services from the first step. */
   const servicesList = Object.entries(selectedServices).flatMap(([category, arr]) => {
     return arr.map((srvKey) => {
       const activities = EMERGENCY_SERVICES[category]?.services[srvKey]?.activities || {};
@@ -440,18 +417,20 @@ export default function EmergencyDetails() {
     });
   });
 
-  // Toggle cost breakdown details for a single activity
-  const [expandedServiceDetails, setExpandedServiceDetails] = useState<Set<string>>(new Set());
+  /** Toggles cost breakdown details for a single activity. */
   function toggleActivityDetails(activityKey: string) {
     setExpandedServiceDetails((old) => {
       const next = new Set(old);
-      if (next.has(activityKey)) next.delete(activityKey);
-      else next.add(activityKey);
+      if (next.has(activityKey)) {
+        next.delete(activityKey);
+      } else {
+        next.add(activityKey);
+      }
       return next;
     });
   }
 
-  // find finishing material object for an external_id
+  /** Finds a finishing material object by external_id. */
   function findFinishingMaterialObj(activityKey: string, externalId: string) {
     const data = finishingMaterialsMapAll[activityKey];
     if (!data) return null;
@@ -464,13 +443,16 @@ export default function EmergencyDetails() {
     return null;
   }
 
-  // user picks a new finishing material
-  function pickMaterial(activityKey: string, externalId: string) {
-    finishingMaterialSelections[activityKey] = [externalId];
+  /** User picks a finishing material for a given section. */
+  function pickMaterial(activityKey: string, sectionName: string, externalId: string) {
+    if (!finishingMaterialSelections[activityKey]) {
+      finishingMaterialSelections[activityKey] = {};
+    }
+    finishingMaterialSelections[activityKey][sectionName] = externalId;
     setFinishingMaterialSelections({ ...finishingMaterialSelections });
   }
 
-  // user indicates they have their own material
+  /** User marks a material as client-owned. */
   function userHasOwnMaterial(activityKey: string, externalId: string) {
     if (!clientOwnedMaterials[activityKey]) {
       clientOwnedMaterials[activityKey] = new Set();
@@ -479,36 +461,29 @@ export default function EmergencyDetails() {
     setClientOwnedMaterials({ ...clientOwnedMaterials });
   }
 
-  // open modal for finishing materials
-  function onClickFinishingMaterialRow(activityKey: string, sectionName: string) {
-    setShowModalServiceId(activityKey);
-    setShowModalSectionName(sectionName);
-  }
-
-  // close finishing material modal
+  /** Closes finishing materials modal. */
   function closeModal() {
     setShowModalServiceId(null);
     setShowModalSectionName(null);
   }
-
-  // Save the entire calculationResultsMap to session if needed
-  useEffect(() => {
-    setSessionItem("calculationResultsMap", calculationResultsMap);
-  }, [calculationResultsMap]);
 
   return (
     <main className="min-h-screen pt-24 pb-16">
       <div className="container mx-auto relative">
         <BreadCrumb items={EMERGENCY_STEPS} />
 
-        {/* Top row: title + Next button */}
-        <div className="flex justify-between items-start mt-8">
-          <SectionBoxTitle>Emergency Details</SectionBoxTitle>
-          <Button onClick={handleNext}>Next →</Button>
+        {/* Top header: title + Next button */}
+        <div className="flex flex-col xl:flex-row justify-between items-start mt-8">
+          <div>
+            <SectionBoxTitle>Emergency Details</SectionBoxTitle>
+          </div>
+          <div className="w-full xl:w-auto flex justify-end mt-2 xl:mt-0">
+            <Button onClick={handleNext}>Next →</Button>
+          </div>
         </div>
 
-        {/* Clear or Contact Support */}
-        <div className="flex justify-between items-center text-sm text-gray-500 mt-8 w-full max-w-[600px]">
+        {/* "No service" + Clear */}
+        <div className="flex justify-between items-center text-sm text-gray-500 mt-8 w-full xl:max-w-[600px]">
           <span>
             No service?{" "}
             <a href="#" className="text-blue-600 hover:underline focus:outline-none">
@@ -527,387 +502,392 @@ export default function EmergencyDetails() {
         <div className="h-6 mt-4 text-left">
           {warningMessage && <p className="text-red-500">{warningMessage}</p>}
         </div>
+      </div>
 
-        {/* Main content: services on the left, summary on the right */}
-        <div className="container mx-auto relative flex mt-8">
-          {/* LEFT column: each selected service + activities */}
-          <div className="flex-1">
-            <div className="flex flex-col gap-4 mt-4 w-full max-w-[600px]">
-              {servicesList.map(({ service, category, activities }, idx) => {
-                const serviceLabel = capitalizeAndTransform(service);
-                const isExpanded = expandedServices.has(service);
+      {/* Main content: two columns on xl, one column on mobile */}
+      <div className="container mx-auto relative flex flex-col xl:flex-row mt-4">
+        {/* LEFT column */}
+        <div className="w-full xl:flex-1">
+          <div className="flex flex-col gap-4 mt-4 w-full xl:max-w-[600px]">
+            {servicesList.map(({ service, category, activities }) => {
+              const serviceLabel = capitalizeAndTransform(service);
+              const isExpanded = expandedServices.has(service);
 
-                // how many chosen in this service
-                const chosenCount = Object.keys(selectedActivities[service] || {}).length;
+              const chosenCount = Object.keys(selectedActivities[service] || {}).length;
 
-                return (
+              return (
+                <div
+                  key={`${category}-${service}`}
+                  className="p-4 border rounded-xl bg-white border-gray-300"
+                >
                   <div
-                    key={`${category}-${service}`}
-                    className="p-4 border rounded-xl bg-white border-gray-300"
+                    className="flex justify-between items-center cursor-pointer"
+                    onClick={() => handleToggleExpand(service)}
                   >
-                    {/* Service header */}
-                    <div
-                      className="flex justify-between items-center cursor-pointer"
-                      onClick={() => handleToggleExpand(service)}
+                    <span
+                      className={`text-2xl font-medium ${
+                        chosenCount > 0 ? "text-blue-600" : "text-gray-800"
+                      }`}
                     >
-                      <span
-                        className={`text-2xl font-medium ${
-                          chosenCount > 0 ? "text-blue-600" : "text-gray-800"
-                        }`}
-                      >
-                        {serviceLabel}
-                        {chosenCount > 0 && (
-                          <span className="text-sm text-gray-500 ml-2">
-                            ({chosenCount} selected)
-                          </span>
-                        )}
-                      </span>
-                      <ChevronDown
-                        className={`w-5 h-5 transform transition-transform ${
-                          isExpanded ? "rotate-180" : ""
-                        }`}
-                      />
-                    </div>
-
-                    {isExpanded && (
-                      <div className="mt-4 flex flex-col gap-4">
-                        {Object.entries(activities).map(([activityKey, activityData], i2) => {
-                          const isSelected =
-                            selectedActivities[service]?.[activityKey] != null;
-                          const activityLabel = capitalizeAndTransform(activityData.activity);
-                          const foundActivity = ALL_SERVICES.find((x) => x.id === activityKey);
-
-                          // cost from the server
-                          const finalCost = serviceCosts[activityKey] || 0;
-                          // entire JSON
-                          const calcResult = calculationResultsMap[activityKey];
-                          const detailsExpanded = expandedServiceDetails.has(activityKey);
-
-                          return (
-                            <div key={activityKey} className="space-y-2">
-                              {/* Toggle row */}
-                              <div className="flex justify-between items-center">
-                                <span className={`text-lg transition-colors duration-300 ${
-                                        isSelected ? "text-blue-600" : "text-gray-800"
-                                      }`}>{activityLabel}</span>
-                                <label className="relative inline-flex items-center cursor-pointer">
-                                  <input
-                                    type="checkbox"
-                                    checked={isSelected}
-                                    onChange={() => handleActivityToggle(service, activityKey)}
-                                    className="sr-only peer"
-                                  />
-                                  <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
-                                  <div className="absolute top-[2px] left-[2px] w-[22px] h-[22px] bg-white rounded-full shadow-md peer-checked:translate-x-[24px] transform transition-transform duration-300"></div>
-                                </label>
-                              </div>
-
-                              {isSelected && foundActivity && (
-                                <>
-                                  <ServiceImage activityKey={activityKey} />                               
-                                  {foundActivity.description && (
-                                    <p className="text-sm text-gray-500 pr-16">
-                                      {foundActivity.description}
-                                    </p>
-                                  )}
-
-                                  {/* Quantity & cost row */}
-                                  <div className="flex justify-between items-center">
-                                    <div className="flex items-center gap-1">
-                                      {/* Decrement */}
-                                      <button
-                                        onClick={() =>
-                                          handleQuantityChange(service, activityKey, false)
-                                        }
-                                        className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
-                                      >
-                                        −
-                                      </button>
-                                      {/* Manual input */}
-                                      <input
-                                        type="text"
-                                        value={
-                                          manualInputValue[service]?.[activityKey] != null
-                                            ? manualInputValue[service][activityKey]!
-                                            : (selectedActivities[service]?.[activityKey] || 1).toString()
-                                        }
-                                        onClick={() =>
-                                          setManualInputValue((old) => ({
-                                            ...old,
-                                            [service]: {
-                                              ...old[service],
-                                              [activityKey]: "",
-                                            },
-                                          }))
-                                        }
-                                        onBlur={() => handleBlurInput(service, activityKey)}
-                                        onChange={(e) =>
-                                          handleManualQuantityChange(service, activityKey, e.target.value)
-                                        }
-                                        className="w-20 text-center px-2 py-1 border rounded"
-                                      />
-                                      {/* Increment */}
-                                      <button
-                                        onClick={() =>
-                                          handleQuantityChange(service, activityKey, true)
-                                        }
-                                        className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
-                                      >
-                                        +
-                                      </button>
-                                      <span className="text-sm text-gray-600">
-                                        {foundActivity.unit_of_measurement}
-                                      </span>
-                                    </div>
-
-                                    <div className="flex items-center gap-2">
-                                      {/* Final cost */}
-                                      <span className="text-lg text-blue-600 font-medium text-right">
-                                        ${formatWithSeparator(finalCost)}
-                                      </span>
-                                      {/* "Details" button */}
-                                      <button
-                                        onClick={() => toggleActivityDetails(activityKey)}
-                                        className={`text-blue-500 text-sm ml-2 ${
-                                          detailsExpanded ? "" : "underline"
-                                        }`}
-                                      >
-                                        Details
-                                      </button>
-                                    </div>
-                                  </div>
-
-                                  {/* Cost Breakdown */}
-                                  {calcResult && detailsExpanded && (
-                                    <div className="mt-4 p-4 bg-gray-50 border rounded">
-                                      <h4 className="text-lg font-semibold text-gray-800 mb-3">
-                                        Cost Breakdown
-                                      </h4>
-
-                                      <div className="flex flex-col gap-2 mb-4">
-                                        <div className="flex justify-between">
-                                          <span className="text-md font-medium text-gray-700">
-                                            Labor
-                                          </span>
-                                          <span className="text-md font-medium text-gray-700">
-                                            {calcResult.work_cost
-                                              ? `$${calcResult.work_cost}`
-                                              : "—"}
-                                          </span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                          <span className="text-md font-medium text-gray-700">
-                                            Materials, tools & equipment
-                                          </span>
-                                          <span className="text-md font-medium text-gray-700">
-                                            {calcResult.material_cost
-                                              ? `$${calcResult.material_cost}`
-                                              : "—"}
-                                          </span>
-                                        </div>
-                                      </div>
-
-                                      {Array.isArray(calcResult.materials) &&
-                                        calcResult.materials.length > 0 && (
-                                          <div className="mt-2">
-                                            <table className="table-auto w-full text-sm text-left text-gray-700">
-                                              <thead>
-                                                <tr className="border-b">
-                                                  <th className="py-2 px-1">Name</th>
-                                                  <th className="py-2 px-1">Price</th>
-                                                  <th className="py-2 px-1">Qty</th>
-                                                  <th className="py-2 px-1">Subtotal</th>
-                                                </tr>
-                                              </thead>
-                                              <tbody className="divide-y divide-gray-200">
-                                                {calcResult.materials.map((m: any, i: number) => {
-                                                  const fmObj = findFinishingMaterialObj(
-                                                    activityKey,
-                                                    m.external_id
-                                                  );
-                                                  const hasImage = fmObj?.image?.length
-                                                    ? true
-                                                    : false;
-
-                                                  const isClientOwned =
-                                                    clientOwnedMaterials[activityKey]?.has(
-                                                      m.external_id
-                                                    );
-
-                                                  let rowClass = "";
-                                                  if (isClientOwned) {
-                                                    rowClass = "border border-red-500 bg-red-50";
-                                                  } else if (hasImage) {
-                                                    rowClass = "border border-blue-300 bg-white cursor-pointer";
-                                                  }
-
-                                                  return (
-                                                    <tr
-                                                      key={`${m.external_id}-${i}`}
-                                                      className={`last:border-0 ${rowClass}`}
-                                                      onClick={() => {
-                                                        // if has image and not client-owned => open modal
-                                                        if (hasImage && !isClientOwned) {
-                                                          let foundSection: string | null = null;
-                                                          const fmData = finishingMaterialsMapAll[
-                                                            activityKey
-                                                          ];
-                                                          if (fmData && fmData.sections) {
-                                                            for (const [secName, list] of Object.entries(
-                                                              fmData.sections
-                                                            )) {
-                                                              if (
-                                                                Array.isArray(list) &&
-                                                                list.some(
-                                                                  (xx) => xx.external_id === m.external_id
-                                                                )
-                                                              ) {
-                                                                foundSection = secName;
-                                                                break;
-                                                              }
-                                                            }
-                                                          }
-                                                          setShowModalServiceId(activityKey);
-                                                          setShowModalSectionName(foundSection);
-                                                        }
-                                                      }}
-                                                    >
-                                                      <td className="py-3 px-1">
-                                                        {hasImage ? (
-                                                          <div className="flex items-center gap-2">
-                                                            <img
-                                                              src={fmObj?.image}
-                                                              alt={m.name}
-                                                              className="w-8 h-8 object-cover rounded"
-                                                            />
-                                                            <span>{m.name}</span>
-                                                          </div>
-                                                        ) : (
-                                                          m.name
-                                                        )}
-                                                      </td>
-                                                      <td className="py-3 px-1">
-                                                        ${m.cost_per_unit}
-                                                      </td>
-                                                      <td className="py-3 px-3">{m.quantity}</td>
-                                                      <td className="py-3 px-3">${m.cost}</td>
-                                                    </tr>
-                                                  );
-                                                })}
-                                              </tbody>
-                                            </table>
-                                          </div>
-                                        )}
-                                    </div>
-                                  )}
-                                </>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* RIGHT column: summary, address, photos, description */}
-          <div className="w-1/2 ml-auto mt-4 pt-1">
-            {/* Summary */}
-            <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden">
-              <SectionBoxSubtitle>Summary</SectionBoxSubtitle>
-              {Object.keys(selectedActivities).length === 0 ? (
-                <div className="text-left text-gray-500 text-medium mt-4">
-                  No services selected
-                </div>
-              ) : (
-                <>
-                  <ul className="mt-4 space-y-2 pb-4">
-                    {Object.entries(selectedActivities).flatMap(([srvKey, acts]) =>
-                      Object.entries(acts).map(([activityKey, quantity]) => {
-                        const foundAct = ALL_SERVICES.find((x) => x.id === activityKey);
-                        if (!foundAct) return null;
-                        const finalCost = serviceCosts[activityKey] || 0;
-                        return (
-                          <li
-                            key={activityKey}
-                            className="grid grid-cols-3 gap-2 text-sm text-gray-600"
-                            style={{
-                              gridTemplateColumns: "46% 25% 25%",
-                              width: "100%",
-                            }}
-                          >
-                            <span className="truncate overflow-hidden">
-                              {foundAct.title}
-                            </span>
-                            <span className="text-right">
-                              {quantity} {foundAct.unit_of_measurement}
-                            </span>
-                            <span className="text-right">
-                              ${formatWithSeparator(finalCost)}
-                            </span>
-                          </li>
-                        );
-                      })
-                    )}
-                  </ul>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-2xl font-semibold text-gray-800">Subtotal:</span>
-                    <span className="text-2xl font-semibold text-blue-600">
-                      ${formatWithSeparator(calculateTotal())}
+                      {serviceLabel}
+                      {chosenCount > 0 && (
+                        <span className="text-sm text-gray-500 ml-2">
+                          ({chosenCount} selected)
+                        </span>
+                      )}
                     </span>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Address */}
-            <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
-              <h2 className="text-2xl font-medium text-gray-800 mb-4">Address</h2>
-              <p className="text-gray-500 text-medium">
-                {fullAddress || "No address provided"}
-              </p>
-            </div>
-
-            {/* Photos */}
-            <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
-              <h2 className="text-2xl font-medium text-gray-800 mb-4">Uploaded Photos</h2>
-              <div className="grid grid-cols-2 gap-4">
-                {photos.map((photo, idx) => (
-                  <div key={idx} className="relative group">
-                    <img
-                      src={photo}
-                      alt={`Uploaded photo ${idx + 1}`}
-                      className="w-full h-32 object-cover rounded-lg"
+                    <ChevronDown
+                      className={`w-5 h-5 transform transition-transform ${
+                        isExpanded ? "rotate-180" : ""
+                      }`}
                     />
                   </div>
-                ))}
-              </div>
-              {photos.length === 0 && (
-                <p className="text-medium text-gray-500 mt-2">No photos uploaded</p>
-              )}
-            </div>
 
-            {/* Description */}
-            <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
-              <h2 className="text-2xl font-medium text-gray-800 mb-4">Problem Description</h2>
-              <p className="text-gray-500 text-medium whitespace-pre-wrap">
-                {description || "No description provided"}
-              </p>
+                  {isExpanded && (
+                    <div className="mt-4 flex flex-col gap-4">
+                      {Object.entries(activities).map(([activityKey, activityData]) => {
+                        const isSelected =
+                          selectedActivities[service]?.[activityKey] != null;
+                        const activityLabel = capitalizeAndTransform(activityData.activity);
+                        const foundActivity = ALL_SERVICES.find((x) => x.id === activityKey);
+                        const finalCost = serviceCosts[activityKey] || 0;
+                        const calcResult = calculationResultsMap[activityKey];
+                        const detailsExpanded = expandedServiceDetails.has(activityKey);
+
+                        return (
+                          <div key={activityKey} className="space-y-2">
+                            {/* Activity toggle */}
+                            <div className="flex justify-between items-center">
+                              <span
+                                className={`text-lg transition-colors duration-300 ${
+                                  isSelected ? "text-blue-600" : "text-gray-800"
+                                }`}
+                              >
+                                {activityLabel}
+                              </span>
+                              <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => handleActivityToggle(service, activityKey)}
+                                  className="sr-only peer"
+                                />
+                                <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
+                                <div className="absolute top-[2px] left-[2px] w-[22px] h-[22px] bg-white rounded-full shadow-md peer-checked:translate-x-[24px] transform transition-transform duration-300"></div>
+                              </label>
+                            </div>
+
+                            {isSelected && foundActivity && (
+                              <>
+                                <ServiceImage activityKey={activityKey} />
+
+                                {foundActivity.description && (
+                                  <p className="text-sm text-gray-500 pr-16">
+                                    {foundActivity.description}
+                                  </p>
+                                )}
+
+                                {/* Quantity row */}
+                                <div className="flex justify-between items-center">
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      onClick={() =>
+                                        handleQuantityChange(service, activityKey, false)
+                                      }
+                                      className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
+                                    >
+                                      −
+                                    </button>
+                                    <input
+                                      type="text"
+                                      value={
+                                        manualInputValue[service]?.[activityKey] != null
+                                          ? manualInputValue[service][activityKey]!
+                                          : (selectedActivities[service]?.[activityKey] || 1).toString()
+                                      }
+                                      onClick={() =>
+                                        setManualInputValue((old) => ({
+                                          ...old,
+                                          [service]: {
+                                            ...old[service],
+                                            [activityKey]: "",
+                                          },
+                                        }))
+                                      }
+                                      onBlur={() => handleBlurInput(service, activityKey)}
+                                      onChange={(e) =>
+                                        handleManualQuantityChange(service, activityKey, e.target.value)
+                                      }
+                                      className="w-20 text-center px-2 py-1 border rounded"
+                                    />
+                                    <button
+                                      onClick={() =>
+                                        handleQuantityChange(service, activityKey, true)
+                                      }
+                                      className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
+                                    >
+                                      +
+                                    </button>
+                                    <span className="text-sm text-gray-600">
+                                      {foundActivity.unit_of_measurement}
+                                    </span>
+                                  </div>
+
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-lg text-blue-600 font-medium text-right">
+                                      ${formatWithSeparator(finalCost)}
+                                    </span>
+                                    {/* Desktop "Details" */}
+                                    <button
+                                      onClick={() => toggleActivityDetails(activityKey)}
+                                      className={`text-blue-500 text-sm ml-2 hidden xl:block ${
+                                        detailsExpanded ? "" : "underline"
+                                      }`}
+                                    >
+                                      Details
+                                    </button>
+                                  </div>
+                                </div>
+
+                                {/* Mobile "Details" button */}
+                                <div className="mt-2 flex justify-end xl:hidden">
+                                  <button
+                                    onClick={() => toggleActivityDetails(activityKey)}
+                                    className={`text-blue-500 text-sm ${
+                                      detailsExpanded ? "" : "underline"
+                                    }`}
+                                  >
+                                    Details
+                                  </button>
+                                </div>
+
+                                {/* Cost breakdown */}
+                                {calcResult && detailsExpanded && (
+                                  <div className="mt-4 p-2 sm:p-4 bg-gray-50 border rounded">
+                                    <h4 className="text-lg font-semibold text-gray-800 mb-3">
+                                      Cost Breakdown
+                                    </h4>
+                                    <div className="flex flex-col gap-2 mb-4">
+                                      <div className="flex justify-between">
+                                        <span className="text-md font-medium text-gray-700">
+                                          Labor
+                                        </span>
+                                        <span className="text-md font-medium text-gray-700">
+                                          {calcResult.work_cost
+                                            ? `$${calcResult.work_cost}`
+                                            : "—"}
+                                        </span>
+                                      </div>
+                                      <div className="flex justify-between">
+                                        <span className="text-md font-medium text-gray-700">
+                                          Materials, tools & equipment
+                                        </span>
+                                        <span className="text-md font-medium text-gray-700">
+                                          {calcResult.material_cost
+                                            ? `$${calcResult.material_cost}`
+                                            : "—"}
+                                        </span>
+                                      </div>
+                                    </div>
+
+                                    {Array.isArray(calcResult.materials) &&
+                                      calcResult.materials.length > 0 && (
+                                        <div className="mt-2">
+                                          <table className="table-auto w-full text-sm text-left text-gray-700">
+                                            <thead>
+                                              <tr className="border-b">
+                                                <th className="py-2 px-1">Name</th>
+                                                <th className="py-2 px-1">Price</th>
+                                                <th className="py-2 px-1">Qty</th>
+                                                <th className="py-2 px-1">Subtotal</th>
+                                              </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-gray-200">
+                                              {calcResult.materials.map((m: any, i: number) => {
+                                                const fmObj = findFinishingMaterialObj(
+                                                  activityKey,
+                                                  m.external_id
+                                                );
+                                                const hasImage = fmObj?.image?.length
+                                                  ? true
+                                                  : false;
+
+                                                const isClientOwned =
+                                                  clientOwnedMaterials[activityKey]?.has(
+                                                    m.external_id
+                                                  );
+
+                                                let rowClass = "";
+                                                if (isClientOwned) {
+                                                  rowClass = "border border-red-500 bg-red-50";
+                                                } else if (hasImage) {
+                                                  rowClass =
+                                                    "border border-blue-300 bg-white cursor-pointer";
+                                                }
+
+                                                return (
+                                                  <tr
+                                                    key={`${m.external_id}-${i}`}
+                                                    className={`last:border-0 ${rowClass}`}
+                                                    onClick={() => {
+                                                      if (hasImage && !isClientOwned) {
+                                                        let foundSection: string | null = null;
+                                                        const fmData =
+                                                          finishingMaterialsMapAll[activityKey];
+                                                        if (fmData && fmData.sections) {
+                                                          for (const [secName, list] of Object.entries(
+                                                            fmData.sections
+                                                          )) {
+                                                            if (
+                                                              Array.isArray(list) &&
+                                                              list.some(
+                                                                (xx) =>
+                                                                  xx.external_id === m.external_id
+                                                              )
+                                                            ) {
+                                                              foundSection = secName;
+                                                              break;
+                                                            }
+                                                          }
+                                                        }
+                                                        setShowModalServiceId(activityKey);
+                                                        setShowModalSectionName(foundSection);
+                                                      }
+                                                    }}
+                                                  >
+                                                    <td className="py-3 px-1">
+                                                      {hasImage ? (
+                                                        <div className="flex items-center gap-2">
+                                                          <img
+                                                            src={fmObj?.image}
+                                                            alt={m.name}
+                                                            className="w-8 h-8 object-cover rounded"
+                                                          />
+                                                          <span>{m.name}</span>
+                                                        </div>
+                                                      ) : (
+                                                        m.name
+                                                      )}
+                                                    </td>
+                                                    <td className="py-3 px-1">${m.cost_per_unit}</td>
+                                                    <td className="py-3 px-3">{m.quantity}</td>
+                                                    <td className="py-3 px-3">${m.cost}</td>
+                                                  </tr>
+                                                );
+                                              })}
+                                            </tbody>
+                                          </table>
+                                        </div>
+                                      )}
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* RIGHT column: summary, address, photos, description */}
+        <div className="w-full xl:w-1/2 xl:ml-auto mt-8 xl:mt-0 pt-1">
+          {/* Summary */}
+          <div className="w-full xl:max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden">
+            <SectionBoxSubtitle>Summary</SectionBoxSubtitle>
+            {Object.keys(selectedActivities).length === 0 ? (
+              <div className="text-left text-gray-500 text-medium mt-4">
+                No services selected
+              </div>
+            ) : (
+              <>
+                <ul className="mt-4 space-y-2 pb-4">
+                  {Object.entries(selectedActivities).flatMap(([srvKey, acts]) =>
+                    Object.entries(acts).map(([activityKey, quantity]) => {
+                      const foundAct = ALL_SERVICES.find((x) => x.id === activityKey);
+                      if (!foundAct) return null;
+                      const finalCost = serviceCosts[activityKey] || 0;
+                      return (
+                        <li
+                          key={activityKey}
+                          className="grid grid-cols-3 gap-2 text-sm text-gray-600"
+                          style={{
+                            gridTemplateColumns: "46% 25% 25%",
+                            width: "100%",
+                          }}
+                        >
+                          <span className="truncate overflow-hidden">
+                            {foundAct.title}
+                          </span>
+                          <span className="text-right">
+                            {quantity} {foundAct.unit_of_measurement}
+                          </span>
+                          <span className="text-right">
+                            ${formatWithSeparator(finalCost)}
+                          </span>
+                        </li>
+                      );
+                    })
+                  )}
+                </ul>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-2xl font-semibold text-gray-800">Subtotal:</span>
+                  <span className="text-2xl font-semibold text-blue-600">
+                    ${formatWithSeparator(calculateTotal())}
+                  </span>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Address */}
+          <div className="w-full xl:max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
+            <h2 className="text-2xl font-medium text-gray-800 mb-4">Address</h2>
+            <p className="text-gray-500 text-medium">
+              {fullAddress || "No address provided"}
+            </p>
+          </div>
+
+          {/* Photos */}
+          <div className="w-full xl:max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
+            <h2 className="text-2xl font-medium text-gray-800 mb-4">Uploaded Photos</h2>
+            <div className="grid grid-cols-2 gap-4">
+              {photos.map((photo, idx) => (
+                <div key={idx} className="relative group">
+                  <img
+                    src={photo}
+                    alt={`Uploaded photo ${idx + 1}`}
+                    className="w-full h-32 object-cover rounded-lg"
+                  />
+                </div>
+              ))}
             </div>
+            {photos.length === 0 && (
+              <p className="text-medium text-gray-500 mt-2">No photos uploaded</p>
+            )}
+          </div>
+
+          {/* Description */}
+          <div className="w-full xl:max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
+            <h2 className="text-2xl font-medium text-gray-800 mb-4">Problem Description</h2>
+            <p className="text-gray-500 text-medium whitespace-pre-wrap">
+              {description || "No description provided"}
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Modal for finishing materials if a row with an image is clicked */}
+      {/* Modal for choosing finishing materials. */}
       {showModalServiceId &&
         showModalSectionName &&
         finishingMaterialsMapAll[showModalServiceId] &&
         finishingMaterialsMapAll[showModalServiceId].sections[showModalSectionName] && (
           <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-lg w-[700px] h-[750px] overflow-hidden relative flex flex-col">
+            <div className="bg-white rounded-lg w-[90vw] h-[90vh] md:w-[80vw] md:h-[80vh] xl:w-[70vw] xl:h-[70vh] overflow-hidden relative flex flex-col">
               {/* Header */}
               <div className="p-4 border-b flex items-center justify-between sticky top-0 bg-white z-10">
                 <h2 className="text-xl font-semibold">
@@ -923,9 +903,10 @@ export default function EmergencyDetails() {
 
               {/* Current material info */}
               {(() => {
-                const currentSel = finishingMaterialSelections[showModalServiceId] || [];
-                if (currentSel.length === 0) return null;
-                const currentExtId = currentSel[0];
+                const picksObj = finishingMaterialSelections[showModalServiceId] || {};
+                const currentExtId = picksObj[showModalSectionName] || null;
+                if (!currentExtId) return null;
+
                 const curMat = findFinishingMaterialObj(showModalServiceId, currentExtId);
                 if (!curMat) return null;
 
@@ -947,11 +928,13 @@ export default function EmergencyDetails() {
                 );
               })()}
 
-              {/* Scrollable content with available finishing materials */}
+              {/* Scrollable content */}
               <div className="overflow-auto p-4 flex-1">
                 {(() => {
                   const data = finishingMaterialsMapAll[showModalServiceId];
-                  if (!data) return <p className="text-sm text-gray-500">No data found</p>;
+                  if (!data) {
+                    return <p className="text-sm text-gray-500">No data found</p>;
+                  }
 
                   const arr = data.sections[showModalSectionName] || [];
                   if (!Array.isArray(arr) || arr.length === 0) {
@@ -962,23 +945,25 @@ export default function EmergencyDetails() {
                     );
                   }
 
-                  // current selection
-                  const curSel = finishingMaterialSelections[showModalServiceId] || [];
-                  const currentExtId = curSel[0] || null;
-                  let currentCost = 0;
+                  const picksObj = finishingMaterialSelections[showModalServiceId] || {};
+                  const currentExtId = picksObj[showModalSectionName] || null;
+
+                  let currentBaseCost = 0;
                   if (currentExtId) {
-                    const cMat = findFinishingMaterialObj(showModalServiceId, currentExtId);
-                    if (cMat) currentCost = parseFloat(cMat.cost || "0") || 0;
+                    const matObj = arr.find((m) => m.external_id === currentExtId);
+                    if (matObj) {
+                      currentBaseCost = parseFloat(matObj.cost || "0") || 0;
+                    }
                   }
 
                   return (
                     <div className="grid grid-cols-2 gap-4">
                       {arr.map((material, i) => {
-                        // show only if there's an image
+                        // Show only if material has an image
                         if (!material.image) return null;
                         const costNum = parseFloat(material.cost || "0") || 0;
                         const isSelected = currentExtId === material.external_id;
-                        const diff = costNum - currentCost;
+                        const diff = costNum - currentBaseCost;
                         let diffStr = "";
                         let diffColor = "";
                         if (diff > 0) {
@@ -995,12 +980,9 @@ export default function EmergencyDetails() {
                             className={`border rounded p-3 flex flex-col items-center cursor-pointer ${
                               isSelected ? "border-blue-500" : "border-gray-300"
                             }`}
-                            onClick={() => {
-                              finishingMaterialSelections[showModalServiceId] = [
-                                material.external_id,
-                              ];
-                              setFinishingMaterialSelections({ ...finishingMaterialSelections });
-                            }}
+                            onClick={() =>
+                              pickMaterial(showModalServiceId!, showModalSectionName, material.external_id)
+                            }
                           >
                             <img
                               src={material.image}
@@ -1011,12 +993,11 @@ export default function EmergencyDetails() {
                               {material.name}
                             </h3>
                             <p className="text-xs text-gray-700">
-                              ${formatWithSeparator(costNum)} / {material.unit_of_measurement}
+                              ${formatWithSeparator(costNum)} /{" "}
+                              {material.unit_of_measurement}
                             </p>
                             {diff !== 0 && (
-                              <p className={`text-xs mt-1 font-medium ${diffColor}`}>
-                                {diffStr}
-                              </p>
+                              <p className={`text-xs mt-1 font-medium ${diffColor}`}>{diffStr}</p>
                             )}
                             {isSelected && (
                               <span className="text-xs text-blue-600 font-semibold mt-1">

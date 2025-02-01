@@ -5,44 +5,40 @@ import React from "react";
 interface PreferencesModalProps {
   /** Whether the modal is shown */
   show: boolean;
-  /** Callback to close the modal (e.g. on Cancel / outside click) */
+  /** Callback to close the modal (e.g. on Cancel or outside click) */
   onClose: () => void;
   /** Callback when user clicks Save */
   onSave: () => void;
 
-  /** Link to the modal's div for outside-click detection */
+  /** Reference to the modal container for outside-click detection */
   preferencesModalRef: React.RefObject<HTMLDivElement>;
 
-  /** Selected language code */
+  /** Current language code */
   selectedLanguage: string;
-  /** Set selected language code */
   setSelectedLanguage: (val: string) => void;
 
-  /** Selected unit of measurement */
+  /** Current measurement unit */
   selectedUnit: string;
-  /** Set selected unit of measurement */
   setSelectedUnit: (val: string) => void;
 
-  /** Selected currency code */
+  /** Current currency code */
   selectedCurrency: string;
-  /** Set selected currency code */
   setSelectedCurrency: (val: string) => void;
 
-  /** All possible language codes */
+  /** Available language codes */
   languages: string[];
-  /** All possible units */
+  /** Available measurement units */
   units: string[];
-  /** All possible currencies */
+  /** Available currency codes */
   currencies: string[];
-  /** A map of language code => displayed name (e.g. ENG->English) */
+  /** Mapping from language code to display name (e.g. ENG -> 'English') */
   languageMap: Record<string, string>;
 }
 
 /**
  * PreferencesModal:
- * - A modal for language, units, and currency.
- * - The 'show' prop controls visibility.
- * - Each section is now a row of same-size buttons for consistent styling.
+ * A modal that allows the user to select language, units, and currency.
+ * The 'show' prop toggles visibility.
  */
 export default function PreferencesModal({
   show,
@@ -65,8 +61,8 @@ export default function PreferencesModal({
   if (!show) return null;
 
   /**
-   * A helper to render a horizontal group of same-size buttons
-   * for any array of codes (like 'ENG','FRA','ESP' or 'Feet','Meters', etc.).
+   * Renders a horizontal group of buttons for a given set of items (languages, units, currencies).
+   * Each button has the same width and toggles its appearance based on selection.
    */
   function renderButtonGroup<T extends string>(
     label: string,
@@ -107,11 +103,21 @@ export default function PreferencesModal({
     <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-[9999]">
       <div
         ref={preferencesModalRef}
-        className="bg-white p-6 rounded-xl shadow-lg max-w-[460px] w-[90%]"
+        className="
+          bg-white
+          p-4 sm:p-6
+          rounded-xl
+          shadow-lg
+          w-[95vw]
+          sm:w-[90%]
+          max-w-[460px]
+          max-h-[90vh]
+          overflow-auto
+        "
       >
         <h2 className="text-2xl font-bold mb-4 text-gray-800">Preferences</h2>
 
-        {/* Language buttons */}
+        {/* Language selection */}
         {renderButtonGroup(
           "Language",
           languages,
@@ -120,10 +126,10 @@ export default function PreferencesModal({
           languageMap
         )}
 
-        {/* Units buttons */}
+        {/* Unit selection */}
         {renderButtonGroup("Units", units, selectedUnit, setSelectedUnit)}
 
-        {/* Currency buttons */}
+        {/* Currency selection */}
         {renderButtonGroup(
           "Currency",
           currencies,
@@ -131,7 +137,7 @@ export default function PreferencesModal({
           setSelectedCurrency
         )}
 
-        {/* Action buttons */}
+        {/* Modal action buttons */}
         <div className="mt-6 flex justify-end gap-3">
           <button
             onClick={onClose}

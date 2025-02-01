@@ -27,7 +27,6 @@ function getApiBaseUrl(): string {
 
 /** 
  * POST /work/finishing_materials => fetch finishing materials for a given work_code. 
- * (Identical to the main page’s logic.)
  */
 async function fetchFinishingMaterials(workCode: string) {
   const url = `${getApiBaseUrl()}/work/finishing_materials`;
@@ -49,7 +48,6 @@ async function fetchFinishingMaterials(workCode: string) {
 
 /** 
  * POST /calculate => compute labor+materials cost. 
- * (Identical to the main page’s logic, but now we can pass finishing_materials.)
  */
 async function calculatePrice(params: {
   work_code: string;
@@ -98,13 +96,17 @@ function ServiceImage({ serviceId }: { serviceId: string }) {
 
 /**
  * RecommendedActivities:
- * --------------------------------
- * - Gathers recommended items for each selected service (servicesRecommendations).
- * - Prevents duplicates if multiple origins suggest the same recommended.
- * - Loads finishing materials for each recommended service so that “calculatePrice”
- *   includes those materials (like your main code does).
- * - Shows them in pages of 2 with a fade transition.
- * - Allows adjusting quantity and Add/Remove from parent’s selectedServicesState.
+ * - Gathers recommended items for each selected service
+ * - Prevents duplicates
+ * - Loads finishing materials, allows adjusting quantity, etc.
+ *
+ * On different screen widths:
+ *   - < 768px: 1 card per page
+ *   - 768px <= width < 1024px: 3 cards per page
+ *   - 1024px <= width < 1280px: 4 cards per page
+ *   - >= 1280px: 2 cards per page
+ *
+ * Also for desktop we keep max-w-[500px], for phone/tablet => w-full
  */
 export default function RecommendedActivities({
   selectedServicesState,
@@ -119,7 +121,7 @@ export default function RecommendedActivities({
 }) {
   const { location } = useLocation();
 
-  // 1) Build a map from each “origin” to an array of recommended IDs
+  // origin -> recommended IDs
   const originToRecommendedIds = useMemo(() => {
     const out: Record<string, string[]> = {};
     for (const originDash of Object.keys(selectedServicesState)) {
@@ -144,7 +146,6 @@ export default function RecommendedActivities({
     return out;
   }, [selectedServicesState]);
 
-  // 2) Flatten into an array, skipping duplicates
   interface FlatRec {
     originId: string;
     recommendedId: string;
@@ -165,7 +166,7 @@ export default function RecommendedActivities({
       const originUnit = originSvc?.unit_of_measurement || "each";
 
       for (const rDash of recIds) {
-        if (used.has(rDash)) continue; // skip duplicates
+        if (used.has(rDash)) continue;
         used.add(rDash);
 
         const recSvc = ALL_SERVICES.find((x) => x.id === rDash);
@@ -173,6 +174,7 @@ export default function RecommendedActivities({
 
         const minQ = recSvc.min_quantity ?? 1;
         let recommendedQty = minQ;
+
         // If same unit => sync
         if (recSvc.unit_of_measurement === originUnit) {
           recommendedQty = Math.max(minQ, originQty);
@@ -192,27 +194,20 @@ export default function RecommendedActivities({
     return arr;
   }, [originToRecommendedIds, selectedServicesState]);
 
-  // finishingMaterials for recommended => recId => { sections: ... }
+  // finishing materials for recommended => recId => { sections: ... }
   const [recommendedFinishingMaterialsMap, setRecommendedFinishingMaterialsMap] = useState<
     Record<string, { sections: Record<string, any[]> }>
   >({});
-  // recommended finishingMaterialSelections => recId => string[]
+  // finishingMaterialSelections => recId => string[]
   const [recommendedFinishingMaterialSelections, setRecommendedFinishingMaterialSelections] =
     useState<Record<string, string[]>>({});
 
-  // recommendedQuantities => recId => number
   const [recommendedQuantities, setRecommendedQuantities] = useState<Record<string, number>>({});
-  // manualRecInput => recId => string|null
   const [manualRecInput, setManualRecInput] = useState<Record<string, string | null>>({});
-  // recommendedCosts => recId => number
   const [recommendedCosts, setRecommendedCosts] = useState<Record<string, number>>({});
-  // fade transition
   const [isFading, setIsFading] = useState(false);
 
-  /**
-   * On mount or if flatRecommended changes,
-   * initialize recommendedQuantities if missing.
-   */
+  // Initialize recommendedQuantities if missing
   useEffect(() => {
     const copy = { ...recommendedQuantities };
     let changed = false;
@@ -227,15 +222,11 @@ export default function RecommendedActivities({
     }
   }, [flatRecommended, recommendedQuantities]);
 
-  /**
-   * On mount / whenever flatRecommended changes:
-   * - fetch finishing materials for each recommended item (like main code).
-   * - select default picks if not present in recommendedFinishingMaterialSelections.
-   */
+  // Load finishing materials
   useEffect(() => {
-    async function loadAllFinishingMaterials() {
+    async function loadAll() {
       const neededIds = flatRecommended.map((item) => item.recommendedId);
-      // For each recommendedId, if we haven't fetched finishingMaterials => do so
+
       await Promise.all(
         neededIds.map(async (recId) => {
           if (!recommendedFinishingMaterialsMap[recId]) {
@@ -244,13 +235,12 @@ export default function RecommendedActivities({
               const data = await fetchFinishingMaterials(dot);
               recommendedFinishingMaterialsMap[recId] = data;
             } catch (err) {
-              console.error("Error fetching finishing materials for", recId, err);
+              console.error("Error fetching finishing materials:", recId, err);
             }
           }
         })
       );
 
-      // now set default picks if we have none
       const newSelections = { ...recommendedFinishingMaterialSelections };
       let updated = false;
 
@@ -261,7 +251,6 @@ export default function RecommendedActivities({
             const picks: string[] = [];
             for (const arr of Object.values(fmData.sections)) {
               if (Array.isArray(arr) && arr.length > 0) {
-                // pick the first finishing material from each sub-section
                 picks.push(arr[0].external_id);
               }
             }
@@ -278,15 +267,12 @@ export default function RecommendedActivities({
     }
 
     if (flatRecommended.length > 0) {
-      loadAllFinishingMaterials();
+      loadAll();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [flatRecommended]);
 
-  /**
-   * Recompute recommendedCosts whenever recommendedQuantities or finishingMaterialSelections changes
-   * or location changes (ZIP).
-   */
+  // Recompute recommendedCosts
   useEffect(() => {
     (async () => {
       const { zip, country } = location;
@@ -300,8 +286,6 @@ export default function RecommendedActivities({
           try {
             const recId = item.recommendedId;
             const qty = recommendedQuantities[recId] ?? item.min_quantity;
-
-            // finishing materials from recommendedFinishingMaterialSelections
             const finishingIds = recommendedFinishingMaterialSelections[recId] || [];
 
             const dot = dashToDot(recId);
@@ -316,7 +300,7 @@ export default function RecommendedActivities({
             const mat = parseFloat(resp.material_cost) || 0;
             nextCosts[recId] = labor + mat;
           } catch (err) {
-            // ignore or handle error
+            // ignore
           }
         })
       );
@@ -329,7 +313,7 @@ export default function RecommendedActivities({
     location,
   ]);
 
-  /** + / - quantity */
+  /** +/- quantity */
   function handleRecQuantityChange(
     recId: string,
     increment: boolean,
@@ -345,7 +329,6 @@ export default function RecommendedActivities({
         [recId]: unit === "each" ? Math.round(newVal) : newVal,
       };
     });
-    // clear typed input
     setManualRecInput((prev) => ({ ...prev, [recId]: null }));
   }
 
@@ -366,7 +349,6 @@ export default function RecommendedActivities({
     }));
   }
 
-  /** blank => revert to numeric next time */
   function handleRecBlur(recId: string) {
     if (manualRecInput[recId] === "") {
       setManualRecInput((prev) => ({ ...prev, [recId]: null }));
@@ -377,7 +359,6 @@ export default function RecommendedActivities({
     setManualRecInput((prev) => ({ ...prev, [recId]: "" }));
   }
 
-  /** Add/Remove recommended => updates parent's selectedServicesState. */
   function handleAddRecommended(recId: string, minQ: number) {
     const isSelected = selectedServicesState[recId] != null;
     if (isSelected) {
@@ -393,7 +374,7 @@ export default function RecommendedActivities({
         [recId]: qty,
       });
 
-      // also add that rec's category if missing
+      // add category if missing
       const catPrefix = recId.split("-").slice(0, 2).join("-");
       if (!selectedCategories.includes(catPrefix)) {
         const nextCats = [...selectedCategories, catPrefix];
@@ -403,10 +384,31 @@ export default function RecommendedActivities({
     }
   }
 
-  // Basic pagination => 2 items per page
+  /**
+   * Items per page logic:
+   *   - phone (<768px): 1
+   *   - iPad mini range (768 <= width < 1024): 3
+   *   - bigger tablets (1024 <= width < 1280): 4
+   *   - desktop (>=1280px): 2
+   */
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [itemsPerPage, setItemsPerPage] = useState(1); // default phone = 1
 
-  // clamp if data changes
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const screenWidth = window.innerWidth;
+      if (screenWidth < 768) {
+        setItemsPerPage(1); // phone
+      } else if (screenWidth < 1024) {
+        setItemsPerPage(3); // iPad Mini range
+      } else if (screenWidth < 1280) {
+        setItemsPerPage(4); // bigger tablets
+      } else {
+        setItemsPerPage(2); // desktop
+      }
+    }
+  }, []);
+
   useEffect(() => {
     if (currentIndex >= flatRecommended.length) {
       setCurrentIndex(0);
@@ -414,40 +416,66 @@ export default function RecommendedActivities({
   }, [flatRecommended, currentIndex]);
 
   const pageItems = useMemo(() => {
-    return flatRecommended.slice(currentIndex, currentIndex + 2);
-  }, [flatRecommended, currentIndex]);
+    return flatRecommended.slice(currentIndex, currentIndex + itemsPerPage);
+  }, [flatRecommended, currentIndex, itemsPerPage]);
 
   function handlePrev() {
     if (currentIndex <= 0) return;
     setIsFading(true);
     setTimeout(() => {
-      setCurrentIndex((prev) => prev - 2);
+      setCurrentIndex((prev) => prev - itemsPerPage);
       setIsFading(false);
     }, 300);
   }
 
   function handleNext() {
-    if (currentIndex + 2 >= flatRecommended.length) return;
+    if (currentIndex + itemsPerPage >= flatRecommended.length) return;
     setIsFading(true);
     setTimeout(() => {
-      setCurrentIndex((prev) => prev + 2);
+      setCurrentIndex((prev) => prev + itemsPerPage);
       setIsFading(false);
     }, 300);
   }
 
-  // If no recommended => show a small “No additional recommendations”
+  // If no recommended => show "No additional recommendations"
   if (flatRecommended.length === 0) {
     return (
-      <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
+      <div
+        className="
+          ml-auto
+          bg-brand-light
+          p-4
+          rounded-lg
+          border
+          border-gray-300
+          overflow-hidden
+          mt-6
+          w-full
+          xl:max-w-[500px]
+        "
+      >
         <h2 className="text-2xl font-medium text-gray-800 mb-4">Maybe You Also Need</h2>
         <p className="text-md text-gray-500 mt-4">No additional recommendations</p>
       </div>
     );
   }
 
-  // Otherwise => show the 2-per-page with fade
+  // Container: w-full on phone/tablet, max-w-[500px] on desktop
   return (
-    <div className="max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
+    <div
+      className="
+        ml-auto
+        bg-brand-light
+        p-4
+        rounded-lg
+        border
+        border-gray-300
+        overflow-hidden
+        mt-6
+        w-full
+        xl:max-w-[500px]
+      "
+    >
       {/* Title / Pagination */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-2xl font-medium text-gray-800">Maybe you also need</h2>
@@ -465,9 +493,9 @@ export default function RecommendedActivities({
           </button>
           <button
             onClick={handleNext}
-            disabled={currentIndex + 2 >= flatRecommended.length}
+            disabled={currentIndex + itemsPerPage >= flatRecommended.length}
             className={`p-2 rounded border transition-colors ${
-              currentIndex + 2 >= flatRecommended.length
+              currentIndex + itemsPerPage >= flatRecommended.length
                 ? "text-gray-300 border-gray-200"
                 : "text-black border-gray-400"
             }`}
@@ -477,22 +505,29 @@ export default function RecommendedActivities({
         </div>
       </div>
 
-      {/* Cards */}
+      {/* Grid layout based on itemsPerPage */}
       <div
-        className={`grid grid-cols-2 gap-4 transition-opacity duration-300 ${
-          isFading ? "opacity-0" : "opacity-100"
-        }`}
+        className={`
+          transition-opacity 
+          duration-300 
+          ${isFading ? "opacity-0" : "opacity-100"} 
+          grid 
+          gap-4
+          ${
+            itemsPerPage === 1
+              ? "grid-cols-1"
+              : itemsPerPage === 2
+              ? "grid-cols-2"
+              : itemsPerPage === 3
+              ? "grid-cols-3"
+              : "grid-cols-4"
+          }
+        `}
       >
         {pageItems.map((item) => {
           const recId = item.recommendedId;
-
-          // cost from recommendedCosts
           const costVal = recommendedCosts[recId] || 0;
-
-          // recommendedQuantities => numeric fallback
           const numeric = recommendedQuantities[recId] ?? item.min_quantity;
-
-          // typed => if null => show numeric
           const typedVal = manualRecInput[recId] ?? null;
           const displayVal = typedVal !== null ? typedVal : String(numeric);
 
@@ -516,12 +551,17 @@ export default function RecommendedActivities({
                 </p>
               )}
 
-              {/* Quantity */}
+              {/* Quantity controls */}
               <div className="mt-2">
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() =>
-                      handleRecQuantityChange(recId, false, item.unit_of_measurement, item.min_quantity)
+                      handleRecQuantityChange(
+                        recId,
+                        false,
+                        item.unit_of_measurement,
+                        item.min_quantity
+                      )
                     }
                     className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
                   >
@@ -533,13 +573,23 @@ export default function RecommendedActivities({
                     onClick={() => handleRecClick(recId)}
                     onBlur={() => handleRecBlur(recId)}
                     onChange={(e) =>
-                      handleRecManualChange(recId, e.target.value, item.unit_of_measurement, item.min_quantity)
+                      handleRecManualChange(
+                        recId,
+                        e.target.value,
+                        item.unit_of_measurement,
+                        item.min_quantity
+                      )
                     }
                     className="w-16 text-center px-1 py-1 border rounded text-sm"
                   />
                   <button
                     onClick={() =>
-                      handleRecQuantityChange(recId, true, item.unit_of_measurement, item.min_quantity)
+                      handleRecQuantityChange(
+                        recId,
+                        true,
+                        item.unit_of_measurement,
+                        item.min_quantity
+                      )
                     }
                     className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
                   >

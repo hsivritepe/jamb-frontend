@@ -17,7 +17,6 @@ interface PaymentOptionPanelProps {
   onConfirm: (optionLabel: string, coefficient: number) => void;
 }
 
-
 export default function PaymentOptionPanel({
   subtotal,
   materialsAndFees,
@@ -44,7 +43,7 @@ export default function PaymentOptionPanel({
   ];
 
   return (
-    <div className="w-[500px] bg-white border border-gray-300 rounded-lg p-4 h-[760px]">
+    <div className="w-full xl:w-[500px] bg-white border border-gray-300 rounded-lg p-4">
       {/* Title */}
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold text-gray-800">
@@ -60,12 +59,8 @@ export default function PaymentOptionPanel({
 
       <div className="space-y-4">
         {options.map((opt) => {
-          // Check if user has selected this option
           const isSelected = selectedOption === opt.label;
-
-          // discountedLabor => baseLabor * coefficient
           const discountedLabor = subtotal * opt.coefficient;
-          // total => discountedLabor + materials/fees
           const newTotal = discountedLabor + materialsAndFees;
 
           return (
@@ -85,7 +80,6 @@ export default function PaymentOptionPanel({
               </div>
               <p className="text-sm text-gray-500">{opt.description}</p>
 
-              {/* Show labor discount + final total */}
               <p className="text-sm text-gray-700 mt-1">
                 <strong>Labor Cost:</strong>{" "}
                 <span className="text-blue-600 font-medium">

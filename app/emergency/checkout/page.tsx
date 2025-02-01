@@ -7,7 +7,7 @@ import ActionIconsBar from "@/components/ui/ActionIconsBar";
 import { SectionBoxTitle } from "@/components/ui/SectionBoxTitle";
 import { SectionBoxSubtitle } from "@/components/ui/SectionBoxSubtitle";
 import { EMERGENCY_STEPS } from "@/constants/navigation";
-import { EMERGENCY_SERVICES } from "@/constants/emergency"; // For matching categories
+import { EMERGENCY_SERVICES } from "@/constants/emergency";
 import { ALL_SERVICES } from "@/constants/services";
 
 // session utils
@@ -395,12 +395,12 @@ export default function CheckoutPage() {
           <ActionIconsBar onPrint={handlePrint} onShare={handleShare} onSave={handleSave} />
         </div>
 
-        <div className="bg-white border border-gray-300 mt-8 p-6 rounded-lg space-y-6">
+        <div className="bg-white border border-gray-300 mt-4 p-4 sm:p-6 rounded-lg space-y-6">
           {/* Estimate info */}
           <div>
             <SectionBoxSubtitle>
-              Estimate for Emergency Services
-              <span className="ml-2 text-sm text-gray-500">({estimateNumber})</span>
+            <div>Estimate for Emergency Services</div>
+            <div className="my-2 text-sm text-gray-500">({estimateNumber})</div>
             </SectionBoxSubtitle>
             <p className="text-xs text-gray-400 -mt-2 ml-1">
               *This number is temporary and will be replaced with a permanent
@@ -422,7 +422,7 @@ export default function CheckoutPage() {
                     {items.map((item, j) => {
                       const itemIndex = `${catIndex}.${j + 1}`;
                       return (
-                        <div key={item.activityKey} className="mt-3 ml-4 pb-3">
+                        <div key={item.activityKey} className="mt-3 ml-0 sm:ml-4 pb-3">
                           <h3 className="font-medium text-lg text-gray-800 mb-1">
                             {itemIndex}. {item.title}
                           </h3>
@@ -441,7 +441,7 @@ export default function CheckoutPage() {
                           </div>
 
                           {/* cost breakdown */}
-                          <div className="mt-3 p-4 bg-gray-50 border rounded">
+                          <div className="mt-3 p-2 sm:p-4 bg-gray-50 border rounded">
                             <div className="flex justify-between mb-3">
                               <span className="text-md font-medium text-gray-800">Labor</span>
                               <span className="text-md font-medium text-gray-700">

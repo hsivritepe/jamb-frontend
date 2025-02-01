@@ -382,11 +382,11 @@ export default function CheckoutPage() {
           <ActionIconsBar onPrint={handlePrint} onShare={handleShare} onSave={handleSave} />
         </div>
 
-        <div className="bg-white border border-gray-300 mt-8 p-6 rounded-lg space-y-6">
+        <div className="bg-white border border-gray-300 mt-8 p-4 sm:p-6 rounded-lg space-y-6">
           {/* Reference info */}
           <SectionBoxSubtitle>
-            Estimate for {chosenPackage ? chosenPackage.title : "Unknown"}
-            <span className="ml-2 text-sm text-gray-500">({referenceNumber})</span>
+          <div>Estimate for {chosenPackage ? chosenPackage.title : "Unknown"}</div>
+          <div className="text-sm text-gray-500">({referenceNumber})</div>
           </SectionBoxSubtitle>
           <p className="text-xs text-gray-400 ml-1">
             *This number is temporary and will be replaced with a permanent
@@ -411,7 +411,7 @@ export default function CheckoutPage() {
                       const catName = catObj ? catObj.title : catId;
 
                       return (
-                        <div key={catId} className="ml-4 space-y-4">
+                        <div key={catId} className="ml-0 sm:ml-4 space-y-4">
                           <h4 className="text-lg font-semibold text-gray-700">
                             {catNum}. {catName}
                           </h4>
@@ -449,7 +449,7 @@ export default function CheckoutPage() {
                                 </div>
 
                                 {breakdown && (
-                                  <div className="mt-2 p-4 bg-gray-50 border rounded">
+                                  <div className="mt-2 p-2 sm:p-4 bg-gray-50 border rounded">
                                     <div className="flex justify-between mb-2">
                                       <span className="text-sm font-medium text-gray-700">
                                         Labor

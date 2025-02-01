@@ -11,7 +11,8 @@ interface ActionIconsBarProps {
 
 /**
  * A reusable action bar with three icon buttons: Print, Share, Save.
- * All are active by default. If you want to disable them, add logic or more props.
+ * On smaller screens (<sm), we show only icons. 
+ * From sm and above, we also show text labels.
  */
 const ActionIconsBar: FC<ActionIconsBarProps> = ({
   onPrint,
@@ -26,7 +27,8 @@ const ActionIconsBar: FC<ActionIconsBarProps> = ({
         className="flex items-center gap-2 text-gray-700 hover:text-gray-900"
       >
         <Printer size={20} />
-        <span className="text-sm">Print</span>
+        {/* Text label hidden below sm */}
+        <span className="hidden sm:inline text-sm">Print</span>
       </button>
 
       {/* Share Button */}
@@ -35,7 +37,7 @@ const ActionIconsBar: FC<ActionIconsBarProps> = ({
         className="flex items-center gap-2 text-gray-700 hover:text-gray-900"
       >
         <Share2 size={20} />
-        <span className="text-sm">Share</span>
+        <span className="hidden sm:inline text-sm">Share</span>
       </button>
 
       {/* Save Button */}
@@ -44,7 +46,7 @@ const ActionIconsBar: FC<ActionIconsBarProps> = ({
         className="flex items-center gap-2 text-gray-700 hover:text-gray-900"
       >
         <Save size={20} />
-        <span className="text-sm">Save</span>
+        <span className="hidden sm:inline text-sm">Save</span>
       </button>
     </div>
   );

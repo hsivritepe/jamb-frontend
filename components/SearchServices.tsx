@@ -22,7 +22,7 @@ export default function SearchServices({
                 value={value}
                 onChange={onChange}
                 placeholder={placeholder}
-                className="w-full h-12 px-4 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-blue-600"
+                className="w-full h-12 px-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-blue-600"
             />
         </div>
     );

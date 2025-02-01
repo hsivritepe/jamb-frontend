@@ -10,7 +10,7 @@ import { SectionBoxSubtitle } from "@/components/ui/SectionBoxSubtitle";
 import { taxRatesUSA } from "@/constants/taxRatesUSA";
 import { taxRatesCanada } from "@/constants/taxRatesCanada";
 
-// If you have your new session utility:
+// Session utilities
 import { getSessionItem, setSessionItem } from "@/utils/session";
 
 /** Safely parse a string to a number. If invalid, return 0. */
@@ -19,17 +19,14 @@ function parseNumberOrZero(val: string): number {
   return Number.isNaN(num) ? 0 : num;
 }
 
-/** Default shape of the house/apartment info. */
+/** Default house/apartment info. */
 const defaultHouseInfo = {
   country: "",
   city: "",
   zip: "",
   addressLine: "",
-  // For the USA state code
   state: "",
-  // For the Canadian province name
   province: "",
-
   houseType: "",
   floors: 1,
   squareFootage: 0,
@@ -60,11 +57,11 @@ export default function PackagesDetailsHomePage() {
   // If no packageId, optionally redirect
   useEffect(() => {
     if (!packageId) {
-      // router.push("/packages");
+      // router.push("/packages"); // optional
     }
   }, [packageId]);
 
-  // Always store (or refresh) the packageId in session
+  // Always store the packageId in session
   useEffect(() => {
     if (packageId) {
       setSessionItem("packages_currentPackageId", packageId);
@@ -81,13 +78,11 @@ export default function PackagesDetailsHomePage() {
     setSessionItem("packages_houseInfo", houseInfo);
   }, [houseInfo]);
 
-  /** Handle text or select changes for simple string fields */
   function handleChange(e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     const { name, value } = e.target;
     setHouseInfo((prev) => ({ ...prev, [name]: value }));
   }
 
-  /** Handle numeric fields with parseNumberOrZero. */
   function handleNumber(e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     const { name, value } = e.target;
     setHouseInfo((prev) => ({
@@ -96,7 +91,7 @@ export default function PackagesDetailsHomePage() {
     }));
   }
 
-  /** Attempt to auto-detect location from ipapi.co. */
+  /** Try to auto-detect location from ipapi.co. */
   async function handleAutoFillLocation() {
     try {
       const response = await fetch("https://ipapi.co/json/");
@@ -105,18 +100,16 @@ export default function PackagesDetailsHomePage() {
       }
       const data = await response.json();
 
-      // Example mapping from ipapi.co fields
       const city = data.city || "City";
       const zip = data.postal || "00000";
       const country = data.country_name || "";
-      const regionCode = data.region_code || ""; // e.g. "CA", "NY"
+      const regionCode = data.region_code || "";
 
       setHouseInfo((prev) => ({
         ...prev,
         city,
         zip,
         country,
-        // If user is in the US, store regionCode to "state"; for Canada, store it to "province"
         state: country === "United States" ? regionCode : "",
         province: country === "Canada" ? regionCode : "",
       }));
@@ -126,7 +119,7 @@ export default function PackagesDetailsHomePage() {
     }
   }
 
-  /** Validate fields, then proceed to next step. */
+  /** Validate and go next. */
   function handleNext() {
     if (!houseInfo.addressLine.trim()) {
       alert("Please enter your street address before proceeding.");
@@ -140,18 +133,18 @@ export default function PackagesDetailsHomePage() {
       alert("Please select your house type.");
       return;
     }
-    // go to next
     router.push(`/packages/services?packageId=${packageId}`);
   }
 
-  /** Reset form to default state. */
+  /** Clear form. */
   function handleClearAll() {
-    const confirmed = window.confirm("Are you sure you want to clear all data?");
+    const confirmed = window.confirm(
+      "Are you sure you want to clear all data?"
+    );
     if (!confirmed) return;
     setHouseInfo(defaultHouseInfo);
   }
 
-  /** Toggle booleans */
   function toggleGarage() {
     setHouseInfo((prev) => ({
       ...prev,
@@ -184,24 +177,24 @@ export default function PackagesDetailsHomePage() {
     }));
   }
 
-  // We'll show the US states if user selected "USA"
   const isUS = houseInfo.country === "USA";
-  // We'll show the provinces if user selected "Canada"
   const isCanada = houseInfo.country === "Canada";
 
   return (
     <main className="min-h-screen pt-24 pb-16">
-      <div className="container mx-auto">
+      <div className="container mx-auto xl:px-0">
         <BreadCrumb items={PACKAGES_STEPS} />
 
+        {/* Top row: Title and Next button */}
         <div className="flex justify-between items-center mt-8">
-          <SectionBoxTitle>Home / Apartment Information</SectionBoxTitle>
+          <SectionBoxTitle>Home Details</SectionBoxTitle>
           <Button onClick={handleNext}>Next →</Button>
         </div>
 
-        <div className="flex justify-between items-center mt-2 max-w-3xl">
+        {/* Sub-header and Clear button */}
+        <div className="flex justify-between items-center mt-8 xl:max-w-3xl">
           <p className="text-gray-600">
-            Please provide details about your home so we can tailor the package properly.
+            Please provide details about your home
           </p>
           <button
             onClick={handleClearAll}
@@ -211,7 +204,8 @@ export default function PackagesDetailsHomePage() {
           </button>
         </div>
 
-        <div className="bg-white border border-gray-300 mt-6 p-6 rounded-lg space-y-6 max-w-3xl">
+        {/* Main form container */}
+        <div className="bg-white border border-gray-300 mt-6 p-6 rounded-lg space-y-6 w-full xl:max-w-3xl">
           {/* Address & Location */}
           <div>
             <SectionBoxSubtitle>Address & Location</SectionBoxSubtitle>
@@ -228,9 +222,9 @@ export default function PackagesDetailsHomePage() {
               className="w-full px-4 py-2 border border-gray-300 rounded mt-1"
             />
 
-            <div className="flex gap-4 mt-4">
+            <div className="flex flex-col xl:flex-row gap-4 mt-4">
               {/* City */}
-              <div className="w-1/2">
+              <div className="w-full xl:w-1/2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   City
                 </label>
@@ -245,7 +239,7 @@ export default function PackagesDetailsHomePage() {
               </div>
 
               {/* ZIP */}
-              <div className="w-1/2">
+              <div className="w-full xl:w-1/2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   ZIP Code
                 </label>
@@ -260,8 +254,8 @@ export default function PackagesDetailsHomePage() {
               </div>
             </div>
 
-            <div className="flex gap-4 mt-4">
-              <div className="w-1/3">
+            <div className="flex flex-col xl:flex-row gap-4 mt-4">
+              <div className="w-full xl:w-1/3">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Country
                 </label>
@@ -274,13 +268,11 @@ export default function PackagesDetailsHomePage() {
                   <option value="">-- Select --</option>
                   <option value="USA">USA</option>
                   <option value="Canada">Canada</option>
-                  {/* More countries if needed */}
                 </select>
               </div>
 
-              {/* If "USA" => show state dropdown */}
               {isUS && (
-                <div className="w-1/3">
+                <div className="w-full xl:w-1/3">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     State (Short Code)
                   </label>
@@ -300,9 +292,8 @@ export default function PackagesDetailsHomePage() {
                 </div>
               )}
 
-              {/* If "Canada" => show province dropdown */}
               {isCanada && (
-                <div className="w-1/3">
+                <div className="w-full xl:w-1/3">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Province
                   </label>
@@ -323,11 +314,11 @@ export default function PackagesDetailsHomePage() {
               )}
 
               {/* Auto-detect button */}
-              <div className="w-1/3 flex items-end">
+              <div className="w-full xl:w-1/3 flex items-end">
                 <button
                   type="button"
                   onClick={handleAutoFillLocation}
-                  className="px-4 py-2 bg-blue-100 text-blue-600 border border-blue-400 rounded hover:bg-blue-200 transition-colors h-10"
+                  className="px-4 py-2 bg-blue-100 text-blue-600 border border-blue-400 rounded hover:bg-blue-200 transition-colors h-10 w-full xl:w-auto"
                 >
                   Auto Detect
                 </button>
@@ -339,9 +330,9 @@ export default function PackagesDetailsHomePage() {
           <div>
             <SectionBoxSubtitle>Indoor Details</SectionBoxSubtitle>
 
-            <div className="flex gap-4 mt-2">
+            <div className="flex flex-col xl:flex-row gap-4 mt-2">
               {/* House Type */}
-              <div className="w-1/2">
+              <div className="w-full xl:w-1/2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   House Type
                 </label>
@@ -359,7 +350,7 @@ export default function PackagesDetailsHomePage() {
               </div>
 
               {/* Floors */}
-              <div className="w-1/2">
+              <div className="w-full xl:w-1/2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Floors
                 </label>
@@ -376,16 +367,18 @@ export default function PackagesDetailsHomePage() {
               </div>
             </div>
 
-            <div className="flex gap-4 mt-4">
+            <div className="flex flex-col xl:flex-row gap-4 mt-4">
               {/* Total Square Footage */}
-              <div className="w-1/2">
+              <div className="w-full xl:w-1/2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Total Square Footage
                 </label>
                 <input
                   type="text"
                   name="squareFootage"
-                  value={houseInfo.squareFootage === 0 ? "" : houseInfo.squareFootage}
+                  value={
+                    houseInfo.squareFootage === 0 ? "" : houseInfo.squareFootage
+                  }
                   onChange={(e) => {
                     const val = parseNumberOrZero(e.target.value);
                     setHouseInfo((prev) => ({ ...prev, squareFootage: val }));
@@ -396,7 +389,7 @@ export default function PackagesDetailsHomePage() {
               </div>
 
               {/* Bedrooms */}
-              <div className="w-1/2">
+              <div className="w-full xl:w-1/2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Bedrooms
                 </label>
@@ -415,9 +408,9 @@ export default function PackagesDetailsHomePage() {
               </div>
             </div>
 
-            <div className="flex gap-4 mt-4">
+            <div className="flex flex-col xl:flex-row gap-4 mt-4">
               {/* Bathrooms */}
-              <div className="w-1/2">
+              <div className="w-full xl:w-1/2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Bathrooms
                 </label>
@@ -436,7 +429,7 @@ export default function PackagesDetailsHomePage() {
               </div>
 
               {/* Major Appliances */}
-              <div className="w-1/2">
+              <div className="w-full xl:w-1/2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Major Appliances
                 </label>
@@ -455,9 +448,9 @@ export default function PackagesDetailsHomePage() {
               </div>
             </div>
 
-            <div className="flex gap-4 mt-4">
+            <div className="flex flex-col xl:flex-row gap-4 mt-4">
               {/* Air Conditioners */}
-              <div className="w-1/2">
+              <div className="w-full xl:w-1/2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Air Conditioners (AC units)
                 </label>
@@ -475,7 +468,7 @@ export default function PackagesDetailsHomePage() {
               </div>
 
               {/* Boiler / Heater */}
-              <div className="w-1/2">
+              <div className="w-full xl:w-1/2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Boiler / Heater
                 </label>
@@ -484,13 +477,7 @@ export default function PackagesDetailsHomePage() {
                     type="checkbox"
                     id="hasBoiler"
                     checked={houseInfo.hasBoiler}
-                    onChange={() => {
-                      setHouseInfo((prev) => ({
-                        ...prev,
-                        hasBoiler: !prev.hasBoiler,
-                        boilerType: !prev.hasBoiler ? "gas" : "",
-                      }));
-                    }}
+                    onChange={toggleBoiler}
                     className="w-5 h-5 text-blue-600 cursor-pointer"
                   />
                   <label htmlFor="hasBoiler" className="cursor-pointer">
@@ -542,7 +529,7 @@ export default function PackagesDetailsHomePage() {
                     name="garageCount"
                     value={houseInfo.garageCount}
                     onChange={handleNumber}
-                    className="w-1/2 px-4 py-2 border border-gray-300 rounded"
+                    className="w-full xl:w-1/2 px-4 py-2 border border-gray-300 rounded"
                   >
                     <option value="1">1</option>
                     <option value="2">2</option>
@@ -582,7 +569,7 @@ export default function PackagesDetailsHomePage() {
                       setHouseInfo((prev) => ({ ...prev, yardArea: val }));
                     }}
                     placeholder="e.g. 300"
-                    className="w-1/2 px-4 py-2 border border-gray-300 rounded"
+                    className="w-full xl:w-1/2 px-4 py-2 border border-gray-300 rounded"
                   />
                 </div>
               )}
@@ -616,7 +603,7 @@ export default function PackagesDetailsHomePage() {
                       setHouseInfo((prev) => ({ ...prev, poolArea: val }));
                     }}
                     placeholder="e.g. 250"
-                    className="w-1/2 px-4 py-2 border border-gray-300 rounded"
+                    className="w-full xl:w-1/2 px-4 py-2 border border-gray-300 rounded"
                   />
                 </div>
               )}

@@ -5,20 +5,18 @@ import React, { ChangeEvent } from "react";
 interface AddressSectionProps {
   address: string;
   onAddressChange: (e: ChangeEvent<HTMLInputElement>) => void;
-
   zip: string;
   onZipChange: (e: ChangeEvent<HTMLInputElement>) => void;
-
   stateName: string;
   onStateChange: (e: ChangeEvent<HTMLInputElement>) => void;
-
   onUseMyLocation: () => void;
   className?: string;
 }
 
 /**
- * A reusable AddressSection block that includes inputs for address, state, and ZIP.
- * On "Use my location", it calls onUseMyLocation (the parent handles how to fill them).
+ * A reusable AddressSection:
+ * - On phones/tablets (<1280px): `w-full`.
+ * - On desktops (≥1280px, xl:): restored old "max-w-[500px] ml-auto".
  */
 export default function AddressSection({
   address,
@@ -32,24 +30,26 @@ export default function AddressSection({
 }: AddressSectionProps) {
   return (
     <div
-      className={`max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mb-6 ${
-        className ? className : ""
-      }`}
+      className={`
+        w-full
+        xl:max-w-[500px] xl:ml-auto
+        bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mb-6
+        ${className || ""}
+      `}
     >
       <h2 className="text-2xl font-medium text-gray-800 mb-4">
         We Need Your Address
       </h2>
 
       <div className="flex flex-col gap-4">
-        {/* Address (street, city, etc.) */}
+        {/* Address */}
         <input
           type="text"
           value={address}
           onChange={onAddressChange}
-          onFocus={(e) => (e.target.placeholder = "")}
-          onBlur={(e) => (e.target.placeholder = "Enter your address")}
           placeholder="Enter your address"
-          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-4 py-2 border border-gray-300 rounded-md 
+                     focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
 
         {/* State */}
@@ -57,10 +57,9 @@ export default function AddressSection({
           type="text"
           value={stateName}
           onChange={onStateChange}
-          onFocus={(e) => (e.target.placeholder = "")}
-          onBlur={(e) => (e.target.placeholder = "Enter your state")}
           placeholder="Enter your state"
-          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-4 py-2 border border-gray-300 rounded-md 
+                     focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
 
         {/* ZIP */}
@@ -68,10 +67,9 @@ export default function AddressSection({
           type="text"
           value={zip}
           onChange={onZipChange}
-          onFocus={(e) => (e.target.placeholder = "")}
-          onBlur={(e) => (e.target.placeholder = "Enter your ZIP")}
           placeholder="Enter your ZIP"
-          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-4 py-2 border border-gray-300 rounded-md 
+                     focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
 
         <button onClick={onUseMyLocation} className="text-blue-600 text-left mt-2">

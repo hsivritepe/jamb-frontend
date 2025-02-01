@@ -9,15 +9,14 @@ import { SectionBoxTitle } from "@/components/ui/SectionBoxTitle";
 export default function Emergency() {
   const router = useRouter();
 
-  // Navigates to the next step (emergency/services)
   const handleNext = () => {
     router.push("/emergency/services");
   };
 
   return (
     <main className="min-h-screen pt-24">
-      <div className="container mx-auto mb-16">
-        {/* Breadcrumb navigation for the Emergency flow */}
+      <div className="container mx-auto xl:px-0 mb-16">
+        {/* Breadcrumb navigation */}
         <BreadCrumb items={EMERGENCY_STEPS} />
 
         {/* Next Button positioned at the top-right */}
@@ -25,11 +24,10 @@ export default function Emergency() {
           <Button onClick={handleNext}>Next →</Button>
         </div>
 
-        {/* Main content with two columns (stacked on mobile, side by side on larger screens) */}
-        <div className="grid grid-cols-1 lg:grid-cols-[45%,45%] lg:gap-[10%] lg:min-h-[500px]">
+        {/* Main content: single column for screens <1280px, two columns for >=1280px */}
+        <div className="grid grid-cols-1 gap-8 xl:grid-cols-[45%,45%] xl:gap-[10%] xl:min-h-[500px]">
           {/* Left Column: Text Content and Checklist */}
           <div className="space-y-8">
-            {/* Headline */}
             <SectionBoxTitle>Fast assistance for urgent home issues</SectionBoxTitle>
 
             {/* Checklist */}

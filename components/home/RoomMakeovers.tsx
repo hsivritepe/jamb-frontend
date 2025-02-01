@@ -58,15 +58,20 @@ interface RoomsGridProps {
   searchQuery?: string;
 }
 
+/**
+ * RoomsGrid component:
+ * - Only reduce the subtitle font size for phones (<768px).
+ * - Everything else remains unchanged.
+ */
 export default function RoomsGrid({
   title = "Whole-Room Makeovers, Done Right",
   subtitle = "Comprehensive Home Renovations for Every Room and Space",
-  searchQuery = ""
+  searchQuery = "",
 }: RoomsGridProps) {
   const router = useRouter();
 
   // Load previously saved type and selected rooms
-  const [selectedType, setSelectedType] = useState<'indoor' | 'outdoor'>(
+  const [selectedType, setSelectedType] = useState<"indoor" | "outdoor">(
     loadFromSession("rooms_selectedType", "indoor")
   );
   const [selectedSections, setSelectedSections] = useState<string[]>(
@@ -75,7 +80,7 @@ export default function RoomsGrid({
 
   // Initialize rooms based on selectedType
   const [rooms, setRooms] = useState(
-    selectedType === 'indoor' ? indoorRooms : outdoorRooms
+    selectedType === "indoor" ? indoorRooms : outdoorRooms
   );
 
   // Save changes to session
@@ -90,7 +95,7 @@ export default function RoomsGrid({
   // Recompute rooms when selectedType changes (shuffle subcategories for variety)
   useEffect(() => {
     const shuffledRooms =
-      selectedType === 'indoor'
+      selectedType === "indoor"
         ? indoorRooms.map((room) => ({
             ...room,
             subcategories: shuffleArray(room.subcategories),
@@ -99,7 +104,6 @@ export default function RoomsGrid({
             ...room,
             subcategories: shuffleArray(room.subcategories),
           }));
-
     setRooms(shuffledRooms);
   }, [selectedType]);
 
@@ -127,7 +131,6 @@ export default function RoomsGrid({
       alert("Please select at least one room before proceeding.");
       return;
     }
-    // Proceed to the next step: /rooms/services
     router.push("/rooms/services");
   };
 
@@ -136,7 +139,19 @@ export default function RoomsGrid({
       <div className="container mx-auto">
         <SectionBoxTitle>
           <div dangerouslySetInnerHTML={{ __html: title }} />
-          <p className="text-[30px] leading-[41px] font-normal text-gray-500">
+
+          {/**
+           * Subtitle:
+           * For phones (<768px), use smaller font (text-[20px], leading-[28px]).
+           * For md: and above, keep original (text-[30px], leading-[41px]).
+           */}
+          <p
+            className={`
+              font-normal text-gray-500
+              text-[20px] leading-[28px]  /* phones */
+              md:text-[30px] md:leading-[41px] /* tablets/desktops */
+            `}
+          >
             {subtitle}
           </p>
         </SectionBoxTitle>
@@ -176,7 +191,7 @@ export default function RoomsGrid({
             id: room.id,
             title: room.title,
             image: room.image,
-            url: `/rooms/${room.title.toLowerCase().replace(/ /g, '_')}`,
+            url: `/rooms/${room.title.toLowerCase().replace(/ /g, "_")}`,
             subcategories: room.subcategories,
             isSelected: selectedSections.includes(room.id),
           }))}

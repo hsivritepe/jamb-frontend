@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import Image from "next/image"; // 1) Import from next/image
+import Image from "next/image";
 import React, { useState, useEffect, ChangeEvent } from "react";
 import BreadCrumb from "@/components/ui/BreadCrumb";
 import SearchServices from "@/components/SearchServices";
@@ -19,8 +19,6 @@ import {
 } from "@/constants/categories";
 
 import { ChevronDown } from "lucide-react";
-
-// Use session.ts
 import { getSessionItem, setSessionItem } from "@/utils/session";
 
 /** Formats a numeric value with two decimals and comma separators. */
@@ -87,17 +85,18 @@ function convertServiceIdToApiFormat(serviceId: string) {
   return serviceId.replaceAll("-", ".");
 }
 
-/** Fetch finishing materials (POST /work/finishing_materials). */
+/** Returns the base API URL or fallback. */
+function getApiBaseUrl(): string {
+  return process.env.NEXT_PUBLIC_API_BASE_URL || "https://your-api.example.com";
+}
+
+/** POST /work/finishing_materials => fetch finishing materials. */
 async function fetchFinishingMaterials(workCode: string) {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_API_BASE_URL || "https://your-api.example.com";
+  const baseUrl = getApiBaseUrl();
   const url = `${baseUrl}/work/finishing_materials`;
   const res = await fetch(url, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
     body: JSON.stringify({ work_code: workCode }),
   });
   if (!res.ok) {
@@ -108,7 +107,7 @@ async function fetchFinishingMaterials(workCode: string) {
   return res.json();
 }
 
-/** Calculate cost breakdown (POST /calculate). */
+/** POST /calculate => compute labor+materials cost. */
 async function calculatePrice(params: {
   work_code: string;
   zipcode: string;
@@ -116,16 +115,12 @@ async function calculatePrice(params: {
   square: number;
   finishing_materials: string[];
 }) {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_API_BASE_URL || "https://your-api.example.com";
+  const baseUrl = getApiBaseUrl();
   const url = `${baseUrl}/calculate`;
 
   const res = await fetch(url, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
     body: JSON.stringify(params),
   });
   if (!res.ok) {
@@ -136,51 +131,45 @@ async function calculatePrice(params: {
   return res.json();
 }
 
-/**
- * Simple component that constructs a direct image URL:
- *   http://dev.thejamb.com/images/[firstSegment]/[converted].
- */
+/** Simple image component for a service, full width for phone/tablet. */
 function ServiceImage({ serviceId }: { serviceId: string }) {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
 
   useEffect(() => {
-    // The first segment is the part before the first hyphen, e.g. "1" from "1-1-1"
     const firstSegment = serviceId.split("-")[0];
-    // Convert "1-1-1" => "1.1.1"
     const code = convertServiceIdToApiFormat(serviceId);
-    // Construct final image URL
     const url = `http://dev.thejamb.com/images/${firstSegment}/${code}.jpg`;
     setImageSrc(url);
   }, [serviceId]);
 
   if (!imageSrc) return null;
 
-  // Next.js <Image> for automatic optimization. We'll unify all images to e.g. width=600, height=400.
-  // Ensure "dev.thejamb.com" is in next.config.js -> images.domains
   return (
-    <div className="mb-2 border rounded overflow-hidden">
+    <div className="mb-2 border rounded overflow-hidden w-full">
       <Image
         src={imageSrc}
         alt="Service"
         width={600}
         height={400}
-        style={{ objectFit: "cover" }}
-        // optionally, you can specify priority or other props
+        style={{ objectFit: "cover", width: "100%", height: "auto" }}
       />
     </div>
   );
 }
 
-/** Ensure finishing materials for a service are loaded. */
+/**
+ * Ensure finishing materials for a service are loaded
+ * and initialize finishingMaterialSelections if missing.
+ */
 async function ensureFinishingMaterialsLoaded(
   serviceId: string,
   finishingMaterialsMap: Record<string, any>,
   setFinishingMaterialsMap: React.Dispatch<
     React.SetStateAction<Record<string, any>>
   >,
-  finishingMaterialSelections: Record<string, string[]>,
+  finishingMaterialSelections: Record<string, Record<string, string>>,
   setFinishingMaterialSelections: React.Dispatch<
-    React.SetStateAction<Record<string, string[]>>
+    React.SetStateAction<Record<string, Record<string, string>>>
   >
 ) {
   try {
@@ -190,18 +179,17 @@ async function ensureFinishingMaterialsLoaded(
       finishingMaterialsMap[serviceId] = data;
       setFinishingMaterialsMap({ ...finishingMaterialsMap });
     }
-    // If no selection for this service => pick default in each sub-section
+    // If no selection object for this service => create it
     if (!finishingMaterialSelections[serviceId]) {
-      const data = finishingMaterialsMap[serviceId];
-      if (!data) return;
-      const picks: string[] = [];
-      const sections = data.sections || {};
-      for (const arr of Object.values(sections)) {
+      const fmData = finishingMaterialsMap[serviceId];
+      if (!fmData) return;
+      const newObj: Record<string, string> = {};
+      for (const [secName, arr] of Object.entries(fmData.sections || {})) {
         if (Array.isArray(arr) && arr.length > 0) {
-          picks.push(arr[0].external_id);
+          newObj[secName] = arr[0].external_id;
         }
       }
-      finishingMaterialSelections[serviceId] = picks;
+      finishingMaterialSelections[serviceId] = newObj;
       setFinishingMaterialSelections({ ...finishingMaterialSelections });
     }
   } catch (err) {
@@ -222,14 +210,13 @@ export default function PackageServicesPage() {
   }
   const chosenPackage = chosenPackageRaw;
 
-  // Selected services: { indoor: { svcId: qty }, outdoor: { svcId: qty } }
+  // selectedServices => { indoor: { serviceId: qty }, outdoor: { serviceId: qty } }
   const [selectedServices, setSelectedServices] = useState<{
     indoor: Record<string, number>;
     outdoor: Record<string, number>;
   }>(() =>
     getSessionItem("packages_selectedServices", { indoor: {}, outdoor: {} })
   );
-
   useEffect(() => {
     setSessionItem("packages_selectedServices", selectedServices);
   }, [selectedServices]);
@@ -267,7 +254,7 @@ export default function PackageServicesPage() {
     setSessionItem("packages_searchQuery", searchQuery);
   }, [searchQuery]);
 
-  // Expanded categories
+  // For toggling categories
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
     new Set()
   );
@@ -279,35 +266,50 @@ export default function PackageServicesPage() {
     });
   }
 
-  // Materials & cost breakdown
+  // finishingMaterialsMap => { [serviceId]: { sections: {...} } }
   const [finishingMaterialsMap, setFinishingMaterialsMap] = useState<
     Record<string, any>
   >({});
+  // finishingMaterialSelections => { [serviceId]: { [sectionName]: externalId } }
   const [finishingMaterialSelections, setFinishingMaterialSelections] =
-    useState<Record<string, string[]>>({});
+    useState<Record<string, Record<string, string>>>({});
 
-  // calculationResultsMap => server response for each service
+  // cost breakdown
   const [calculationResultsMap, setCalculationResultsMap] = useState<
     Record<string, any>
   >({});
   // serviceCosts => final numeric cost (labor + materials) for each service
   const [serviceCosts, setServiceCosts] = useState<Record<string, number>>({});
 
-  // For toggling cost breakdown UI
+  // For toggling details
   const [expandedCostBreakdown, setExpandedCostBreakdown] = useState<
     Set<string>
   >(new Set());
   function toggleCostBreakdown(svcId: string) {
     setExpandedCostBreakdown((old) => {
       const copy = new Set(old);
-      copy.has(svcId) ? copy.delete(svcId) : copy.add(svcId);
+      if (copy.has(svcId)) copy.delete(svcId);
+      else copy.add(svcId);
       return copy;
     });
   }
 
-  // Manual input for quantity
+  // manual input => serviceId => string
   const [manualInputValue, setManualInputValue] = useState<
     Record<string, string>
+  >({});
+
+  // finishing-material modal
+  const [showModalServiceId, setShowModalServiceId] = useState<string | null>(
+    null
+  );
+  const [showModalSectionName, setShowModalSectionName] = useState<
+    string | null
+  >(null);
+
+  // user-owned materials => serviceId => set of externalIds
+  const [clientOwnedMaterials, setClientOwnedMaterials] = useState<
+    Record<string, Set<string>>
   >({});
 
   // Keep packageId in session
@@ -315,7 +317,7 @@ export default function PackageServicesPage() {
     setSessionItem("packages_currentPackageId", packageId);
   }, [packageId]);
 
-  // "Select all" and "Clear all"
+  /** Clear all services. */
   function handleClearAll() {
     const sure = window.confirm(
       "Are you sure you want to clear all selections?"
@@ -329,31 +331,28 @@ export default function PackageServicesPage() {
     setCalculationResultsMap({});
     setServiceCosts({});
     setManualInputValue({});
+    setClientOwnedMaterials({});
   }
 
-  // Select all services from the chosen package
+  /** Select all services from the chosen package. */
   async function handleSelectAll() {
     const sure = window.confirm("Select all services from this package?");
     if (!sure) return;
 
     const allCatIds = new Set<string>();
-    // We'll add catIds from indoor + outdoor to expand them visually
-    chosenPackage.services.indoor.forEach((it) => {
-      const catId = it.id.split("-").slice(0, 2).join("-");
+    chosenPackage.services.indoor.forEach((x) => {
+      const catId = x.id.split("-").slice(0, 2).join("-");
       allCatIds.add(catId);
     });
-    chosenPackage.services.outdoor.forEach((it) => {
-      const catId = it.id.split("-").slice(0, 2).join("-");
+    chosenPackage.services.outdoor.forEach((x) => {
+      const catId = x.id.split("-").slice(0, 2).join("-");
       allCatIds.add(catId);
     });
 
     const nextIndoor: Record<string, number> = {};
     const nextOutdoor: Record<string, number> = {};
 
-    async function selectServiceWithMinQuantity(
-      serviceId: string,
-      isIndoor: boolean
-    ) {
+    async function selectService(serviceId: string, isIndoor: boolean) {
       const found = ALL_SERVICES.find((s) => s.id === serviceId);
       const minQ = found?.min_quantity || 1;
       if (isIndoor) {
@@ -361,7 +360,6 @@ export default function PackageServicesPage() {
       } else {
         nextOutdoor[serviceId] = minQ;
       }
-      // load finishing materials
       await ensureFinishingMaterialsLoaded(
         serviceId,
         finishingMaterialsMap,
@@ -369,44 +367,40 @@ export default function PackageServicesPage() {
         finishingMaterialSelections,
         setFinishingMaterialSelections
       );
-      // set manual input
       setManualInputValue((prev) => ({ ...prev, [serviceId]: String(minQ) }));
     }
 
-    // Select all indoor
+    // indoor
     for (const it of chosenPackage.services.indoor) {
-      await selectServiceWithMinQuantity(it.id, true);
+      await selectService(it.id, true);
     }
-    // Select all outdoor
+    // outdoor
     for (const it of chosenPackage.services.outdoor) {
-      await selectServiceWithMinQuantity(it.id, false);
+      await selectService(it.id, false);
     }
 
-    // Update state
     setSelectedServices({ indoor: nextIndoor, outdoor: nextOutdoor });
-
-    // Expand categories
-    setExpandedCategories((prev) => {
-      const merged = new Set(prev);
-      allCatIds.forEach((catId) => merged.add(catId));
-      return merged;
+    setExpandedCategories((old) => {
+      const copy = new Set(old);
+      for (const c of Array.from(allCatIds)) {
+        copy.add(c);
+      }
+      return copy;
     });
   }
 
-  // Toggle a service on/off
+  /** Toggle a service in selectedServices. */
   async function toggleService(serviceId: string) {
-    // Determine isIndoor by checking if the service is in .indoor array
     const isIndoor = !!chosenPackage.services.indoor.find(
       (x) => x.id === serviceId
     );
     const sideKey = isIndoor ? "indoor" : "outdoor";
+
     const copy = { ...selectedServices[sideKey] };
     const isOn = !!copy[serviceId];
 
     if (isOn) {
-      // Turn off => remove from selected
       delete copy[serviceId];
-      // Also clear cost breakdown, finishing materials, etc.
       setCalculationResultsMap((old) => {
         const c = { ...old };
         delete c[serviceId];
@@ -427,12 +421,16 @@ export default function PackageServicesPage() {
         delete c[serviceId];
         return c;
       });
+      setClientOwnedMaterials((old) => {
+        const c = { ...old };
+        delete c[serviceId];
+        return c;
+      });
     } else {
-      // Turn on => use minQ
-      const foundSvc = ALL_SERVICES.find((s) => s.id === serviceId);
-      const minQ = foundSvc?.min_quantity || 1;
+      // Turn on
+      const svcObj = ALL_SERVICES.find((s) => s.id === serviceId);
+      const minQ = svcObj?.min_quantity || 1;
       copy[serviceId] = minQ;
-      // load finishing materials
       await ensureFinishingMaterialsLoaded(
         serviceId,
         finishingMaterialsMap,
@@ -440,19 +438,17 @@ export default function PackageServicesPage() {
         finishingMaterialSelections,
         setFinishingMaterialSelections
       );
-      // set manual input
-      setManualInputValue((m) => ({ ...m, [serviceId]: String(minQ) }));
+      setManualInputValue((old) => ({ ...old, [serviceId]: String(minQ) }));
     }
-    setSelectedServices((prev) => ({ ...prev, [sideKey]: copy }));
+    setSelectedServices((old) => ({ ...old, [sideKey]: copy }));
   }
 
-  // increment/decrement for the quantity
+  /** +/- quantity. */
   function handleQuantityChange(
     serviceId: string,
     increment: boolean,
     unit: string
   ) {
-    // isIndoor => check chosenPackage.services.indoor
     const isIndoor = !!chosenPackage.services.indoor.find(
       (x) => x.id === serviceId
     );
@@ -460,21 +456,23 @@ export default function PackageServicesPage() {
     const copy = { ...selectedServices[sideKey] };
     const oldVal = copy[serviceId] || 1;
 
-    const foundSvc = ALL_SERVICES.find((s) => s.id === serviceId);
-    const minQ = foundSvc?.min_quantity || 1;
+    const svcObj = ALL_SERVICES.find((s) => s.id === serviceId);
+    const minQ = svcObj?.min_quantity || 1;
+    const maxQ = svcObj?.max_quantity || 999999;
 
     let newVal = increment ? oldVal + 1 : oldVal - 1;
     if (newVal < minQ) newVal = minQ;
-    // If unit is "each", we might want to keep it integer
+    if (newVal > maxQ) newVal = maxQ;
+
     copy[serviceId] = unit === "each" ? Math.round(newVal) : newVal;
-    setSelectedServices((prev) => ({ ...prev, [sideKey]: copy }));
+    setSelectedServices((old) => ({ ...old, [sideKey]: copy }));
     setManualInputValue((old) => ({
       ...old,
       [serviceId]: String(copy[serviceId]),
     }));
   }
 
-  // Manually typed quantity
+  /** typed quantity. */
   function handleManualQuantityChange(
     serviceId: string,
     value: string,
@@ -482,24 +480,25 @@ export default function PackageServicesPage() {
   ) {
     setManualInputValue((old) => ({ ...old, [serviceId]: value }));
   }
+
   function handleBlurInput(serviceId: string, unit: string) {
-    // isIndoor => check chosenPackage
     const isIndoor = !!chosenPackage.services.indoor.find(
       (x) => x.id === serviceId
     );
     const sideKey = isIndoor ? "indoor" : "outdoor";
+
     const copy = { ...selectedServices[sideKey] };
+    const strVal = manualInputValue[serviceId] || "1";
+    let parsed = parsePositiveNumber(strVal);
 
-    const valStr = manualInputValue[serviceId] || "1";
-    let parsed = parsePositiveNumber(valStr);
+    const svcObj = ALL_SERVICES.find((s) => s.id === serviceId);
+    const minQ = svcObj?.min_quantity || 1;
+    const maxQ = svcObj?.max_quantity || 999999;
+    if (parsed < minQ) parsed = minQ;
+    if (parsed > maxQ) parsed = maxQ;
 
-    const foundSvc = ALL_SERVICES.find((s) => s.id === serviceId);
-    const minQ = foundSvc?.min_quantity || 1;
-    if (parsed < minQ) {
-      parsed = minQ;
-    }
     copy[serviceId] = unit === "each" ? Math.round(parsed) : parsed;
-    setSelectedServices((prev) => ({ ...prev, [sideKey]: copy }));
+    setSelectedServices((old) => ({ ...old, [sideKey]: copy }));
     setManualInputValue((old) => ({
       ...old,
       [serviceId]: String(copy[serviceId]),
@@ -513,12 +512,14 @@ export default function PackageServicesPage() {
     chosenPackage.services[sideKey].forEach((pkgItem) => {
       const svcObj = ALL_SERVICES.find((s) => s.id === pkgItem.id);
       if (!svcObj) return;
-      // If there's a search query => filter by title/desc
       if (searchQuery) {
         const lower = searchQuery.toLowerCase();
-        const matchTitle = svcObj.title.toLowerCase().includes(lower);
-        const matchDesc = svcObj.description?.toLowerCase().includes(lower);
-        if (!matchTitle && !matchDesc) return;
+        if (
+          !svcObj.title.toLowerCase().includes(lower) &&
+          !svcObj.description?.toLowerCase().includes(lower)
+        ) {
+          return;
+        }
       }
       combinedServices.push(svcObj);
     });
@@ -534,7 +535,6 @@ export default function PackageServicesPage() {
     const catId = svc.id.split("-").slice(0, 2).join("-");
     const catObj = ALL_CATEGORIES.find((c) => c.id === catId);
     if (!catObj) continue;
-
     const sectionName = catObj.section;
     if (isIndoorSection(sectionName)) {
       if (!homeSectionsMap[sectionName]) {
@@ -559,16 +559,17 @@ export default function PackageServicesPage() {
     catServicesMap[catId].push(svc);
   }
 
-  // After each selection change => recalc
-  const userZip = houseInfo?.zip || "";
+  // Recalc cost whenever user changes selected services or finishing materials
   useEffect(() => {
     async function recalcAll() {
       const merged = {
         ...selectedServices.indoor,
         ...selectedServices.outdoor,
       };
+      const userZip = houseInfo?.zip || "";
+      if (!userZip || userZip.length < 5) return; // skip if no valid ZIP
+
       for (const [svcId, qty] of Object.entries(merged)) {
-        // Ensure finishing materials loaded
         await ensureFinishingMaterialsLoaded(
           svcId,
           finishingMaterialsMap,
@@ -576,24 +577,26 @@ export default function PackageServicesPage() {
           finishingMaterialSelections,
           setFinishingMaterialSelections
         );
-        // Then call /calculate
-        const svcObj = ALL_SERVICES.find((s) => s.id === svcId);
-        if (!svcObj) continue;
-        const finishingIds = finishingMaterialSelections[svcId] || [];
+        const foundSvc = ALL_SERVICES.find((s) => s.id === svcId);
+        if (!foundSvc) continue;
+
+        const picksObj = finishingMaterialSelections[svcId] || {};
+        const finishingIds = Object.values(picksObj);
+
         try {
-          const result = await calculatePrice({
+          const resp = await calculatePrice({
             work_code: convertServiceIdToApiFormat(svcId),
             zipcode: userZip,
-            unit_of_measurement: svcObj.unit_of_measurement || "each",
+            unit_of_measurement: foundSvc.unit_of_measurement || "each",
             square: qty,
             finishing_materials: finishingIds,
           });
-          const labor = parseFloat(result.work_cost) || 0;
-          const mat = parseFloat(result.material_cost) || 0;
-          setCalculationResultsMap((old) => ({ ...old, [svcId]: result }));
+          const labor = parseFloat(resp.work_cost) || 0;
+          const mat = parseFloat(resp.material_cost) || 0;
+          setCalculationResultsMap((old) => ({ ...old, [svcId]: resp }));
           setServiceCosts((old) => ({ ...old, [svcId]: labor + mat }));
         } catch (err) {
-          console.error("Error in recalcAll =>", err);
+          console.error("Error calculating cost for", svcId, err);
         }
       }
     }
@@ -601,19 +604,19 @@ export default function PackageServicesPage() {
   }, [
     selectedServices,
     finishingMaterialSelections,
-    userZip,
     finishingMaterialsMap,
     setFinishingMaterialsMap,
     setFinishingMaterialSelections,
+    houseInfo,
   ]);
 
-  // Save to session so Estimate page can read
+  // Save cost data in session
   useEffect(() => {
     setSessionItem("packages_calculationResultsMap", calculationResultsMap);
     setSessionItem("packages_serviceCosts", serviceCosts);
   }, [calculationResultsMap, serviceCosts]);
 
-  // "Next" => go to /packages/estimate
+  // Next button => go to /packages/estimate
   function handleNext() {
     const anyIndoor = Object.keys(selectedServices.indoor).length > 0;
     const anyOutdoor = Object.keys(selectedServices.outdoor).length > 0;
@@ -634,14 +637,17 @@ export default function PackageServicesPage() {
   }
   const annualPrice = calculateAnnualPrice();
 
-  // Merge indoor+outdoor
+  // Merge indoor + outdoor
   const mergedSelected: Record<string, number> = {
     ...selectedServices.indoor,
     ...selectedServices.outdoor,
   };
 
-  // Build summary structure => section -> catId -> array of {svcObj, qty}
-  type ServiceItem = { svcObj: (typeof ALL_SERVICES)[number]; qty: number };
+  // Build summary structure => section => cat => ...
+  interface ServiceItem {
+    svcObj: (typeof ALL_SERVICES)[number];
+    qty: number;
+  }
   const summaryStructure: Record<string, Record<string, ServiceItem[]>> = {};
 
   for (const [svcId, qty] of Object.entries(mergedSelected)) {
@@ -652,18 +658,53 @@ export default function PackageServicesPage() {
     if (!catObj) continue;
 
     const sectionName = catObj.section;
-    if (!summaryStructure[sectionName]) {
-      summaryStructure[sectionName] = {};
-    }
+    if (!summaryStructure[sectionName]) summaryStructure[sectionName] = {};
     if (!summaryStructure[sectionName][catId]) {
       summaryStructure[sectionName][catId] = [];
     }
     summaryStructure[sectionName][catId].push({ svcObj, qty });
   }
 
-  // Toggle package (the 4-button switch)
+  // Switch package ID
   function handlePackageToggle(newPkgId: string) {
     router.push(`/packages/services?packageId=${newPkgId}`);
+  }
+
+  function userHasOwnMaterial(serviceId: string, extId: string) {
+    if (!clientOwnedMaterials[serviceId]) {
+      clientOwnedMaterials[serviceId] = new Set();
+    }
+    clientOwnedMaterials[serviceId].add(extId);
+    setClientOwnedMaterials({ ...clientOwnedMaterials });
+  }
+
+  // pick a finishing material => finishingMaterialSelections[serviceId][showModalSectionName] = extId
+  function pickMaterial(serviceId: string, sectionName: string, extId: string) {
+    const existing = finishingMaterialSelections[serviceId] || {};
+    existing[sectionName] = extId;
+    finishingMaterialSelections[serviceId] = existing;
+    setFinishingMaterialSelections({ ...finishingMaterialSelections });
+  }
+
+  // find finishing material object
+  function findFinishingMaterialObj(
+    serviceId: string,
+    extId: string
+  ): {
+    name: string;
+    cost: string;
+    image?: string;
+    unit_of_measurement: string;
+  } | null {
+    const data = finishingMaterialsMap[serviceId];
+    if (!data) return null;
+    for (const arr of Object.values(data.sections || {})) {
+      if (Array.isArray(arr)) {
+        const found = arr.find((fm) => fm.external_id === extId);
+        if (found) return found;
+      }
+    }
+    return null;
   }
 
   const packageIdsInOrder = [
@@ -680,23 +721,42 @@ export default function PackageServicesPage() {
       </div>
 
       <div className="container mx-auto">
-        {/* Toggler + Next */}
-        <div className="flex justify-between items-center mt-11">
-          <div className="inline-flex rounded-lg p-1 w-full max-w-[624px] h-14 border border-gray-300 bg-white">
+        {/* Toggler + Next (stack vertically on smaller screens, side by side on xl) */}
+        <div className="flex flex-col xl:flex-row justify-between items-start gap-4 mt-11">
+          {/* Package switcher - full width on phone/tablet, 600px on desktop */}
+          <div
+            className="
+    inline-flex flex-nowrap items-center justify-start overflow-x-auto
+    rounded-lg p-1 w-full xl:w-[600px] h-12 md:h-14 border border-gray-300 bg-white
+    text-sm md:text-base lg:text-lg
+  "
+          >
             {packageIdsInOrder.map((pkgId) => {
               const pkgObj = PACKAGES.find((p) => p.id === pkgId);
               if (!pkgObj) return null;
               const displayTitle = getShortTitle(pkgId);
               const isActive = pkgId === packageId;
+
               return (
                 <button
                   key={pkgId}
                   onClick={() => handlePackageToggle(pkgId)}
-                  className={`flex-1 px-4 py-2 rounded-md font-semibold transition-colors text-lg ${
-                    isActive
-                      ? "bg-blue-600 text-white"
-                      : "text-gray-600 hover:bg-gray-100"
-                  }`}
+                  /*
+          - On phones (<768px): "grow basis-0" ensures each button expands 
+            to remove leftover space, and if total width > screen, horizontal scroll kicks in.
+          - From md: we revert to "flex-1 px-4" for the original layout (equal-sized buttons).
+          - "whitespace-nowrap" keeps "all-inclusive" on a single line.
+        */
+                  className={`
+          grow basis-0 md:flex-1
+          px-2 md:px-4 py-2
+          rounded-md font-semibold transition-colors whitespace-nowrap
+          ${
+            isActive
+              ? "bg-blue-600 text-white"
+              : "text-gray-600 hover:bg-gray-100"
+          }
+        `}
                 >
                   {displayTitle}
                 </button>
@@ -704,13 +764,16 @@ export default function PackageServicesPage() {
             })}
           </div>
 
-          <Button onClick={handleNext} variant="primary">
-            Next →
-          </Button>
+          {/* Next button => align right */}
+          <div className="w-full xl:w-auto flex justify-end">
+            <Button onClick={handleNext} variant="primary">
+              Next →
+            </Button>
+          </div>
         </div>
 
-        {/* Search */}
-        <div className="w-full max-w-[624px] mt-6 mb-4">
+        {/* Search => full width on smaller screens, 600px on desktop */}
+        <div className="w-full xl:max-w-[600px] mt-6 mb-4">
           <SearchServices
             value={searchQuery}
             onChange={(e: ChangeEvent<HTMLInputElement>) =>
@@ -720,15 +783,15 @@ export default function PackageServicesPage() {
           />
         </div>
 
-        {/* "Select all" / "Clear" */}
-        <div className="flex justify-between items-center text-sm text-gray-500 mt-6 w-full max-w-[624px]">
+        {/* "Select all" / "Clear" => full width on smaller screens, 600px on desktop */}
+        <div className="flex justify-between items-center text-sm text-gray-500 mt-6 w-full xl:max-w-[600px]">
           <span>
             No service?{" "}
             <a
               href="#"
               className="text-blue-600 hover:underline focus:outline-none"
             >
-              Contact support
+              Contact support.
             </a>
           </span>
           <div className="flex gap-4">
@@ -747,14 +810,14 @@ export default function PackageServicesPage() {
           </div>
         </div>
 
-        {/* Left=services, Right=summary */}
-        <div className="container mx-auto relative flex mt-8">
-          {/* LEFT column: services grouped by indoor/outdoor => by section => by category */}
-          <div className="flex-1 space-y-12">
+        {/* Main layout => stacked on phone/tablet, side by side on xl */}
+        <div className="container mx-auto relative flex flex-col xl:flex-row mt-8 gap-8">
+          {/* LEFT column => full width on smaller screens */}
+          <div className="w-full xl:flex-1 space-y-12">
             {/* For Home */}
             {Object.keys(homeSectionsMap).length > 0 && (
-              <div>
-                <div className="w-full max-w-[624px] mx-auto">
+              <div className="w-full">
+                <div className="w-full mx-auto">
                   <div
                     className="relative overflow-hidden rounded-xl border border-gray-300 h-32 bg-center bg-cover"
                     style={{ backgroundImage: `url(/images/rooms/attic.jpg)` }}
@@ -768,14 +831,14 @@ export default function PackageServicesPage() {
                   </div>
                 </div>
 
-                <div className="mt-6 space-y-6">
+                <div className="mt-6 space-y-6 w-full">
                   {Object.keys(homeSectionsMap).map((sectionName) => {
                     const catIdsSet = homeSectionsMap[sectionName];
                     if (!catIdsSet?.size) return null;
                     const catIdsArray = Array.from(catIdsSet);
 
                     return (
-                      <div key={sectionName} className="mt-4">
+                      <div key={sectionName} className="mt-4 w-full">
                         <SectionBoxSubtitle>{sectionName}</SectionBoxSubtitle>
 
                         {catIdsArray.map((catId) => {
@@ -886,13 +949,14 @@ export default function PackageServicesPage() {
 
                                         {isSelected && (
                                           <>
-                                            {/* Use Next.js Image-based component */}
                                             <ServiceImage serviceId={svc.id} />
                                             {svc.description && (
-                                              <p className="text-sm text-gray-500 pr-16">
+                                              <p className="text-sm text-gray-500">
                                                 {svc.description}
                                               </p>
                                             )}
+
+                                            {/* Quantity row */}
                                             <div className="flex justify-between items-center">
                                               <div className="flex items-center gap-1">
                                                 <button
@@ -912,8 +976,8 @@ export default function PackageServicesPage() {
                                                   value={inputValue}
                                                   onClick={() =>
                                                     setManualInputValue(
-                                                      (prev) => ({
-                                                        ...prev,
+                                                      (old) => ({
+                                                        ...old,
                                                         [svc.id]: "",
                                                       })
                                                     )
@@ -932,7 +996,6 @@ export default function PackageServicesPage() {
                                                     )
                                                   }
                                                   className="w-20 text-center px-2 py-1 border rounded"
-                                                  placeholder="1"
                                                 />
                                                 <button
                                                   onClick={() =>
@@ -950,7 +1013,6 @@ export default function PackageServicesPage() {
                                                   {svc.unit_of_measurement}
                                                 </span>
                                               </div>
-                                              {/* cost + breakdown toggle */}
                                               <div className="flex items-center gap-2">
                                                 <span className="text-lg text-blue-600 font-medium text-right">
                                                   $
@@ -958,19 +1020,23 @@ export default function PackageServicesPage() {
                                                     finalCost
                                                   )}
                                                 </span>
-                                                <button
-                                                  onClick={() =>
-                                                    toggleCostBreakdown(svc.id)
-                                                  }
-                                                  className={`text-blue-500 text-sm ml-2 ${
-                                                    isBreakdownOpen
-                                                      ? ""
-                                                      : "underline"
-                                                  }`}
-                                                >
-                                                  Details
-                                                </button>
                                               </div>
+                                            </div>
+
+                                            {/* "Details" button => below, right for phone/tablet */}
+                                            <div className="mt-2 flex justify-end">
+                                              <button
+                                                onClick={() =>
+                                                  toggleCostBreakdown(svc.id)
+                                                }
+                                                className={`text-blue-500 text-sm ${
+                                                  isBreakdownOpen
+                                                    ? ""
+                                                    : "underline"
+                                                }`}
+                                              >
+                                                Details
+                                              </button>
                                             </div>
 
                                             {isBreakdownOpen && calcResult && (
@@ -991,7 +1057,7 @@ export default function PackageServicesPage() {
                                                   </div>
                                                   <div className="flex justify-between">
                                                     <span className="text-md font-medium text-gray-700">
-                                                      Materials, tools, &amp;
+                                                      Materials, tools &amp;
                                                       equipment
                                                     </span>
                                                     <span>
@@ -1011,7 +1077,7 @@ export default function PackageServicesPage() {
                                                       <table className="table-auto w-full text-sm text-left text-gray-700">
                                                         <thead>
                                                           <tr className="border-b">
-                                                            <th className="py-2 px-1 text-left">
+                                                            <th className="py-2 px-1">
                                                               Name
                                                             </th>
                                                             <th className="py-2 px-1">
@@ -1030,27 +1096,125 @@ export default function PackageServicesPage() {
                                                             (
                                                               m: any,
                                                               idx2: number
-                                                            ) => (
-                                                              <tr
-                                                                key={`${m.external_id}-${idx2}`}
-                                                              >
-                                                                <td className="py-3 px-1">
-                                                                  {m.name}
-                                                                </td>
-                                                                <td className="py-3 px-1">
-                                                                  $
-                                                                  {
-                                                                    m.cost_per_unit
-                                                                  }
-                                                                </td>
-                                                                <td className="py-3 px-3">
-                                                                  {m.quantity}
-                                                                </td>
-                                                                <td className="py-3 px-3">
-                                                                  ${m.cost}
-                                                                </td>
-                                                              </tr>
-                                                            )
+                                                            ) => {
+                                                              const fmObj =
+                                                                findFinishingMaterialObj(
+                                                                  svc.id,
+                                                                  m.external_id
+                                                                );
+                                                              const hasImage =
+                                                                fmObj?.image
+                                                                  ?.length
+                                                                  ? true
+                                                                  : false;
+                                                              const isClientOwned =
+                                                                clientOwnedMaterials[
+                                                                  svc.id
+                                                                ]?.has(
+                                                                  m.external_id
+                                                                );
+                                                              let rowClass = "";
+                                                              if (
+                                                                isClientOwned
+                                                              ) {
+                                                                rowClass =
+                                                                  "border border-red-500 bg-red-50";
+                                                              } else if (
+                                                                hasImage
+                                                              ) {
+                                                                rowClass =
+                                                                  "border bg-white cursor-pointer";
+                                                              }
+                                                              return (
+                                                                <tr
+                                                                  key={`${m.external_id}-${idx2}`}
+                                                                  className={`last:border-0 ${rowClass}`}
+                                                                  onClick={() => {
+                                                                    if (
+                                                                      !isClientOwned &&
+                                                                      hasImage
+                                                                    ) {
+                                                                      let foundSection:
+                                                                        | string
+                                                                        | null =
+                                                                        null;
+                                                                      const fmData =
+                                                                        finishingMaterialsMap[
+                                                                          svc.id
+                                                                        ];
+                                                                      if (
+                                                                        fmData?.sections
+                                                                      ) {
+                                                                        for (const [
+                                                                          sName,
+                                                                          arr,
+                                                                        ] of Object.entries(
+                                                                          fmData.sections
+                                                                        )) {
+                                                                          if (
+                                                                            Array.isArray(
+                                                                              arr
+                                                                            ) &&
+                                                                            arr.some(
+                                                                              (
+                                                                                xx
+                                                                              ) =>
+                                                                                xx.external_id ===
+                                                                                m.external_id
+                                                                            )
+                                                                          ) {
+                                                                            foundSection =
+                                                                              sName;
+                                                                            break;
+                                                                          }
+                                                                        }
+                                                                      }
+                                                                      setShowModalServiceId(
+                                                                        svc.id
+                                                                      );
+                                                                      setShowModalSectionName(
+                                                                        foundSection
+                                                                      );
+                                                                    }
+                                                                  }}
+                                                                >
+                                                                  <td className="py-3 px-1">
+                                                                    {hasImage ? (
+                                                                      <div className="flex items-center gap-2">
+                                                                        <img
+                                                                          src={
+                                                                            fmObj?.image
+                                                                          }
+                                                                          alt={
+                                                                            m.name
+                                                                          }
+                                                                          className="w-8 h-8 object-cover rounded"
+                                                                        />
+                                                                        <span>
+                                                                          {
+                                                                            m.name
+                                                                          }
+                                                                        </span>
+                                                                      </div>
+                                                                    ) : (
+                                                                      m.name
+                                                                    )}
+                                                                  </td>
+                                                                  <td className="py-3 px-1">
+                                                                    $
+                                                                    {
+                                                                      m.cost_per_unit
+                                                                    }
+                                                                  </td>
+                                                                  <td className="py-3 px-1">
+                                                                    {m.quantity}
+                                                                  </td>
+                                                                  <td className="py-3 px-1">
+                                                                    ${m.cost}
+                                                                  </td>
+                                                                </tr>
+                                                              );
+                                                            }
                                                           )}
                                                         </tbody>
                                                       </table>
@@ -1077,8 +1241,8 @@ export default function PackageServicesPage() {
 
             {/* For Garden */}
             {Object.keys(gardenSectionsMap).length > 0 && (
-              <div>
-                <div className="w-full max-w-[624px] mx-auto">
+              <div className="w-full">
+                <div className="w-full mx-auto">
                   <div
                     className="relative overflow-hidden rounded-xl border border-gray-300 h-32 bg-center bg-cover"
                     style={{
@@ -1094,14 +1258,14 @@ export default function PackageServicesPage() {
                   </div>
                 </div>
 
-                <div className="mt-6 space-y-6">
+                <div className="mt-6 space-y-6 w-full">
                   {Object.keys(gardenSectionsMap).map((sectionName) => {
                     const catIdsSet = gardenSectionsMap[sectionName];
                     if (!catIdsSet?.size) return null;
                     const catIdsArr = Array.from(catIdsSet);
 
                     return (
-                      <div key={sectionName} className="mt-4">
+                      <div key={sectionName} className="mt-4 w-full">
                         <SectionBoxSubtitle>{sectionName}</SectionBoxSubtitle>
 
                         {catIdsArr.map((catId) => {
@@ -1212,10 +1376,9 @@ export default function PackageServicesPage() {
 
                                         {isSelected && (
                                           <>
-                                            {/* Use Next.js Image-based component */}
-                                            <ServiceImage serviceId={svc.id} />                                          
+                                            <ServiceImage serviceId={svc.id} />
                                             {svc.description && (
-                                              <p className="text-sm text-gray-500 pr-16">
+                                              <p className="text-sm text-gray-500">
                                                 {svc.description}
                                               </p>
                                             )}
@@ -1258,7 +1421,6 @@ export default function PackageServicesPage() {
                                                     )
                                                   }
                                                   className="w-20 text-center px-2 py-1 border rounded"
-                                                  placeholder="1"
                                                 />
                                                 <button
                                                   onClick={() =>
@@ -1276,7 +1438,6 @@ export default function PackageServicesPage() {
                                                   {svc.unit_of_measurement}
                                                 </span>
                                               </div>
-                                              {/* cost + breakdown toggle */}
                                               <div className="flex items-center gap-2">
                                                 <span className="text-lg text-blue-600 font-medium text-right">
                                                   $
@@ -1284,19 +1445,23 @@ export default function PackageServicesPage() {
                                                     finalCost
                                                   )}
                                                 </span>
-                                                <button
-                                                  onClick={() =>
-                                                    toggleCostBreakdown(svc.id)
-                                                  }
-                                                  className={`text-blue-500 text-sm ml-2 ${
-                                                    isBreakdownOpen
-                                                      ? ""
-                                                      : "underline"
-                                                  }`}
-                                                >
-                                                  Details
-                                                </button>
                                               </div>
+                                            </div>
+
+                                            {/* "Details" button => below, right for phone/tablet */}
+                                            <div className="mt-2 flex justify-end">
+                                              <button
+                                                onClick={() =>
+                                                  toggleCostBreakdown(svc.id)
+                                                }
+                                                className={`text-blue-500 text-sm ${
+                                                  isBreakdownOpen
+                                                    ? ""
+                                                    : "underline"
+                                                }`}
+                                              >
+                                                Details
+                                              </button>
                                             </div>
 
                                             {isBreakdownOpen && calcResult && (
@@ -1317,7 +1482,7 @@ export default function PackageServicesPage() {
                                                   </div>
                                                   <div className="flex justify-between">
                                                     <span className="text-md font-medium text-gray-700">
-                                                      Materials, tools, &amp;
+                                                      Materials, tools &amp;
                                                       equipment
                                                     </span>
                                                     <span>
@@ -1356,27 +1521,125 @@ export default function PackageServicesPage() {
                                                             (
                                                               m: any,
                                                               idx2: number
-                                                            ) => (
-                                                              <tr
-                                                                key={`${m.external_id}-${idx2}`}
-                                                              >
-                                                                <td className="py-3 px-1">
-                                                                  {m.name}
-                                                                </td>
-                                                                <td className="py-3 px-1">
-                                                                  $
-                                                                  {
-                                                                    m.cost_per_unit
-                                                                  }
-                                                                </td>
-                                                                <td className="py-3 px-1">
-                                                                  {m.quantity}
-                                                                </td>
-                                                                <td className="py-3 px-1">
-                                                                  ${m.cost}
-                                                                </td>
-                                                              </tr>
-                                                            )
+                                                            ) => {
+                                                              const fmObj =
+                                                                findFinishingMaterialObj(
+                                                                  svc.id,
+                                                                  m.external_id
+                                                                );
+                                                              const hasImage =
+                                                                fmObj?.image
+                                                                  ?.length
+                                                                  ? true
+                                                                  : false;
+                                                              const isClientOwned =
+                                                                clientOwnedMaterials[
+                                                                  svc.id
+                                                                ]?.has(
+                                                                  m.external_id
+                                                                );
+                                                              let rowClass = "";
+                                                              if (
+                                                                isClientOwned
+                                                              ) {
+                                                                rowClass =
+                                                                  "border border-red-500 bg-red-50";
+                                                              } else if (
+                                                                hasImage
+                                                              ) {
+                                                                rowClass =
+                                                                  "border bg-white cursor-pointer";
+                                                              }
+                                                              return (
+                                                                <tr
+                                                                  key={`${m.external_id}-${idx2}`}
+                                                                  className={`last:border-0 ${rowClass}`}
+                                                                  onClick={() => {
+                                                                    if (
+                                                                      !isClientOwned &&
+                                                                      hasImage
+                                                                    ) {
+                                                                      let foundSection:
+                                                                        | string
+                                                                        | null =
+                                                                        null;
+                                                                      const fmData =
+                                                                        finishingMaterialsMap[
+                                                                          svc.id
+                                                                        ];
+                                                                      if (
+                                                                        fmData?.sections
+                                                                      ) {
+                                                                        for (const [
+                                                                          sName,
+                                                                          arr,
+                                                                        ] of Object.entries(
+                                                                          fmData.sections
+                                                                        )) {
+                                                                          if (
+                                                                            Array.isArray(
+                                                                              arr
+                                                                            ) &&
+                                                                            arr.some(
+                                                                              (
+                                                                                xx
+                                                                              ) =>
+                                                                                xx.external_id ===
+                                                                                m.external_id
+                                                                            )
+                                                                          ) {
+                                                                            foundSection =
+                                                                              sName;
+                                                                            break;
+                                                                          }
+                                                                        }
+                                                                      }
+                                                                      setShowModalServiceId(
+                                                                        svc.id
+                                                                      );
+                                                                      setShowModalSectionName(
+                                                                        foundSection
+                                                                      );
+                                                                    }
+                                                                  }}
+                                                                >
+                                                                  <td className="py-3 px-1">
+                                                                    {hasImage ? (
+                                                                      <div className="flex items-center gap-2">
+                                                                        <img
+                                                                          src={
+                                                                            fmObj?.image
+                                                                          }
+                                                                          alt={
+                                                                            m.name
+                                                                          }
+                                                                          className="w-8 h-8 object-cover rounded"
+                                                                        />
+                                                                        <span>
+                                                                          {
+                                                                            m.name
+                                                                          }
+                                                                        </span>
+                                                                      </div>
+                                                                    ) : (
+                                                                      m.name
+                                                                    )}
+                                                                  </td>
+                                                                  <td className="py-3 px-1">
+                                                                    $
+                                                                    {
+                                                                      m.cost_per_unit
+                                                                    }
+                                                                  </td>
+                                                                  <td className="py-3 px-1">
+                                                                    {m.quantity}
+                                                                  </td>
+                                                                  <td className="py-3 px-1">
+                                                                    ${m.cost}
+                                                                  </td>
+                                                                </tr>
+                                                              );
+                                                            }
                                                           )}
                                                         </tbody>
                                                       </table>
@@ -1403,16 +1666,15 @@ export default function PackageServicesPage() {
           </div>
 
           {/* RIGHT column => summary */}
-          <div className="w-1/2 ml-auto pt-0 space-y-6">
+          <div className="w-full xl:w-1/2 xl:ml-auto pt-0 space-y-6 mt-8 xl:mt-0">
             {/* Summary Card */}
-            <div className="max-w-[500px] ml-auto bg-white p-4 rounded-lg border border-gray-300 overflow-hidden">
+            <div className="w-full xl:max-w-[500px] ml-auto bg-white p-4 rounded-lg border border-gray-300 overflow-hidden">
               <SectionBoxSubtitle>
                 Your {chosenPackage.title}
               </SectionBoxSubtitle>
-
               {Object.keys(mergedSelected).length === 0 ? (
                 <div className="text-left text-gray-500 text-medium mt-4">
-                  No services selected
+                  No services selected.
                 </div>
               ) : (
                 <>
@@ -1421,56 +1683,63 @@ export default function PackageServicesPage() {
                     &amp; category:
                   </p>
 
-                  {/* Build a local summary structure */}
                   <div className="space-y-6">
-                    {Object.entries(summaryStructure).map(
-                      ([sectionName, cats]) => {
-                        if (!Object.keys(cats).length) return null;
-                        return (
-                          <div key={sectionName}>
-                            <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                              {sectionName}
-                            </h3>
-                            {Object.entries(cats).map(([catId, arr]) => {
-                              const catObj = ALL_CATEGORIES.find(
-                                (c) => c.id === catId
-                              );
-                              const catName = catObj ? catObj.title : catId;
-                              if (!arr.length) return null;
-
-                              return (
-                                <div key={catId} className="ml-4 mb-4">
-                                  <h4 className="text-lg font-medium text-gray-700 mb-2">
-                                    {catName}
-                                  </h4>
-                                  <ul className="space-y-1">
-                                    {arr.map(({ svcObj, qty }) => {
-                                      const cost = serviceCosts[svcObj.id] || 0;
-                                      return (
-                                        <li
-                                          key={svcObj.id}
-                                          className="flex justify-between items-center text-sm text-gray-600"
-                                        >
-                                          <span className="truncate w-1/2 pr-2">
-                                            {svcObj.title}
-                                          </span>
-                                          <span>
-                                            {qty} {svcObj.unit_of_measurement}
-                                          </span>
-                                          <span className="text-right w-1/4">
-                                            ${formatWithSeparator(cost)}
-                                          </span>
-                                        </li>
-                                      );
-                                    })}
-                                  </ul>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        );
+                    {/* Summary structure => show section -> cat -> items */}
+                    {(() => {
+                      interface ServiceItem {
+                        svcObj: (typeof ALL_SERVICES)[number];
+                        qty: number;
                       }
-                    )}
+                      return Object.entries(summaryStructure).map(
+                        ([sectionName, cats]) => {
+                          if (!Object.keys(cats).length) return null;
+                          return (
+                            <div key={sectionName}>
+                              <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                                {sectionName}
+                              </h3>
+                              {Object.entries(cats).map(([catId, arr]) => {
+                                const catObj = ALL_CATEGORIES.find(
+                                  (c) => c.id === catId
+                                );
+                                const catName = catObj ? catObj.title : catId;
+                                if (!arr.length) return null;
+
+                                return (
+                                  <div key={catId} className="ml-4 mb-4">
+                                    <h4 className="text-lg font-medium text-gray-700 mb-2">
+                                      {catName}
+                                    </h4>
+                                    <ul className="space-y-1">
+                                      {arr.map(({ svcObj, qty }) => {
+                                        const cost =
+                                          serviceCosts[svcObj.id] || 0;
+                                        return (
+                                          <li
+                                            key={svcObj.id}
+                                            className="flex justify-between items-center text-sm text-gray-600"
+                                          >
+                                            <span className="truncate w-1/2 pr-2">
+                                              {svcObj.title}
+                                            </span>
+                                            <span>
+                                              {qty} {svcObj.unit_of_measurement}
+                                            </span>
+                                            <span className="text-right w-1/4">
+                                              ${formatWithSeparator(cost)}
+                                            </span>
+                                          </li>
+                                        );
+                                      })}
+                                    </ul>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          );
+                        }
+                      );
+                    })()}
                   </div>
 
                   {/* Price total */}
@@ -1497,71 +1766,236 @@ export default function PackageServicesPage() {
             </div>
 
             {/* House info */}
-            <div className="max-w-[500px] ml-auto bg-white p-4 rounded-lg border border-gray-300 overflow-hidden">
+            <div className="w-full xl:max-w-[500px] ml-auto bg-white p-4 rounded-lg border border-gray-300 overflow-hidden">
               <SectionBoxSubtitle>Home Details</SectionBoxSubtitle>
               <div className="mt-2 space-y-1 text-sm text-gray-700">
                 <p>
-                  <strong>Address:</strong> {houseInfo.addressLine || "N/A"}
+                  <strong>Address:</strong>{" "}
+                  {houseInfo.addressLine ? `${houseInfo.addressLine}.` : "N/A."}
                 </p>
                 <p>
-                  <strong>City / Zip:</strong> {houseInfo.city || "?"},{" "}
-                  {houseInfo.zip || "?"}
+                  <strong>City / Zip:</strong>{" "}
+                  {houseInfo.city
+                    ? `${houseInfo.city}, ${houseInfo.zip || "?"}`
+                    : "? , ?"}
                 </p>
                 <p>
-                  <strong>Country:</strong> {houseInfo.country || "?"}
+                  <strong>Country:</strong>{" "}
+                  {houseInfo.country ? `${houseInfo.country}.` : "?."}
                 </p>
                 <hr className="my-2" />
                 <p>
                   <strong>House Type:</strong>{" "}
-                  {formatHouseType(houseInfo.houseType)}
+                  {formatHouseType(houseInfo.houseType)}.
                 </p>
                 <p>
-                  <strong>Floors:</strong> {houseInfo.floors}
+                  <strong>Floors:</strong> {houseInfo.floors}.
                 </p>
                 <p>
                   <strong>Square ft:</strong>{" "}
-                  {houseInfo.squareFootage > 0 ? houseInfo.squareFootage : "?"}
+                  {houseInfo.squareFootage > 0
+                    ? `${houseInfo.squareFootage}.`
+                    : "?."}
                 </p>
                 <p>
-                  <strong>Bedrooms:</strong> {houseInfo.bedrooms}
+                  <strong>Bedrooms:</strong> {houseInfo.bedrooms}.
                 </p>
                 <p>
-                  <strong>Bathrooms:</strong> {houseInfo.bathrooms}
+                  <strong>Bathrooms:</strong> {houseInfo.bathrooms}.
                 </p>
                 <p>
-                  <strong>Appliances:</strong> {houseInfo.applianceCount}
+                  <strong>Appliances:</strong> {houseInfo.applianceCount}.
                 </p>
                 <p>
-                  <strong>AC Units:</strong> {houseInfo.airConditioners}
+                  <strong>AC Units:</strong> {houseInfo.airConditioners}.
                 </p>
                 <p>
                   <strong>Boiler/Heater:</strong>{" "}
                   {houseInfo.hasBoiler
-                    ? houseInfo.boilerType || "Yes"
-                    : "No / None"}
+                    ? `${houseInfo.boilerType || "Yes"}.`
+                    : "No / None."}
                 </p>
                 <hr className="my-2" />
                 <p>
                   <strong>Garage:</strong>{" "}
-                  {houseInfo.hasGarage ? houseInfo.garageCount : "No"}
+                  {houseInfo.hasGarage ? `${houseInfo.garageCount}.` : "No."}
                 </p>
                 <p>
                   <strong>Yard:</strong>{" "}
                   {houseInfo.hasYard
-                    ? `${houseInfo.yardArea} sq ft`
-                    : "No yard/garden"}
+                    ? `${houseInfo.yardArea} sq ft.`
+                    : "No yard/garden."}
                 </p>
                 <p>
                   <strong>Pool:</strong>{" "}
                   {houseInfo.hasPool
-                    ? `${houseInfo.poolArea} sq ft`
-                    : "No pool"}
+                    ? `${houseInfo.poolArea} sq ft.`
+                    : "No pool."}
                 </p>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Finishing-material modal => one section at a time */}
+      {showModalServiceId &&
+        showModalSectionName &&
+        finishingMaterialsMap[showModalServiceId] &&
+        finishingMaterialsMap[showModalServiceId].sections[
+          showModalSectionName
+        ] && (
+          <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-lg w-[90vw] h-[90vh] md:w-[80vw] md:h-[80vh] xl:w-[70vw] xl:h-[70vh] overflow-hidden relative flex flex-col">
+              {/* Sticky header */}
+              <div className="p-4 border-b flex items-center justify-between sticky top-0 bg-white z-10">
+                <h2 className="text-xl font-semibold">
+                  Choose a finishing material (section {showModalSectionName})
+                </h2>
+                <button
+                  onClick={() => {
+                    setShowModalServiceId(null);
+                    setShowModalSectionName(null);
+                  }}
+                  className="text-red-500 border border-red-500 px-2 py-1 rounded"
+                >
+                  Close
+                </button>
+              </div>
+
+              {(() => {
+                const picksObj =
+                  finishingMaterialSelections[showModalServiceId] || {};
+                const currentExtId = picksObj[showModalSectionName] || null;
+                if (!currentExtId) return null;
+
+                const fmData = finishingMaterialsMap[showModalServiceId];
+                if (!fmData) return null;
+
+                const allMats = Object.values(
+                  fmData.sections || {}
+                ).flat() as any[];
+                const curMat = allMats.find(
+                  (x: any) => x.external_id === currentExtId
+                );
+                if (!curMat) return null;
+
+                const curCost = parseFloat(curMat.cost || "0") || 0;
+                return (
+                  <div className="text-sm text-gray-600 border-b p-4 bg-white sticky top-[61px] z-10">
+                    Current material:{" "}
+                    <strong>
+                      {curMat.name} (${formatWithSeparator(curCost)})
+                    </strong>
+                    <button
+                      onClick={() =>
+                        userHasOwnMaterial(showModalServiceId!, currentExtId)
+                      }
+                      className="ml-4 text-xs text-red-500 border border-red-500 px-2 py-1 rounded"
+                    >
+                      I have my own (Remove later)
+                    </button>
+                  </div>
+                );
+              })()}
+
+              <div className="overflow-auto p-4 flex-1">
+                {(() => {
+                  const data = finishingMaterialsMap[showModalServiceId];
+                  if (!data) {
+                    return (
+                      <p className="text-sm text-gray-500">No data found.</p>
+                    );
+                  }
+                  const arr = data.sections[showModalSectionName] || [];
+                  if (!Array.isArray(arr) || arr.length === 0) {
+                    return (
+                      <p className="text-sm text-gray-500">
+                        No finishing materials in section {showModalSectionName}
+                        .
+                      </p>
+                    );
+                  }
+
+                  const picksObj =
+                    finishingMaterialSelections[showModalServiceId] || {};
+                  const currentExtId = picksObj[showModalSectionName] || null;
+                  let currentBaseCost = 0;
+                  if (currentExtId) {
+                    const fmObj = arr.find(
+                      (m: any) => m.external_id === currentExtId
+                    );
+                    if (fmObj) {
+                      currentBaseCost = parseFloat(fmObj.cost || "0") || 0;
+                    }
+                  }
+
+                  return (
+                    <div className="grid grid-cols-2 gap-4 mt-4">
+                      {arr.map((material: any, i: number) => {
+                        if (!material.image) return null;
+                        const costNum = parseFloat(material.cost || "0") || 0;
+                        const isSelected =
+                          currentExtId === material.external_id;
+                        const diff = costNum - currentBaseCost;
+                        let diffStr = "";
+                        let diffColor = "";
+                        if (diff > 0) {
+                          diffStr = `+${formatWithSeparator(diff)}`;
+                          diffColor = "text-red-500";
+                        } else if (diff < 0) {
+                          diffStr = `-${formatWithSeparator(Math.abs(diff))}`;
+                          diffColor = "text-green-600";
+                        }
+
+                        return (
+                          <div
+                            key={`${material.external_id}-${i}`}
+                            className={`border rounded p-3 flex flex-col items-center cursor-pointer ${
+                              isSelected ? "border-blue-500" : "border-gray-300"
+                            }`}
+                            onClick={() => {
+                              pickMaterial(
+                                showModalServiceId!,
+                                showModalSectionName!,
+                                material.external_id
+                              );
+                            }}
+                          >
+                            <img
+                              src={material.image}
+                              alt={material.name}
+                              className="w-32 h-32 object-cover rounded"
+                            />
+                            <h3 className="text-sm font-medium mt-2 text-center line-clamp-2">
+                              {material.name}
+                            </h3>
+                            <p className="text-xs text-gray-700">
+                              ${formatWithSeparator(costNum)} /{" "}
+                              {material.unit_of_measurement}
+                            </p>
+                            {diff !== 0 && (
+                              <p
+                                className={`text-xs mt-1 font-medium ${diffColor}`}
+                              >
+                                {diffStr}
+                              </p>
+                            )}
+                            {isSelected && (
+                              <span className="text-xs text-blue-600 font-semibold mt-1">
+                                Currently Selected
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+          </div>
+        )}
     </main>
   );
 }
