@@ -313,7 +313,7 @@ export default function Header() {
   return (
     <>
       <header className="fixed w-full z-50 bg-gray-100/50 backdrop-blur-sm shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-4">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 py-4">
           <nav className="bg-white rounded-2xl">
             <div className="flex justify-between items-center h-16 px-6">
               {/* Logo */}

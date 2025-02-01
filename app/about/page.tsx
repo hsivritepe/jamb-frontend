@@ -9,30 +9,30 @@ import WhoIsThisFor from "@/components/WhoIsThisFor";
 const steps = [
   {
     number: 1,
-    title: "Choose a Service",
+    title: "Select a Service, Room, or Package",
     description:
-      "<p>On our website or in the app, select the type of job you need: single-time task, full-room service, or a comprehensive maintenance package. We support any task—from small fixes to large-scale renovations.</p><p>This could be anything from mounting a shelf or replacing plumbing fixtures to a full kitchen remodel.</p>",
+      "<p>In each section, choose the type of work you need, the quantity, any finishing materials and equipment, and your preferred start time or special payment plan. Our system will generate a detailed estimate for all tasks—no prior registration or subscription required.</p> <p>Whether it's a single-time service, a specific room renovation, or a full maintenance package, you’ll see the maximum detail of costs and materials.</p>",
     image: "/images/how-it-works-step-1.png",
   },
   {
     number: 2,
-    title: "Answer a Few Questions",
+    title: "Wait for System Confirmation",
     description:
-      "<p>We automatically assign a qualified professional to complete the job. All of our experts are thoroughly vetted and experienced in their fields.</p><p>You don't need to worry about the quality of work. We only assign trusted professionals who arrive on time and complete the job with care.</p>",
+      "<p>The system checks the availability and delivery schedules for all required materials, then coordinates the final estimate with each assigned professional.</p> <p>This step ensures accurate timeframes and cost alignment, preventing unexpected delays or price changes later.</p>",
     image: "/images/how-it-works-step-2.png",
   },
   {
     number: 3,
-    title: "Get Your Professional Assigned",
+    title: "Confirm and Pay",
     description:
-      "<p>We automatically assign a qualified professional to complete the job. All of our experts are thoroughly vetted and experienced in their fields.</p><p>You don't need to worry about the quality of work. We only assign trusted professionals who arrive on time and complete the job with care.</p>",
+      "<p>Once the order is confirmed, simply pay through the app according to your chosen conditions. The system automatically orders all necessary materials from suppliers and dispatches the details to the assigned professionals.</p> <p>If any unexpected issues arise—like shipping delays or last-minute schedule conflicts—the system automatically reassigns workers or substitutes materials to keep your project on track.</p>",
     image: "/images/how-it-works-step-3.png",
   },
   {
     number: 4,
-    title: "Track Your Progress",
+    title: "Monitor All Stages in the App",
     description:
-      "<p>Through your account on the website or mobile app, you can track the progress of your job in real time. You'll always know what stage the work is at, and you can make changes if needed.</p><p>We give you full control over the repair or maintenance process.</p>",
+      "<p>Track every phase of the project in real time: review documentation if needed, see ongoing updates, and contact our support team if you have any questions.</p><p>With full visibility into the process, you maintain control while our system and professionals handle the logistics and execution.</p>",
     image: "/images/how-it-works-step-4.png",
   },
 ];

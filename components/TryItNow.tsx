@@ -18,7 +18,7 @@ export default function TryItNow() {
                         Try Jamb &nbsp; →
                     </Button>
                     <div className="text-md text-gray-500 pt-4">
-                        Offer valid on the first order on Jamb.com or
+                        Offer valid on the first order on thejamb.com or
                         the Jamp app for new users only.
                     </div>
                 </div>

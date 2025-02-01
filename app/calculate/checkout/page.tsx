@@ -318,7 +318,7 @@ export default function CheckoutPage() {
           {/* Estimate info */}
           <div>
             <SectionBoxSubtitle>
-              Estimate for Selected Services <span className="ml-2 text-sm text-gray-500">({estimateNumber})</span>
+              Estimate for Selected Services <span className="ml-0 sm:ml-2 text-sm text-gray-500">({estimateNumber})</span>
             </SectionBoxSubtitle>
             <p className="text-xs text-gray-400 -mt-2 ml-1">
               *This number is temporary and will be replaced with a permanent order number after confirmation.
