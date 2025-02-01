@@ -261,7 +261,7 @@ export default function Estimate() {
                               )}
 
                               {calcResult && (
-                                <div className="mt-1 p-4 bg-gray-50 border rounded">
+                                <div className="mt-1 p-2 sm:p-4 bg-gray-50 border rounded">
                                   <div className="flex justify-between mb-4">
                                     <span className="text-md font-medium text-gray-800">
                                       Labor

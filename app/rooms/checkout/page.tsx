@@ -428,7 +428,7 @@ export default function RoomsCheckout() {
                                         </div>
 
                                         {cr && (
-                                          <div className="mt-2 p-4 bg-gray-50 border rounded">
+                                          <div className="mt-2 p-2 sm:p-4 bg-gray-50 border rounded">
                                             <div className="flex justify-between mb-3">
                                               <span className="text-md font-medium text-gray-700">
                                                 Labor
@@ -555,7 +555,7 @@ export default function RoomsCheckout() {
 
             <div className="flex justify-between mb-2">
               <span className="font-semibold text-lg text-gray-600">
-                Materials, tools and equipment:
+                Materials, tools & equipment:
               </span>
               <span className="font-semibold text-lg text-gray-600">
                 ${formatWithSeparator(materialsSubtotal)}

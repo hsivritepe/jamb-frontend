@@ -308,7 +308,7 @@ export default function EmergencyEstimate() {
 
                         {/* Cost Breakdown if present */}
                         {act.breakdown && (
-                          <div className="mt-3 p-4 bg-gray-50 border rounded">
+                          <div className="mt-3 p-2 sm:p-4 bg-gray-50 border rounded">
                             <div className="flex justify-between mb-2">
                               <span className="text-md font-medium text-gray-800">
                                 Labor

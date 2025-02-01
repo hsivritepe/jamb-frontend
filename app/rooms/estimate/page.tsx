@@ -266,7 +266,7 @@ export default function RoomsEstimate() {
       {/* Outer container => flex-col on mobile, row on xl+ */}
       <div className="container mx-auto py-12 flex flex-col xl:flex-row gap-12">
         {/* LEFT column => main estimate */}
-        <div className="w-full xl:max-w-[700px] bg-brand-light p-6 rounded-xl border border-gray-300 overflow-hidden">
+        <div className="w-full xl:max-w-[700px] bg-brand-light p-4 sm:p-6 rounded-xl border border-gray-300 overflow-hidden">
           <SectionBoxSubtitle>Estimate for Selected Rooms</SectionBoxSubtitle>
 
           {chosenRooms.map((room) => {
@@ -302,7 +302,7 @@ export default function RoomsEstimate() {
                   if (relevantCats.length === 0) return null;
 
                   return (
-                    <div key={sectionName} className="mb-4 ml-2">
+                    <div key={sectionName} className="mb-4 ml-0 sm:ml-2">
                       <h4 className="text-xl font-medium text-gray-700 mb-2">
                         {sectionNumber}. {sectionName}
                       </h4>
@@ -317,7 +317,7 @@ export default function RoomsEstimate() {
                         if (chosenServices.length === 0) return null;
 
                         return (
-                          <div key={catId} className="mb-4 ml-4">
+                          <div key={catId} className="mb-4 ml-0 sm:ml-4">
                             <h5 className="text-lg font-medium text-gray-700 mb-2">
                               {catNumber}. {catName}
                             </h5>
@@ -333,7 +333,7 @@ export default function RoomsEstimate() {
                               return (
                                 <div
                                   key={svc.id}
-                                  className="mb-6 ml-4 space-y-2"
+                                  className="mb-6 ml-0 sm:ml-4 space-y-2"
                                 >
                                   <h6 className="font-medium text-md text-gray-700">
                                     {svcNumber}. {svc.title}
@@ -363,7 +363,7 @@ export default function RoomsEstimate() {
                                   )}
 
                                   {cr && (
-                                    <div className="p-4 bg-gray-50 border rounded">
+                                    <div className="p-2 sm:p-4 bg-gray-50 border rounded">
                                       <div className="flex justify-between mb-3">
                                         <span className="text-sm font-medium text-gray-800">
                                           Labor

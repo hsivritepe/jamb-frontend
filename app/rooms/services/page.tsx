@@ -1264,7 +1264,7 @@ export default function RoomDetails() {
                               if (relevantCats.length === 0) return null;
 
                               return (
-                                <div key={secName} className="mb-4 ml-2">
+                                <div key={secName} className="mb-4 ml-0 sm:ml-2">
                                   <h4 className="text-lg font-medium text-gray-700 mb-2">
                                     {secName}
                                   </h4>
@@ -1284,7 +1284,7 @@ export default function RoomDetails() {
                                       return null;
 
                                     return (
-                                      <div key={catId} className="mb-4 ml-4">
+                                      <div key={catId} className="mb-4 ml-0 sm:ml-4">
                                         <h5 className="text-md font-medium text-gray-700 mb-2">
                                           {catName}
                                         </h5>
@@ -1321,7 +1321,7 @@ export default function RoomDetails() {
                               );
                             }
                           )}
-                          <div className="flex justify-between items-center mb-2 ml-2">
+                          <div className="flex justify-between items-center mb-2 ml-0 sm:ml-2">
                             <span className="font-medium text-gray-800">
                               {room.title} Total:
                             </span>

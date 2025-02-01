@@ -663,7 +663,7 @@ export default function EmergencyDetails() {
 
                                 {/* Cost breakdown */}
                                 {calcResult && detailsExpanded && (
-                                  <div className="mt-4 p-4 bg-gray-50 border rounded">
+                                  <div className="mt-4 p-2 sm:p-4 bg-gray-50 border rounded">
                                     <h4 className="text-lg font-semibold text-gray-800 mb-3">
                                       Cost Breakdown
                                     </h4>

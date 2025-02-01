@@ -441,7 +441,7 @@ export default function CheckoutPage() {
                           </div>
 
                           {/* cost breakdown */}
-                          <div className="mt-3 p-4 bg-gray-50 border rounded">
+                          <div className="mt-3 p-2 sm:p-4 bg-gray-50 border rounded">
                             <div className="flex justify-between mb-3">
                               <span className="text-md font-medium text-gray-800">Labor</span>
                               <span className="text-md font-medium text-gray-700">

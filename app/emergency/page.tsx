@@ -15,7 +15,7 @@ export default function Emergency() {
 
   return (
     <main className="min-h-screen pt-24">
-      <div className="container mx-auto px-4 xl:px-0 mb-16">
+      <div className="container mx-auto xl:px-0 mb-16">
         {/* Breadcrumb navigation */}
         <BreadCrumb items={EMERGENCY_STEPS} />
 

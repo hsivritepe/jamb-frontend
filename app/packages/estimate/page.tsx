@@ -391,7 +391,7 @@ export default function EstimatePage() {
 
                                 {/* Additional breakdown */}
                                 {svc.breakdown && (
-                                  <div className="mt-2 p-4 bg-gray-50 border rounded">
+                                  <div className="mt-2 p-2 sm:p-4 bg-gray-50 border rounded">
                                     <div className="flex justify-between mb-2">
                                       <span className="text-sm font-medium text-gray-700">
                                         Labor
