@@ -222,7 +222,7 @@ export default function Services() {
         </div>
 
         {/* Search bar => full width for phone/tablet */}
-        <div className="flex flex-col gap-4 mt-8 w-full">
+        <div className="flex flex-col gap-4 mt-8 w-full xl:w-[600px]">
           <SearchServices
             value={searchQuery}
             onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
