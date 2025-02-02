@@ -137,13 +137,11 @@ export default function SettingsPage() {
         {/* Additional links (demo) */}
         <div className="space-y-4 text-gray-800">
           <div className="flex items-center gap-2">
-            <span className="text-xl">👥</span>
             <a href="/about-us" className="hover:text-blue-600">
               About us
             </a>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xl">👤</span>
             <a href="/become-a-pro" className="hover:text-blue-600">
               Become a Professional
             </a>
