@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 interface UserProfile {
   email: string;
@@ -28,19 +29,26 @@ interface UserCard {
 }
 
 /**
- * Modifications:
- * 1) Dispatch "authChange" on logout and use `router.push("/login")`
- *    instead of a full page reload.
- * 2) Rest of the file remains the same.
+ * Helper function for time-based greeting
  */
+function getGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
+}
 
-export default function UserCabinetPage() {
+export default function ProfilePage() {
   const router = useRouter();
+
+  // Loading/error states
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
+  // Auth token
   const [token, setToken] = useState("");
 
+  // Basic user profile
   const [profile, setProfile] = useState<UserProfile>({
     email: "",
     name: "",
@@ -48,6 +56,7 @@ export default function UserCabinetPage() {
     phone: ""
   });
 
+  // Address info
   const [address, setAddress] = useState<UserAddress>({
     country: "",
     address: "",
@@ -56,6 +65,7 @@ export default function UserCabinetPage() {
     zipcode: ""
   });
 
+  // Card data (if needed later)
   const [card, setCard] = useState<UserCard>({
     number: "",
     surname: "",
@@ -65,58 +75,133 @@ export default function UserCabinetPage() {
     zipcode: ""
   });
 
-  // On mount => read token from sessionStorage
+  // Whether to show modals
+  const [showContactModal, setShowContactModal] = useState(false);
+  const [showPropertyModal, setShowPropertyModal] = useState(false);
+
+  // Refs for modals
+  const contactModalRef = useRef<HTMLDivElement>(null);
+  const propertyModalRef = useRef<HTMLDivElement>(null);
+
+  // On mount => check token => if none => /login => else load from session or server
   useEffect(() => {
     const storedToken = sessionStorage.getItem("authToken");
-    if (storedToken) {
-      setToken(storedToken);
-    } else {
-      // If no token => user not logged in => go to /login
+    if (!storedToken) {
       router.push("/login");
-    }
-  }, [router]);
-
-  // =================== (1) PROFILE ===================
-  const loadProfile = async () => {
-    if (!token) {
-      setErrorMsg("No token found. Please log in first.");
       return;
     }
-    setLoading(true);
-    setErrorMsg("");
+    setToken(storedToken);
 
-    try {
-      const res = await fetch("http://dev.thejamb.com/api/user/info", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token }),
-      });
-
-      if (res.ok) {
-        const data = await res.json();
+    // 1) Check if we have "profileData" in sessionStorage
+    const storedProfileData = sessionStorage.getItem("profileData");
+    if (storedProfileData) {
+      // If so, parse and load it
+      try {
+        const data = JSON.parse(storedProfileData);
+        // e.g. data.email, data.name, data.surname, data.address, data.card, etc.
         setProfile({
           email: data.email || "",
           name: data.name || "",
           surname: data.surname || "",
           phone: data.phone || ""
         });
+        if (data.address) {
+          setAddress({
+            country: data.address.country || "",
+            address: data.address.address || "",
+            city: data.address.city || "",
+            state: data.address.state || "",
+            zipcode: data.address.zipcode?.toString() || ""
+          });
+        }
+        if (data.card) {
+          setCard({
+            number: data.card.number || "",
+            surname: data.card.surname || "",
+            name: data.card.name || "",
+            expiredTo: data.card.expired_to || "",
+            cvv: data.card.cvv || "",
+            zipcode: data.card.zipcode || ""
+          });
+        }
+      } catch (err) {
+        console.error("Failed to parse profileData from sessionStorage:", err);
+        // If parse fails, we can fetch from server
+        fetchUserInfo(storedToken);
+      }
+    } else {
+      // 2) If no profileData, fetch from server
+      fetchUserInfo(storedToken);
+    }
+  }, [router]);
+
+  /**
+   * (Optional) If you want to forcibly refresh data from server,
+   * call fetchUserInfo again. We'll do that after we update user info.
+   */
+  async function fetchUserInfo(_token: string) {
+    setLoading(true);
+    setErrorMsg("");
+
+    try {
+      const res = await fetch("http://dev.thejamb.com/user/info", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: _token }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        // Store in state
+        setProfile({
+          email: data.email || "",
+          name: data.name || "",
+          surname: data.surname || "",
+          phone: data.phone || ""
+        });
+        if (data.address) {
+          setAddress({
+            country: data.address.country || "",
+            address: data.address.address || "",
+            city: data.address.city || "",
+            state: data.address.state || "",
+            zipcode: data.address.zipcode?.toString() || ""
+          });
+        }
+        if (data.card) {
+          setCard({
+            number: data.card.number || "",
+            surname: data.card.surname || "",
+            name: data.card.name || "",
+            expiredTo: data.card.expired_to || "",
+            cvv: data.card.cvv || "",
+            zipcode: data.card.zipcode || ""
+          });
+        }
+
+        // Also update "profileData" in sessionStorage
+        sessionStorage.setItem("profileData", JSON.stringify(data));
       } else {
         if (res.status === 400 || res.status === 401) {
           const errData = await res.json();
-          setErrorMsg(errData.error || "Bad request/Unauthorized");
+          setErrorMsg(errData.error || "Bad request / Unauthorized");
         } else {
-          setErrorMsg(`Unknown error: ${res.status}`);
+          setErrorMsg(`Unknown error fetching user info: ${res.status}`);
         }
       }
     } catch (error) {
-      console.error("loadProfile error:", error);
-      setErrorMsg("Error loading profile. Check console.");
+      console.error("Error fetching user info:", error);
+      setErrorMsg("Error fetching user info. See console.");
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  const saveProfile = async () => {
+  /**
+   * Save contact details => PATCH /user/profile
+   * Then update local state + sessionStorage
+   */
+  async function saveContactDetails() {
     if (!token) {
       setErrorMsg("No token found.");
       return;
@@ -125,38 +210,43 @@ export default function UserCabinetPage() {
     setErrorMsg("");
 
     try {
-      const res = await fetch("http://dev.thejamb.com/api/user/info", {
-        method: "POST",
+      const res = await fetch("http://dev.thejamb.com/user/profile", {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           token,
-          email: profile.email,
           name: profile.name,
-          surname: profile.surname,
-          phone: profile.phone
+          surname: profile.surname
+          // phone, email, etc. if needed
         }),
       });
 
       if (res.ok) {
-        alert("Profile saved successfully!");
+        alert("Contact details updated!");
+        // We'll re-fetch from server => also re-update sessionStorage
+        await fetchUserInfo(token);
+        setShowContactModal(false);
       } else {
         if (res.status === 400 || res.status === 401) {
           const errData = await res.json();
-          setErrorMsg(errData.error || "Bad request/Unauthorized");
+          setErrorMsg(errData.error || "Bad request / Unauthorized");
         } else {
-          setErrorMsg(`Unknown error saving profile. ${res.status}`);
+          setErrorMsg(`Unknown error updating contact: ${res.status}`);
         }
       }
     } catch (error) {
-      console.error("saveProfile error:", error);
-      setErrorMsg("Error saving profile. Check console.");
+      console.error("saveContactDetails error:", error);
+      setErrorMsg("Error saving contact details. See console.");
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  // =================== (2) ADDRESS ===================
-  const saveAddress = async () => {
+  /**
+   * Save/update address => POST /user/address
+   * Then update local state + sessionStorage
+   */
+  async function saveAddressData() {
     if (!token) {
       setErrorMsg("No token found.");
       return;
@@ -165,7 +255,7 @@ export default function UserCabinetPage() {
     setErrorMsg("");
 
     try {
-      const res = await fetch("http://dev.thejamb.com/api/user/address", {
+      const res = await fetch("http://dev.thejamb.com/user/address", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -180,297 +270,342 @@ export default function UserCabinetPage() {
 
       if (res.ok) {
         alert("Address saved successfully!");
+        // Re-fetch => update sessionStorage
+        await fetchUserInfo(token);
+        setShowPropertyModal(false);
       } else {
         if (res.status === 400) {
           const errData = await res.json();
           setErrorMsg(`Error saving address: ${errData.error}`);
         } else {
-          setErrorMsg(`Unknown error: ${res.status}`);
+          setErrorMsg(`Unknown error saving address: ${res.status}`);
         }
       }
     } catch (error) {
-      console.error("saveAddress error:", error);
+      console.error("saveAddressData error:", error);
       setErrorMsg("Error saving address. See console.");
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  // =================== (3) CARD ===================
-  const saveCard = async () => {
-    if (!token) {
-      setErrorMsg("No token found.");
-      return;
-    }
-    setLoading(true);
-    setErrorMsg("");
+  /**
+   * Logout => remove token, remove profileData, dispatch event, navigate
+   */
+  function handleLogout() {
+    sessionStorage.removeItem("authToken");
+    sessionStorage.removeItem("profileData");
+    window.dispatchEvent(new Event("authChange"));
+    router.push("/login");
+  }
 
-    try {
-      const res = await fetch("http://dev.thejamb.com/api/user/card", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          token,
-          number: card.number,
-          surname: card.surname,
-          name: card.name,
-          expiredTo: card.expiredTo,
-          cvv: card.cvv,
-          zipcode: card.zipcode
-        }),
-      });
-
-      if (res.ok) {
-        alert("Card saved successfully!");
-      } else {
-        if (res.status === 400) {
-          const errData = await res.json();
-          setErrorMsg(`Error saving card: ${errData.error}`);
-        } else {
-          setErrorMsg(`Unknown error: ${res.status}`);
+  // Close modals on outside click
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (showContactModal && contactModalRef.current) {
+        if (!contactModalRef.current.contains(e.target as Node)) {
+          setShowContactModal(false);
         }
       }
-    } catch (error) {
-      console.error("saveCard error:", error);
-      setErrorMsg("Error saving card. See console.");
-    } finally {
-      setLoading(false);
+      if (showPropertyModal && propertyModalRef.current) {
+        if (!propertyModalRef.current.contains(e.target as Node)) {
+          setShowPropertyModal(false);
+        }
+      }
     }
-  };
 
-  // =================== LOGOUT ===================
-  const handleLogout = () => {
-    // 1) Remove token from sessionStorage
-    sessionStorage.removeItem("authToken");
+    if (showContactModal || showPropertyModal) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showContactModal, showPropertyModal]);
 
-    // 2) Dispatch the custom event so the Header sees we're logged out
-    window.dispatchEvent(new Event("authChange"));
+  // For greeting
+  const greetingText = getGreeting();
+  const hasName = Boolean(profile.name.trim());
 
-    // 3) Navigate to /login without refreshing the entire site
-    router.push("/login");
-  };
-
-  // =================== INPUT HANDLERS ===================
-  const handleProfileChange = (field: keyof UserProfile, value: string) => {
-    setProfile((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleAddressChange = (field: keyof UserAddress, value: string) => {
-    setAddress((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleCardChange = (field: keyof UserCard, value: string) => {
-    setCard((prev) => ({ ...prev, [field]: value }));
-  };
+  // Does user have address?
+  const hasAddress = Boolean(
+    address.country.trim() ||
+    address.address.trim() ||
+    address.city.trim() ||
+    address.state.trim() ||
+    address.zipcode.trim()
+  );
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-start p-6 bg-gray-50">
-      <h1 className="text-2xl font-bold mb-4">User Cabinet</h1>
+    <div className="pt-24 min-h-screen w-full bg-gray-50 pb-10">
+      <div className="max-w-7xl mx-auto px-0 sm:px-4">
+        {/* Greeting */}
+        <h1 className="text-2xl sm:text-3xl font-bold mt-6 mb-2">
+          {greetingText}, {hasName ? profile.name : "Guest"}!
+        </h1>
 
-      {/* Logout button */}
-      <div className="mt-16 mb-4">
-        <button
-          onClick={handleLogout}
-          className="bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600"
-        >
-          Logout
-        </button>
-      </div>
-
-      {errorMsg && (
-        <div className="mb-4 text-red-600">
-          <p>{errorMsg}</p>
-        </div>
-      )}
-
-      {/* Profile info */}
-      <div className="w-full max-w-md bg-white p-4 rounded shadow mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Profile Info</h2>
+        {/* Nav row */}
+        <div className="flex items-center justify-between mb-10">
+          <div className="flex items-center gap-8">
+            <Link href="/profile" className="text-blue-600 border-b-2 border-blue-600">
+              Profile
+            </Link>
+            <Link href="/dashboard" className="text-gray-600 hover:text-blue-600">
+              Orders
+            </Link>
+            <Link href="/profile/settings" className="text-gray-600 hover:text-blue-600">
+              Settings
+            </Link>
+          </div>
           <button
-            onClick={loadProfile}
-            disabled={loading}
-            className="bg-blue-600 text-white py-1 px-3 rounded text-sm"
+            onClick={handleLogout}
+            className="text-red-500 hover:text-red-600"
           >
-            {loading ? "Loading..." : "Load Profile"}
+            Log out
           </button>
         </div>
 
-        <div className="mb-4">
-          <label className="block text-sm text-gray-600 mb-1">Email</label>
-          <input
-            type="email"
-            value={profile.email}
-            readOnly
-            onChange={(e) => handleProfileChange("email", e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded bg-gray-100"
-          />
+        {/* Error message */}
+        {errorMsg && (
+          <div className="mb-4 text-red-600 font-medium">
+            {errorMsg}
+          </div>
+        )}
+
+        {/* Contact details */}
+        <h2 className="text-xl font-semibold mb-3">Contact details</h2>
+        <div className="bg-white p-4 rounded-md shadow-sm flex items-center justify-between mb-6">
+          <div>
+            <p className="text-lg font-semibold">
+              {profile.name} {profile.surname}
+            </p>
+            <div className="text-gray-500 text-sm mt-1">
+              <p>Email address</p>
+              <p>{profile.email || "—"}</p>
+            </div>
+            <div className="text-gray-500 text-sm mt-2">
+              <p>Phone number</p>
+              <p>{profile.phone || "—"}</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setShowContactModal(true)}
+            className="text-blue-600 hover:underline text-sm"
+          >
+            Edit
+          </button>
         </div>
-        <div className="mb-4">
-          <label className="block text-sm text-gray-600 mb-1">Name</label>
-          <input
-            type="text"
-            value={profile.name}
-            onChange={(e) => handleProfileChange("name", e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded"
-          />
+
+        {/* Property details */}
+        <h2 className="text-xl font-semibold mb-3">Property details</h2>
+        <div className="bg-white p-4 rounded-md shadow-sm flex items-center justify-between mb-6">
+          <div>
+            {hasAddress ? (
+              <div className="text-gray-700 space-y-1">
+                <p className="font-semibold">{address.address}</p>
+                <p>
+                  {address.city} {address.state} {address.zipcode}
+                </p>
+                <p>{address.country}</p>
+              </div>
+            ) : (
+              <p className="text-gray-500">No property details yet</p>
+            )}
+          </div>
+          <button
+            onClick={() => setShowPropertyModal(true)}
+            className="text-blue-600 hover:underline text-sm"
+          >
+            {hasAddress ? "Edit" : "+ Add new"}
+          </button>
         </div>
-        <div className="mb-4">
-          <label className="block text-sm text-gray-600 mb-1">Surname</label>
-          <input
-            type="text"
-            value={profile.surname}
-            onChange={(e) => handleProfileChange("surname", e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded"
-          />
+
+        {/* Payment details */}
+        <h2 className="text-xl font-semibold mb-3">Payment details</h2>
+        <div className="bg-white p-4 rounded-md shadow-sm flex items-center justify-between">
+          <p className="text-gray-500">No payment details yet</p>
+          <button className="text-blue-600 hover:underline text-sm">
+            + Add new
+          </button>
         </div>
-        <div className="mb-4">
-          <label className="block text-sm text-gray-600 mb-1">Phone</label>
-          <input
-            type="tel"
-            value={profile.phone}
-            onChange={(e) => handleProfileChange("phone", e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded"
-          />
-        </div>
-        <button
-          onClick={saveProfile}
-          disabled={loading}
-          className="bg-green-600 text-white py-2 px-4 rounded"
-        >
-          {loading ? "Saving..." : "Save Profile"}
-        </button>
       </div>
 
-      {/* Address info */}
-      <div className="w-full max-w-md bg-white p-4 rounded shadow mb-6">
-        <h2 className="text-lg font-semibold mb-4">Address Info</h2>
-        <div className="mb-4">
-          <label className="block text-sm text-gray-600 mb-1">Country</label>
-          <input
-            type="text"
-            value={address.country}
-            onChange={(e) => handleAddressChange("country", e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded"
-          />
-        </div>
-        <div className="mb-4">
-          <label className="block text-sm text-gray-600 mb-1">Address</label>
-          <input
-            type="text"
-            placeholder="123 Main St"
-            value={address.address}
-            onChange={(e) => handleAddressChange("address", e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded"
-          />
-        </div>
-        <div className="mb-4">
-          <label className="block text-sm text-gray-600 mb-1">City</label>
-          <input
-            type="text"
-            value={address.city}
-            onChange={(e) => handleAddressChange("city", e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded"
-          />
-        </div>
-        <div className="mb-4">
-          <label className="block text-sm text-gray-600 mb-1">State</label>
-          <input
-            type="text"
-            value={address.state}
-            onChange={(e) => handleAddressChange("state", e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded"
-          />
-        </div>
-        <div className="mb-4">
-          <label className="block text-sm text-gray-600 mb-1">Zipcode</label>
-          <input
-            type="text"
-            value={address.zipcode}
-            onChange={(e) => handleAddressChange("zipcode", e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded"
-          />
-        </div>
+      {/* CONTACT MODAL */}
+      {showContactModal && (
+        <div className="fixed inset-0 bg-black/30 z-50 flex justify-end">
+          <div
+            ref={contactModalRef}
+            className="bg-white w-full sm:w-[400px] h-full p-6 flex flex-col relative"
+          >
+            <div className="flex items-start justify-between mb-4">
+              <h3 className="text-lg font-semibold">Contact details</h3>
+              <button
+                onClick={() => setShowContactModal(false)}
+                className="text-gray-500 hover:text-gray-800 text-xl"
+              >
+                &times;
+              </button>
+            </div>
 
-        <button
-          onClick={saveAddress}
-          disabled={loading}
-          className="bg-green-600 text-white py-2 px-4 rounded"
-        >
-          {loading ? "Saving..." : "Save Address"}
-        </button>
-      </div>
+            <div className="flex flex-col gap-4 flex-1 overflow-y-auto">
+              <div>
+                <label className="block text-sm mb-1 text-gray-600">Name</label>
+                <input
+                  type="text"
+                  placeholder="Name"
+                  value={profile.name}
+                  onChange={(e) =>
+                    setProfile({ ...profile, name: e.target.value })
+                  }
+                  className="w-full p-3 border rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block text-sm mb-1 text-gray-600">Last Name</label>
+                <input
+                  type="text"
+                  placeholder="Last Name"
+                  value={profile.surname}
+                  onChange={(e) =>
+                    setProfile({ ...profile, surname: e.target.value })
+                  }
+                  className="w-full p-3 border rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block text-sm mb-1 text-gray-600">Email address</label>
+                <input
+                  type="email"
+                  placeholder="hello@thejamb.com"
+                  value={profile.email}
+                  onChange={(e) =>
+                    setProfile({ ...profile, email: e.target.value })
+                  }
+                  className="w-full p-3 border rounded-md"
+                />
+                <button
+                  type="button"
+                  className="text-blue-600 text-sm mt-1 hover:underline"
+                >
+                  Add new email
+                </button>
+              </div>
+              <div>
+                <label className="block text-sm mb-1 text-gray-600">Phone number</label>
+                <input
+                  type="tel"
+                  placeholder="+1 234 56 78 90"
+                  value={profile.phone}
+                  onChange={(e) =>
+                    setProfile({ ...profile, phone: e.target.value })
+                  }
+                  className="w-full p-3 border rounded-md"
+                />
+              </div>
+            </div>
 
-      {/* Payment Card */}
-      <div className="w-full max-w-md bg-white p-4 rounded shadow mb-6">
-        <h2 className="text-lg font-semibold mb-4">Payment Card</h2>
-        <div className="mb-4">
-          <label className="block text-sm text-gray-600 mb-1">Card Number</label>
-          <input
-            type="text"
-            placeholder="1234 5678 1234 5678"
-            value={card.number}
-            onChange={(e) => handleCardChange("number", e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded"
-          />
+            <button
+              onClick={saveContactDetails}
+              disabled={loading}
+              className="mt-6 bg-blue-600 text-white font-semibold p-3 rounded-md hover:bg-blue-700"
+            >
+              {loading ? "Saving..." : "Save →"}
+            </button>
+          </div>
         </div>
-        <div className="mb-4">
-          <label className="block text-sm text-gray-600 mb-1">Cardholder Surname</label>
-          <input
-            type="text"
-            value={card.surname}
-            onChange={(e) => handleCardChange("surname", e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded"
-          />
-        </div>
-        <div className="mb-4">
-          <label className="block text-sm text-gray-600 mb-1">Cardholder Name</label>
-          <input
-            type="text"
-            value={card.name}
-            onChange={(e) => handleCardChange("name", e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded"
-          />
-        </div>
-        <div className="mb-4">
-          <label className="block text-sm text-gray-600 mb-1">Expires (MM/YY)</label>
-          <input
-            type="text"
-            placeholder="12/25"
-            value={card.expiredTo}
-            onChange={(e) => handleCardChange("expiredTo", e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded"
-          />
-        </div>
-        <div className="mb-4">
-          <label className="block text-sm text-gray-600 mb-1">CVV</label>
-          <input
-            type="text"
-            placeholder="123"
-            value={card.cvv}
-            onChange={(e) => handleCardChange("cvv", e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded"
-          />
-        </div>
-        <div className="mb-4">
-          <label className="block text-sm text-gray-600 mb-1">Billing Zipcode</label>
-          <input
-            type="text"
-            placeholder="90210"
-            value={card.zipcode}
-            onChange={(e) => handleCardChange("zipcode", e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded"
-          />
-        </div>
+      )}
 
-        <button
-          onClick={saveCard}
-          disabled={loading}
-          className="bg-green-600 text-white py-2 px-4 rounded"
-        >
-          {loading ? "Saving..." : "Save Card"}
-        </button>
-      </div>
-    </main>
+      {/* PROPERTY MODAL */}
+      {showPropertyModal && (
+        <div className="fixed inset-0 bg-black/30 z-50 flex justify-end">
+          <div
+            ref={propertyModalRef}
+            className="bg-white w-full sm:w-[400px] h-full p-6 flex flex-col relative"
+          >
+            <div className="flex items-start justify-between mb-4">
+              <h3 className="text-lg font-semibold">Property details</h3>
+              <button
+                onClick={() => setShowPropertyModal(false)}
+                className="text-gray-500 hover:text-gray-800 text-xl"
+              >
+                &times;
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-4 flex-1 overflow-y-auto">
+              <div>
+                <label className="block text-sm mb-1 text-gray-600">Country</label>
+                <input
+                  type="text"
+                  placeholder="USA"
+                  value={address.country}
+                  onChange={(e) =>
+                    setAddress({ ...address, country: e.target.value })
+                  }
+                  className="w-full p-3 border rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block text-sm mb-1 text-gray-600">Address line</label>
+                <input
+                  type="text"
+                  placeholder="123 Main St"
+                  value={address.address}
+                  onChange={(e) =>
+                    setAddress({ ...address, address: e.target.value })
+                  }
+                  className="w-full p-3 border rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block text-sm mb-1 text-gray-600">City</label>
+                <input
+                  type="text"
+                  placeholder="Los Angeles"
+                  value={address.city}
+                  onChange={(e) =>
+                    setAddress({ ...address, city: e.target.value })
+                  }
+                  className="w-full p-3 border rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block text-sm mb-1 text-gray-600">State</label>
+                <input
+                  type="text"
+                  placeholder="California"
+                  value={address.state}
+                  onChange={(e) =>
+                    setAddress({ ...address, state: e.target.value })
+                  }
+                  className="w-full p-3 border rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block text-sm mb-1 text-gray-600">Zipcode</label>
+                <input
+                  type="text"
+                  placeholder="90210"
+                  value={address.zipcode}
+                  onChange={(e) =>
+                    setAddress({ ...address, zipcode: e.target.value })
+                  }
+                  className="w-full p-3 border rounded-md"
+                />
+              </div>
+            </div>
+
+            <button
+              onClick={saveAddressData}
+              disabled={loading}
+              className="mt-6 bg-blue-600 text-white font-semibold p-3 rounded-md hover:bg-blue-700"
+            >
+              {loading ? "Saving..." : "Save →"}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

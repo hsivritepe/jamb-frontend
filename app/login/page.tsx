@@ -7,14 +7,6 @@ import GoogleIcon from "@/components/icons/GoogleIcon";
 import FacebookIcon from "@/components/icons/FacebookIcon";
 import AppleIcon from "@/components/icons/AppleIcon";
 
-/**
- * Changes made:
- * 1) After storing the auth token in sessionStorage, we must dispatch "authChange".
- *    Otherwise, the Header won't see the login state.
- * 2) Removed the forced `router.refresh()` if you want immediate client-side update
- *    (the "authChange" event is enough). But you could keep `router.refresh()` if desired.
- */
-
 export default function LoginOrRegisterPage() {
   const router = useRouter();
 
@@ -85,10 +77,27 @@ export default function LoginOrRegisterPage() {
         // 1) Store token in sessionStorage
         sessionStorage.setItem("authToken", data.token);
 
-        // 2) Dispatch the custom "authChange" event so the Header updates
+        // 2) Immediately fetch user info so we can store it in sessionStorage
+        try {
+          const userRes = await fetch("http://dev.thejamb.com/user/info", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token: data.token }),
+          });
+          if (userRes.ok) {
+            const userData = await userRes.json();
+            // Store user info in sessionStorage => "profileData"
+            sessionStorage.setItem("profileData", JSON.stringify(userData));
+          }
+        } catch (err) {
+          console.error("Error fetching user info after login:", err);
+          // Not critical, user can still fetch on profile page
+        }
+
+        // 3) Dispatch the custom "authChange" event so the Header updates
         window.dispatchEvent(new Event("authChange"));
 
-        // 3) Navigate to /profile
+        // 4) Navigate to /profile
         router.push("/profile");
       } else if (res.status === 400) {
         const data = await res.json();
@@ -244,7 +253,7 @@ export default function LoginOrRegisterPage() {
                 <label className="block text-sm text-gray-600 mb-1">Email address</label>
                 <input
                   type="email"
-                  placeholder="E.g. hello@jamb.com"
+                  placeholder="E.g. hello@thejamb.com"
                   value={loginEmail}
                   onChange={(e) => setLoginEmail(e.target.value)}
                   className="w-full p-3 border border-gray-300 rounded"

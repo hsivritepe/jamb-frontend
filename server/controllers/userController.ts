@@ -37,6 +37,7 @@ export async function createUser(email: string, phoneNumber: string, password: s
       email,
       phone: phoneNumber, // or phone_number field in your DB
       passwordHash: hashedPassword,
+      // Optionally: firstLang, secondLang defaults, sendingAgreed = false, etc.
     },
   });
 
@@ -338,7 +339,7 @@ export async function updateUserCard(
  * Body:
  * { "token": "valid-user-token" }
  *
- * 200 => { data: { name, surname, card, address, ... } }
+ * 200 => { data: { name, surname, phone, firstLang, secondLang, sendingAgreed, card, address, ... } }
  * 400 => { error: "Bad request" }
  * 401 => { error: "Unauthorized" }
  */
@@ -352,26 +353,28 @@ export async function getUserInfo(token: string) {
     return { error: "Unauthorized" };
   }
 
-  // Return the fields as needed
+  // Return the fields you want to expose
   const userInfo = {
-    email: user.email,
     name: user.name || "",
     surname: user.surname || "",
     phone: user.phone || "",
-    address: {
-      country: user.addressCountry || "",
-      address: user.addressAddress || "",
-      city: user.addressCity || "",
-      state: user.addressState || "",
-      zipcode: user.addressZipcode || "",
-    },
+    firstLang: user.firstLang || "",
+    secondLang: user.secondLang || "",
+    sendingAgreed: user.sendingAgreed || false,  // If you have this field in DB
     card: {
       number: user.cardNumber || "",
       surname: user.cardSurname || "",
       name: user.cardName || "",
-      expiredTo: user.cardExpiredTo || "",
+      expired_to: user.cardExpiredTo || "",
       cvv: user.cardCVV || "",
       zipcode: user.cardZipcode || "",
+    },
+    address: {
+      country: user.addressCountry || "",
+      address: user.addressAddress || "",
+      zipcode: user.addressZipcode || "",
+      city: user.addressCity || "",
+      state: user.addressState || "",
     },
   };
 
@@ -379,18 +382,7 @@ export async function getUserInfo(token: string) {
 }
 
 /**
- * Authenticate with token (optionally returning profile).
- *
- * POST /user/auth/token
- * Body:
- * {
- *   "token": "valid-user-token",
- *   "with_profile": boolean
- * }
- *
- * 200 => { success: "ok", name, surname, ... } if with_profile
- * 400 => { error: "Bad Request" }
- * 401 => { error: "Unauthorized" }
+ * (Optional) Auth with token
  */
 export async function authenticateWithToken(token: string, withProfile?: boolean) {
   if (!token) {
@@ -416,23 +408,36 @@ export async function authenticateWithToken(token: string, withProfile?: boolean
 }
 
 /**
- * Example for updating some advanced user profile fields (optional).
+ * New: Update user profile with name, surname, firstLang, secondLang, sendingAgreed
  */
-export async function updateUserProfile(token: string, name: string, surname: string) {
-  if (!token || !name || !surname) {
+export async function updateUserProfile(
+  token: string,
+  name: string,
+  surname: string,
+  firstLang: string,
+  secondLang: string,
+  sendingAgreed: boolean
+) {
+  // Validate token
+  if (!token) {
     return { error: "Bad request" };
   }
 
+  // Look up user by token
   const user = await db.user.findUnique({ where: { authToken: token } });
   if (!user) {
     return { error: "Invalid token" };
   }
 
+  // Update fields as needed
   await db.user.update({
     where: { id: user.id },
     data: {
-      name,
-      surname,
+      name: name || "",
+      surname: surname || "",
+      firstLang: firstLang || "",
+      secondLang: secondLang || "",
+      sendingAgreed: sendingAgreed ?? false,
     },
   });
 
