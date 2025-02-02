@@ -1,97 +1,141 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import GoogleIcon from "@/components/icons/GoogleIcon";
 import FacebookIcon from "@/components/icons/FacebookIcon";
 import AppleIcon from "@/components/icons/AppleIcon";
 
+/**
+ * Changes made:
+ * 1) After storing the auth token in sessionStorage, we must dispatch "authChange".
+ *    Otherwise, the Header won't see the login state.
+ * 2) Removed the forced `router.refresh()` if you want immediate client-side update
+ *    (the "authChange" event is enough). But you could keep `router.refresh()` if desired.
+ */
+
 export default function LoginOrRegisterPage() {
-  // Registration states
+  const router = useRouter();
+
+  // Registration form
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
   const [agreedToTos, setAgreedToTos] = useState(false);
 
-  // Login states
+  // Login form
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
 
   // Toggles
-  const [showRegister, setShowRegister] = useState(true);
+  const [showRegister, setShowRegister] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
 
-  // Forgot Password (step 1 only)
+  // Forgot password email
   const [resetEmail, setResetEmail] = useState("");
 
-  // ============= REGISTRATION ============
+  // =============== REGISTER ===============
   const handleRegister = async () => {
     if (!agreedToTos) {
       alert("Please agree to the terms and conditions.");
       return;
     }
+
     try {
       const res = await fetch("http://dev.thejamb.com/user/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, phone, password }),
+        body: JSON.stringify({
+          email,
+          phone_number: phoneNumber,
+          password
+        }),
       });
-      const data = await res.json();
-      if (data.error) {
-        alert(`Error: ${data.error}`);
+
+      if (res.ok) {
+        alert("Successfully created account! Check your email for the activation code.");
+      } else if (res.status === 400) {
+        const data = await res.json();
+        alert(`Registration error: ${data.error}`);
       } else {
-        alert("Successfully created account!");
-        // maybe redirect to /account or /login
+        alert(`Registration error: ${res.status}`);
       }
     } catch (error) {
-      alert("Registration failed. Check console for more info.");
+      alert("Registration failed. Check console for details.");
       console.error("Registration error:", error);
     }
   };
 
-  // ============= LOGIN ============
+  // =============== LOGIN ===============
   const handleLogin = async () => {
     try {
-      const res = await fetch("http://dev.thejamb.com/api/user/auth/credentials", {
+      const res = await fetch("http://dev.thejamb.com/user/auth/credentials", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: loginEmail, password: loginPassword }),
+        body: JSON.stringify({
+          email: loginEmail,
+          password: loginPassword
+        }),
       });
-      const data = await res.json();
-      if (data.error) {
-        alert(`Error: ${data.error}`);
+
+      if (res.ok) {
+        const data = await res.json();
+
+        // 1) Store token in sessionStorage
+        sessionStorage.setItem("authToken", data.token);
+
+        // 2) Dispatch the custom "authChange" event so the Header updates
+        window.dispatchEvent(new Event("authChange"));
+
+        // 3) Navigate to /profile
+        router.push("/profile");
+      } else if (res.status === 400) {
+        const data = await res.json();
+        alert(`Login error: ${data.error}`);
+      } else if (res.status === 401) {
+        const data = await res.json();
+        alert(`Unauthorized: ${data.error}`);
       } else {
-        alert(`Logged in! Token: ${data.token}`);
-        // store token or redirect
+        alert(`Login error. Status: ${res.status}`);
       }
     } catch (error) {
-      alert("Login failed. Check console for more info.");
+      alert("Login failed. Check console.");
       console.error("Login error:", error);
     }
   };
 
-  // ============= FORGOT PASSWORD (REQUEST) ============
+  // =============== FORGOT PASSWORD ===============
   const handleForgotPassword = async () => {
     if (!resetEmail.trim()) {
       alert("Please enter your email for password reset.");
       return;
     }
+
     try {
-      const res = await fetch("http://dev.thejamb.com/api/user/change-password/request", {
+      const res = await fetch("http://dev.thejamb.com/user/change-password/request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: resetEmail }),
       });
-      const data = await res.json();
-      if (data.error) {
+
+      if (res.ok) {
+        alert("Email has been sent with reset instructions!");
+        router.push(`/password-reset?email=${encodeURIComponent(resetEmail)}`);
+      } else if (res.status === 400) {
+        const data = await res.json();
+        alert(`Reset error: ${data.error}`);
+      } else if (res.status === 404) {
+        const data = await res.json();
+        alert(`Reset error: ${data.error}`);
+      } else if (res.status === 500) {
+        const data = await res.json();
         alert(`Reset error: ${data.error}`);
       } else {
-        alert("An email has been sent with reset instructions!");
-        // Hide the forgot password block
-        setShowForgotPassword(false);
+        alert(`Reset error: status ${res.status}`);
       }
     } catch (error) {
-      alert("Failed to request a password reset. Check console for details.");
+      alert("Failed to request a password reset. Check console.");
       console.error("Forgot Password error:", error);
     }
   };
@@ -99,8 +143,8 @@ export default function LoginOrRegisterPage() {
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-gray-50 px-4 py-10">
       {showRegister ? (
-        /* =============== REGISTER FORM =============== */
-        <div className="w-full max-w-md bg-white p-8 rounded-lg shadow">
+        // ================= REGISTER FORM =================
+        <div className="w-full max-w-md bg-white p-8 mt-20 rounded-lg shadow">
           <h1 className="text-2xl font-bold mb-6 text-center">Create Account</h1>
 
           {/* Email */}
@@ -121,8 +165,8 @@ export default function LoginOrRegisterPage() {
             <input
               type="tel"
               placeholder="+1"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
               className="w-full p-3 border border-gray-300 rounded"
             />
           </div>
@@ -132,7 +176,7 @@ export default function LoginOrRegisterPage() {
             <label className="block text-sm text-gray-600 mb-1">Password</label>
             <input
               type="password"
-              placeholder="6 words, numbers and a capital letter"
+              placeholder="At least 6 chars"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full p-3 border border-gray-300 rounded"
@@ -150,12 +194,11 @@ export default function LoginOrRegisterPage() {
             <label htmlFor="agreeTos" className="text-sm text-gray-600">
               By creating an account you agree to our{" "}
               <Link href="/terms" className="underline text-blue-600">
-                terms of conditions
+                terms and conditions
               </Link>
             </label>
           </div>
 
-          {/* Confirm Button */}
           <button
             onClick={handleRegister}
             className="w-full bg-blue-600 text-white py-3 rounded text-center font-medium hover:bg-blue-700"
@@ -164,7 +207,7 @@ export default function LoginOrRegisterPage() {
           </button>
 
           <div className="text-center mt-4">
-            <span className="text-sm text-gray-700">Have an account?</span>{" "}
+            <span className="text-sm text-gray-700">Already have an account?</span>{" "}
             <button
               onClick={() => setShowRegister(false)}
               className="text-blue-600 underline text-sm"
@@ -173,7 +216,7 @@ export default function LoginOrRegisterPage() {
             </button>
           </div>
 
-          {/* Sign with */}
+          {/* Social login icons */}
           <div className="mt-8 text-center">
             <p className="text-gray-500 text-sm mb-2">Sign with</p>
             <div className="flex justify-center gap-4">
@@ -190,9 +233,8 @@ export default function LoginOrRegisterPage() {
           </div>
         </div>
       ) : (
-        /* =============== LOGIN FORM =============== */
+        // ================= LOGIN FORM =================
         <div className="w-full max-w-md bg-white p-8 rounded-lg shadow">
-          {/* If NOT in forgot password mode => show normal login fields */}
           {!showForgotPassword ? (
             <>
               <h1 className="text-2xl font-bold mb-6 text-center">Login</h1>
@@ -221,7 +263,6 @@ export default function LoginOrRegisterPage() {
                 />
               </div>
 
-              {/* Forgot Password Link */}
               <div className="mb-6 text-right">
                 <button
                   onClick={() => setShowForgotPassword(true)}
@@ -231,7 +272,6 @@ export default function LoginOrRegisterPage() {
                 </button>
               </div>
 
-              {/* Login Button */}
               <button
                 onClick={handleLogin}
                 className="w-full bg-blue-600 text-white py-3 rounded text-center font-medium hover:bg-blue-700"
@@ -250,7 +290,7 @@ export default function LoginOrRegisterPage() {
               </div>
             </>
           ) : (
-            /* =============== FORGOT PASSWORD ONLY =============== */
+            // =============== FORGOT PASSWORD ===============
             <>
               <h1 className="text-2xl font-bold mb-6 text-center">Forgot Password</h1>
               <p className="mb-4 text-sm text-gray-700">
@@ -258,9 +298,7 @@ export default function LoginOrRegisterPage() {
               </p>
 
               <div className="mb-4">
-                <label className="block text-sm text-gray-600 mb-1">
-                  Email address
-                </label>
+                <label className="block text-sm text-gray-600 mb-1">Email address</label>
                 <input
                   type="email"
                   placeholder="E.g. hello@jamb.com"

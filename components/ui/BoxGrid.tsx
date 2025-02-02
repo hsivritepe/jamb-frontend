@@ -47,11 +47,11 @@ export function Box({
     isPopular,
 }: BoxProps) {
     const variants = {
-        default: 'bg-white border border-gray-200',
+        default: 'bg-white border border-gray-500 sm:border-gray-200',
         primary: 'bg-blue-600 text-white',
         dark: 'bg-gray-900 text-white',
         'full-width': 'bg-gray-900 text-white w-full',
-        light: 'bg-brand-light border border-gray-200',
+        light: 'bg-brand-light border border-gray-500 sm:border-gray-200',
     };
 
     return (

@@ -197,23 +197,10 @@ export default function Services() {
       <div className="container mx-auto">
         <BreadCrumb items={CALCULATE_STEPS} />
 
-        {/* 
-          1) Phone (<768px): title & button in column, button on the right 
-             => use "flex-col" + "items-end" for phone
-          2) Tablet (≥768px) and Desktop => keep them in row (justify-between?)
-             => "md:flex-row"
-        */}
         <div className="mt-8">
           <div className="flex flex-col md:flex-row justify-between gap-2">
-            {/* 
-              For phone => full width
-              We'll place button on the right using "self-end" 
-              so that it's at the right edge of its own line.
-            */}
             <SectionBoxTitle className="flex-shrink-0">Select Your Categories</SectionBoxTitle>
-
             <div className="flex flex-col items-end md:items-center md:flex-row md:justify-end">
-              {/* On phone => .items-end puts the button to the right edge in its column */}
               <Button onClick={handleNext} className="mt-2 md:mt-0">
                 Next →
               </Button>
