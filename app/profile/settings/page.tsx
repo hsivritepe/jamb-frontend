@@ -184,20 +184,6 @@ export default function SettingsPage() {
             Delete Account
           </button>
         </div>
-
-        {/* Additional links (demo) */}
-        <div className="space-y-4 text-gray-800 mt-4 mb-10">
-          <div className="flex items-center gap-2">
-            <a href="/about-us" className="hover:text-blue-600">
-              About us
-            </a>
-          </div>
-          <div className="flex items-center gap-2">
-            <a href="/become-a-pro" className="hover:text-blue-600">
-              Become a Professional
-            </a>
-          </div>
-        </div>
       </div>
 
       {/* Edit details side modal */}
