@@ -29,7 +29,8 @@ interface UserCard {
 }
 
 /**
- * Returns a time-based greeting.
+ * Returns a time-based greeting:
+ * "Good morning", "Good afternoon", or "Good evening".
  */
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -65,7 +66,7 @@ export default function ProfilePage() {
     zipcode: "",
   });
 
-  // Card data
+  // Card data (if needed)
   const [card, setCard] = useState<UserCard>({
     number: "",
     surname: "",
@@ -79,18 +80,21 @@ export default function ProfilePage() {
   const [showContactModal, setShowContactModal] = useState(false);
   const [showPropertyModal, setShowPropertyModal] = useState(false);
 
-  // Refs for modals (to detect outside clicks)
+  // Refs for modals (for outside clicks)
   const contactModalRef = useRef<HTMLDivElement>(null);
   const propertyModalRef = useRef<HTMLDivElement>(null);
 
-  // Static map images
+  // Static map image URLs
   const [mapUrl, setMapUrl] = useState("");
   const [streetViewUrl, setStreetViewUrl] = useState("");
 
-  // On mount => check token => load from session or server
+  /**
+   * On mount => check for token => if none => /login => else load from session or server
+   */
   useEffect(() => {
     const storedToken = sessionStorage.getItem("authToken");
     if (!storedToken) {
+      // If no token => not logged in => redirect
       router.push("/login");
       return;
     }
@@ -108,7 +112,7 @@ export default function ProfilePage() {
           surname: data.surname || "",
           phone: data.phone || "",
         });
-        // Fill address
+        // Fill address, if any
         if (data.address) {
           setAddress({
             country: data.address.country || "",
@@ -118,7 +122,7 @@ export default function ProfilePage() {
             zipcode: data.address.zipcode?.toString() || "",
           });
         }
-        // Fill card
+        // Fill card, if any
         if (data.card) {
           setCard({
             number: data.card.number || "",
@@ -129,11 +133,12 @@ export default function ProfilePage() {
             zipcode: data.card.zipcode || "",
           });
         }
-        // If we have map URLs
+        // Also load mapUrl/streetViewUrl if they exist
         if (data.mapUrl) setMapUrl(data.mapUrl);
         if (data.streetViewUrl) setStreetViewUrl(data.streetViewUrl);
       } catch (err) {
         console.error("Failed to parse profileData from sessionStorage:", err);
+        // If parse fails => fetch from server
         fetchUserInfo(storedToken);
       }
     } else {
@@ -143,7 +148,7 @@ export default function ProfilePage() {
   }, [router]);
 
   /**
-   * Fetch user info => POST /user/info
+   * Fetch user info => /user/info
    */
   async function fetchUserInfo(_token: string) {
     setLoading(true);
@@ -158,7 +163,7 @@ export default function ProfilePage() {
 
       if (res.ok) {
         const data = await res.json();
-        // Fill local state
+        // Store in local state
         setProfile({
           email: data.email || "",
           name: data.name || "",
@@ -184,11 +189,11 @@ export default function ProfilePage() {
             zipcode: data.card.zipcode || "",
           });
         }
-        // Clear old map images in state
+        // Clear old map images
         setMapUrl("");
         setStreetViewUrl("");
 
-        // Save to sessionStorage
+        // Save new data to sessionStorage
         sessionStorage.setItem("profileData", JSON.stringify(data));
       } else {
         if (res.status === 400 || res.status === 401) {
@@ -225,7 +230,7 @@ export default function ProfilePage() {
           token,
           name: profile.name,
           surname: profile.surname,
-          // Add phone/email if needed
+          // If you want to also update phone/email => add them
         }),
       });
 
@@ -328,13 +333,87 @@ export default function ProfilePage() {
   // Check if user has address
   const hasAddress = Boolean(
     address.country.trim() ||
-      address.address.trim() ||
-      address.city.trim() ||
-      address.state.trim() ||
-      address.zipcode.trim()
+    address.address.trim() ||
+    address.city.trim() ||
+    address.state.trim() ||
+    address.zipcode.trim()
   );
 
-  // Possibly geocode => static map => skip for brevity here
+  // If we want to geocode => build static map => store in session => see previous logic
+  // For brevity, let's keep the same approach
+
+  useEffect(() => {
+    if (!hasAddress) {
+      setMapUrl("");
+      setStreetViewUrl("");
+      return;
+    }
+
+    // Check if we have them in session
+    const storedProfileData = sessionStorage.getItem("profileData");
+    if (storedProfileData) {
+      try {
+        const pd = JSON.parse(storedProfileData);
+        if (pd.mapUrl && pd.streetViewUrl) {
+          setMapUrl(pd.mapUrl);
+          setStreetViewUrl(pd.streetViewUrl);
+          return;
+        }
+      } catch (err) {
+        console.warn("Failed to parse existing profileData for map images:", err);
+      }
+    }
+
+    // If not => geocode
+    const addressString = `${address.address}, ${address.city}, ${address.state} ${address.zipcode}, ${address.country}`;
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    if (!apiKey) {
+      console.warn("Missing Google Maps API key => no static map or street view");
+      return;
+    }
+
+    async function geocodeAndSaveImages() {
+      try {
+        const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
+          addressString
+        )}&key=${apiKey}`;
+        const response = await fetch(geocodeUrl);
+        const data = await response.json();
+        if (data.status === "OK" && data.results && data.results.length > 0) {
+          const loc = data.results[0].geometry.location;
+          const lat = loc.lat;
+          const lng = loc.lng;
+
+          // Build static map
+          const newMapUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=16&size=600x300&markers=color:blue%7C${lat},${lng}&language=en&key=${apiKey}`;
+          setMapUrl(newMapUrl);
+
+          // Street View
+          const newStreetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=600x300&location=${lat},${lng}&fov=80&heading=70&pitch=0&language=en&key=${apiKey}`;
+          setStreetViewUrl(newStreetViewUrl);
+
+          // Store them in session
+          const stored = sessionStorage.getItem("profileData");
+          if (stored) {
+            const parsedData = JSON.parse(stored);
+            parsedData.mapUrl = newMapUrl;
+            parsedData.streetViewUrl = newStreetViewUrl;
+            sessionStorage.setItem("profileData", JSON.stringify(parsedData));
+          }
+        } else {
+          console.warn("No geocode results. Status:", data.status);
+          setMapUrl("");
+          setStreetViewUrl("");
+        }
+      } catch (err) {
+        console.error("Error geocoding address:", err);
+        setMapUrl("");
+        setStreetViewUrl("");
+      }
+    }
+
+    geocodeAndSaveImages();
+  }, [hasAddress, address]);
 
   return (
     <div className="pt-24 min-h-screen w-full bg-gray-50 pb-10">
@@ -354,7 +433,7 @@ export default function ProfilePage() {
               Orders
             </Link>
             <Link href="/profile/messages" className="text-gray-600 hover:text-blue-600">
-              Messages
+            Messages
             </Link>
             <Link href="/profile/settings" className="text-gray-600 hover:text-blue-600">
               Settings
@@ -419,7 +498,7 @@ export default function ProfilePage() {
             </button>
           </div>
 
-          {/* Second row => Map & Street View side-by-side on large screens, stacked otherwise */}
+          {/* Second row => Map & Street View side by side on lg, stacked otherwise */}
           <div className="flex flex-col gap-4 lg:flex-row w-full lg:w-1/2 lg:gap-1">
             {/* Static map */}
             {mapUrl && (
@@ -430,7 +509,7 @@ export default function ProfilePage() {
               />
             )}
 
-            {/* Street view */}
+            {/* Street View */}
             {streetViewUrl && (
               <img
                 src={streetViewUrl}
