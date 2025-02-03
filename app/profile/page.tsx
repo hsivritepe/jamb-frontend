@@ -29,7 +29,8 @@ interface UserCard {
 }
 
 /**
- * Helper function for time-based greeting
+ * Returns a time-based greeting:
+ * "Good morning" / "Good afternoon" / "Good evening"
  */
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -53,7 +54,7 @@ export default function ProfilePage() {
     email: "",
     name: "",
     surname: "",
-    phone: ""
+    phone: "",
   });
 
   // Address info
@@ -62,28 +63,34 @@ export default function ProfilePage() {
     address: "",
     city: "",
     state: "",
-    zipcode: ""
+    zipcode: "",
   });
 
-  // Card data (if needed later)
+  // Card data (if needed)
   const [card, setCard] = useState<UserCard>({
     number: "",
     surname: "",
     name: "",
     expiredTo: "",
     cvv: "",
-    zipcode: ""
+    zipcode: "",
   });
 
   // Whether to show modals
   const [showContactModal, setShowContactModal] = useState(false);
   const [showPropertyModal, setShowPropertyModal] = useState(false);
 
-  // Refs for modals
+  // Refs for modals (for outside clicks)
   const contactModalRef = useRef<HTMLDivElement>(null);
   const propertyModalRef = useRef<HTMLDivElement>(null);
 
-  // On mount => check token => if none => /login => else load from session or server
+  // Map image URLs (static map and street view)
+  const [mapUrl, setMapUrl] = useState("");
+  const [streetViewUrl, setStreetViewUrl] = useState("");
+
+  /**
+   * On mount => check token => if none => /login => else load from session or server
+   */
   useEffect(() => {
     const storedToken = sessionStorage.getItem("authToken");
     if (!storedToken) {
@@ -92,28 +99,29 @@ export default function ProfilePage() {
     }
     setToken(storedToken);
 
-    // 1) Check if we have "profileData" in sessionStorage
+    // Try loading "profileData" from sessionStorage
     const storedProfileData = sessionStorage.getItem("profileData");
     if (storedProfileData) {
-      // If so, parse and load it
       try {
         const data = JSON.parse(storedProfileData);
-        // e.g. data.email, data.name, data.surname, data.address, data.card, etc.
+        // Fill user profile
         setProfile({
           email: data.email || "",
           name: data.name || "",
           surname: data.surname || "",
-          phone: data.phone || ""
+          phone: data.phone || "",
         });
+        // Fill address, if any
         if (data.address) {
           setAddress({
             country: data.address.country || "",
             address: data.address.address || "",
             city: data.address.city || "",
             state: data.address.state || "",
-            zipcode: data.address.zipcode?.toString() || ""
+            zipcode: data.address.zipcode?.toString() || "",
           });
         }
+        // Fill card, if any
         if (data.card) {
           setCard({
             number: data.card.number || "",
@@ -121,23 +129,24 @@ export default function ProfilePage() {
             name: data.card.name || "",
             expiredTo: data.card.expired_to || "",
             cvv: data.card.cvv || "",
-            zipcode: data.card.zipcode || ""
+            zipcode: data.card.zipcode || "",
           });
         }
+        // Also load mapUrl/streetViewUrl if they exist
+        if (data.mapUrl) setMapUrl(data.mapUrl);
+        if (data.streetViewUrl) setStreetViewUrl(data.streetViewUrl);
       } catch (err) {
         console.error("Failed to parse profileData from sessionStorage:", err);
-        // If parse fails, we can fetch from server
         fetchUserInfo(storedToken);
       }
     } else {
-      // 2) If no profileData, fetch from server
+      // If none found => fetch from server
       fetchUserInfo(storedToken);
     }
   }, [router]);
 
   /**
-   * (Optional) If you want to forcibly refresh data from server,
-   * call fetchUserInfo again. We'll do that after we update user info.
+   * Fetch user info => /user/info
    */
   async function fetchUserInfo(_token: string) {
     setLoading(true);
@@ -152,12 +161,12 @@ export default function ProfilePage() {
 
       if (res.ok) {
         const data = await res.json();
-        // Store in state
+        // Store in local state
         setProfile({
           email: data.email || "",
           name: data.name || "",
           surname: data.surname || "",
-          phone: data.phone || ""
+          phone: data.phone || "",
         });
         if (data.address) {
           setAddress({
@@ -165,7 +174,7 @@ export default function ProfilePage() {
             address: data.address.address || "",
             city: data.address.city || "",
             state: data.address.state || "",
-            zipcode: data.address.zipcode?.toString() || ""
+            zipcode: data.address.zipcode?.toString() || "",
           });
         }
         if (data.card) {
@@ -175,11 +184,14 @@ export default function ProfilePage() {
             name: data.card.name || "",
             expiredTo: data.card.expired_to || "",
             cvv: data.card.cvv || "",
-            zipcode: data.card.zipcode || ""
+            zipcode: data.card.zipcode || "",
           });
         }
+        // Maybe we do NOT have mapUrl/streetViewUrl yet => clear them
+        setMapUrl("");
+        setStreetViewUrl("");
 
-        // Also update "profileData" in sessionStorage
+        // Save new data to sessionStorage
         sessionStorage.setItem("profileData", JSON.stringify(data));
       } else {
         if (res.status === 400 || res.status === 401) {
@@ -199,7 +211,6 @@ export default function ProfilePage() {
 
   /**
    * Save contact details => PATCH /user/profile
-   * Then update local state + sessionStorage
    */
   async function saveContactDetails() {
     if (!token) {
@@ -216,14 +227,12 @@ export default function ProfilePage() {
         body: JSON.stringify({
           token,
           name: profile.name,
-          surname: profile.surname
-          // phone, email, etc. if needed
+          surname: profile.surname,
         }),
       });
 
       if (res.ok) {
         alert("Contact details updated!");
-        // We'll re-fetch from server => also re-update sessionStorage
         await fetchUserInfo(token);
         setShowContactModal(false);
       } else {
@@ -244,7 +253,6 @@ export default function ProfilePage() {
 
   /**
    * Save/update address => POST /user/address
-   * Then update local state + sessionStorage
    */
   async function saveAddressData() {
     if (!token) {
@@ -264,13 +272,12 @@ export default function ProfilePage() {
           address: address.address,
           city: address.city,
           state: address.state,
-          zipcode: address.zipcode
+          zipcode: address.zipcode,
         }),
       });
 
       if (res.ok) {
         alert("Address saved successfully!");
-        // Re-fetch => update sessionStorage
         await fetchUserInfo(token);
         setShowPropertyModal(false);
       } else {
@@ -290,7 +297,7 @@ export default function ProfilePage() {
   }
 
   /**
-   * Logout => remove token, remove profileData, dispatch event, navigate
+   * Logout => remove token, remove profileData, dispatch event => navigate
    */
   function handleLogout() {
     sessionStorage.removeItem("authToken");
@@ -299,7 +306,9 @@ export default function ProfilePage() {
     router.push("/login");
   }
 
-  // Close modals on outside click
+  /**
+   * Close modals if user clicks outside them
+   */
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (showContactModal && contactModalRef.current) {
@@ -324,18 +333,103 @@ export default function ProfilePage() {
     };
   }, [showContactModal, showPropertyModal]);
 
-  // For greeting
+  // Greet
   const greetingText = getGreeting();
   const hasName = Boolean(profile.name.trim());
 
   // Does user have address?
   const hasAddress = Boolean(
     address.country.trim() ||
-    address.address.trim() ||
-    address.city.trim() ||
-    address.state.trim() ||
-    address.zipcode.trim()
+      address.address.trim() ||
+      address.city.trim() ||
+      address.state.trim() ||
+      address.zipcode.trim()
   );
+
+  // Geocode => build static map and street view => store in session
+  useEffect(() => {
+    if (!hasAddress) {
+      // No address => clear images
+      setMapUrl("");
+      setStreetViewUrl("");
+      return;
+    }
+
+    // Check if we already have them in "profileData"
+    const storedProfileData = sessionStorage.getItem("profileData");
+    if (storedProfileData) {
+      try {
+        const pd = JSON.parse(storedProfileData);
+        if (pd.mapUrl && pd.streetViewUrl) {
+          // Already have them => use them
+          setMapUrl(pd.mapUrl);
+          setStreetViewUrl(pd.streetViewUrl);
+          return; // skip geocode
+        }
+      } catch (err) {
+        console.warn("Failed to parse profileData for map images:", err);
+      }
+    }
+
+    // If not in session => geocode
+    const addressString = `${address.address}, ${address.city}, ${address.state} ${address.zipcode}, ${address.country}`;
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    if (!apiKey) {
+      console.warn(
+        "Missing Google Maps API key. Cannot load static map or street view."
+      );
+      return;
+    }
+
+    async function geocodeAndSave() {
+      try {
+        const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
+          addressString
+        )}&key=${apiKey}`;
+        const response = await fetch(geocodeUrl);
+        const data = await response.json();
+        if (data.status === "OK" && data.results && data.results.length > 0) {
+          const locationResult = data.results[0].geometry.location;
+          const lat = locationResult.lat;
+          const lng = locationResult.lng;
+
+          // Build static map URL
+          const newMapUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=16&size=600x300&markers=color:blue%7C${lat},${lng}&language=en&key=${apiKey}`;
+          setMapUrl(newMapUrl);
+
+          // Street View
+          const newStreetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=600x300&location=${lat},${lng}&fov=80&heading=70&pitch=0&language=en&key=${apiKey}`;
+          setStreetViewUrl(newStreetViewUrl);
+
+          // Save them in the same "profileData" object, so next time we skip geocode
+          const stored = sessionStorage.getItem("profileData");
+          if (stored) {
+            try {
+              const dataObj = JSON.parse(stored);
+              dataObj.mapUrl = newMapUrl;
+              dataObj.streetViewUrl = newStreetViewUrl;
+              sessionStorage.setItem("profileData", JSON.stringify(dataObj));
+            } catch (parseErr) {
+              console.warn(
+                "Could not parse profileData to save map images:",
+                parseErr
+              );
+            }
+          }
+        } else {
+          console.warn("No geocode results found. Status:", data.status);
+          setMapUrl("");
+          setStreetViewUrl("");
+        }
+      } catch (err) {
+        console.error("Error geocoding address for static map:", err);
+        setMapUrl("");
+        setStreetViewUrl("");
+      }
+    }
+
+    geocodeAndSave();
+  }, [hasAddress, address]);
 
   return (
     <div className="pt-24 min-h-screen w-full bg-gray-50 pb-10">
@@ -348,13 +442,22 @@ export default function ProfilePage() {
         {/* Nav row */}
         <div className="flex items-center justify-between mb-10">
           <div className="flex items-center gap-8">
-            <Link href="/profile" className="text-blue-600 border-b-2 border-blue-600">
+            <Link
+              href="/profile"
+              className="text-blue-600 border-b-2 border-blue-600"
+            >
               Profile
             </Link>
-            <Link href="/dashboard" className="text-gray-600 hover:text-blue-600">
+            <Link
+              href="/dashboard"
+              className="text-gray-600 hover:text-blue-600"
+            >
               Orders
             </Link>
-            <Link href="/profile/settings" className="text-gray-600 hover:text-blue-600">
+            <Link
+              href="/profile/settings"
+              className="text-gray-600 hover:text-blue-600"
+            >
               Settings
             </Link>
           </div>
@@ -368,9 +471,7 @@ export default function ProfilePage() {
 
         {/* Error message */}
         {errorMsg && (
-          <div className="mb-4 text-red-600 font-medium">
-            {errorMsg}
-          </div>
+          <div className="mb-4 text-red-600 font-medium">{errorMsg}</div>
         )}
 
         {/* Contact details */}
@@ -399,26 +500,55 @@ export default function ProfilePage() {
 
         {/* Property details */}
         <h2 className="text-xl font-semibold mb-3">Property details</h2>
-        <div className="bg-white p-4 rounded-md shadow-sm flex items-center justify-between mb-6">
-          <div>
-            {hasAddress ? (
-              <div className="text-gray-700 space-y-1">
-                <p className="font-semibold">{address.address}</p>
-                <p>
-                  {address.city} {address.state} {address.zipcode}
-                </p>
-                <p>{address.country}</p>
-              </div>
-            ) : (
-              <p className="text-gray-500">No property details yet</p>
+        <div className="bg-white p-4 rounded-md shadow-sm flex flex-col gap-4 mb-6 w-full">
+          {/* First line: Address + Edit button, centered horizontally */}
+          <div className="flex flex-row items-center justify-between w-full gap-6">
+            <div>
+              {/* Label: "Address" */}
+              <p className="text-gray-500 text-sm mb-1">Address</p>
+
+              {hasAddress ? (
+                <div className="text-gray-700 space-y-1">
+                  <p className="font-semibold">{address.address}</p>
+                  <p>
+                    {address.city} {address.state} {address.zipcode}
+                  </p>
+                  <p>{address.country}</p>
+                </div>
+              ) : (
+                <p className="text-gray-500">No property details yet</p>
+              )}
+            </div>
+
+            {/* Edit / Add new button */}
+            <button
+              onClick={() => setShowPropertyModal(true)}
+              className="text-blue-600 hover:underline text-sm"
+            >
+              {hasAddress ? "Edit" : "+ Add new"}
+            </button>
+          </div>
+
+          {/* Second line: Two static images => stacked on smaller screens, side-by-side on lg+ */}
+          <div className="flex flex-col justify-between gap-4 w-full lg:w-1/2 lg:flex-row lg:gap-1">
+            {/* Static map (if available) */}
+            {mapUrl && (
+              <img
+                src={mapUrl}
+                alt="Map of user address"
+                className="w-full rounded-md border"
+              />
+            )}
+
+            {/* Street View (if available) */}
+            {streetViewUrl && (
+              <img
+                src={streetViewUrl}
+                alt="Street View of user address"
+                className="w-full rounded-md border"
+              />
             )}
           </div>
-          <button
-            onClick={() => setShowPropertyModal(true)}
-            className="text-blue-600 hover:underline text-sm"
-          >
-            {hasAddress ? "Edit" : "+ Add new"}
-          </button>
         </div>
 
         {/* Payment details */}
@@ -462,7 +592,9 @@ export default function ProfilePage() {
                 />
               </div>
               <div>
-                <label className="block text-sm mb-1 text-gray-600">Last Name</label>
+                <label className="block text-sm mb-1 text-gray-600">
+                  Last Name
+                </label>
                 <input
                   type="text"
                   placeholder="Last Name"
@@ -474,7 +606,9 @@ export default function ProfilePage() {
                 />
               </div>
               <div>
-                <label className="block text-sm mb-1 text-gray-600">Email address</label>
+                <label className="block text-sm mb-1 text-gray-600">
+                  Email address
+                </label>
                 <input
                   type="email"
                   placeholder="hello@thejamb.com"
@@ -484,15 +618,11 @@ export default function ProfilePage() {
                   }
                   className="w-full p-3 border rounded-md"
                 />
-                <button
-                  type="button"
-                  className="text-blue-600 text-sm mt-1 hover:underline"
-                >
-                  Add new email
-                </button>
               </div>
               <div>
-                <label className="block text-sm mb-1 text-gray-600">Phone number</label>
+                <label className="block text-sm mb-1 text-gray-600">
+                  Phone number
+                </label>
                 <input
                   type="tel"
                   placeholder="+1 234 56 78 90"
@@ -535,7 +665,9 @@ export default function ProfilePage() {
 
             <div className="flex flex-col gap-4 flex-1 overflow-y-auto">
               <div>
-                <label className="block text-sm mb-1 text-gray-600">Country</label>
+                <label className="block text-sm mb-1 text-gray-600">
+                  Country
+                </label>
                 <input
                   type="text"
                   placeholder="USA"
@@ -547,7 +679,9 @@ export default function ProfilePage() {
                 />
               </div>
               <div>
-                <label className="block text-sm mb-1 text-gray-600">Address line</label>
+                <label className="block text-sm mb-1 text-gray-600">
+                  Address line
+                </label>
                 <input
                   type="text"
                   placeholder="123 Main St"
@@ -571,7 +705,9 @@ export default function ProfilePage() {
                 />
               </div>
               <div>
-                <label className="block text-sm mb-1 text-gray-600">State</label>
+                <label className="block text-sm mb-1 text-gray-600">
+                  State
+                </label>
                 <input
                   type="text"
                   placeholder="California"
@@ -583,7 +719,9 @@ export default function ProfilePage() {
                 />
               </div>
               <div>
-                <label className="block text-sm mb-1 text-gray-600">Zipcode</label>
+                <label className="block text-sm mb-1 text-gray-600">
+                  Zipcode
+                </label>
                 <input
                   type="text"
                   placeholder="90210"
