@@ -4,6 +4,14 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
+// 1) Helper function for greeting
+function getGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
+}
+
 export default function SettingsPage() {
   const router = useRouter();
   const [token, setToken] = useState("");
@@ -16,6 +24,10 @@ export default function SettingsPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const editModalRef = useRef<HTMLDivElement>(null);
 
+  // 2) State to hold user’s name (if any) from session
+  const [userName, setUserName] = useState("");
+  const [hasName, setHasName] = useState(false);
+
   // Fetch token (and optionally preferences) on mount
   useEffect(() => {
     const storedToken = sessionStorage.getItem("authToken");
@@ -24,9 +36,24 @@ export default function SettingsPage() {
       return;
     }
     setToken(storedToken);
-    // If needed, fetch preferences from server with this token
+
+    // Attempt to read user’s name from "profileData"
+    const storedProfile = sessionStorage.getItem("profileData");
+    if (storedProfile) {
+      try {
+        const parsed = JSON.parse(storedProfile);
+        const name = parsed?.name?.trim();
+        if (name) {
+          setUserName(name);
+          setHasName(true);
+        }
+      } catch (err) {
+        console.warn("Failed to parse profileData in Settings:", err);
+      }
+    }
   }, [router]);
 
+  // For logout
   function handleLogout() {
     sessionStorage.removeItem("authToken");
     sessionStorage.removeItem("profileData"); // also remove cached profile
@@ -55,12 +82,11 @@ export default function SettingsPage() {
 
   // Example "save" handler
   const handleSave = () => {
-    // Possibly do a PATCH request to update preferences on server
     alert("Preferences saved!");
     setShowEditModal(false);
   };
 
-  // ================== NEW: Delete account ==================
+  // ========== Delete account ==========
   async function handleDeleteAccount() {
     const confirmMsg = "Are you sure you want to delete your account? This cannot be undone.";
     if (!window.confirm(confirmMsg)) {
@@ -80,7 +106,6 @@ export default function SettingsPage() {
       });
 
       if (response.ok) {
-        // Account deleted => log out
         alert("Account deleted successfully. Goodbye!");
         sessionStorage.removeItem("authToken");
         sessionStorage.removeItem("profileData");
@@ -101,13 +126,18 @@ export default function SettingsPage() {
     }
   }
 
+  // 3) Build greeting
+  const greetingText = getGreeting();
+
   return (
     <div className="pt-24 min-h-screen w-full bg-gray-50 pb-10">
       <div className="max-w-7xl mx-0 sm:mx-auto px-0 sm:px-4">
-        {/* Heading */}
-        <h1 className="text-2xl sm:text-3xl font-bold mt-6 mb-2">Settings</h1>
+        {/* Greeting */}
+        <h1 className="text-2xl sm:text-3xl font-bold mt-6 mb-2">
+          {greetingText}, {hasName ? userName : "Guest"}!
+        </h1>
 
-        {/* Sub navigation row */}
+        {/* Nav row => includes "Messages" */}
         <div className="flex items-center justify-between mb-10">
           <div className="flex items-center gap-8">
             <Link href="/profile" className="text-gray-600 hover:text-blue-600">
@@ -116,7 +146,10 @@ export default function SettingsPage() {
             <Link href="/dashboard" className="text-gray-600 hover:text-blue-600">
               Orders
             </Link>
-            {/* Active page => Settings => text-blue + underline */}
+            <Link href="/profile/messages" className="text-gray-600 hover:text-blue-600">
+              Messages
+            </Link>
+            {/* Active => Settings */}
             <Link
               href="/profile/settings"
               className="text-blue-600 border-b-2 border-blue-600"
@@ -124,15 +157,9 @@ export default function SettingsPage() {
               Settings
             </Link>
           </div>
-          <button
-            onClick={handleLogout}
-            className="text-red-500 hover:text-red-600"
-          >
-            Log out
-          </button>
         </div>
 
-        {/* Main content => preference block */}
+        {/* Preferences block */}
         <h2 className="text-xl font-semibold mb-3">Details</h2>
 
         <div
@@ -144,7 +171,6 @@ export default function SettingsPage() {
             mb-4
           "
         >
-          {/* Left side: the 3 preferences => stack on mobile, row on larger */}
           <div
             className="
               flex flex-col sm:flex-row
@@ -166,7 +192,6 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* Right side: Edit button */}
           <button
             onClick={() => setShowEditModal(true)}
             className="text-blue-600 hover:underline text-sm mt-3 sm:mt-0"
@@ -175,18 +200,27 @@ export default function SettingsPage() {
           </button>
         </div>
 
-        {/* Delete account */}
+        {/* Logout button */}
+        <div className="bg-white p-4 rounded-md shadow-sm mb-4">
+          <button
+            onClick={handleLogout}
+            className="border border-red-500 text-red-500 font-medium px-12 py-2 rounded hover:bg-red-50"
+          >
+            Log out
+          </button>
+        </div>
+
+        {/* Delete Account button */}
         <div className="bg-white p-4 rounded-md shadow-sm">
           <button
             onClick={handleDeleteAccount}
-            className="bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600"
+            className="bg-red-500 text-white font-medium px-5 py-2 rounded hover:bg-red-600"
           >
             Delete Account
           </button>
         </div>
       </div>
 
-      {/* Edit details side modal */}
       {showEditModal && (
         <div className="fixed inset-0 bg-black/30 z-50 flex justify-end">
           <div
@@ -205,7 +239,6 @@ export default function SettingsPage() {
 
             {/* Form fields: Language, Measurement, Currency */}
             <div className="flex flex-col gap-4 flex-1 overflow-y-auto">
-              {/* Language */}
               <div>
                 <label className="block text-sm mb-1 text-gray-600">Language</label>
                 <select
@@ -219,7 +252,6 @@ export default function SettingsPage() {
                   <option>German</option>
                 </select>
               </div>
-              {/* Measurement */}
               <div>
                 <label className="block text-sm mb-1 text-gray-600">
                   Measurement system
@@ -233,7 +265,6 @@ export default function SettingsPage() {
                   <option>Meters</option>
                 </select>
               </div>
-              {/* Currency */}
               <div>
                 <label className="block text-sm mb-1 text-gray-600">Currency</label>
                 <select

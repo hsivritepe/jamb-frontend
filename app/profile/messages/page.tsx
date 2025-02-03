@@ -14,15 +14,15 @@ function getGreeting(): string {
   return "Good evening";
 }
 
-export default function OrdersPage() {
+export default function MessagesPage() {
   const router = useRouter();
   const [token, setToken] = useState("");
 
   const [userName, setUserName] = useState("");
   const [hasName, setHasName] = useState(false);
 
-  // Tab state: "active", "saved", or "past"
-  const [tab, setTab] = useState<"active" | "saved" | "past">("active");
+  // Tab state: "inbox" or "outbox"
+  const [tab, setTab] = useState<"inbox" | "outbox">("inbox");
 
   useEffect(() => {
     const storedToken = sessionStorage.getItem("authToken");
@@ -43,7 +43,7 @@ export default function OrdersPage() {
           setHasName(true);
         }
       } catch (err) {
-        console.warn("Failed to parse profileData in Orders:", err);
+        console.warn("Failed to parse profileData in Messages:", err);
       }
     }
   }, [router]);
@@ -58,17 +58,17 @@ export default function OrdersPage() {
           {greetingText}, {hasName ? userName : "Guest"}!
         </h1>
 
-        {/* Navigation row => includes "Messages" */}
+        {/* Navigation row */}
         <div className="flex items-center justify-between mb-10">
           <div className="flex items-center gap-8">
             <Link href="/profile" className="text-gray-600 hover:text-blue-600">
               Profile
             </Link>
-            {/* Active => Orders */}
-            <Link href="/dashboard" className="text-blue-600 border-b-2 border-blue-600">
+            <Link href="/dashboard" className="text-gray-600 hover:text-blue-600">
               Orders
             </Link>
-            <Link href="/profile/messages" className="text-gray-600 hover:text-blue-600">
+            {/* Active => Messages */}
+            <Link href="/messages" className="text-blue-600 border-b-2 border-blue-600">
               Messages
             </Link>
             <Link href="/profile/settings" className="text-gray-600 hover:text-blue-600">
@@ -77,44 +77,33 @@ export default function OrdersPage() {
           </div>
         </div>
 
-        {/* Tabs: active, saved, past */}
+        {/* Tabs row: Inbox, Outbox */}
         <div className="flex items-center gap-4 mb-6 text-sm font-medium">
           <button
-            onClick={() => setTab("active")}
+            onClick={() => setTab("inbox")}
             className={`px-3 py-2 rounded 
-              ${tab === "active" ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-100"}`}
+              ${tab === "inbox" ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-100"}`}
           >
-            Active
+            Inbox
           </button>
           <button
-            onClick={() => setTab("saved")}
+            onClick={() => setTab("outbox")}
             className={`px-3 py-2 rounded 
-              ${tab === "saved" ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-100"}`}
+              ${tab === "outbox" ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-100"}`}
           >
-            Saved
-          </button>
-          <button
-            onClick={() => setTab("past")}
-            className={`px-3 py-2 rounded 
-              ${tab === "past" ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-100"}`}
-          >
-            Past
+            Outbox
           </button>
         </div>
 
-        {tab === "active" && (
+        {/* Content per tab */}
+        {tab === "inbox" && (
           <div>
-            <p className="text-gray-700">No active orders yet.</p>
+            <p className="text-gray-700">No inbox messages yet.</p>
           </div>
         )}
-        {tab === "saved" && (
+        {tab === "outbox" && (
           <div>
-            <p className="text-gray-700">No saved orders yet.</p>
-          </div>
-        )}
-        {tab === "past" && (
-          <div>
-            <p className="text-gray-700">No past orders yet.</p>
+            <p className="text-gray-700">No outbox messages yet.</p>
           </div>
         )}
       </div>
