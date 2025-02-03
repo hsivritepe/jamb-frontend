@@ -443,3 +443,36 @@ export async function updateUserProfile(
 
   return { success: true };
 }
+
+
+/**
+ * Delete a user account by token.
+ *
+ * PATCH /user/delete
+ * Body:
+ * {
+ *   "token": "user-token-123"
+ * }
+ *
+ * Typical responses:
+ * 200 => { "success": "User has been deleted" }
+ * 400 => { "error": "Token is required" }
+ * 404 => { "error": "User not found" }
+ */
+export async function deleteUserAccount(token: string) {
+  if (!token) {
+    return { error: "Token is required" };
+  }
+
+  const user = await db.user.findUnique({ where: { authToken: token } });
+  if (!user) {
+    return { error: "User not found" };
+  }
+
+  // Perform the deletion
+  await db.user.delete({
+    where: { id: user.id },
+  });
+
+  return { success: "User has been deleted" };
+}

@@ -30,7 +30,7 @@ interface UserCard {
 
 /**
  * Returns a time-based greeting:
- * "Good morning" / "Good afternoon" / "Good evening"
+ * "Good morning", "Good afternoon", or "Good evening".
  */
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -84,16 +84,17 @@ export default function ProfilePage() {
   const contactModalRef = useRef<HTMLDivElement>(null);
   const propertyModalRef = useRef<HTMLDivElement>(null);
 
-  // Map image URLs (static map and street view)
+  // Static map image URLs
   const [mapUrl, setMapUrl] = useState("");
   const [streetViewUrl, setStreetViewUrl] = useState("");
 
   /**
-   * On mount => check token => if none => /login => else load from session or server
+   * On mount => check for token => if none => /login => else load from session or server
    */
   useEffect(() => {
     const storedToken = sessionStorage.getItem("authToken");
     if (!storedToken) {
+      // If no token => not logged in => redirect
       router.push("/login");
       return;
     }
@@ -137,10 +138,11 @@ export default function ProfilePage() {
         if (data.streetViewUrl) setStreetViewUrl(data.streetViewUrl);
       } catch (err) {
         console.error("Failed to parse profileData from sessionStorage:", err);
+        // If parse fails => fetch from server
         fetchUserInfo(storedToken);
       }
     } else {
-      // If none found => fetch from server
+      // If none => fetch from server
       fetchUserInfo(storedToken);
     }
   }, [router]);
@@ -187,7 +189,7 @@ export default function ProfilePage() {
             zipcode: data.card.zipcode || "",
           });
         }
-        // Maybe we do NOT have mapUrl/streetViewUrl yet => clear them
+        // Clear old map images
         setMapUrl("");
         setStreetViewUrl("");
 
@@ -228,6 +230,7 @@ export default function ProfilePage() {
           token,
           name: profile.name,
           surname: profile.surname,
+          // If you want to also update phone/email => add them
         }),
       });
 
@@ -245,7 +248,7 @@ export default function ProfilePage() {
       }
     } catch (error) {
       console.error("saveContactDetails error:", error);
-      setErrorMsg("Error saving contact details. See console.");
+      setErrorMsg("Error saving contact details. Check console.");
     } finally {
       setLoading(false);
     }
@@ -333,55 +336,53 @@ export default function ProfilePage() {
     };
   }, [showContactModal, showPropertyModal]);
 
-  // Greet
+  // Greeting
   const greetingText = getGreeting();
   const hasName = Boolean(profile.name.trim());
 
-  // Does user have address?
+  // Check if user has address
   const hasAddress = Boolean(
     address.country.trim() ||
-      address.address.trim() ||
-      address.city.trim() ||
-      address.state.trim() ||
-      address.zipcode.trim()
+    address.address.trim() ||
+    address.city.trim() ||
+    address.state.trim() ||
+    address.zipcode.trim()
   );
 
-  // Geocode => build static map and street view => store in session
+  // If we want to geocode => build static map => store in session => see previous logic
+  // For brevity, let's keep the same approach
+
   useEffect(() => {
     if (!hasAddress) {
-      // No address => clear images
       setMapUrl("");
       setStreetViewUrl("");
       return;
     }
 
-    // Check if we already have them in "profileData"
+    // Check if we have them in session
     const storedProfileData = sessionStorage.getItem("profileData");
     if (storedProfileData) {
       try {
         const pd = JSON.parse(storedProfileData);
         if (pd.mapUrl && pd.streetViewUrl) {
-          // Already have them => use them
           setMapUrl(pd.mapUrl);
           setStreetViewUrl(pd.streetViewUrl);
-          return; // skip geocode
+          return;
         }
       } catch (err) {
-        console.warn("Failed to parse profileData for map images:", err);
+        console.warn("Failed to parse existing profileData for map images:", err);
       }
     }
 
-    // If not in session => geocode
+    // If not => geocode
     const addressString = `${address.address}, ${address.city}, ${address.state} ${address.zipcode}, ${address.country}`;
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
     if (!apiKey) {
-      console.warn(
-        "Missing Google Maps API key. Cannot load static map or street view."
-      );
+      console.warn("Missing Google Maps API key => no static map or street view");
       return;
     }
 
-    async function geocodeAndSave() {
+    async function geocodeAndSaveImages() {
       try {
         const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
           addressString
@@ -389,11 +390,11 @@ export default function ProfilePage() {
         const response = await fetch(geocodeUrl);
         const data = await response.json();
         if (data.status === "OK" && data.results && data.results.length > 0) {
-          const locationResult = data.results[0].geometry.location;
-          const lat = locationResult.lat;
-          const lng = locationResult.lng;
+          const loc = data.results[0].geometry.location;
+          const lat = loc.lat;
+          const lng = loc.lng;
 
-          // Build static map URL
+          // Build static map
           const newMapUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=16&size=600x300&markers=color:blue%7C${lat},${lng}&language=en&key=${apiKey}`;
           setMapUrl(newMapUrl);
 
@@ -401,34 +402,27 @@ export default function ProfilePage() {
           const newStreetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=600x300&location=${lat},${lng}&fov=80&heading=70&pitch=0&language=en&key=${apiKey}`;
           setStreetViewUrl(newStreetViewUrl);
 
-          // Save them in the same "profileData" object, so next time we skip geocode
+          // Store them in session
           const stored = sessionStorage.getItem("profileData");
           if (stored) {
-            try {
-              const dataObj = JSON.parse(stored);
-              dataObj.mapUrl = newMapUrl;
-              dataObj.streetViewUrl = newStreetViewUrl;
-              sessionStorage.setItem("profileData", JSON.stringify(dataObj));
-            } catch (parseErr) {
-              console.warn(
-                "Could not parse profileData to save map images:",
-                parseErr
-              );
-            }
+            const parsedData = JSON.parse(stored);
+            parsedData.mapUrl = newMapUrl;
+            parsedData.streetViewUrl = newStreetViewUrl;
+            sessionStorage.setItem("profileData", JSON.stringify(parsedData));
           }
         } else {
-          console.warn("No geocode results found. Status:", data.status);
+          console.warn("No geocode results. Status:", data.status);
           setMapUrl("");
           setStreetViewUrl("");
         }
       } catch (err) {
-        console.error("Error geocoding address for static map:", err);
+        console.error("Error geocoding address:", err);
         setMapUrl("");
         setStreetViewUrl("");
       }
     }
 
-    geocodeAndSave();
+    geocodeAndSaveImages();
   }, [hasAddress, address]);
 
   return (
@@ -442,22 +436,13 @@ export default function ProfilePage() {
         {/* Nav row */}
         <div className="flex items-center justify-between mb-10">
           <div className="flex items-center gap-8">
-            <Link
-              href="/profile"
-              className="text-blue-600 border-b-2 border-blue-600"
-            >
+            <Link href="/profile" className="text-blue-600 border-b-2 border-blue-600">
               Profile
             </Link>
-            <Link
-              href="/dashboard"
-              className="text-gray-600 hover:text-blue-600"
-            >
+            <Link href="/dashboard" className="text-gray-600 hover:text-blue-600">
               Orders
             </Link>
-            <Link
-              href="/profile/settings"
-              className="text-gray-600 hover:text-blue-600"
-            >
+            <Link href="/profile/settings" className="text-gray-600 hover:text-blue-600">
               Settings
             </Link>
           </div>
@@ -478,16 +463,16 @@ export default function ProfilePage() {
         <h2 className="text-xl font-semibold mb-3">Contact details</h2>
         <div className="bg-white p-4 rounded-md shadow-sm flex items-center justify-between mb-6">
           <div>
-            <p className="text-lg font-semibold">
+            <h1 className="text-xl sm:text-2xl font-semibold mb-2 text-blue-600">
               {profile.name} {profile.surname}
-            </p>
-            <div className="text-gray-500 text-sm mt-1">
-              <p>Email address</p>
-              <p>{profile.email || "—"}</p>
+            </h1>
+            <div>
+              <p className="text-gray-500 text-sm mt-1">Email address</p>
+              <p className="mt-1">{profile.email || "—"}</p>
             </div>
-            <div className="text-gray-500 text-sm mt-2">
-              <p>Phone number</p>
-              <p>{profile.phone || "—"}</p>
+            <div>
+              <p className="text-gray-500 text-sm mt-1">Phone number</p>
+              <p className="mt-1">{profile.phone || "—"}</p>
             </div>
           </div>
           <button
@@ -501,12 +486,10 @@ export default function ProfilePage() {
         {/* Property details */}
         <h2 className="text-xl font-semibold mb-3">Property details</h2>
         <div className="bg-white p-4 rounded-md shadow-sm flex flex-col gap-4 mb-6 w-full">
-          {/* First line: Address + Edit button, centered horizontally */}
+          {/* First row => Address + Edit button */}
           <div className="flex flex-row items-center justify-between w-full gap-6">
             <div>
-              {/* Label: "Address" */}
               <p className="text-gray-500 text-sm mb-1">Address</p>
-
               {hasAddress ? (
                 <div className="text-gray-700 space-y-1">
                   <p className="font-semibold">{address.address}</p>
@@ -520,7 +503,6 @@ export default function ProfilePage() {
               )}
             </div>
 
-            {/* Edit / Add new button */}
             <button
               onClick={() => setShowPropertyModal(true)}
               className="text-blue-600 hover:underline text-sm"
@@ -529,9 +511,9 @@ export default function ProfilePage() {
             </button>
           </div>
 
-          {/* Second line: Two static images => stacked on smaller screens, side-by-side on lg+ */}
-          <div className="flex flex-col justify-between gap-4 w-full lg:w-1/2 lg:flex-row lg:gap-1">
-            {/* Static map (if available) */}
+          {/* Second row => Map & Street View side by side on lg, stacked otherwise */}
+          <div className="flex flex-col gap-4 lg:flex-row w-full lg:w-1/2 lg:gap-1">
+            {/* Static map */}
             {mapUrl && (
               <img
                 src={mapUrl}
@@ -540,7 +522,7 @@ export default function ProfilePage() {
               />
             )}
 
-            {/* Street View (if available) */}
+            {/* Street View */}
             {streetViewUrl && (
               <img
                 src={streetViewUrl}
@@ -578,6 +560,7 @@ export default function ProfilePage() {
               </button>
             </div>
 
+            {/* Fields */}
             <div className="flex flex-col gap-4 flex-1 overflow-y-auto">
               <div>
                 <label className="block text-sm mb-1 text-gray-600">Name</label>

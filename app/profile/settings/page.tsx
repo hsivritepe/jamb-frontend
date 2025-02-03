@@ -29,6 +29,7 @@ export default function SettingsPage() {
 
   function handleLogout() {
     sessionStorage.removeItem("authToken");
+    sessionStorage.removeItem("profileData"); // also remove cached profile
     window.dispatchEvent(new Event("authChange"));
     router.push("/login");
   }
@@ -58,6 +59,47 @@ export default function SettingsPage() {
     alert("Preferences saved!");
     setShowEditModal(false);
   };
+
+  // ================== NEW: Delete account ==================
+  async function handleDeleteAccount() {
+    const confirmMsg = "Are you sure you want to delete your account? This cannot be undone.";
+    if (!window.confirm(confirmMsg)) {
+      return; // user canceled
+    }
+
+    if (!token) {
+      alert("No token found. Please log in first.");
+      return;
+    }
+
+    try {
+      const response = await fetch("http://dev.thejamb.com/user/delete", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token }),
+      });
+
+      if (response.ok) {
+        // Account deleted => log out
+        alert("Account deleted successfully. Goodbye!");
+        sessionStorage.removeItem("authToken");
+        sessionStorage.removeItem("profileData");
+        window.dispatchEvent(new Event("authChange"));
+        router.push("/login");
+      } else if (response.status === 400) {
+        const data = await response.json();
+        alert("Delete error: " + data.error);
+      } else if (response.status === 404) {
+        const data = await response.json();
+        alert("Delete error: " + data.error);
+      } else {
+        alert("Unknown error deleting account. Status: " + response.status);
+      }
+    } catch (err) {
+      console.error("Delete account error:", err);
+      alert("Failed to delete account. Check console.");
+    }
+  }
 
   return (
     <div className="pt-24 min-h-screen w-full bg-gray-50 pb-10">
@@ -93,24 +135,23 @@ export default function SettingsPage() {
         {/* Main content => preference block */}
         <h2 className="text-xl font-semibold mb-3">Details</h2>
 
-        {/*
-          "flex flex-col sm:flex-row ..." makes the content stacked in a column on mobile,
-          and side by side on larger screens.
-          We do the same for the "items-start sm:items-center justify-between" to align the button.
-        */}
-        <div className="
-          bg-white p-4 rounded-md shadow-sm
-          flex flex-col sm:flex-row
-          items-start sm:items-center
-          justify-between
-          mb-10
-        ">
-          {/* Left side: the 3 preferences => stack on mobile, row on larger */}
-          <div className="
+        <div
+          className="
+            bg-white p-4 rounded-md shadow-sm
             flex flex-col sm:flex-row
-            gap-4 sm:gap-12
-            text-sm text-gray-700
-          ">
+            items-start sm:items-center
+            justify-between
+            mb-4
+          "
+        >
+          {/* Left side: the 3 preferences => stack on mobile, row on larger */}
+          <div
+            className="
+              flex flex-col sm:flex-row
+              gap-4 sm:gap-12
+              text-sm text-gray-700
+            "
+          >
             <div>
               <p className="font-medium text-gray-500">Language</p>
               <p>{language}</p>
@@ -134,8 +175,18 @@ export default function SettingsPage() {
           </button>
         </div>
 
+        {/* Delete account */}
+        <div className="bg-white p-4 rounded-md shadow-sm">
+          <button
+            onClick={handleDeleteAccount}
+            className="bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600"
+          >
+            Delete Account
+          </button>
+        </div>
+
         {/* Additional links (demo) */}
-        <div className="space-y-4 text-gray-800">
+        <div className="space-y-4 text-gray-800 mt-4 mb-10">
           <div className="flex items-center gap-2">
             <a href="/about-us" className="hover:text-blue-600">
               About us
