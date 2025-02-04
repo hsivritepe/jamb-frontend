@@ -1,37 +1,38 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import type { FinishingMaterial } from "@/types/FinishingMaterial";
 
-/**
- * Formats numeric values with commas and two decimals.
- * If you already have this function in the parent file, you can remove or replace it here.
- * Otherwise, keep it as is. Or pass it in as a prop from the parent if needed.
- */
-function localFormatWithSeparator(value: number): string {
-  return new Intl.NumberFormat("en-US", { minimumFractionDigits: 2 }).format(
-    value
-  );
+/** Converts an integer to an ordinal like "1st", "2nd", "3rd". */
+function toOrdinal(num: number): string {
+  if (num === 1) return "1st";
+  if (num === 2) return "2nd";
+  if (num === 3) return "3rd";
+  return `${num}th`;
 }
 
-/**
- * Props for the FinishingMaterialsModal component.
- */
+/** Props for the FinishingMaterialsModal component. */
 interface FinishingMaterialsModalProps {
   showModalServiceId: string | null;
   showModalSectionName: string | null;
-  finishingMaterialsMapAll: Record<string, { sections: Record<string, FinishingMaterial[]> }>;
+  finishingMaterialsMapAll: Record<
+    string,
+    { sections: Record<string, FinishingMaterial[]> }
+  >;
   finishingMaterialSelections: Record<string, Record<string, string>>;
   setFinishingMaterialSelections: React.Dispatch<
     React.SetStateAction<Record<string, Record<string, string>>>
   >;
   closeModal: () => void;
   userHasOwnMaterial: (serviceId: string, extId: string) => void;
-  formatWithSeparator: (value: number) => string; // or use localFormatWithSeparator if you prefer
+  formatWithSeparator: (value: number) => string;
 }
 
 /**
- * A modal component that shows finishing materials to pick from.
+ * A modal component to pick finishing materials or equipment.
+ * Adapts to screen sizes:
+ * - On mobile/tablet => full-screen overlay, with the "current material" block in two lines
+ * - On desktop => pinned to the right at 2/3 width and full height, with 3 columns for the current material
  */
 export default function FinishingMaterialsModal({
   showModalServiceId,
@@ -43,7 +44,7 @@ export default function FinishingMaterialsModal({
   userHasOwnMaterial,
   formatWithSeparator,
 }: FinishingMaterialsModalProps) {
-  // If there's no valid serviceId or sectionName, or no data loaded, return null (no modal).
+  // Early return if data is invalid
   if (
     !showModalServiceId ||
     !showModalSectionName ||
@@ -53,26 +54,39 @@ export default function FinishingMaterialsModal({
     return null;
   }
 
-  // Rendering the modal if we have all needed data
-  const picksObj = finishingMaterialSelections[showModalServiceId] || {};
-  const currentExtId = picksObj[showModalSectionName] || null;
-  const fmData = finishingMaterialsMapAll[showModalServiceId];
+  // Convert sectionName to an ordinal if numeric (e.g. "1" => "1st")
+  let sectionOrdinalStr = showModalSectionName;
+  {
+    const parsed = parseInt(showModalSectionName, 10);
+    if (!isNaN(parsed) && parsed > 0) {
+      sectionOrdinalStr = toOrdinal(parsed);
+    }
+  }
 
-  // If no currentExtId or no data, we show minimal content
+  const serviceId = showModalServiceId;
+  const sectionName = showModalSectionName;
+
+  // Finishing materials data
+  const fmData = finishingMaterialsMapAll[serviceId];
+  const picksObj = finishingMaterialSelections[serviceId] || {};
+  const currentExtId = picksObj[sectionName] || null;
+
+  // If nothing is selected or no data
   if (!currentExtId || !fmData) {
     return (
-      <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg w-[90vw] h-[90vh] md:w-[80vw] md:h-[80vh] xl:w-[70vw] xl:h-[70vh] overflow-hidden relative flex flex-col">
-          {/* Sticky header */}
+      <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
+        <div className="bg-white w-full h-full lg:w-2/3 lg:h-screen lg:fixed lg:top-0 lg:right-0 overflow-hidden relative flex flex-col">
+          {/* Header */}
           <div className="p-4 border-b flex items-center justify-between sticky top-0 bg-white z-10">
             <h2 className="text-xl font-semibold">
-              Choose a finishing material (section {showModalSectionName})
+              Choose {sectionOrdinalStr} finishing material or equipment
             </h2>
             <button
               onClick={closeModal}
-              className="text-red-500 border border-red-500 px-2 py-1 rounded"
+              className="text-gray-700 hover:text-red-500 px-2 py-1"
+              aria-label="Close modal"
             >
-              Close
+              ✕
             </button>
           </div>
           <div className="overflow-auto p-4 flex-1">
@@ -83,64 +97,99 @@ export default function FinishingMaterialsModal({
     );
   }
 
-  // Flatten all sections to find the "current" material object
+  // Flatten sections
   const allMats = Object.values(fmData.sections || {}).flat() as FinishingMaterial[];
   const curMat = allMats.find((x) => x.external_id === currentExtId) || null;
   const curCost = curMat ? parseFloat(curMat.cost || "0") || 0 : 0;
 
-  // The array of materials we want to show in the modal
-  const arr = fmData.sections[showModalSectionName] || [];
-  // Find the base cost to show cost differences
+  // Determine base cost of the currently selected
+  const arr = fmData.sections[sectionName] || [];
   let currentBaseCost = 0;
-  if (currentExtId) {
-    const matObj = arr.find((m) => m.external_id === currentExtId);
-    if (matObj) {
-      currentBaseCost = parseFloat(matObj.cost || "0") || 0;
-    }
+  const foundMat = arr.find((m) => m.external_id === currentExtId);
+  if (foundMat) {
+    currentBaseCost = parseFloat(foundMat.cost || "0") || 0;
+  }
+
+  // Lightbox for zoom
+  const [zoomedImage, setZoomedImage] = useState<string | null>(null);
+  function handleImageClick(imageUrl: string) {
+    setZoomedImage((old) => (old === imageUrl ? null : imageUrl));
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg w-[90vw] h-[90vh] md:w-[80vw] md:h-[80vh] xl:w-[70vw] xl:h-[70vh] overflow-hidden relative flex flex-col">
-        {/* Sticky header */}
+    <div className="fixed inset-0 z-50 flex bg-black/40">
+      {/* Main container => pinned on desktop */}
+      <div className="bg-white w-full h-full lg:w-2/3 lg:h-screen lg:ml-auto overflow-hidden relative flex flex-col">
+        {/* Sticky header with "Choose nth material/equipment" */}
         <div className="p-4 border-b flex items-center justify-between sticky top-0 bg-white z-10">
           <h2 className="text-xl font-semibold">
-            Choose a finishing material (section {showModalSectionName})
+            Choose {sectionOrdinalStr} material/equipment
           </h2>
           <button
             onClick={closeModal}
-            className="text-red-500 border border-red-500 px-2 py-1 rounded"
+            className="text-gray-700 hover:text-red-500 px-2 py-1"
+            aria-label="Close modal"
           >
-            Close
+            ✕
           </button>
         </div>
 
-        {/* Current material info */}
         {curMat && (
-          <div className="text-sm text-gray-600 border-b p-4 bg-white sticky top-[61px] z-10">
-            Current material: <strong>{curMat.name}</strong> (
-            ${formatWithSeparator(curCost)})
-            <button
-              onClick={() => userHasOwnMaterial(showModalServiceId, currentExtId)}
-              className="ml-4 text-xs text-red-500 border border-red-500 px-2 py-1 rounded"
-            >
-              I have my own (Remove later)
-            </button>
+          <div
+            className="
+              border-b bg-white z-10 sticky top-[52px]
+              px-4 py-2
+              flex flex-col gap-1
+              sm:flex-row sm:items-center
+            "
+          >
+            {/* 1) Name => up to 2 lines, left aligned */}
+            <div className="flex-1 overflow-hidden pr-3">
+              <div
+                className="
+                  text-md font-semibold text-gray-700 
+                  line-clamp-2 leading-tight text-left
+                "
+                title={curMat.name}
+              >
+                {curMat.name}
+              </div>
+            </div>
+
+            {/* 2) On mobile => next line with price & button separated by "justify-between" */}
+            <div className="w-full sm:w-auto flex justify-between items-center">
+              {/* bigger bold price */}
+              <div className="mr-2 text-xl font-bold text-gray-800">
+                ${formatWithSeparator(curCost)}
+              </div>
+              {/* "I have my own" button */}
+              <button
+                onClick={() => userHasOwnMaterial(serviceId, currentExtId)}
+                className="
+                  text-xs px-2 py-1 rounded border border-red-500 text-red-500
+                  hover:bg-red-500 hover:text-white
+                  active:bg-red-600
+                "
+              >
+                I have my own
+              </button>
+            </div>
           </div>
         )}
 
-        {/* Materials list */}
+        {/* Scrollable => all materials */}
         <div className="overflow-auto p-4 flex-1">
           {(!Array.isArray(arr) || arr.length === 0) && (
             <p className="text-sm text-gray-500">
-              No finishing materials in section {showModalSectionName}
+              No materials in this section
             </p>
           )}
 
           {Array.isArray(arr) && arr.length > 0 && (
-            <div className="grid grid-cols-2 gap-4 mt-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-4">
               {arr.map((material, i) => {
                 if (!material.image) return null;
+
                 const costNum = parseFloat(material.cost || "0") || 0;
                 const isSelected = currentExtId === material.external_id;
                 const diff = costNum - currentBaseCost;
@@ -154,40 +203,75 @@ export default function FinishingMaterialsModal({
                   diffColor = "text-green-600";
                 }
 
+                function handleSelectClick() {
+                  const serviceObj = finishingMaterialSelections[serviceId] || {};
+                  serviceObj[sectionName] = material.external_id;
+                  finishingMaterialSelections[serviceId] = serviceObj;
+                  setFinishingMaterialSelections({
+                    ...finishingMaterialSelections,
+                  });
+                }
+
                 return (
                   <div
                     key={`${material.external_id}-${i}`}
-                    className={`border rounded p-3 flex flex-col items-center cursor-pointer ${
-                      isSelected ? "border-blue-500" : "border-gray-300"
-                    }`}
-                    onClick={() => {
-                      const serviceObj = finishingMaterialSelections[showModalServiceId] || {};
-                      serviceObj[showModalSectionName] = material.external_id;
-                      finishingMaterialSelections[showModalServiceId] = serviceObj;
-                      setFinishingMaterialSelections({
-                        ...finishingMaterialSelections,
-                      });
-                    }}
+                    className={`
+                      border rounded p-4 flex flex-col justify-between
+                      min-h-[300px] sm:min-h-[320px]
+                      ${isSelected ? "border-blue-500" : "border-gray-300"}
+                    `}
                   >
-                    <img
-                      src={material.image}
-                      alt={material.name}
-                      className="w-32 h-32 object-cover rounded"
-                    />
-                    <h3 className="text-sm font-medium mt-2 text-center line-clamp-2">
-                      {material.name}
-                    </h3>
-                    <p className="text-xs text-gray-700">
-                      ${formatWithSeparator(costNum)} / {material.unit_of_measurement}
-                    </p>
-                    {diff !== 0 && (
-                      <p className={`text-xs mt-1 font-medium ${diffColor}`}>{diffStr}</p>
-                    )}
-                    {isSelected && (
-                      <span className="text-xs text-blue-600 font-semibold mt-1">
-                        Currently Selected
-                      </span>
-                    )}
+                    {/* Upper block => bigger image, left-aligned name */}
+                    <div className="flex-1 mb-3">
+                      {/* Taller image => aspect-[2/3] */}
+                      <div
+                        className="w-full overflow-hidden rounded cursor-pointer"
+                        onClick={() => handleImageClick(material.image!)}
+                      >
+                        <img
+                          src={material.image}
+                          alt={material.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+
+                      {/* name => normal font, up to 4 lines */}
+                      <h3
+                        className="mt-3 text-sm text-left text-gray-800 line-clamp-3 sm:line-clamp-4 leading-snug"
+                        title={material.name}
+                      >
+                        {material.name}
+                      </h3>
+                    </div>
+
+                    {/* Price + diff */}
+                    <div className="mb-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-base font-bold text-gray-800">
+                          ${formatWithSeparator(costNum)}
+                        </span>
+                        {diff !== 0 && (
+                          <span className={`text-base font-normal ${diffColor}`}>
+                            {diffStr}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Select button */}
+                    <button
+                      onClick={handleSelectClick}
+                      className={`
+                        px-3 py-2 text-sm font-semibold rounded
+                        ${
+                          isSelected
+                            ? "bg-blue-300 text-white"
+                            : "bg-blue-600 text-white hover:bg-blue-700"
+                        }
+                      `}
+                    >
+                      {isSelected ? "Selected" : "Select"}
+                    </button>
                   </div>
                 );
               })}
@@ -195,6 +279,20 @@ export default function FinishingMaterialsModal({
           )}
         </div>
       </div>
+
+      {/* Lightbox if zoomed */}
+      {zoomedImage && (
+        <div
+          className="absolute inset-0 z-50 bg-black/80 flex items-center justify-center cursor-pointer"
+          onClick={() => setZoomedImage(null)}
+        >
+          <img
+            src={zoomedImage}
+            alt="Zoomed"
+            className="max-w-full max-h-full object-contain"
+          />
+        </div>
+      )}
     </div>
   );
 }
