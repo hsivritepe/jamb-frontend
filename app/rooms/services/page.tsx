@@ -20,6 +20,8 @@ import PhotosAndDescription from "@/components/ui/PhotosAndDescription";
 // Unified session utilities
 import { setSessionItem, getSessionItem, clearSession } from "@/utils/session";
 
+import FinishingMaterialsModal from "@/components/FinishingMaterialsModal"; // <-- NEW IMPORT
+
 interface FinishingMaterial {
   id: number;
   image?: string;
@@ -397,7 +399,6 @@ export default function RoomDetails() {
             await ensureFinishingMaterialsLoaded(serviceId);
 
             // Flatten the picks from finishingMaterialSelections[serviceId]
-            // example: { walls: "extA", trim: "extB" } => ["extA", "extB"]
             const picksObj = finishingMaterialSelections[serviceId] || {};
             const finishingIds = Object.values(picksObj);
 
@@ -1361,154 +1362,17 @@ export default function RoomDetails() {
         </div>
       </div>
 
-      {/* Modal for finishing materials (one section at a time) */}
-      {showModalServiceId &&
-        showModalSectionName &&
-        finishingMaterialsMapAll[showModalServiceId] &&
-        finishingMaterialsMapAll[showModalServiceId].sections[
-          showModalSectionName
-        ] && (
-          <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-lg w-[90vw] h-[90vh] md:w-[80vw] md:h-[80vh] lg:w-[70vw] lg:h-[70vh] overflow-hidden relative flex flex-col">
-              {/* Header */}
-              <div className="p-4 border-b flex items-center justify-between sticky top-0 bg-white z-10">
-                <h2 className="text-xl font-semibold">
-                  Choose a finishing material (section {showModalSectionName})
-                </h2>
-                <button
-                  onClick={closeModal}
-                  className="text-red-500 border border-red-500 px-2 py-1 rounded"
-                >
-                  Close
-                </button>
-              </div>
-
-              {(() => {
-                // If we haven't initialized any picks for this service, do nothing
-                const picksObj = finishingMaterialSelections[showModalServiceId];
-                if (!picksObj) return null;
-
-                const currentExtId = picksObj[showModalSectionName] || null;
-                if (!currentExtId) return null;
-
-                const curMat = findFinishingMaterialObj(
-                  showModalServiceId,
-                  currentExtId
-                );
-                if (!curMat) return null;
-
-                const curCost = parseFloat(curMat.cost || "0") || 0;
-                return (
-                  <div className="text-sm text-gray-600 border-b p-4 bg-white sticky top-[61px] z-10">
-                    Current material: <strong>{curMat.name}</strong> ($
-                    {formatWithSeparator(curCost)})
-                    <button
-                      onClick={() =>
-                        userHasOwnMaterial(showModalServiceId, currentExtId)
-                      }
-                      className="ml-4 text-xs text-red-500 border border-red-500 px-2 py-1 rounded"
-                    >
-                      I have my own (Remove later)
-                    </button>
-                  </div>
-                );
-              })()}
-
-              <div className="overflow-auto p-4 flex-1">
-                {(() => {
-                  const data = finishingMaterialsMapAll[showModalServiceId];
-                  if (!data)
-                    return (
-                      <p className="text-sm text-gray-500">No data found</p>
-                    );
-
-                  const arr = data.sections[showModalSectionName] || [];
-                  if (!Array.isArray(arr) || arr.length === 0) {
-                    return (
-                      <p className="text-sm text-gray-500">
-                        No finishing materials in section {showModalSectionName}
-                      </p>
-                    );
-                  }
-
-                  const picksObj =
-                    finishingMaterialSelections[showModalServiceId] || {};
-                  const currentExtId = picksObj[showModalSectionName] || null;
-                  let currentBaseCost = 0;
-                  if (currentExtId) {
-                    const fmObj = findFinishingMaterialObj(
-                      showModalServiceId,
-                      currentExtId
-                    );
-                    if (fmObj) {
-                      currentBaseCost = parseFloat(fmObj.cost || "0") || 0;
-                    }
-                  }
-
-                  return (
-                    <div className="grid grid-cols-2 gap-4 mt-4">
-                      {arr.map((material, i) => {
-                        if (!material.image) return null;
-                        const costNum = parseFloat(material.cost || "0") || 0;
-                        const isSelected = currentExtId === material.external_id;
-                        const diff = costNum - currentBaseCost;
-                        let diffStr = "";
-                        let diffColor = "";
-                        if (diff > 0) {
-                          diffStr = `+${formatWithSeparator(diff)}`;
-                          diffColor = "text-red-500";
-                        } else if (diff < 0) {
-                          diffStr = `-${formatWithSeparator(Math.abs(diff))}`;
-                          diffColor = "text-green-600";
-                        }
-
-                        return (
-                          <div
-                            key={`${material.external_id}-${i}`}
-                            className={`border rounded p-3 flex flex-col items-center cursor-pointer ${
-                              isSelected ? "border-blue-500" : "border-gray-300"
-                            }`}
-                            onClick={() => {
-                              // Only update the one section
-                              pickMaterial(
-                                showModalServiceId,
-                                showModalSectionName,
-                                material.external_id
-                              );
-                            }}
-                          >
-                            <img
-                              src={material.image}
-                              alt={material.name}
-                              className="w-32 h-32 object-cover rounded"
-                            />
-                            <h3 className="text-sm font-medium mt-2 text-center line-clamp-2">
-                              {material.name}
-                            </h3>
-                            <p className="text-xs text-gray-700">
-                              ${formatWithSeparator(costNum)} /{" "}
-                              {material.unit_of_measurement}
-                            </p>
-                            {diff !== 0 && (
-                              <p className={`text-xs mt-1 font-medium ${diffColor}`}>
-                                {diffStr}
-                              </p>
-                            )}
-                            {isSelected && (
-                              <span className="text-xs text-blue-600 font-semibold mt-1">
-                                Currently Selected
-                              </span>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                })()}
-              </div>
-            </div>
-          </div>
-        )}
+      {/* REPLACED: old modal is removed, we now call our FinishingMaterialsModal component */}
+      <FinishingMaterialsModal
+        showModalServiceId={showModalServiceId}
+        showModalSectionName={showModalSectionName}
+        finishingMaterialsMapAll={finishingMaterialsMapAll}
+        finishingMaterialSelections={finishingMaterialSelections}
+        setFinishingMaterialSelections={setFinishingMaterialSelections}
+        closeModal={closeModal}
+        userHasOwnMaterial={userHasOwnMaterial}
+        formatWithSeparator={formatWithSeparator}
+      />
     </main>
   );
 }
