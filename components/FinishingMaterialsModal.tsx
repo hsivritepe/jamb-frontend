@@ -227,7 +227,7 @@ export default function FinishingMaterialsModal({
                   <div
                     key={`${material.external_id}-${i}`}
                     className={`
-                      border rounded p-4 flex flex-col justify-between
+                      border rounded p-2 sm:p-4 flex flex-col justify-between
                       min-h-[300px] sm:min-h-[320px]
                       ${isSelected ? "border-red-600" : "border-gray-300"}
                     `}
@@ -262,7 +262,7 @@ export default function FinishingMaterialsModal({
                           ${formatWithSeparator(costNum)}
                         </span>
                         {diff !== 0 && (
-                          <span className={`text-base font-normal ${diffColor}`}>
+                          <span className={`text-sm sm:text-base font-normal ${diffColor}`}>
                             {diffStr}
                           </span>
                         )}
