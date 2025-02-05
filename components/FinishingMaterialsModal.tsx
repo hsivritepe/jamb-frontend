@@ -11,6 +11,15 @@ function toOrdinal(num: number): string {
   return `${num}th`;
 }
 
+/** Helper to parse a cost string that may contain commas (e.g. "1,962"). */
+function parseCostString(costStr: string | undefined): number {
+  if (!costStr) return 0;
+  // Remove commas before parsing
+  const cleaned = costStr.replace(/,/g, "");
+  const parsed = parseFloat(cleaned);
+  return isNaN(parsed) ? 0 : parsed;
+}
+
 /** Props for the FinishingMaterialsModal component. */
 interface FinishingMaterialsModalProps {
   showModalServiceId: string | null;
@@ -100,14 +109,15 @@ export default function FinishingMaterialsModal({
   // Flatten sections
   const allMats = Object.values(fmData.sections || {}).flat() as FinishingMaterial[];
   const curMat = allMats.find((x) => x.external_id === currentExtId) || null;
-  const curCost = curMat ? parseFloat(curMat.cost || "0") || 0 : 0;
+  // Fix: parse cost with commas removed
+  const curCost = parseCostString(curMat?.cost);
 
   // Determine base cost of the currently selected
   const arr = fmData.sections[sectionName] || [];
   let currentBaseCost = 0;
   const foundMat = arr.find((m) => m.external_id === currentExtId);
   if (foundMat) {
-    currentBaseCost = parseFloat(foundMat.cost || "0") || 0;
+    currentBaseCost = parseCostString(foundMat.cost);
   }
 
   // Lightbox for zoom
@@ -190,7 +200,8 @@ export default function FinishingMaterialsModal({
               {arr.map((material, i) => {
                 if (!material.image) return null;
 
-                const costNum = parseFloat(material.cost || "0") || 0;
+                // Fix: parse with commas removed
+                const costNum = parseCostString(material.cost);
                 const isSelected = currentExtId === material.external_id;
                 const diff = costNum - currentBaseCost;
                 let diffStr = "";
@@ -218,7 +229,7 @@ export default function FinishingMaterialsModal({
                     className={`
                       border rounded p-4 flex flex-col justify-between
                       min-h-[300px] sm:min-h-[320px]
-                      ${isSelected ? "border-blue-500" : "border-gray-300"}
+                      ${isSelected ? "border-red-600" : "border-gray-300"}
                     `}
                   >
                     {/* Upper block => bigger image, left-aligned name */}
@@ -265,7 +276,7 @@ export default function FinishingMaterialsModal({
                         px-3 py-2 text-sm font-semibold rounded
                         ${
                           isSelected
-                            ? "bg-blue-300 text-white"
+                            ? "bg-red-500 text-white"
                             : "bg-blue-600 text-white hover:bg-blue-700"
                         }
                       `}
