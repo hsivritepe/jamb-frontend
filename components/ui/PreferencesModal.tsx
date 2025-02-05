@@ -38,7 +38,7 @@ interface PreferencesModalProps {
 /**
  * PreferencesModal:
  * A modal that allows the user to select language, units, and currency.
- * The 'show' prop toggles visibility.
+ * Now styled similarly to your PROPERTY MODAL with a right-side drawer approach.
  */
 export default function PreferencesModal({
   show,
@@ -100,20 +100,10 @@ export default function PreferencesModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-[9999]">
+    <div className="fixed inset-0 bg-black/30 z-50 flex justify-end">
       <div
         ref={preferencesModalRef}
-        className="
-          bg-white
-          p-4 sm:p-6
-          rounded-xl
-          shadow-lg
-          w-[95vw]
-          sm:w-[90%]
-          max-w-[460px]
-          max-h-[90vh]
-          overflow-auto
-        "
+        className="bg-white w-full sm:w-[400px] h-full p-6 flex flex-col relative"
       >
         <h2 className="text-2xl font-bold mb-4 text-gray-800">Preferences</h2>
 
@@ -138,7 +128,7 @@ export default function PreferencesModal({
         )}
 
         {/* Modal action buttons */}
-        <div className="mt-6 flex justify-end gap-3">
+        <div className="mt-auto flex justify-end gap-3">
           <button
             onClick={onClose}
             className="px-4 py-2 rounded bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"

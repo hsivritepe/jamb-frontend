@@ -138,9 +138,7 @@ function MobileNav({
               key={item.name}
               href={item.href}
               className={`font-medium transition-colors duration-200 ${
-                isActive
-                  ? "text-blue-600"
-                  : "text-gray-700 hover:text-blue-600"
+                isActive ? "text-blue-600" : "text-gray-700 hover:text-blue-600"
               }`}
               prefetch={false}
               onClick={() => setIsMobileMenuOpen(false)}
@@ -587,21 +585,38 @@ export default function Header() {
 
       {/* Location modal */}
       {showLocationModal && (
-        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-[9999]">
+        <div className="fixed inset-0 bg-black/30 z-50 flex justify-start">
           <div
             ref={locationModalRef}
             className="
-              bg-white 
-              rounded-xl 
-              shadow-lg 
-              w-[90%]
-              max-w-[500px]
-              p-4 
-              text-center
-              sm:p-6 
-              md:p-8
-            "
+        bg-white
+        w-full
+        sm:w-[400px]
+        h-full
+        p-6
+        flex
+        flex-col
+        relative
+        overflow-auto
+      "
           >
+            {/* Close (X) button in top-right */}
+            <button
+              onClick={() => setShowLocationModal(false)}
+              className="
+          absolute
+          top-3
+          right-3
+          text-gray-500
+          hover:text-red-500
+          p-1
+          transition-colors
+        "
+              aria-label="Close location modal"
+            >
+              ✕
+            </button>
+
             <h2 className="text-xl font-semibold mb-4 text-gray-800">
               Set Your Location
             </h2>
@@ -683,7 +698,7 @@ export default function Header() {
                 Clear
               </button>
               <button
-                className="flex-1 p-3 font-medium border-none rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+                className="flex-1 p-3 font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 border-none"
                 onClick={() => {
                   handleManualLocationSave();
                 }}

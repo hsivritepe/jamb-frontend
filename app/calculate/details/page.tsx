@@ -108,6 +108,190 @@ function ServiceImage({ serviceId }: { serviceId: string }) {
 }
 
 /**
+ * A modal to help user calculate square footage from length & width
+ * or directly from square meters. Then apply that result to the service quantity.
+ */
+interface SurfaceCalculatorModalProps {
+  show: boolean;
+  onClose: () => void;
+  serviceId: string | null;
+  onApplySquareFeet: (serviceId: string | null, sqFeet: number) => void;
+}
+
+function SurfaceCalculatorModal({
+  show,
+  onClose,
+  serviceId,
+  onApplySquareFeet,
+}: SurfaceCalculatorModalProps) {
+  if (!show) return null;
+
+  // internal states
+  const [system, setSystem] = useState<"ft" | "m">("ft");
+  const [lengthVal, setLengthVal] = useState("");
+  const [widthVal, setWidthVal] = useState("");
+  const [sqMetersVal, setSqMetersVal] = useState("");
+
+  // compute area from length*width => always in sq ft
+  function computeAreaSqFt(): number {
+    const lengthNum = parseFloat(lengthVal) || 0;
+    const widthNum = parseFloat(widthVal) || 0;
+    if (system === "m") {
+      // each dimension in meters => area in m^2 => convert to ft^2
+      // 1 m^2 = 10.7639 ft^2
+      return lengthNum * widthNum * 10.7639;
+    }
+    // system = ft => direct
+    return lengthNum * widthNum;
+  }
+
+  // compute from known sq meters
+  function computeAreaFromSqMeters(): number {
+    const val = parseFloat(sqMetersVal) || 0;
+    return val * 10.7639; // 1 m^2 = 10.7639 ft^2
+  }
+
+  function handleApply() {
+    if (!serviceId) {
+      onClose();
+      return;
+    }
+    // decide which area to take
+    let areaFt = computeAreaSqFt();
+    // if user typed sq meters => prefer that
+    if (sqMetersVal.trim()) {
+      areaFt = computeAreaFromSqMeters();
+    }
+    if (areaFt < 1) areaFt = 1; // minimal
+    onApplySquareFeet(serviceId, Math.round(areaFt));
+    onClose();
+  }
+
+  return (
+    <div className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg w-full max-w-md overflow-hidden relative p-4">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-3 border-b pb-2">
+          <h2 className="text-lg font-semibold text-gray-800">
+            Surface Calculator
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-red-500 px-2"
+            aria-label="Close"
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* short instructions */}
+        <p className="text-sm text-gray-600 mb-4">
+          Enter length & width in meters or feet, or a known m² area to convert
+          to sq ft automatically.
+        </p>
+
+        {/* system toggle */}
+        <div className="mb-4">
+          <span className="text-sm text-gray-700 mr-2">Units (LxW):</span>
+          <button
+            onClick={() => setSystem("ft")}
+            className={`px-3 py-1 border rounded-l ${
+              system === "ft"
+                ? "bg-blue-600 text-white border-blue-600"
+                : "bg-gray-200 text-gray-700 border-gray-300 hover:bg-gray-300"
+            }`}
+          >
+            ft
+          </button>
+          <button
+            onClick={() => setSystem("m")}
+            className={`px-3 py-1 border rounded-r ${
+              system === "m"
+                ? "bg-blue-600 text-white border-blue-600"
+                : "bg-gray-200 text-gray-700 border-gray-300 hover:bg-gray-300"
+            }`}
+          >
+            m
+          </button>
+        </div>
+
+        {/* length + width */}
+        <div className="flex gap-2 mb-4">
+          <div className="flex-1">
+            <label className="block text-sm text-gray-600 mb-1">Length</label>
+            <input
+              type="number"
+              placeholder={`0 (${system})`}
+              value={lengthVal}
+              onChange={(e) => setLengthVal(e.target.value)}
+              className="w-full border rounded px-2 py-1"
+            />
+          </div>
+          <div className="flex-1">
+            <label className="block text-sm text-gray-600 mb-1">Width</label>
+            <input
+              type="number"
+              placeholder={`0 (${system})`}
+              value={widthVal}
+              onChange={(e) => setWidthVal(e.target.value)}
+              className="w-full border rounded px-2 py-1"
+            />
+          </div>
+        </div>
+
+        {/* or known sq meters */}
+        <div className="mb-4">
+          <label className="block text-sm text-gray-600 mb-1">
+            Or known area (m²):
+          </label>
+          <input
+            type="number"
+            className="w-full border rounded px-2 py-1"
+            placeholder="0 m²"
+            value={sqMetersVal}
+            onChange={(e) => setSqMetersVal(e.target.value)}
+          />
+        </div>
+
+        {/* Calculated results */}
+        <div className="mb-4 text-sm text-gray-700">
+          <p className="mb-1">
+            Calculated from length & width:{" "}
+            <span className="font-medium">
+              {Math.round(computeAreaSqFt())} sq ft
+            </span>
+          </p>
+          {sqMetersVal.trim() && (
+            <p>
+              From known m²:{" "}
+              <span className="font-medium">
+                {Math.round(computeAreaFromSqMeters())} sq ft
+              </span>
+            </p>
+          )}
+        </div>
+
+        {/* Footer buttons */}
+        <div className="flex justify-end gap-3 mt-4">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleApply}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Apply
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
  * The main "Details" page component
  */
 export default function Details() {
@@ -226,6 +410,30 @@ export default function Details() {
     string | null
   >(null);
 
+  // State for the surface calculator
+  const [showSurfaceCalc, setShowSurfaceCalc] = useState(false);
+  const [calcServiceId, setCalcServiceId] = useState<string | null>(null);
+
+  // This is triggered from SurfaceCalculatorModal's "Apply" button
+  function handleApplySquareFeet(serviceId: string | null, sqFeet: number) {
+    if (!serviceId) return;
+    // If the user hasn't turned on the service yet, we could auto-enable,
+    // or just skip. Below we assume the service is already toggled on.
+    setSelectedServicesState((old) => {
+      if (!(serviceId in old)) {
+        return old; // do nothing if not toggled
+      }
+      return {
+        ...old,
+        [serviceId]: sqFeet,
+      };
+    });
+    setManualInputValue((old) => ({
+      ...old,
+      [serviceId]: String(sqFeet),
+    }));
+  }
+
   useEffect(() => {
     setSessionItem("calculationResultsMap", calculationResultsMap);
   }, [calculationResultsMap]);
@@ -284,7 +492,6 @@ export default function Details() {
         const newObj = { ...old, [serviceId]: minQ };
 
         setManualInputValue((prev) => ({ ...prev, [serviceId]: String(minQ) }));
-
         ensureFinishingMaterialsLoaded(serviceId);
         return newObj;
       }
@@ -495,7 +702,9 @@ export default function Details() {
   /** Next => validate selections and go to estimate page. */
   function handleNext() {
     if (Object.keys(selectedServicesState).length === 0) {
-      setWarningMessage("Please select at least one service before proceeding.");
+      setWarningMessage(
+        "Please select at least one service before proceeding."
+      );
       return;
     }
     if (!address.trim()) {
@@ -676,6 +885,17 @@ export default function Details() {
                                 const detailsExpanded =
                                   expandedServiceDetails.has(svc.id);
 
+                                // Let's define a helper to open the surface calc
+                                function openSurfaceCalc() {
+                                  setCalcServiceId(svc.id);
+                                  setShowSurfaceCalc(true);
+                                }
+
+                                const showSurfaceCalcButton =
+                                  svc.unit_of_measurement
+                                    .toLowerCase()
+                                    .includes("sq ft");
+
                                 return (
                                   <div key={svc.id} className="space-y-2">
                                     <div className="flex justify-between items-center">
@@ -771,21 +991,46 @@ export default function Details() {
                                           </div>
                                         </div>
 
-                                        {/* Mobile "Details" button */}
-                                        <div className="mt-2 flex justify-end">
-                                          <button
-                                            onClick={() =>
-                                              toggleServiceDetails(svc.id)
-                                            }
-                                            className={`text-blue-600 text-sm font-medium mb-3 ${
-                                              detailsExpanded ? "" : "underline"
-                                            }`}
-                                          >
-                                            Cost Breakdown
-                                          </button>
+                                        {/* Buttons row: optional "Surface Calc" + "Cost Breakdown" */}
+                                        <div className="mt-2 mb-3 flex items-center">
+                                          {showSurfaceCalcButton ? (
+                                            <>
+                                              <button
+                                                onClick={openSurfaceCalc}
+                                                className="text-blue-600 text-sm font-medium hover:underline mr-auto"
+                                              >
+                                                Surface Calc
+                                              </button>
+                                              <button
+                                                onClick={() =>
+                                                  toggleServiceDetails(svc.id)
+                                                }
+                                                className={`text-blue-600 text-sm font-medium mb-3 ${
+                                                  detailsExpanded
+                                                    ? ""
+                                                    : "underline"
+                                                }`}
+                                              >
+                                                Cost Breakdown
+                                              </button>
+                                            </>
+                                          ) : (
+                                            <button
+                                              onClick={() =>
+                                                toggleServiceDetails(svc.id)
+                                              }
+                                              className={`ml-auto text-blue-600 text-sm font-medium mb-3 ${
+                                                detailsExpanded
+                                                  ? ""
+                                                  : "underline"
+                                              }`}
+                                            >
+                                              Cost Breakdown
+                                            </button>
+                                          )}
                                         </div>
 
-                                        {/* Cost breakdown */}
+                                        {/* Cost breakdown menu*/}
                                         {calcResult && detailsExpanded && (
                                           <div className="mt-4 p-4 bg-gray-50 border rounded">
                                             <div className="flex flex-col gap-2 mb-4">
@@ -811,8 +1056,11 @@ export default function Details() {
                                               </div>
                                             </div>
 
-                                            {Array.isArray(calcResult.materials) &&
-                                              calcResult.materials.length > 0 && (
+                                            {Array.isArray(
+                                              calcResult.materials
+                                            ) &&
+                                              calcResult.materials.length >
+                                                0 && (
                                                 <div className="mt-2">
                                                   <table className="table-auto w-full text-sm text-left text-gray-700">
                                                     <thead>
@@ -833,19 +1081,16 @@ export default function Details() {
                                                     </thead>
                                                     <tbody className="divide-y divide-gray-200">
                                                       {calcResult.materials.map(
-                                                        (
-                                                          m: any,
-                                                          i: number
-                                                        ) => {
+                                                        (m: any, i: number) => {
                                                           const fmObj =
                                                             findFinishingMaterialObj(
                                                               svc.id,
                                                               m.external_id
                                                             );
-                                                          const hasImage =
-                                                            fmObj?.image?.length
-                                                              ? true
-                                                              : false;
+                                                          const hasImage = fmObj
+                                                            ?.image?.length
+                                                            ? true
+                                                            : false;
                                                           const isClientOwned =
                                                             clientOwnedMaterials[
                                                               svc.id
@@ -917,7 +1162,9 @@ export default function Details() {
                                                             >
                                                               <td className="py-3 px-1">
                                                                 {hasImage ? (
-                                                                  <div className="flex items-center gap-2">
+                                                                  //
+                                                                  // On phones => vertical stack, on bigger => horizontal
+                                                                  <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
                                                                     <img
                                                                       src={
                                                                         fmObj?.image
@@ -925,7 +1172,7 @@ export default function Details() {
                                                                       alt={
                                                                         m.name
                                                                       }
-                                                                      className="w-8 h-8 object-cover rounded"
+                                                                      className="w-24 h-24 object-cover rounded"
                                                                     />
                                                                     <span>
                                                                       {m.name}
@@ -937,7 +1184,9 @@ export default function Details() {
                                                               </td>
                                                               <td className="py-3 px-1">
                                                                 $
-                                                                {m.cost_per_unit}
+                                                                {
+                                                                  m.cost_per_unit
+                                                                }
                                                               </td>
                                                               <td className="py-3 px-3">
                                                                 {m.quantity}
@@ -1023,8 +1272,7 @@ export default function Details() {
                                         key={svc.id}
                                         className="grid grid-cols-3 gap-2 text-sm text-gray-600"
                                         style={{
-                                          gridTemplateColumns:
-                                            "40% 30% 25%",
+                                          gridTemplateColumns: "40% 30% 25%",
                                         }}
                                       >
                                         <span>{svc.title}</span>
@@ -1112,7 +1360,7 @@ export default function Details() {
         </div>
       </div>
 
-      {/* FinishingMaterialsModal (REPLACES the old modal code) */}
+      {/* Finishing-material modal */}
       <FinishingMaterialsModal
         showModalServiceId={showModalServiceId}
         showModalSectionName={showModalSectionName}
@@ -1122,6 +1370,14 @@ export default function Details() {
         closeModal={closeModal}
         userHasOwnMaterial={userHasOwnMaterial}
         formatWithSeparator={formatWithSeparator}
+      />
+
+      {/* SurfaceCalculatorModal */}
+      <SurfaceCalculatorModal
+        show={showSurfaceCalc}
+        onClose={() => setShowSurfaceCalc(false)}
+        serviceId={calcServiceId}
+        onApplySquareFeet={handleApplySquareFeet}
       />
     </main>
   );

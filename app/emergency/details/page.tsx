@@ -17,7 +17,9 @@ import { setSessionItem, getSessionItem } from "@/utils/session";
 // Number formatting utility
 import { formatWithSeparator } from "@/utils/format";
 
+// Modal components
 import FinishingMaterialsModal from "@/components/FinishingMaterialsModal";
+import SurfaceCalculatorModal from "@/components/SurfaceCalculatorModal"; // <-- ваш компонент калькулятора
 
 interface FinishingMaterial {
   id: number;
@@ -58,7 +60,9 @@ async function calculatePrice(params: {
     body: JSON.stringify(params),
   });
   if (!res.ok) {
-    throw new Error(`Failed to calculate price (work_code=${params.work_code}).`);
+    throw new Error(
+      `Failed to calculate price (work_code=${params.work_code}).`
+    );
   }
   return res.json();
 }
@@ -77,7 +81,9 @@ async function fetchFinishingMaterials(workCode: string) {
     body: JSON.stringify({ work_code: workCode }),
   });
   if (!res.ok) {
-    throw new Error(`Failed to fetch finishing materials (work_code=${workCode}).`);
+    throw new Error(
+      `Failed to fetch finishing materials (work_code=${workCode}).`
+    );
   }
   return res.json();
 }
@@ -120,7 +126,10 @@ export default function EmergencyDetails() {
   const router = useRouter();
 
   // Session data
-  const selectedServices = getSessionItem<Record<string, string[]>>("selectedServices", {});
+  const selectedServices = getSessionItem<Record<string, string[]>>(
+    "selectedServices",
+    {}
+  );
   const fullAddress = getSessionItem<string>("fullAddress", "");
   const zip = getSessionItem<string>("zip", "");
   const photos = getSessionItem<string[]>("photos", []);
@@ -137,17 +146,20 @@ export default function EmergencyDetails() {
   >({});
 
   // Which service panels are expanded
-  const [expandedServices, setExpandedServices] = useState<Set<string>>(new Set());
+  const [expandedServices, setExpandedServices] = useState<Set<string>>(
+    new Set()
+  );
 
   // Warnings
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
 
   // Calculated costs
   const [serviceCosts, setServiceCosts] = useState<Record<string, number>>({});
-  const [calculationResultsMap, setCalculationResultsMap] = useState<Record<string, any>>({});
+  const [calculationResultsMap, setCalculationResultsMap] = useState<
+    Record<string, any>
+  >({});
 
   // Finishing materials data
-  // finishingMaterialsMapAll[activityKey] = { sections: { [sectionName]: FinishingMaterial[] } }
   const [finishingMaterialsMapAll, setFinishingMaterialsMapAll] = useState<
     Record<string, { sections: Record<string, FinishingMaterial[]> }>
   >({});
@@ -157,15 +169,22 @@ export default function EmergencyDetails() {
     useState<Record<string, Record<string, string>>>({});
 
   // Tracks client-owned materials
-  const [clientOwnedMaterials, setClientOwnedMaterials] =
-    useState<Record<string, Set<string>>>({});
+  const [clientOwnedMaterials, setClientOwnedMaterials] = useState<
+    Record<string, Set<string>>
+  >({});
 
-  // Modal state
-  const [showModalServiceId, setShowModalServiceId] = useState<string | null>(null);
-  const [showModalSectionName, setShowModalSectionName] = useState<string | null>(null);
+  // Modal state (finishing materials)
+  const [showModalServiceId, setShowModalServiceId] = useState<string | null>(
+    null
+  );
+  const [showModalSectionName, setShowModalSectionName] = useState<
+    string | null
+  >(null);
 
   // Expanded cost breakdown per activity
-  const [expandedServiceDetails, setExpandedServiceDetails] = useState<Set<string>>(new Set());
+  const [expandedServiceDetails, setExpandedServiceDetails] = useState<
+    Set<string>
+  >(new Set());
 
   // Persist selectedActivities to session
   useEffect(() => {
@@ -177,7 +196,59 @@ export default function EmergencyDetails() {
     setSessionItem("calculationResultsMap", calculationResultsMap);
   }, [calculationResultsMap]);
 
+  // ----------------------------------------------------------------------------
+  // SURFACE CALCULATOR logic
+  // ----------------------------------------------------------------------------
+  const [surfaceCalcOpen, setSurfaceCalcOpen] = useState(false);
+  const [surfaceCalcServiceKey, setSurfaceCalcServiceKey] = useState<
+    string | null
+  >(null);
+  const [surfaceCalcActivityKey, setSurfaceCalcActivityKey] = useState<
+    string | null
+  >(null);
+
+  // Открыть калькулятор
+  function openSurfaceCalc(serviceKey: string, activityKey: string) {
+    setSurfaceCalcServiceKey(serviceKey);
+    setSurfaceCalcActivityKey(activityKey);
+    setSurfaceCalcOpen(true);
+  }
+
+  // Применить площадь из калькулятора
+  function handleApplySquareFeet(serviceId: string, sqFeet: number) {
+    // Применяем к выбранной активности
+    if (!surfaceCalcServiceKey || !surfaceCalcActivityKey) return;
+
+    const found = ALL_SERVICES.find((x) => x.id === surfaceCalcActivityKey);
+    if (!found) return;
+
+    const minQ = found.min_quantity ?? 1;
+    const maxQ = found.max_quantity ?? 99999;
+    let finalVal = sqFeet;
+    if (finalVal < minQ) finalVal = minQ;
+    if (finalVal > maxQ) {
+      finalVal = maxQ;
+      setWarningMessage(`Maximum quantity for "${found.title}" is ${maxQ}.`);
+    }
+
+    // Обновляем selectedActivities
+    setSelectedActivities((prev) => {
+      const copy = { ...prev };
+      if (!copy[surfaceCalcServiceKey]) {
+        copy[surfaceCalcServiceKey] = {};
+      }
+      copy[surfaceCalcServiceKey][surfaceCalcActivityKey] = finalVal;
+      return copy;
+    });
+
+    // Закрыть модалку
+    setSurfaceCalcOpen(false);
+  }
+  // ----------------------------------------------------------------------------
+
+  // ----------------------------------------------------------------------------
   // Recalculate costs whenever selected activities or ZIP changes
+  // ----------------------------------------------------------------------------
   useEffect(() => {
     const allActivityKeys: string[] = [];
     Object.values(selectedActivities).forEach((serviceObj) => {
@@ -220,7 +291,10 @@ export default function EmergencyDetails() {
 
         const laborCost = parseFloat(resp.work_cost) || 0;
         const matCost = parseFloat(resp.material_cost) || 0;
-        setServiceCosts((old) => ({ ...old, [activityKey]: laborCost + matCost }));
+        setServiceCosts((old) => ({
+          ...old,
+          [activityKey]: laborCost + matCost,
+        }));
         setCalculationResultsMap((old) => ({ ...old, [activityKey]: resp }));
       } catch (err) {
         console.error("Error in calculatePrice:", err);
@@ -304,7 +378,11 @@ export default function EmergencyDetails() {
   }
 
   /** Increments or decrements activity quantity. */
-  function handleQuantityChange(serviceKey: string, activityKey: string, increment: boolean) {
+  function handleQuantityChange(
+    serviceKey: string,
+    activityKey: string,
+    increment: boolean
+  ) {
     const found = ALL_SERVICES.find((x) => x.id === activityKey);
     if (!found) return;
 
@@ -334,7 +412,11 @@ export default function EmergencyDetails() {
   }
 
   /** Handles manual input for quantity. */
-  function handleManualQuantityChange(serviceKey: string, activityKey: string, value: string) {
+  function handleManualQuantityChange(
+    serviceKey: string,
+    activityKey: string,
+    value: string
+  ) {
     const found = ALL_SERVICES.find((x) => x.id === activityKey);
     if (!found) return;
 
@@ -355,7 +437,10 @@ export default function EmergencyDetails() {
 
     setSelectedActivities((prev) => ({
       ...prev,
-      [serviceKey]: { ...prev[serviceKey], [activityKey]: Math.round(parsedVal) },
+      [serviceKey]: {
+        ...prev[serviceKey],
+        [activityKey]: Math.round(parsedVal),
+      },
     }));
 
     setWarningMessage(null);
@@ -401,7 +486,9 @@ export default function EmergencyDetails() {
       (obj) => Object.keys(obj).length > 0
     );
     if (!hasAny) {
-      setWarningMessage("Please select at least one service before proceeding.");
+      setWarningMessage(
+        "Please select at least one service before proceeding."
+      );
       return;
     }
     if (!fullAddress.trim()) {
@@ -412,12 +499,15 @@ export default function EmergencyDetails() {
   }
 
   /** Builds a list of services from the first step. */
-  const servicesList = Object.entries(selectedServices).flatMap(([category, arr]) => {
-    return arr.map((srvKey) => {
-      const activities = EMERGENCY_SERVICES[category]?.services[srvKey]?.activities || {};
-      return { service: srvKey, category, activities };
-    });
-  });
+  const servicesList = Object.entries(selectedServices).flatMap(
+    ([category, arr]) => {
+      return arr.map((srvKey) => {
+        const activities =
+          EMERGENCY_SERVICES[category]?.services[srvKey]?.activities || {};
+        return { service: srvKey, category, activities };
+      });
+    }
+  );
 
   /** Toggles cost breakdown details for a single activity. */
   function toggleActivityDetails(activityKey: string) {
@@ -446,7 +536,11 @@ export default function EmergencyDetails() {
   }
 
   /** User picks a finishing material for a given section. */
-  function pickMaterial(activityKey: string, sectionName: string, externalId: string) {
+  function pickMaterial(
+    activityKey: string,
+    sectionName: string,
+    externalId: string
+  ) {
     if (!finishingMaterialSelections[activityKey]) {
       finishingMaterialSelections[activityKey] = {};
     }
@@ -488,7 +582,10 @@ export default function EmergencyDetails() {
         <div className="flex justify-between items-center text-sm text-gray-500 mt-8 w-full xl:max-w-[600px]">
           <span>
             No service?{" "}
-            <a href="#" className="text-blue-600 hover:underline focus:outline-none">
+            <a
+              href="#"
+              className="text-blue-600 hover:underline focus:outline-none"
+            >
               Contact emergency support
             </a>
           </span>
@@ -514,8 +611,9 @@ export default function EmergencyDetails() {
             {servicesList.map(({ service, category, activities }) => {
               const serviceLabel = capitalizeAndTransform(service);
               const isExpanded = expandedServices.has(service);
-
-              const chosenCount = Object.keys(selectedActivities[service] || {}).length;
+              const chosenCount = Object.keys(
+                selectedActivities[service] || {}
+              ).length;
 
               return (
                 <div
@@ -547,237 +645,346 @@ export default function EmergencyDetails() {
 
                   {isExpanded && (
                     <div className="mt-4 flex flex-col gap-4">
-                      {Object.entries(activities).map(([activityKey, activityData]) => {
-                        const isSelected =
-                          selectedActivities[service]?.[activityKey] != null;
-                        const activityLabel = capitalizeAndTransform(activityData.activity);
-                        const foundActivity = ALL_SERVICES.find((x) => x.id === activityKey);
-                        const finalCost = serviceCosts[activityKey] || 0;
-                        const calcResult = calculationResultsMap[activityKey];
-                        const detailsExpanded = expandedServiceDetails.has(activityKey);
+                      {Object.entries(activities).map(
+                        ([activityKey, activityData]) => {
+                          const isSelected =
+                            selectedActivities[service]?.[activityKey] != null;
+                          const activityLabel = capitalizeAndTransform(
+                            activityData.activity
+                          );
+                          const foundActivity = ALL_SERVICES.find(
+                            (x) => x.id === activityKey
+                          );
+                          const finalCost = serviceCosts[activityKey] || 0;
+                          const calcResult = calculationResultsMap[activityKey];
+                          const detailsExpanded =
+                            expandedServiceDetails.has(activityKey);
 
-                        return (
-                          <div key={activityKey} className="space-y-2">
-                            {/* Activity toggle */}
-                            <div className="flex justify-between items-center">
-                              <span
-                                className={`text-lg transition-colors duration-300 ${
-                                  isSelected ? "text-blue-600" : "text-gray-800"
-                                }`}
-                              >
-                                {activityLabel}
-                              </span>
-                              <label className="relative inline-flex items-center cursor-pointer">
-                                <input
-                                  type="checkbox"
-                                  checked={isSelected}
-                                  onChange={() => handleActivityToggle(service, activityKey)}
-                                  className="sr-only peer"
-                                />
-                                <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
-                                <div className="absolute top-[2px] left-[2px] w-[22px] h-[22px] bg-white rounded-full shadow-md peer-checked:translate-x-[24px] transform transition-transform duration-300"></div>
-                              </label>
-                            </div>
+                          // Показываем кнопку Surface Calc, если единицы измерения "sq ft" / "K sq ft"
+                          const showSurfaceCalcButton = foundActivity
+                            ? ["sq ft", "K sq ft"].includes(
+                                foundActivity.unit_of_measurement
+                              )
+                            : false;
 
-                            {isSelected && foundActivity && (
-                              <>
-                                <ServiceImage activityKey={activityKey} />
+                          return (
+                            <div key={activityKey} className="space-y-2">
+                              {/* Activity toggle */}
+                              <div className="flex justify-between items-center">
+                                <span
+                                  className={`text-lg transition-colors duration-300 ${
+                                    isSelected
+                                      ? "text-blue-600"
+                                      : "text-gray-800"
+                                  }`}
+                                >
+                                  {activityLabel}
+                                </span>
+                                <label className="relative inline-flex items-center cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={() =>
+                                      handleActivityToggle(service, activityKey)
+                                    }
+                                    className="sr-only peer"
+                                  />
+                                  <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
+                                  <div className="absolute top-[2px] left-[2px] w-[22px] h-[22px] bg-white rounded-full shadow-md peer-checked:translate-x-[24px] transform transition-transform duration-300"></div>
+                                </label>
+                              </div>
 
-                                {foundActivity.description && (
-                                  <p className="text-sm text-gray-500">
-                                    {foundActivity.description}
-                                  </p>
-                                )}
+                              {isSelected && foundActivity && (
+                                <>
+                                  <ServiceImage activityKey={activityKey} />
 
-                                {/* Quantity row */}
-                                <div className="flex justify-between items-center">
-                                  <div className="flex items-center gap-1">
-                                    <button
-                                      onClick={() =>
-                                        handleQuantityChange(service, activityKey, false)
-                                      }
-                                      className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
-                                    >
-                                      −
-                                    </button>
-                                    <input
-                                      type="text"
-                                      value={
-                                        manualInputValue[service]?.[activityKey] != null
-                                          ? manualInputValue[service][activityKey]!
-                                          : (
-                                              selectedActivities[service]?.[activityKey] || 1
-                                            ).toString()
-                                      }
-                                      onClick={() =>
-                                        setManualInputValue((old) => ({
-                                          ...old,
-                                          [service]: {
-                                            ...old[service],
-                                            [activityKey]: "",
-                                          },
-                                        }))
-                                      }
-                                      onBlur={() => handleBlurInput(service, activityKey)}
-                                      onChange={(e) =>
-                                        handleManualQuantityChange(service, activityKey, e.target.value)
-                                      }
-                                      className="w-20 text-center px-2 py-1 border rounded"
-                                    />
-                                    <button
-                                      onClick={() =>
-                                        handleQuantityChange(service, activityKey, true)
-                                      }
-                                      className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
-                                    >
-                                      +
-                                    </button>
-                                    <span className="text-sm text-gray-600">
-                                      {foundActivity.unit_of_measurement}
-                                    </span>
-                                  </div>
+                                  {foundActivity.description && (
+                                    <p className="text-sm text-gray-500">
+                                      {foundActivity.description}
+                                    </p>
+                                  )}
 
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-lg text-blue-600 font-semibold text-right">
-                                      ${formatWithSeparator(finalCost)}
-                                    </span>
-                                  </div>
-                                </div>
-
-                                {/* "Details" button */}
-                                <div className="mt-2 flex justify-end">
-                                  <button
-                                    onClick={() => toggleActivityDetails(activityKey)}
-                                    className={`text-blue-600 text-sm font-medium mb-3 ${
-                                      detailsExpanded ? "" : "underline"
-                                    }`}
-                                  >
-                                    Cost Breakdown
-                                  </button>
-                                </div>
-
-                                {/* Cost breakdown */}
-                                {calcResult && detailsExpanded && (
-                                  <div className="mt-4 p-2 sm:p-4 bg-gray-50 border rounded">
-                                    <div className="flex flex-col gap-2 mb-4">
-                                      <div className="flex justify-between">
-                                        <span className="text-md font-medium text-gray-700">
-                                          Labor
-                                        </span>
-                                        <span className="text-md font-semibold text-gray-700">
-                                          {calcResult.work_cost
-                                            ? `$${calcResult.work_cost}`
-                                            : "—"}
-                                        </span>
-                                      </div>
-                                      <div className="flex justify-between">
-                                        <span className="text-md font-medium text-gray-700">
-                                          Materials, tools & equipment
-                                        </span>
-                                        <span className="text-md font-semibold text-gray-700">
-                                          {calcResult.material_cost
-                                            ? `$${calcResult.material_cost}`
-                                            : "—"}
-                                        </span>
-                                      </div>
+                                  {/* Quantity row */}
+                                  <div className="flex justify-between items-center">
+                                    <div className="flex items-center gap-1">
+                                      <button
+                                        onClick={() =>
+                                          handleQuantityChange(
+                                            service,
+                                            activityKey,
+                                            false
+                                          )
+                                        }
+                                        className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
+                                      >
+                                        −
+                                      </button>
+                                      <input
+                                        type="text"
+                                        value={
+                                          manualInputValue[service]?.[
+                                            activityKey
+                                          ] != null
+                                            ? manualInputValue[service][
+                                                activityKey
+                                              ]!
+                                            : (
+                                                selectedActivities[service]?.[
+                                                  activityKey
+                                                ] || 1
+                                              ).toString()
+                                        }
+                                        onClick={() =>
+                                          setManualInputValue((old) => ({
+                                            ...old,
+                                            [service]: {
+                                              ...old[service],
+                                              [activityKey]: "",
+                                            },
+                                          }))
+                                        }
+                                        onBlur={() =>
+                                          handleBlurInput(service, activityKey)
+                                        }
+                                        onChange={(e) =>
+                                          handleManualQuantityChange(
+                                            service,
+                                            activityKey,
+                                            e.target.value
+                                          )
+                                        }
+                                        className="w-20 text-center px-2 py-1 border rounded"
+                                      />
+                                      <button
+                                        onClick={() =>
+                                          handleQuantityChange(
+                                            service,
+                                            activityKey,
+                                            true
+                                          )
+                                        }
+                                        className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
+                                      >
+                                        +
+                                      </button>
+                                      <span className="text-sm text-gray-600">
+                                        {foundActivity.unit_of_measurement}
+                                      </span>
                                     </div>
 
-                                    {Array.isArray(calcResult.materials) &&
-                                      calcResult.materials.length > 0 && (
-                                        <div className="mt-2">
-                                          <table className="table-auto w-full text-sm text-left text-gray-700">
-                                            <thead>
-                                              <tr className="border-b">
-                                                <th className="py-2 px-1">Name</th>
-                                                <th className="py-2 px-1">Price</th>
-                                                <th className="py-2 px-1">Qty</th>
-                                                <th className="py-2 px-1">Subtotal</th>
-                                              </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-gray-200">
-                                              {calcResult.materials.map((m: any, i: number) => {
-                                                const fmObj = findFinishingMaterialObj(
-                                                  activityKey,
-                                                  m.external_id
-                                                );
-                                                const hasImage = fmObj?.image?.length
-                                                  ? true
-                                                  : false;
-
-                                                const isClientOwned =
-                                                  clientOwnedMaterials[activityKey]?.has(
-                                                    m.external_id
-                                                  );
-
-                                                let rowClass = "";
-                                                if (isClientOwned) {
-                                                  rowClass = "border border-red-500 bg-red-50";
-                                                } else if (hasImage) {
-                                                  rowClass =
-                                                    "border border-blue-300 bg-white cursor-pointer";
-                                                }
-
-                                                return (
-                                                  <tr
-                                                    key={`${m.external_id}-${i}`}
-                                                    className={`last:border-0 ${rowClass}`}
-                                                    onClick={() => {
-                                                      if (hasImage && !isClientOwned) {
-                                                        let foundSection: string | null = null;
-                                                        const fmData =
-                                                          finishingMaterialsMapAll[activityKey];
-                                                        if (fmData && fmData.sections) {
-                                                          for (const [secName, list] of Object.entries(
-                                                            fmData.sections
-                                                          )) {
-                                                            if (
-                                                              Array.isArray(list) &&
-                                                              list.some(
-                                                                (xx) =>
-                                                                  xx.external_id === m.external_id
-                                                              )
-                                                            ) {
-                                                              foundSection = secName;
-                                                              break;
-                                                            }
-                                                          }
-                                                        }
-                                                        setShowModalServiceId(activityKey);
-                                                        setShowModalSectionName(foundSection);
-                                                      }
-                                                    }}
-                                                  >
-                                                    <td className="py-3 px-1">
-                                                      {hasImage ? (
-                                                        <div className="flex items-center gap-2">
-                                                          <img
-                                                            src={fmObj?.image}
-                                                            alt={m.name}
-                                                            className="w-8 h-8 object-cover rounded"
-                                                          />
-                                                          <span>{m.name}</span>
-                                                        </div>
-                                                      ) : (
-                                                        m.name
-                                                      )}
-                                                    </td>
-                                                    <td className="py-3 px-1">${m.cost_per_unit}</td>
-                                                    <td className="py-3 px-3">{m.quantity}</td>
-                                                    <td className="py-3 px-3">${m.cost}</td>
-                                                  </tr>
-                                                );
-                                              })}
-                                            </tbody>
-                                          </table>
-                                        </div>
-                                      )}
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-lg text-blue-600 font-semibold text-right">
+                                        ${formatWithSeparator(finalCost)}
+                                      </span>
+                                    </div>
                                   </div>
-                                )}
-                              </>
-                            )}
-                          </div>
-                        );
-                      })}
+
+                                  {/* Buttons row: optional "Surface Calc" + "Cost Breakdown" */}
+                                  <div className="mt-2 mb-3 flex items-center">
+                                    {showSurfaceCalcButton ? (
+                                      <>
+                                        <button
+                                          onClick={() =>
+                                            openSurfaceCalc(
+                                              service,
+                                              activityKey
+                                            )
+                                          }
+                                          className="text-blue-600 text-sm font-medium hover:underline mr-auto"
+                                        >
+                                          Surface Calc
+                                        </button>
+                                        <button
+                                          onClick={() =>
+                                            toggleActivityDetails(activityKey)
+                                          }
+                                          className={`text-blue-600 text-sm font-medium mb-0 ${
+                                            detailsExpanded ? "" : "underline"
+                                          }`}
+                                        >
+                                          Cost Breakdown
+                                        </button>
+                                      </>
+                                    ) : (
+                                      <button
+                                        onClick={() =>
+                                          toggleActivityDetails(activityKey)
+                                        }
+                                        className={`ml-auto text-blue-600 text-sm font-medium mb-0 ${
+                                          detailsExpanded ? "" : "underline"
+                                        }`}
+                                      >
+                                        Cost Breakdown
+                                      </button>
+                                    )}
+                                  </div>
+
+                                  {/* Cost breakdown */}
+                                  {calcResult && detailsExpanded && (
+                                    <div className="mt-4 p-2 sm:p-4 bg-gray-50 border rounded">
+                                      <div className="flex flex-col gap-2 mb-4">
+                                        <div className="flex justify-between">
+                                          <span className="text-md font-medium text-gray-700">
+                                            Labor
+                                          </span>
+                                          <span className="text-md font-semibold text-gray-700">
+                                            {calcResult.work_cost
+                                              ? `$${calcResult.work_cost}`
+                                              : "—"}
+                                          </span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-md font-medium text-gray-700">
+                                            Materials, tools & equipment
+                                          </span>
+                                          <span className="text-md font-semibold text-gray-700">
+                                            {calcResult.material_cost
+                                              ? `$${calcResult.material_cost}`
+                                              : "—"}
+                                          </span>
+                                        </div>
+                                      </div>
+
+                                      {Array.isArray(calcResult.materials) &&
+                                        calcResult.materials.length > 0 && (
+                                          <div className="mt-2">
+                                            <table className="table-auto w-full text-sm text-left text-gray-700">
+                                              <thead>
+                                                <tr className="border-b">
+                                                  <th className="py-2 px-1">
+                                                    Name
+                                                  </th>
+                                                  <th className="py-2 px-1">
+                                                    Price
+                                                  </th>
+                                                  <th className="py-2 px-1">
+                                                    Qty
+                                                  </th>
+                                                  <th className="py-2 px-1">
+                                                    Subtotal
+                                                  </th>
+                                                </tr>
+                                              </thead>
+                                              <tbody className="divide-y divide-gray-200">
+                                                {calcResult.materials.map(
+                                                  (m: any, i: number) => {
+                                                    const fmObj =
+                                                      findFinishingMaterialObj(
+                                                        activityKey,
+                                                        m.external_id
+                                                      );
+                                                    const hasImage = fmObj
+                                                      ?.image?.length
+                                                      ? true
+                                                      : false;
+                                                    const isClientOwned =
+                                                      clientOwnedMaterials[
+                                                        activityKey
+                                                      ]?.has(m.external_id);
+
+                                                    let rowClass = "";
+                                                    if (isClientOwned) {
+                                                      rowClass =
+                                                        "border border-red-500 bg-red-50";
+                                                    } else if (hasImage) {
+                                                      rowClass =
+                                                        "border border-blue-300 bg-white cursor-pointer";
+                                                    }
+
+                                                    return (
+                                                      <tr
+                                                        key={`${m.external_id}-${i}`}
+                                                        className={`last:border-0 ${rowClass}`}
+                                                        onClick={() => {
+                                                          if (
+                                                            hasImage &&
+                                                            !isClientOwned
+                                                          ) {
+                                                            let foundSection:
+                                                              | string
+                                                              | null = null;
+                                                            const fmData =
+                                                              finishingMaterialsMapAll[
+                                                                activityKey
+                                                              ];
+                                                            if (
+                                                              fmData &&
+                                                              fmData.sections
+                                                            ) {
+                                                              for (const [
+                                                                secName,
+                                                                list,
+                                                              ] of Object.entries(
+                                                                fmData.sections
+                                                              )) {
+                                                                if (
+                                                                  Array.isArray(
+                                                                    list
+                                                                  ) &&
+                                                                  list.some(
+                                                                    (xx) =>
+                                                                      xx.external_id ===
+                                                                      m.external_id
+                                                                  )
+                                                                ) {
+                                                                  foundSection =
+                                                                    secName;
+                                                                  break;
+                                                                }
+                                                              }
+                                                            }
+                                                            setShowModalServiceId(
+                                                              activityKey
+                                                            );
+                                                            setShowModalSectionName(
+                                                              foundSection
+                                                            );
+                                                          }
+                                                        }}
+                                                      >
+                                                        <td className="py-3 px-1">
+                                                          {hasImage ? (
+                                                            <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+                                                              <img
+                                                                src={
+                                                                  fmObj?.image
+                                                                }
+                                                                alt={m.name}
+                                                                className="w-24 h-24 object-cover rounded"
+                                                              />
+                                                              <span>
+                                                                {m.name}
+                                                              </span>
+                                                            </div>
+                                                          ) : (
+                                                            m.name
+                                                          )}
+                                                        </td>
+                                                        <td className="py-3 px-1">
+                                                          ${m.cost_per_unit}
+                                                        </td>
+                                                        <td className="py-3 px-3">
+                                                          {m.quantity}
+                                                        </td>
+                                                        <td className="py-3 px-3">
+                                                          ${m.cost}
+                                                        </td>
+                                                      </tr>
+                                                    );
+                                                  }
+                                                )}
+                                              </tbody>
+                                            </table>
+                                          </div>
+                                        )}
+                                    </div>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                          );
+                        }
+                      )}
                     </div>
                   )}
                 </div>
@@ -798,36 +1005,41 @@ export default function EmergencyDetails() {
             ) : (
               <>
                 <ul className="mt-4 space-y-2 pb-4">
-                  {Object.entries(selectedActivities).flatMap(([srvKey, acts]) =>
-                    Object.entries(acts).map(([activityKey, quantity]) => {
-                      const foundAct = ALL_SERVICES.find((x) => x.id === activityKey);
-                      if (!foundAct) return null;
-                      const finalCost = serviceCosts[activityKey] || 0;
-                      return (
-                        <li
-                          key={activityKey}
-                          className="grid grid-cols-3 gap-2 text-sm text-gray-600"
-                          style={{
-                            gridTemplateColumns: "46% 25% 25%",
-                            width: "100%",
-                          }}
-                        >
-                          <span className="truncate overflow-hidden">
-                            {foundAct.title}
-                          </span>
-                          <span className="text-right">
-                            {quantity} {foundAct.unit_of_measurement}
-                          </span>
-                          <span className="text-right">
-                            ${formatWithSeparator(finalCost)}
-                          </span>
-                        </li>
-                      );
-                    })
+                  {Object.entries(selectedActivities).flatMap(
+                    ([srvKey, acts]) =>
+                      Object.entries(acts).map(([activityKey, quantity]) => {
+                        const foundAct = ALL_SERVICES.find(
+                          (x) => x.id === activityKey
+                        );
+                        if (!foundAct) return null;
+                        const finalCost = serviceCosts[activityKey] || 0;
+                        return (
+                          <li
+                            key={activityKey}
+                            className="grid grid-cols-3 gap-2 text-sm text-gray-600"
+                            style={{
+                              gridTemplateColumns: "46% 25% 25%",
+                              width: "100%",
+                            }}
+                          >
+                            <span className="truncate overflow-hidden">
+                              {foundAct.title}
+                            </span>
+                            <span className="text-right">
+                              {quantity} {foundAct.unit_of_measurement}
+                            </span>
+                            <span className="text-right">
+                              ${formatWithSeparator(finalCost)}
+                            </span>
+                          </li>
+                        );
+                      })
                   )}
                 </ul>
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-2xl font-semibold text-gray-800">Subtotal:</span>
+                  <span className="text-2xl font-semibold text-gray-800">
+                    Subtotal:
+                  </span>
                   <span className="text-2xl font-semibold text-blue-600">
                     ${formatWithSeparator(calculateTotal())}
                   </span>
@@ -846,7 +1058,9 @@ export default function EmergencyDetails() {
 
           {/* Photos */}
           <div className="w-full xl:max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
-            <h2 className="text-2xl font-medium text-gray-800 mb-4">Uploaded Photos</h2>
+            <h2 className="text-2xl font-medium text-gray-800 mb-4">
+              Uploaded Photos
+            </h2>
             <div className="grid grid-cols-2 gap-4">
               {photos.map((photo, idx) => (
                 <div key={idx} className="relative group">
@@ -859,13 +1073,17 @@ export default function EmergencyDetails() {
               ))}
             </div>
             {photos.length === 0 && (
-              <p className="text-medium text-gray-500 mt-2">No photos uploaded</p>
+              <p className="text-medium text-gray-500 mt-2">
+                No photos uploaded
+              </p>
             )}
           </div>
 
           {/* Description */}
           <div className="w-full xl:max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
-            <h2 className="text-2xl font-medium text-gray-800 mb-4">Problem Description</h2>
+            <h2 className="text-2xl font-medium text-gray-800 mb-4">
+              Problem Description
+            </h2>
             <p className="text-gray-500 text-medium whitespace-pre-wrap">
               {description || "No description provided"}
             </p>
@@ -873,7 +1091,7 @@ export default function EmergencyDetails() {
         </div>
       </div>
 
-      {/* Replaced old modal with our FinishingMaterialsModal component */}
+      {/* Finishing materials modal */}
       <FinishingMaterialsModal
         showModalServiceId={showModalServiceId}
         showModalSectionName={showModalSectionName}
@@ -883,6 +1101,14 @@ export default function EmergencyDetails() {
         closeModal={closeModal}
         userHasOwnMaterial={userHasOwnMaterial}
         formatWithSeparator={formatWithSeparator}
+      />
+
+      {/* Surface Calculator modal */}
+      <SurfaceCalculatorModal
+        show={surfaceCalcOpen}
+        onClose={() => setSurfaceCalcOpen(false)}
+        serviceId={surfaceCalcServiceKey}
+        onApplySquareFeet={handleApplySquareFeet}
       />
     </main>
   );

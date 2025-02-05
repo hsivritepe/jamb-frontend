@@ -1,14 +1,14 @@
 /**
  * importer.ts
- * 
- * Описание на русском:
- *  - Этот скрипт читает finishing_material_sections.json
- *  - Для каждого материала (по external_id) запрашивает BigBox API (type=product)
- *  - Добавляет в базу (через addFinishingMaterialToDb), если в базе нет
- *  - Также обрабатывает up to 10 variants (то есть, другие `item_id`)
- *  - Использует локальный файл progress.json, чтобы не перезапускать заново
- *  - остановка сервера control C
- *  - restart server - npx ts-node -P tsconfig.server.json importer.ts
+ *
+ * Comments in English only:
+ *  - This script reads finishing_material_sections.json
+ *  - For each material (by external_id) it requests BigBox API (type=product)
+ *  - Adds to the database (via addFinishingMaterialToDb) if it's not in the DB yet
+ *  - Also processes up to 10 variants (other `item_id` values)
+ *  - Uses a local file progress.json so we don't restart from the beginning
+ *  - To stop the script, press Ctrl + C
+ *  - To restart the script: npx ts-node -P tsconfig.server.json importer.ts
  */
 
 import path from 'path';
@@ -20,10 +20,10 @@ import { fetchProduct } from './supplierApi';
 import { buildFinishingMaterialPayload, addFinishingMaterialToDb } from './finishingMaterialService';
 import { ExtendedProduct } from './types';
 
-// 1) Читаем основной JSON с материалами
+// 1) Read the main JSON with materials
 import finishingMaterialSections from './finishing_material_sections.json';
 
-// 2) Интерфейсы для items в finishing_material_sections
+// 2) Interfaces for items in finishing_material_sections
 interface FinishingMaterialSectionItem {
   id: string;
   material_external_id: string;
@@ -32,11 +32,11 @@ interface FinishingMaterialSectionItem {
   section: string;
 }
 
-// Извлекаем data-часть из JSON-файла
+// Extract the data part from the JSON file
 const dataArray: FinishingMaterialSectionItem[] = finishingMaterialSections.data;
 
-// 3) Создаём файл/объект для отслеживания прогресса, чтобы можно было продолжать с места остановки
-//    progress.json будет выглядеть примерно так: { "processed": { "203728679": true, ... } }
+// 3) Create a file/object to track progress so we can resume from where we left off
+//    progress.json might look like: { "processed": { "203728679": true, ... } }
 const PROGRESS_FILE_PATH = path.join(__dirname, 'progress.json');
 let progressData: { processed: Record<string, boolean> } = { processed: {} };
 
@@ -105,7 +105,7 @@ async function processOneMaterial(item: FinishingMaterialSectionItem) {
         continue;
       }
 
-      // build payload (reuse same work_code, section from the main item or define your own logic)
+      // build payload (reuse the same work_code, section from the main item or define your own logic)
       const variantPayload = buildFinishingMaterialPayload(
         parseInt(item.section, 10),
         variant.item_id,
