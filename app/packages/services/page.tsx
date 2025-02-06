@@ -1698,7 +1698,7 @@ export default function PackageServicesPage() {
                                                                 >
                                                                   <td className="py-3 px-1 align-top">
                                                                     {hasImage ? (
-                                                                      <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+                                                                      <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center break-words">
                                                                         <img
                                                                           src={
                                                                             fmObj?.image
@@ -1708,7 +1708,7 @@ export default function PackageServicesPage() {
                                                                           }
                                                                           className="w-24 h-24 object-cover rounded"
                                                                         />
-                                                                        <span>
+                                                                        <span className="break-words">
                                                                           {
                                                                             m.name
                                                                           }

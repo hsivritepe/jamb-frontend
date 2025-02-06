@@ -1164,7 +1164,7 @@ export default function Details() {
                                                                 {hasImage ? (
                                                                   //
                                                                   // On phones => vertical stack, on bigger => horizontal
-                                                                  <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+                                                                  <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center break-words">
                                                                     <img
                                                                       src={
                                                                         fmObj?.image
@@ -1174,7 +1174,7 @@ export default function Details() {
                                                                       }
                                                                       className="w-24 h-24 object-cover rounded"
                                                                     />
-                                                                    <span>
+                                                                    <span className="break-words">
                                                                       {m.name}
                                                                     </span>
                                                                   </div>

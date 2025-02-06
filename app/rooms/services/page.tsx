@@ -1184,7 +1184,7 @@ export default function RoomDetails() {
                                                                               }
                                                                               className="w-24 h-24 object-cover rounded"
                                                                             />
-                                                                            <span>
+                                                                            <span className="break-words">
                                                                               {
                                                                                 m.name
                                                                               }
