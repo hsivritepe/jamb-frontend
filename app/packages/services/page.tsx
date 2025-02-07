@@ -914,7 +914,7 @@ export default function PackageServicesPage() {
                                 className="flex justify-between items-center w-full"
                               >
                                 <h3
-                                  className={`font-medium text-2xl ${
+                                  className={`font-semibold sm:font-medium text-2xl ${
                                     selectedInCat > 0
                                       ? "text-blue-600"
                                       : "text-black"
@@ -923,7 +923,8 @@ export default function PackageServicesPage() {
                                   {catName}
                                   {selectedInCat > 0 && (
                                     <span className="text-sm text-gray-500 ml-2">
-                                      ({selectedInCat} selected)
+                                      ({selectedInCat} 
+                                      <span className="hidden sm:inline"> selected</span>)
                                     </span>
                                   )}
                                 </h3>
@@ -1110,10 +1111,10 @@ export default function PackageServicesPage() {
 
                                             {/* cost breakdown panel */}
                                             {isBreakdownOpen && calcResult && (
-                                              <div className="mt-4 p-4 bg-gray-50 border rounded">
+                                              <div className="mt-4 p-2 sm:p-4 bg-gray-50 border rounded">
                                                 <div className="flex flex-col gap-2 mb-2">
                                                   <div className="flex justify-between">
-                                                    <span className="text-md font-medium text-gray-700">
+                                                    <span className="text-md font-semibold sm:font-medium text-gray-700">
                                                       Labor
                                                     </span>
                                                     <span className="text-md font-semibold text-gray-700">
@@ -1123,7 +1124,7 @@ export default function PackageServicesPage() {
                                                     </span>
                                                   </div>
                                                   <div className="flex justify-between">
-                                                    <span className="text-md font-medium text-gray-700">
+                                                    <span className="text-md font-semibold sm:font-medium text-gray-700">
                                                       Materials, tools &amp;
                                                       equipment
                                                     </span>
@@ -1366,7 +1367,7 @@ export default function PackageServicesPage() {
                                 className="flex justify-between items-center w-full"
                               >
                                 <h3
-                                  className={`font-medium text-2xl ${
+                                  className={`font-semibold sm:font-medium text-2xl ${
                                     selectedInCat > 0
                                       ? "text-blue-600"
                                       : "text-black"
@@ -1375,7 +1376,8 @@ export default function PackageServicesPage() {
                                   {catName}
                                   {selectedInCat > 0 && (
                                     <span className="text-sm text-gray-500 ml-2">
-                                      ({selectedInCat} selected)
+                                      ({selectedInCat} 
+                                      <span className="hidden sm:inline"> selected</span>)
                                     </span>
                                   )}
                                 </h3>
@@ -1561,10 +1563,10 @@ export default function PackageServicesPage() {
 
                                             {/* Cost breakdown panel */}
                                             {isBreakdownOpen && calcResult && (
-                                              <div className="mt-4 p-4 bg-gray-50 border rounded">
+                                              <div className="mt-4 p-2 sm:p-4 bg-gray-50 border rounded">
                                                 <div className="flex flex-col gap-2 mb-2">
                                                   <div className="flex justify-between">
-                                                    <span className="text-md font-medium text-gray-700">
+                                                    <span className="text-md font-semibold sm:font-medium text-gray-700">
                                                       Labor
                                                     </span>
                                                     <span className="text-md font-semibold text-gray-700">
@@ -1574,7 +1576,7 @@ export default function PackageServicesPage() {
                                                     </span>
                                                   </div>
                                                   <div className="flex justify-between">
-                                                    <span className="text-md font-medium text-gray-700">
+                                                    <span className="text-md font-semibold sm:font-medium text-gray-700">
                                                       Materials, tools &amp;
                                                       equipment
                                                     </span>
@@ -1761,7 +1763,7 @@ export default function PackageServicesPage() {
           {/* RIGHT column => summary + house info */}
           <div className="w-full xl:w-1/2 xl:ml-auto pt-0 space-y-6 mt-8 xl:mt-0">
             {/* Summary card */}
-            <div className="w-full xl:max-w-[500px] ml-auto bg-white p-4 rounded-lg border border-gray-300 overflow-hidden">
+            <div className="w-full xl:max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden">
               <SectionBoxSubtitle>
                 Your {chosenPackage.title}
               </SectionBoxSubtitle>
@@ -1830,7 +1832,7 @@ export default function PackageServicesPage() {
 
                   <div className="flex flex-col gap-2 items-end mt-6">
                     <div className="flex justify-between w-full">
-                      <span className="text-2xl font-semibold text-gray-700">
+                      <span className="text-2xl font-semibold text-black">
                         Annual price:
                       </span>
                       <span className="text-2xl font-semibold text-blue-600">

@@ -625,14 +625,15 @@ export default function EmergencyDetails() {
                     onClick={() => handleToggleExpand(service)}
                   >
                     <span
-                      className={`text-2xl font-medium ${
+                      className={`text-2xl font-semibold sm:font-medium ${
                         chosenCount > 0 ? "text-blue-600" : "text-gray-800"
                       }`}
                     >
                       {serviceLabel}
                       {chosenCount > 0 && (
                         <span className="text-sm text-gray-500 ml-2">
-                          ({chosenCount} selected)
+                          ({chosenCount} 
+                            <span className="hidden sm:inline"> selected</span>)
                         </span>
                       )}
                     </span>
@@ -824,7 +825,7 @@ export default function EmergencyDetails() {
                                     <div className="mt-4 p-2 sm:p-4 bg-gray-50 border rounded">
                                       <div className="flex flex-col gap-2 mb-4">
                                         <div className="flex justify-between">
-                                          <span className="text-md font-medium text-gray-700">
+                                          <span className="text-md font-semibold sm:font-medium text-gray-700">
                                             Labor
                                           </span>
                                           <span className="text-md font-semibold text-gray-700">
@@ -834,7 +835,7 @@ export default function EmergencyDetails() {
                                           </span>
                                         </div>
                                         <div className="flex justify-between">
-                                          <span className="text-md font-medium text-gray-700">
+                                          <span className="text-md font-semibold sm:font-medium text-gray-700">
                                             Materials, tools & equipment
                                           </span>
                                           <span className="text-md font-semibold text-gray-700">
@@ -1049,16 +1050,16 @@ export default function EmergencyDetails() {
           </div>
 
           {/* Address */}
-          <div className="w-full xl:max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
-            <h2 className="text-2xl font-medium text-gray-800 mb-4">Address</h2>
+          <div className="hidden sm:block w-full xl:max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
+            <h2 className="text-2xl font-semibold sm:font-medium text-gray-800 mb-4">Address</h2>
             <p className="text-gray-500 text-medium">
               {fullAddress || "No address provided"}
             </p>
           </div>
 
           {/* Photos */}
-          <div className="w-full xl:max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
-            <h2 className="text-2xl font-medium text-gray-800 mb-4">
+          <div className="hidden sm:block w-full xl:max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
+            <h2 className="text-2xl font-semibold sm:font-medium text-gray-800 mb-4">
               Uploaded Photos
             </h2>
             <div className="grid grid-cols-2 gap-4">
@@ -1080,8 +1081,8 @@ export default function EmergencyDetails() {
           </div>
 
           {/* Description */}
-          <div className="w-full xl:max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
-            <h2 className="text-2xl font-medium text-gray-800 mb-4">
+          <div className="hidden sm:block w-full xl:max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
+            <h2 className="text-2xl font-semibold sm:font-medium text-gray-800 mb-4">
               Problem Description
             </h2>
             <p className="text-gray-500 text-medium whitespace-pre-wrap">

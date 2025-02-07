@@ -844,16 +844,17 @@ export default function Details() {
                             className="flex justify-between items-center w-full"
                           >
                             <h3
-                              className={`font-medium text-2xl ${
+                              className={`font-semibold sm:font-medium text-2xl ${
                                 selectedInCat > 0
                                   ? "text-blue-600"
-                                  : "text-black"
+                                  : "text-gray-800"
                               }`}
                             >
                               {catTitle}
                               {selectedInCat > 0 && (
                                 <span className="text-sm text-gray-500 ml-2">
-                                  ({selectedInCat} selected)
+                                  ({selectedInCat} 
+                                  <span className="hidden sm:inline"> selected</span>)
                                 </span>
                               )}
                             </h3>
@@ -1032,10 +1033,10 @@ export default function Details() {
 
                                         {/* Cost breakdown menu*/}
                                         {calcResult && detailsExpanded && (
-                                          <div className="mt-4 p-4 bg-gray-50 border rounded">
+                                          <div className="mt-4 p-2 sm:p-4 bg-gray-50 border rounded">
                                             <div className="flex flex-col gap-2 mb-4">
                                               <div className="flex justify-between">
-                                                <span className="text-md font-medium text-gray-700">
+                                                <span className="text-md font-semibold sm:font-medium text-gray-700">
                                                   Labor
                                                 </span>
                                                 <span className="text-md font-semibold text-gray-700">
@@ -1045,7 +1046,7 @@ export default function Details() {
                                                 </span>
                                               </div>
                                               <div className="flex justify-between">
-                                                <span className="text-md font-medium text-gray-700">
+                                                <span className="text-md font-semibold sm:font-medium text-gray-700">
                                                   Materials, tools and equipment
                                                 </span>
                                                 <span className="text-md font-semibold text-gray-700">
@@ -1307,7 +1308,7 @@ export default function Details() {
             </div>
 
             {/* Address block */}
-            <div className="w-full xl:max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
+            <div className="hidden sm:block w-full xl:max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
               <h2 className="text-2xl font-medium text-gray-800 mb-4">
                 Address
               </h2>
@@ -1317,7 +1318,7 @@ export default function Details() {
             </div>
 
             {/* Photos block */}
-            <div className="w-full xl:max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
+            <div className="hidden sm:block w-full xl:max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
               <h2 className="text-2xl font-medium text-gray-800 mb-4">
                 Uploaded Photos
               </h2>
@@ -1340,7 +1341,7 @@ export default function Details() {
             </div>
 
             {/* Additional details */}
-            <div className="w-full xl:max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
+            <div className="hidden sm:block w-full xl:max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
               <h2 className="text-2xl font-medium text-gray-800 mb-4">
                 Additional details
               </h2>

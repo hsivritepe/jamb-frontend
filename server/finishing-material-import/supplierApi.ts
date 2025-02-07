@@ -1,11 +1,5 @@
 import axios from 'axios';
 
-/**
- * Minimal interface for the BigBox "type=product" response.
- * 
- * If you prefer, you could define "specifications" here as well,
- * or keep it minimal and later cast to ExtendedProduct from types.ts.
- */
 export interface ProductResponse {
   product?: {
     item_id?: string;
@@ -16,11 +10,31 @@ export interface ProductResponse {
       currency?: string;
       unit?: string;
     };
-    // If you want to define specs here, uncomment:
-    // specifications?: Array<{ group_name?: string; name?: string; value?: string }>;
     // ...
   };
-  // you may add request_info, request_parameters, etc. if needed
+  // other fields if needed
+}
+
+export interface CategoryResponse {
+  // For category requests, BigBox typically returns:
+  category_results?: Array<{
+    position: number;
+    product: {
+      item_id?: string;
+      title?: string;
+      // ...
+    };
+  }>;
+  // Or possibly search_results if type=search
+  search_results?: Array<{
+    position: number;
+    product: {
+      item_id?: string;
+      title?: string;
+      // ...
+    };
+  }>;
+  // other fields if needed
 }
 
 function getApiKeyOrThrow(): string {
@@ -31,15 +45,13 @@ function getApiKeyOrThrow(): string {
   return key;
 }
 
-// Base URL for BigBox API
 const BIGBOX_API_URL = 'https://api.bigboxapi.com/request';
 
 /**
- * Fetch a product from the BigBox API (Home Depot data) by item_id
+ * Fetch a single product by item_id
  */
 export async function fetchProduct(itemId: string): Promise<ProductResponse> {
   const apiKey = getApiKeyOrThrow();
-
   const response = await axios.get<ProductResponse>(BIGBOX_API_URL, {
     params: {
       api_key: apiKey,
@@ -47,6 +59,22 @@ export async function fetchProduct(itemId: string): Promise<ProductResponse> {
       item_id: itemId,
     },
   });
+  return response.data;
+}
 
-  return response.data; // Contains "product" field, etc.
+/**
+ * Fetch a category or search result by URL from last breadcrumb
+ * We'll choose 'type=category' here, but if it's actually a search link,
+ * you can pass type=search or detect automatically.
+ */
+export async function fetchCategoryByUrl(hdUrl: string, requestType: 'category' | 'search'): Promise<CategoryResponse> {
+  const apiKey = getApiKeyOrThrow();
+  const response = await axios.get<CategoryResponse>(BIGBOX_API_URL, {
+    params: {
+      api_key: apiKey,
+      type: requestType,
+      url: hdUrl
+    }
+  });
+  return response.data;
 }

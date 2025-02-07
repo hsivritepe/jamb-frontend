@@ -830,16 +830,17 @@ export default function RoomDetails() {
                                     className="flex justify-between items-center w-full"
                                   >
                                     <h3
-                                      className={`font-medium text-2xl ${
+                                      className={`font-semibold sm:font-medium text-2xl ${
                                         selectedCount > 0
                                           ? "text-blue-600"
-                                          : "text-black"
+                                          : "text-gray-800"
                                       }`}
                                     >
                                       {catName}
                                       {selectedCount > 0 && (
                                         <span className="text-sm text-gray-500 ml-2">
-                                          ({selectedCount} selected)
+                                          ({selectedCount} 
+                                            <span className="hidden sm:inline"> selected</span>)
                                         </span>
                                       )}
                                     </h3>
@@ -1036,10 +1037,10 @@ export default function RoomDetails() {
 
                                                 {/* Cost breakdown */}
                                                 {calcResult && detailsExpanded && (
-                                                  <div className="mt-4 p-4 bg-gray-50 border rounded">
+                                                  <div className="mt-4 p-2 sm:p-4 bg-gray-50 border rounded">
                                                     <div className="flex flex-col gap-2 mb-4">
                                                       <div className="flex justify-between">
-                                                        <span className="text-md font-medium text-gray-700">
+                                                        <span className="text-md font-semibold sm:font-medium text-gray-700">
                                                           Labor
                                                         </span>
                                                         <span className="text-md font-semibold text-gray-700">
@@ -1049,8 +1050,8 @@ export default function RoomDetails() {
                                                         </span>
                                                       </div>
                                                       <div className="flex justify-between">
-                                                        <span className="text-md font-medium text-gray-700">
-                                                          Materials, tools, equip
+                                                        <span className="text-md font-semibold sm:font-medium text-gray-700">
+                                                          Materials, tools, equipment
                                                         </span>
                                                         <span className="text-md font-semibold text-gray-700">
                                                           {calcResult.material_cost

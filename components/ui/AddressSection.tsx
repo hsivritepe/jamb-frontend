@@ -37,7 +37,7 @@ export default function AddressSection({
         ${className || ""}
       `}
     >
-      <h2 className="text-2xl font-medium text-gray-800 mb-4">
+      <h2 className="text-2xl font-semibold sm:font-medium text-gray-800 mb-4">
         We Need Your Address
       </h2>
 
@@ -72,7 +72,7 @@ export default function AddressSection({
                      focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
 
-        <button onClick={onUseMyLocation} className="text-blue-600 text-left mt-2">
+        <button onClick={onUseMyLocation} className="text-blue-600 text-left mt-2 font-semibold sm:font-medium">
           Use my location
         </button>
       </div>

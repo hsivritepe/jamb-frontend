@@ -123,7 +123,7 @@ export default function ServicesGrid({
           <div className="inline-flex rounded-lg border border-gray-200 p-1">
             <button
               onClick={() => setSelectedType("indoor")}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              className={`px-4 py-2 rounded-md text-sm font-semibold sm:font-medium transition-colors ${
                 selectedType === "indoor"
                   ? "bg-blue-600 text-white"
                   : "hover:bg-gray-100 text-gray-600"
@@ -133,7 +133,7 @@ export default function ServicesGrid({
             </button>
             <button
               onClick={() => setSelectedType("outdoor")}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              className={`px-4 py-2 rounded-md text-sm font-semibold sm:font-medium transition-colors ${
                 selectedType === "outdoor"
                   ? "bg-blue-600 text-white"
                   : "hover:bg-gray-100 text-gray-600"
