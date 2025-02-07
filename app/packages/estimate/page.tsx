@@ -590,7 +590,7 @@ export default function EstimatePage() {
           <div className="mt-6 space-y-4">
             <button
               onClick={handleProceedToCheckout}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold sm:font-medium hover:bg-blue-700 transition-colors"
             >
               Proceed to Checkout →
             </button>
@@ -609,7 +609,7 @@ export default function EstimatePage() {
                 py-3
                 rounded-lg
                 font-xs
-                font-normal
+                font-semibold sm:font-medium
               "
             >
               Go back to Services →

@@ -188,7 +188,7 @@ export default function Estimate() {
 
       <div className="container mx-auto py-12 flex flex-col xl:flex-row gap-12">
         {/* LEFT column */}
-        <div className="w-full xl:max-w-[700px] bg-brand-light p-6 rounded-xl border border-gray-300 overflow-hidden">
+        <div className="w-full xl:max-w-[700px] bg-brand-light p-4 sm:p-6 rounded-xl border border-gray-300 overflow-hidden">
           <SectionBoxSubtitle>Estimate for Selected Services</SectionBoxSubtitle>
 
           <div className="mt-4 space-y-4">
@@ -473,14 +473,14 @@ export default function Estimate() {
           {/* Buttons */}
           <div className="mt-6 space-y-4">
             <button
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold sm:font-medium hover:bg-blue-700 transition-colors"
               onClick={handleProceedToCheckout}
             >
               Proceed to Checkout →
             </button>
             <button
               onClick={() => router.push("/calculate/details")}
-              className="w-full text-brand border border-brand py-3 rounded-lg font-medium"
+              className="w-full text-brand border border-brand py-3 rounded-lg font-semibold sm:font-medium"
             >
               Add more services →
             </button>
