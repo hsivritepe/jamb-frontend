@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, MouseEvent } from "react";
 import type { FinishingMaterial } from "@/types/FinishingMaterial";
 
 /** Converts an integer to an ordinal like "1st", "2nd", "3rd". */
@@ -40,8 +40,11 @@ interface FinishingMaterialsModalProps {
 /**
  * A modal component to pick finishing materials or equipment.
  * Adapts to screen sizes:
- * - On mobile/tablet => full-screen overlay, with the "current material" block in two lines
- * - On desktop => pinned to the right at 2/3 width and full height, with 3 columns for the current material
+ * - On mobile/tablet => full-screen overlay
+ * - On desktop => pinned to the right at 2/3 width and full height
+ *   with a 3 or 4-column grid for materials
+ *
+ * Now also closes on click outside (backdrop) if screen ≥ 1024px.
  */
 export default function FinishingMaterialsModal({
   showModalServiceId,
@@ -83,7 +86,21 @@ export default function FinishingMaterialsModal({
   // If nothing is selected or no data
   if (!currentExtId || !fmData) {
     return (
-      <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
+      <div
+        className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center"
+        // Desktop click-outside check
+        onClick={(e: MouseEvent<HTMLDivElement>) => {
+          // Only close if user clicked the backdrop (not a child)
+          // AND if screen width is >= 1024px
+          if (
+            e.target === e.currentTarget &&
+            typeof window !== "undefined" &&
+            window.innerWidth >= 1024
+          ) {
+            closeModal();
+          }
+        }}
+      >
         <div className="bg-white w-full h-full lg:w-2/3 lg:h-screen lg:fixed lg:top-0 lg:right-0 overflow-hidden relative flex flex-col">
           {/* Header */}
           <div className="p-4 border-b flex items-center justify-between sticky top-0 bg-white z-10">
@@ -126,8 +143,23 @@ export default function FinishingMaterialsModal({
     setZoomedImage((old) => (old === imageUrl ? null : imageUrl));
   }
 
+  // Handler for backdrop click (desktop-only)
+  function handleBackdropClick(e: MouseEvent<HTMLDivElement>) {
+    // If user clicked the exact backdrop AND is on desktop (≥1024px), close
+    if (
+      e.target === e.currentTarget &&
+      typeof window !== "undefined" &&
+      window.innerWidth >= 1024
+    ) {
+      closeModal();
+    }
+  }
+
   return (
-    <div className="fixed inset-0 z-50 flex bg-black/40">
+    <div
+      className="fixed inset-0 z-50 flex bg-black/40"
+      onClick={handleBackdropClick}
+    >
       {/* Main container => pinned on desktop */}
       <div className="bg-white w-full h-full lg:w-2/3 lg:h-screen lg:ml-auto overflow-hidden relative flex flex-col">
         {/* Sticky header with "Choose nth material/equipment" */}
@@ -215,7 +247,8 @@ export default function FinishingMaterialsModal({
                 }
 
                 function handleSelectClick() {
-                  const serviceObj = finishingMaterialSelections[serviceId] || {};
+                  const serviceObj =
+                    finishingMaterialSelections[serviceId] || {};
                   serviceObj[sectionName] = material.external_id;
                   finishingMaterialSelections[serviceId] = serviceObj;
                   setFinishingMaterialSelections({
@@ -227,62 +260,66 @@ export default function FinishingMaterialsModal({
                   <div
                     key={`${material.external_id}-${i}`}
                     className={`
-                      border rounded p-2 sm:p-4 flex flex-col justify-between
+                      border rounded flex flex-col
                       min-h-[300px] sm:min-h-[320px]
                       ${isSelected ? "border-red-600" : "border-gray-300"}
                     `}
                   >
-                    {/* Upper block => bigger image, left-aligned name */}
-                    <div className="flex-1 mb-3">
-                      {/* Taller image => aspect-[2/3] */}
-                      <div
-                        className="w-full overflow-hidden rounded cursor-pointer"
-                        onClick={() => handleImageClick(material.image!)}
-                      >
-                        <img
-                          src={material.image}
-                          alt={material.name}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
+                    {/* Image at the top without padding */}
+                    <div
+                      className="w-full overflow-hidden cursor-pointer"
+                      onClick={() => handleImageClick(material.image!)}
+                    >
+                      <img
+                        src={material.image}
+                        alt={material.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
 
-                      {/* name => normal font, up to 4 lines */}
+                    {/* Padded content below the image */}
+                    <div className="flex-1 p-2 sm:p-4 flex flex-col">
+                      {/* Name */}
                       <h3
-                        className="mt-3 text-sm text-left text-gray-800 line-clamp-3 sm:line-clamp-4 leading-snug"
+                        className="mt-2 text-sm text-left text-gray-800 line-clamp-3 sm:line-clamp-4 leading-snug"
                         title={material.name}
                       >
                         {material.name}
                       </h3>
-                    </div>
 
-                    {/* Price + diff */}
-                    <div className="mb-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-base font-bold text-gray-800">
-                          ${formatWithSeparator(costNum)}
-                        </span>
-                        {diff !== 0 && (
-                          <span className={`text-sm sm:text-base font-normal ${diffColor}`}>
-                            {diffStr}
+                      {/* Bottom section holds price + diff and the "Select" button */}
+                      <div className="mt-auto">
+                        {/* Price row */}
+                        <div className="flex justify-between items-center mb-3">
+                          <span className="text-base font-bold text-gray-800">
+                            ${formatWithSeparator(costNum)}
                           </span>
-                        )}
+                          {diff !== 0 && (
+                            <span
+                              className={`text-sm sm:text-base font-normal ${diffColor}`}
+                            >
+                              {diffStr}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Select button */}
+                        <button
+                          onClick={handleSelectClick}
+                          className={`
+                            w-full
+                            px-3 py-2 text-sm font-semibold rounded
+                            ${
+                              isSelected
+                                ? "bg-red-500 text-white"
+                                : "bg-blue-600 text-white hover:bg-blue-700"
+                            }
+                          `}
+                        >
+                          {isSelected ? "Selected" : "Select"}
+                        </button>
                       </div>
                     </div>
-
-                    {/* Select button */}
-                    <button
-                      onClick={handleSelectClick}
-                      className={`
-                        px-3 py-2 text-sm font-semibold rounded
-                        ${
-                          isSelected
-                            ? "bg-red-500 text-white"
-                            : "bg-blue-600 text-white hover:bg-blue-700"
-                        }
-                      `}
-                    >
-                      {isSelected ? "Selected" : "Select"}
-                    </button>
                   </div>
                 );
               })}
