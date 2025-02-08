@@ -1,0 +1,2166 @@
+{
+  "Driveway": {
+    "8": {
+      "section": "Outdoor Painting",
+      "categories": {
+        "8.10": {
+          "category": "Concrete",
+          "activities": {
+            "8.10.1": {
+              "activity": "Concrete Epoxy Painting",
+              "unit_of_measurement": "sq ft"
+            },
+            "8.10.2": {
+              "activity": "Concrete Acrylic Latex Painting",
+              "unit_of_measurement": "sq ft"
+            },
+            "8.10.3": {
+              "activity": "Concrete Masonry Painting",
+              "unit_of_measurement": "sq ft"
+            },
+            "8.10.4": {
+              "activity": "Concrete Staining",
+              "unit_of_measurement": "sq ft"
+            }
+          }
+        }
+      }
+    },
+    "9": {
+      "section": "Outdoor Carpentry",
+      "categories": {
+        "9.9": {
+          "category": "Walkway",
+          "activities": {
+            "9.9.1": {
+              "activity": "Wooden Walkway Installation",
+              "unit_of_measurement": "sq ft"
+            },
+            "9.9.2": {
+              "activity": "Wooden Walkway Sanding and Staining",
+              "unit_of_measurement": "sq ft"
+            },
+            "9.9.3": {
+              "activity": "Wooden Walkway Removal",
+              "unit_of_measurement": "sq ft"
+            }
+          }
+        }
+      }
+    },
+    "11": {
+      "section": "Outdoor Cleaning",
+      "categories": {
+        "11.2": {
+          "category": "Driveway",
+          "activities": {
+            "11.2.1": {
+              "activity": "Driveway Pressure Washing",
+              "unit_of_measurement": "sq ft"
+            },
+            "11.2.2": {
+              "activity": "Driveway Soft Washing",
+              "unit_of_measurement": "sq ft"
+            },
+            "11.2.3": {
+              "activity": "Driveway Deep Cleaning Solutions",
+              "unit_of_measurement": "sq ft"
+            }
+          }
+        }
+      }
+    },
+    "18": {
+      "section": "Outdoor Lighting",
+      "categories": {
+        "18.1": {
+          "category": "Path Lights",
+          "activities": {
+            "18.1.1": {
+              "activity": "Landscape Path Light Kit (6-10 lights) Installation",
+              "unit_of_measurement": "each"
+            },
+            "18.1.2": {
+              "activity": "Solar LED In-Ground Path Light Installation",
+              "unit_of_measurement": "each"
+            },
+            "18.1.3": {
+              "activity": "Deck Post Lighting Installation",
+              "unit_of_measurement": "lin ft"
+            },
+            "18.1.4": {
+              "activity": "Hardwired Path Light Installation",
+              "unit_of_measurement": "each"
+            }
+          }
+        }
+      }
+    },
+    "20": {
+      "section": "Landscaping",
+      "categories": {
+        "20.5": {
+          "category": "Mulching",
+          "activities": {
+            "20.5.1": {
+              "activity": "Organic Mulching (Up to 3\u201d Deep)",
+              "unit_of_measurement": "sq ft"
+            },
+            "20.5.2": {
+              "activity": "Organic Mulching for Playgrounds",
+              "unit_of_measurement": "sq ft"
+            },
+            "20.5.3": {
+              "activity": "Pea Gravel Pebble Mulching",
+              "unit_of_measurement": "sq ft"
+            },
+            "20.5.4": {
+              "activity": "Mulch Replacement and Top-Up",
+              "unit_of_measurement": "sq ft"
+            },
+            "20.5.5": {
+              "activity": "Mulch Color Covering",
+              "unit_of_measurement": "sq ft"
+            }
+          }
+        },
+        "20.6": {
+          "category": "Landscape Rocks",
+          "activities": {
+            "20.6.1": {
+              "activity": "Ground Cover Rocks Installation",
+              "unit_of_measurement": "sq ft"
+            },
+            "20.6.2": {
+              "activity": "Erosion Control Rocks Installation",
+              "unit_of_measurement": "cu ft"
+            },
+            "20.6.3": {
+              "activity": "Rock Wall Installation",
+              "unit_of_measurement": "sq ft"
+            }
+          }
+        },
+        "20.7": {
+          "category": "Edging",
+          "activities": {
+            "20.7.1": {
+              "activity": "Install Plastic Landscape Edging",
+              "unit_of_measurement": "lin ft"
+            },
+            "20.7.2": {
+              "activity": "Install Metal Landscape Edging",
+              "unit_of_measurement": "lin ft"
+            },
+            "20.7.3": {
+              "activity": "Install Natural Stone Landscape Edging",
+              "unit_of_measurement": "lin ft"
+            },
+            "20.7.4": {
+              "activity": "Install Brick Landscape Edging",
+              "unit_of_measurement": "lin ft"
+            },
+            "20.7.5": {
+              "activity": "Install Wood Landscape Edging",
+              "unit_of_measurement": "lin ft"
+            },
+            "20.7.6": {
+              "activity": "Install Paver Landscape Edging",
+              "unit_of_measurement": "lin ft"
+            }
+          }
+        },
+        "20.10": {
+          "category": "Walkway and Path",
+          "activities": {
+            "20.10.1": {
+              "activity": "Natural Path Installation",
+              "unit_of_measurement": "sq ft"
+            },
+            "20.10.2": {
+              "activity": "Concrete Walkway and Path Installation",
+              "unit_of_measurement": "sq ft"
+            },
+            "20.10.3": {
+              "activity": "Pavers Walkway and Path Installation",
+              "unit_of_measurement": "sq ft"
+            },
+            "20.10.4": {
+              "activity": "Brick Walkway and Path Installation",
+              "unit_of_measurement": "sq ft"
+            },
+            "20.10.5": {
+              "activity": "Stepping Stone Walkway and Path Installation",
+              "unit_of_measurement": "lin ft"
+            },
+            "20.10.6": {
+              "activity": "Crushed Stone or Gravel Path Installation",
+              "unit_of_measurement": "sq ft"
+            },
+            "20.10.7": {
+              "activity": "Surface Maintenance and Weed Control",
+              "unit_of_measurement": "sq ft"
+            }
+          }
+        },
+        "20.13": {
+          "category": "Drainage",
+          "activities": {
+            "20.13.1": {
+              "activity": "French Drain System Installation",
+              "unit_of_measurement": "lin ft"
+            },
+            "20.13.2": {
+              "activity": "Downspout Runoff Installation",
+              "unit_of_measurement": "each"
+            },
+            "20.13.3": {
+              "activity": "Landscape Drainage Solutions Installation",
+              "unit_of_measurement": "each"
+            },
+            "20.13.4": {
+              "activity": "Driveway Drainage Solutions Installation",
+              "unit_of_measurement": "each"
+            },
+            "20.13.5": {
+              "activity": "Yard Drainage Solutions Installation",
+              "unit_of_measurement": "each"
+            },
+            "20.13.6": {
+              "activity": "Drainage System Cleaning",
+              "unit_of_measurement": "each"
+            }
+          }
+        }
+      }
+    }
+  },
+  "Entertainment Area": {
+    "9": {
+      "section": "Outdoor Carpentry",
+      "categories": {
+        "9.1": {
+          "category": "Deck",
+          "activities": {
+            "9.1.1": {
+              "activity": "Adjustable Helical Post Foundation Installation",
+              "unit_of_measurement": "each"
+            },
+            "9.1.2": {
+              "activity": "Plastic Adjustable Pedestal and Framing Installation",
+              "unit_of_measurement": "sq ft"
+            },
+            "9.1.3": {
+              "activity": "Concrete Blocks and Lumber Foundation Installation",
+              "unit_of_measurement": "sq ft"
+            },
+            "9.1.4": {
+              "activity": "Pressure-Treated Wood Decking Installation",
+              "unit_of_measurement": "sq ft"
+            },
+            "9.1.5": {
+              "activity": "Composite Decking Installation",
+              "unit_of_measurement": "sq ft"
+            },
+            "9.1.6": {
+              "activity": "Deck Stairs Installation (Up to 4 Feet)",
+              "unit_of_measurement": "step"
+            },
+            "9.1.7": {
+              "activity": "Deck Stair Balusters Installation",
+              "unit_of_measurement": "lin ft"
+            },
+            "9.1.8": {
+              "activity": "Deck Railing Installation",
+              "unit_of_measurement": "lin ft"
+            }
+          }
+        },
+        "9.2": {
+          "category": "Fence",
+          "activities": {
+            "9.2.3": {
+              "activity": "Picket Fence Installation",
+              "unit_of_measurement": "lin ft"
+            }
+          }
+        },
+        "9.3": {
+          "category": "Pergola",
+          "activities": {
+            "9.3.1": {
+              "activity": "Cedar Pergola Kit Installation",
+              "unit_of_measurement": "sq ft"
+            },
+            "9.3.2": {
+              "activity": "Concrete Column Pergola Installation",
+              "unit_of_measurement": "each"
+            },
+            "9.3.3": {
+              "activity": "Polycarbonate Roof Installation",
+              "unit_of_measurement": "sq ft"
+            }
+          }
+        },
+        "9.6": {
+          "category": "Outdoor Storage",
+          "activities": {
+            "9.6.1": {
+              "activity": "Outdoor Storage Concrete Slab Foundation Installation",
+              "unit_of_measurement": "sq ft"
+            },
+            "9.6.2": {
+              "activity": "Outdoor Storage Square Patio Stone Basement Installation",
+              "unit_of_measurement": "sq ft"
+            },
+            "9.6.3": {
+              "activity": "Outdoor Storage Shed Installation",
+              "unit_of_measurement": "sq ft"
+            },
+            "9.6.5": {
+              "activity": "Storage Building Kit Installation",
+              "unit_of_measurement": "sq ft"
+            }
+          }
+        }
+      }
+    },
+    "10": {
+      "section": "Outdoor Electrical",
+      "categories": {
+        "10.5": {
+          "category": "Ceiling Fans",
+          "activities": {
+            "10.5.1": {
+              "activity": "Wet Rated Outdoor Ceiling Fan Installation",
+              "unit_of_measurement": "each"
+            }
+          }
+        },
+        "10.6": {
+          "category": "Audio-Visual",
+          "activities": {
+            "10.6.1": {
+              "activity": "Outdoor Home Theater Installation",
+              "unit_of_measurement": "each"
+            },
+            "10.6.2": {
+              "activity": "Rock Speakers Installation",
+              "unit_of_measurement": "each"
+            }
+          }
+        }
+      }
+    },
+    "18": {
+      "section": "Outdoor Lighting",
+      "categories": {
+        "18.1": {
+          "category": "Path Lights",
+          "activities": {
+            "18.1.1": {
+              "activity": "Landscape Path Light Kit (6-10 lights) Installation",
+              "unit_of_measurement": "each"
+            },
+            "18.1.2": {
+              "activity": "Solar LED In-Ground Path Light Installation",
+              "unit_of_measurement": "each"
+            },
+            "18.1.3": {
+              "activity": "Deck Post Lighting Installation",
+              "unit_of_measurement": "lin ft"
+            },
+            "18.1.4": {
+              "activity": "Hardwired Path Light Installation",
+              "unit_of_measurement": "each"
+            }
+          }
+        },
+        "18.2": {
+          "category": "Deck and Patio",
+          "activities": {
+            "18.2.1": {
+              "activity": "String Light Kit Installation",
+              "unit_of_measurement": "each"
+            },
+            "18.2.2": {
+              "activity": "Deck/Step Light Installation",
+              "unit_of_measurement": "each"
+            },
+            "18.2.3": {
+              "activity": "Deck Post Light Installation",
+              "unit_of_measurement": "each"
+            }
+          }
+        },
+        "18.3": {
+          "category": "Wall Lights ",
+          "activities": {
+            "18.3.1": {
+              "activity": "Single-Story Wall Light Installation",
+              "unit_of_measurement": "each"
+            }
+          }
+        }
+      }
+    },
+    "22": {
+      "section": "Outdoor Appliance",
+      "categories": {
+        "22.5": {
+          "category": "Patio Heater",
+          "activities": {
+            "22.5.1": {
+              "activity": "Infrared Ceiling-Mounted Electric Heater Installation",
+              "unit_of_measurement": "each"
+            },
+            "22.5.2": {
+              "activity": "Infrared Electric Heater Replacement",
+              "unit_of_measurement": "each"
+            }
+          }
+        },
+        "22.6": {
+          "category": "Hot Tubs",
+          "activities": {
+            "22.6.1": {
+              "activity": "Hot Tub Installation",
+              "unit_of_measurement": "each"
+            },
+            "22.6.2": {
+              "activity": "Hot Tub Maintenance",
+              "unit_of_measurement": "each"
+            }
+          }
+        },
+        "22.9": {
+          "category": "Outdoor Cooling",
+          "activities": {
+            "22.9.1": {
+              "activity": "Outdoor Mist Cooling System for Small to Midsize Patio Installation",
+              "unit_of_measurement": "each"
+            },
+            "22.9.2": {
+              "activity": "Outdoor Mist Cooling System for Mid to Large Patio Installation",
+              "unit_of_measurement": "each"
+            }
+          }
+        }
+      }
+    }
+  },
+  "Exterior Cleaning": {
+    "11": {
+      "section": "Outdoor Cleaning",
+      "categories": {
+        "11.1": {
+          "category": "Deck and Patio",
+          "activities": {
+            "11.1.1": {
+              "activity": "Deck and Patio Pressure Washing",
+              "unit_of_measurement": "sq ft"
+            },
+            "11.1.2": {
+              "activity": "Deck and Patio Soft Washing",
+              "unit_of_measurement": "sq ft"
+            },
+            "11.1.3": {
+              "activity": "Deck and Patio Deep Cleaning Solutions",
+              "unit_of_measurement": "sq ft"
+            }
+          }
+        },
+        "11.2": {
+          "category": "Driveway",
+          "activities": {
+            "11.2.1": {
+              "activity": "Driveway Pressure Washing",
+              "unit_of_measurement": "sq ft"
+            },
+            "11.2.2": {
+              "activity": "Driveway Soft Washing",
+              "unit_of_measurement": "sq ft"
+            },
+            "11.2.3": {
+              "activity": "Driveway Deep Cleaning Solutions",
+              "unit_of_measurement": "sq ft"
+            }
+          }
+        },
+        "11.3": {
+          "category": "Hot Tub",
+          "activities": {
+            "11.3.1": {
+              "activity": "Hot Tub Regular Cleaning",
+              "unit_of_measurement": "each"
+            },
+            "11.3.2": {
+              "activity": "Hot Tub Water Treatment and Cleaning",
+              "unit_of_measurement": "each"
+            }
+          }
+        },
+        "11.4": {
+          "category": "House Washing",
+          "activities": {
+            "11.4.1": {
+              "activity": "Vinyl Siding Cleaning",
+              "unit_of_measurement": "sq ft"
+            },
+            "11.4.2": {
+              "activity": "Wood Siding Cleaning",
+              "unit_of_measurement": "sq ft"
+            },
+            "11.4.3": {
+              "activity": "Brick and Stone Cleaning",
+              "unit_of_measurement": "sq ft"
+            }
+          }
+        },
+        "11.5": {
+          "category": "Fence",
+          "activities": {
+            "11.5.1": {
+              "activity": "Fence Pressure Washing",
+              "unit_of_measurement": "sq ft"
+            },
+            "11.5.2": {
+              "activity": "Fence Soft Washing",
+              "unit_of_measurement": "sq ft"
+            },
+            "11.5.3": {
+              "activity": "Fence Stain and Spot Removal",
+              "unit_of_measurement": "sq ft"
+            }
+          }
+        },
+        "11.6": {
+          "category": "Gutter",
+          "activities": {
+            "11.6.1": {
+              "activity": "Gutter Debris Removal and Pressure Washing",
+              "unit_of_measurement": "lin ft"
+            },
+            "11.6.2": {
+              "activity": "Gutter Cleaning Using Scaffold",
+              "unit_of_measurement": "lin ft"
+            }
+          }
+        },
+        "11.7": {
+          "category": "Roof",
+          "activities": {
+            "11.7.1": {
+              "activity": "Roof Soft Washing",
+              "unit_of_measurement": "sq ft"
+            },
+            "11.7.2": {
+              "activity": "Roof, Gutter and Solar Panel Cleaning Combo",
+              "unit_of_measurement": "sq ft"
+            }
+          }
+        },
+        "11.8": {
+          "category": "Exterior Fixture",
+          "activities": {
+            "11.8.1": {
+              "activity": "Outdoor Furniture Manual Cleaning",
+              "unit_of_measurement": "each"
+            },
+            "11.8.2": {
+              "activity": "Exterior Lighting Fixture Cleaning",
+              "unit_of_measurement": "each"
+            },
+            "11.8.3": {
+              "activity": "Exterior Decorative Element Cleaning",
+              "unit_of_measurement": "each"
+            }
+          }
+        },
+        "11.9": {
+          "category": "Pool",
+          "activities": {
+            "11.9.1": {
+              "activity": "Regular Outdoor Pool Cleaning",
+              "unit_of_measurement": "sq ft"
+            },
+            "11.9.2": {
+              "activity": "Pool Shock Treatment",
+              "unit_of_measurement": "sq ft"
+            },
+            "11.9.3": {
+              "activity": "Pool Filter and Equipment Maintenance",
+              "unit_of_measurement": "sq ft"
+            }
+          }
+        },
+        "11.10": {
+          "category": "Doors and Windows",
+          "activities": {
+            "11.10.1": {
+              "activity": "Outdoor Glass Cleaning",
+              "unit_of_measurement": "each"
+            },
+            "11.10.2": {
+              "activity": "Outdoor Floor-to-Ceiling Glass Cleaning on a Single Storey Building",
+              "unit_of_measurement": "each"
+            },
+            "11.10.3": {
+              "activity": "Outdoor Floor-to-Ceiling Glass Cleaning on a 2-4 Storey Building",
+              "unit_of_measurement": "each"
+            },
+            "11.10.4": {
+              "activity": "Outdoor High-Rise Window Cleaning",
+              "unit_of_measurement": "day"
+            },
+            "11.10.5": {
+              "activity": "Garage Door Cleaning",
+              "unit_of_measurement": "each"
+            }
+          }
+        }
+      }
+    },
+    "22": {
+      "section": "Outdoor Appliance",
+      "categories": {
+        "22.1": {
+          "category": "Grills",
+          "activities": {
+            "22.1.2": {
+              "activity": "Outdoor Grill Cleaning",
+              "unit_of_measurement": "sq ft"
+            }
+          }
+        },
+        "22.2": {
+          "category": "Outdoor Kitchen",
+          "activities": {
+            "22.2.5": {
+              "activity": "Outdoor Kitchen Cleaning",
+              "unit_of_measurement": "each"
+            }
+          }
+        },
+        "22.3": {
+          "category": "Fire Pit",
+          "activities": {
+            "22.3.3": {
+              "activity": "Fire Pit Cleaning",
+              "unit_of_measurement": "each"
+            }
+          }
+        },
+        "22.4": {
+          "category": "Fireplace",
+          "activities": {
+            "22.4.4": {
+              "activity": "Fireplace Cleaning",
+              "unit_of_measurement": "each"
+            }
+          }
+        }
+      }
+    }
+  },
+  "Facade": {
+    "8": {
+      "section": "Outdoor Painting",
+      "categories": {
+        "8.1": {
+          "category": "Exterior Wall",
+          "activities": {
+            "8.1.1": {
+              "activity": "Masonry Painting (Two Coats on a Single-Story Building)",
+              "unit_of_measurement": "sq ft"
+            },
+            "8.1.2": {
+              "activity": "Exterior Wood Stain Painting (Single-Story Building)",
+              "unit_of_measurement": "sq ft"
+            },
+            "8.1.3": {
+              "activity": "Masonry Painting (One Coat on a Single-Story Building)",
+              "unit_of_measurement": "sq ft"
+            },
+            "8.1.4": {
+              "activity": "Exterior Wood Painting (Two Coats on a Single-Story Building)",
+              "unit_of_measurement": "sq ft"
+            },
+            "8.1.5": {
+              "activity": "Wood Shingle Staining (Two Coats on a Single-Story Building)",
+              "unit_of_measurement": "sq ft"
+            },
+            "8.1.6": {
+              "activity": "Masonry Painting (Two Coats on a 2-3 Story Building)",
+              "unit_of_measurement": "sq ft"
+            },
+            "8.1.7": {
+              "activity": "Exterior Wood Stain Painting (2-3 Story Building)",
+              "unit_of_measurement": "sq ft"
+            },
+            "8.1.8": {
+              "activity": "Masonry Painting (One Coat on a 2-3 Story Building)",
+              "unit_of_measurement": "sq ft"
+            },
+            "8.1.9": {
+              "activity": "Exterior Wood Painting (Two Coats on a 2-3 Story Building)",
+              "unit_of_measurement": "sq ft"
+            },
+            "8.1.10": {
+              "activity": "Wood Shingle Painting (Two Coats on a 2-3 Story Building)",
+              "unit_of_measurement": "sq ft"
+            },
+            "8.1.11": {
+              "activity": "High-Rise Painting (Up to 60 Feet or Difficult-to-Reach Areas of the Facade)",
+              "unit_of_measurement": "sq ft"
+            }
+          }
+        },
+        "8.4": {
+          "category": "Window Trim",
+          "activities": {
+            "8.4.1": {
+              "activity": "Window Trim & Jamb Painting",
+              "unit_of_measurement": "each"
+            },
+            "8.4.2": {
+              "activity": "Window Trim and Jamb Staining and Finishing",
+              "unit_of_measurement": "each"
+            },
+            "8.4.3": {
+              "activity": "Window Trim Painting: One Coat",
+              "unit_of_measurement": "lin ft"
+            }
+          }
+        },
+        "8.5": {
+          "category": "Doors",
+          "activities": {
+            "8.5.1": {
+              "activity": "Door Slab Priming and Painting",
+              "unit_of_measurement": "each"
+            },
+            "8.5.2": {
+              "activity": "French Door Slab Priming and Painting",
+              "unit_of_measurement": "each"
+            },
+            "8.5.3": {
+              "activity": "Door Slab Staining and Finishing",
+              "unit_of_measurement": "each"
+            },
+            "8.5.4": {
+              "activity": "French Door Staining and Finishing",
+              "unit_of_measurement": "each"
+            },
+            "8.5.5": {
+              "activity": "Single Garage Door Opening and Trim Sealing and Painting",
+              "unit_of_measurement": "each"
+            },
+            "8.5.6": {
+              "activity": "Single Garage Door Painting (One Coat)",
+              "unit_of_measurement": "each"
+            }
+          }
+        },
+        "8.6": {
+          "category": "Shutter",
+          "activities": {
+            "8.6.1": {
+              "activity": "Window Shutter Finishing",
+              "unit_of_measurement": "set"
+            },
+            "8.6.2": {
+              "activity": "Window Shutter Painting ",
+              "unit_of_measurement": "set"
+            },
+            "8.6.3": {
+              "activity": "Window Shutter Staining and Finishing",
+              "unit_of_measurement": "set"
+            }
+          }
+        },
+        "8.7": {
+          "category": "Trim",
+          "activities": {
+            "8.7.1": {
+              "activity": "Trim Painting with One Coat",
+              "unit_of_measurement": "lin ft"
+            },
+            "8.7.2": {
+              "activity": "Trim Staining and Finishing",
+              "unit_of_measurement": "lin ft"
+            }
+          }
+        },
+        "8.8": {
+          "category": "Stucco",
+          "activities": {
+            "8.8.1": {
+              "activity": "Stucco Acrylic Latex Painting",
+              "unit_of_measurement": "sq ft"
+            },
+            "8.8.2": {
+              "activity": "Stucco Elastomeric Painting",
+              "unit_of_measurement": "sq ft"
+            },
+            "8.8.3": {
+              "activity": "Stucco Masonry Painting",
+              "unit_of_measurement": "sq ft"
+            },
+            "8.8.4": {
+              "activity": "Stucco Lime Washing",
+              "unit_of_measurement": "sq ft"
+            }
+          }
+        },
+        "8.9": {
+          "category": "Brick",
+          "activities": {
+            "8.9.1": {
+              "activity": "Brick Acrylic Latex Painting",
+              "unit_of_measurement": "sq ft"
+            },
+            "8.9.2": {
+              "activity": "Brick Elastomeric Painting",
+              "unit_of_measurement": "sq ft"
+            },
+            "8.9.3": {
+              "activity": "Brick Masonry Painting",
+              "unit_of_measurement": "sq ft"
+            },
+            "8.9.4": {
+              "activity": "Brick Lime Washing",
+              "unit_of_measurement": "sq ft"
+            }
+          }
+        },
+        "8.10": {
+          "category": "Concrete",
+          "activities": {
+            "8.10.1": {
+              "activity": "Concrete Epoxy Painting",
+              "unit_of_measurement": "sq ft"
+            },
+            "8.10.2": {
+              "activity": "Concrete Acrylic Latex Painting",
+              "unit_of_measurement": "sq ft"
+            },
+            "8.10.3": {
+              "activity": "Concrete Masonry Painting",
+              "unit_of_measurement": "sq ft"
+            },
+            "8.10.4": {
+              "activity": "Concrete Staining",
+              "unit_of_measurement": "sq ft"
+            }
+          }
+        }
+      }
+    },
+    "18": {
+      "section": "Outdoor Lighting",
+      "categories": {
+        "18.3": {
+          "category": "Wall Lights ",
+          "activities": {
+            "18.3.1": {
+              "activity": "Single-Story Wall Light Installation",
+              "unit_of_measurement": "each"
+            },
+            "18.3.2": {
+              "activity": "2-3 Story Wall Light Installation",
+              "unit_of_measurement": "each"
+            }
+          }
+        },
+        "18.4": {
+          "category": "Security Lighting",
+          "activities": {
+            "18.4.1": {
+              "activity": "Wall Pack Lights Installation",
+              "unit_of_measurement": "each"
+            },
+            "18.4.2": {
+              "activity": "Area Lights Installation",
+              "unit_of_measurement": "each"
+            }
+          }
+        }
+      }
+    },
+    "23": {
+      "section": "Facade",
+      "categories": {
+        "23.1": {
+          "category": "Wood Siding",
+          "activities": {
+            "23.1.1": {
+              "activity": "Wooden Clapboard Siding Installation on a Single-Story Building",
+              "unit_of_measurement": "sq ft"
+            },
+            "23.1.2": {
+              "activity": "Wooden Clapboard Siding Installation on a 2-3 Story Building",
+              "unit_of_measurement": "sq ft"
+            },
+            "23.1.3": {
+              "activity": "Cedar Wood Shingle Siding Installation on a Single-Story Building",
+              "unit_of_measurement": "sq ft"
+            },
+            "23.1.4": {
+              "activity": "Cedar Wood Shingle Siding Installation on a 2-3 Story Building",
+              "unit_of_measurement": "sq ft"
+            },
+            "23.1.5": {
+              "activity": "Plywood Siding Panel Installation on a Single-Story Building",
+              "unit_of_measurement": "sq ft"
+            },
+            "23.1.6": {
+              "activity": "Plywood Siding Panel Installation on a 2-3 Story Building",
+              "unit_of_measurement": "sq ft"
+            },
+            "23.1.7": {
+              "activity": "Grid Siding Board Installation on a Single-Story Building",
+              "unit_of_measurement": "sq ft"
+            },
+            "23.1.8": {
+              "activity": "Grid Siding Board Installation on a 2-3 Story Building",
+              "unit_of_measurement": "sq ft"
+            },
+            "23.1.9": {
+              "activity": "Wood Siding Removal",
+              "unit_of_measurement": "sq ft"
+            }
+          }
+        },
+        "23.2": {
+          "category": "Vinyl Siding",
+          "activities": {
+            "23.2.1": {
+              "activity": "Vinyl Siding Installation on a Single-Story Building",
+              "unit_of_measurement": "sq ft"
+            },
+            "23.2.2": {
+              "activity": "Vinyl Siding Installation on a 2-3 Story Building",
+              "unit_of_measurement": "sq ft"
+            },
+            "23.2.3": {
+              "activity": "Vinyl Siding Repair",
+              "unit_of_measurement": "sq ft"
+            },
+            "23.2.4": {
+              "activity": "Vinyl Siding Removal",
+              "unit_of_measurement": "sq ft"
+            }
+          }
+        },
+        "23.3": {
+          "category": "Brick Veneer",
+          "activities": {
+            "23.3.1": {
+              "activity": "Thin Brick Veneer Removal",
+              "unit_of_measurement": "sq ft"
+            },
+            "23.3.2": {
+              "activity": "Thin Brick Veneer Installation on a Single-Story Building",
+              "unit_of_measurement": "sq ft"
+            },
+            "23.3.3": {
+              "activity": "Thin Brick Veneer Installation on a 2-3 Story Building",
+              "unit_of_measurement": "sq ft"
+            },
+            "23.3.4": {
+              "activity": "Brick Veneer Sealing",
+              "unit_of_measurement": "sq ft"
+            },
+            "23.3.5": {
+              "activity": "Brick Veneer Pointing and Repointing",
+              "unit_of_measurement": "sq ft"
+            },
+            "23.3.6": {
+              "activity": "Brick Veneer Damage Repair",
+              "unit_of_measurement": "sq ft"
+            }
+          }
+        },
+        "23.4": {
+          "category": "Stone Cladding",
+          "activities": {
+            "23.4.1": {
+              "activity": "Old Cladding Removal",
+              "unit_of_measurement": "sq ft"
+            },
+            "23.4.2": {
+              "activity": "Stone Cladding Surface Preparation",
+              "unit_of_measurement": "sq ft"
+            },
+            "23.4.3": {
+              "activity": "Natural Stone Installation on a Single-Story Building",
+              "unit_of_measurement": "sq ft"
+            },
+            "23.4.4": {
+              "activity": "Natural Stone Installation on a 2-3 Story Building",
+              "unit_of_measurement": "sq ft"
+            },
+            "23.4.5": {
+              "activity": "Manufactured Stone Veneer Installation on a Single-Story Building",
+              "unit_of_measurement": "sq ft"
+            },
+            "23.4.6": {
+              "activity": "Manufactured Stone Veneer Installation on a 2-3 Story Building",
+              "unit_of_measurement": "sq ft"
+            },
+            "23.4.7": {
+              "activity": "Faux Stone Siding Installation on a Single-Story Building",
+              "unit_of_measurement": "sq ft"
+            },
+            "23.4.8": {
+              "activity": "Faux Stone Siding Installation on a 2-3 Story Building",
+              "unit_of_measurement": "sq ft"
+            },
+            "23.4.9": {
+              "activity": "Stone Cladding Column Wrap",
+              "unit_of_measurement": "each"
+            },
+            "23.4.10": {
+              "activity": "Stone Cladding Protective Sealants Application",
+              "unit_of_measurement": "sq ft"
+            }
+          }
+        },
+        "23.5": {
+          "category": "Stucco",
+          "activities": {
+            "23.5.1": {
+              "activity": "Traditional Stucco Application on a Single-Story Building",
+              "unit_of_measurement": "sq ft"
+            },
+            "23.5.2": {
+              "activity": "Traditional Stucco Application on a 2-3 Story Building",
+              "unit_of_measurement": "sq ft"
+            },
+            "23.5.3": {
+              "activity": "Old Stucco Removal on a Single-Story Building",
+              "unit_of_measurement": "sq ft"
+            },
+            "23.5.4": {
+              "activity": "Old Stucco Removal on a 2-3 Story Building",
+              "unit_of_measurement": "sq ft"
+            }
+          }
+        },
+        "23.6": {
+          "category": "Metal Cladding",
+          "activities": {
+            "23.6.1": {
+              "activity": "Galvanized Steel Panel Installation",
+              "unit_of_measurement": "sq ft"
+            },
+            "23.6.2": {
+              "activity": "Old Cladding Removal",
+              "unit_of_measurement": "sq ft"
+            }
+          }
+        },
+        "23.7": {
+          "category": "Glass Facades",
+          "activities": {
+            "23.7.1": {
+              "activity": "Glass Blocks Installation",
+              "unit_of_measurement": "sq ft"
+            },
+            "23.7.2": {
+              "activity": "Glass Blocks Removal",
+              "unit_of_measurement": "sq ft"
+            }
+          }
+        },
+        "23.8": {
+          "category": "Composite Paneling",
+          "activities": {
+            "23.8.1": {
+              "activity": "Composite Siding Installation on a Single-Story Building",
+              "unit_of_measurement": "sq ft"
+            },
+            "23.8.2": {
+              "activity": "Composite Siding Installation on a 2-3 Story Building",
+              "unit_of_measurement": "sq ft"
+            },
+            "23.8.3": {
+              "activity": "Fiber Cement Siding Installation on a Single Story Building",
+              "unit_of_measurement": "sq ft"
+            },
+            "23.8.4": {
+              "activity": "Fiber Cement Siding Installation on a 2-3 Story Building",
+              "unit_of_measurement": "sq ft"
+            },
+            "23.8.5": {
+              "activity": "Composite Paneling Removal on a Single-Story Building",
+              "unit_of_measurement": "sq ft"
+            },
+            "23.8.6": {
+              "activity": "Composite Paneling Removal on a 2-3 Story Building",
+              "unit_of_measurement": "sq ft"
+            }
+          }
+        },
+        "23.9": {
+          "category": "Trims and moldings",
+          "activities": {
+            "23.9.1": {
+              "activity": "Fiber Cement Trim Board Installation on a Single-Story Building",
+              "unit_of_measurement": "lin ft"
+            },
+            "23.9.2": {
+              "activity": "Fiber Cement Trim Board Installation on a 2-3 Story Building",
+              "unit_of_measurement": "lin ft"
+            },
+            "23.9.3": {
+              "activity": "Trim Engineered Treated Wood Siding Installation on a Single-Story Building",
+              "unit_of_measurement": "lin ft"
+            },
+            "23.9.4": {
+              "activity": "Trim Engineered Treated Wood Siding Installation on a 2-3 Story Building",
+              "unit_of_measurement": "lin ft"
+            },
+            "23.9.5": {
+              "activity": "PVC Trim Installation on a Single-Story Building",
+              "unit_of_measurement": "lin ft"
+            },
+            "23.9.6": {
+              "activity": "PVC Trim Installation on a 2-3 Story Building",
+              "unit_of_measurement": "lin ft"
+            },
+            "23.9.7": {
+              "activity": "Custom bent aluminum Installation",
+              "unit_of_measurement": "lin ft"
+            },
+            "23.9.8": {
+              "activity": "Texture Soffit Installation",
+              "unit_of_measurement": "lin ft"
+            },
+            "23.9.9": {
+              "activity": "Trim and Molding Removal",
+              "unit_of_measurement": "lin ft"
+            }
+          }
+        },
+        "23.10": {
+          "category": "Underlayment",
+          "activities": {
+            "23.10.1": {
+              "activity": "House Wrap Installation",
+              "unit_of_measurement": "sq ft"
+            },
+            "23.10.2": {
+              "activity": "House Wrap Removal",
+              "unit_of_measurement": "sq ft"
+            }
+          }
+        },
+        "23.11": {
+          "category": "Pest Control",
+          "activities": {
+            "23.11.1": {
+              "activity": "Perimeter Bug Barrier Installation",
+              "unit_of_measurement": "sq ft"
+            },
+            "23.11.2": {
+              "activity": "Bird Spikes Installation",
+              "unit_of_measurement": "lin ft"
+            },
+            "23.11.3": {
+              "activity": "Screening Installation",
+              "unit_of_measurement": "sq ft"
+            },
+            "23.11.4": {
+              "activity": "Screening Replacement",
+              "unit_of_measurement": "sq ft"
+            }
+          }
+        },
+        "23.12": {
+          "category": "Maintenance",
+          "activities": {
+            "23.12.1": {
+              "activity": "Routine Fa\u00e7ade Inspections",
+              "unit_of_measurement": "sq ft"
+            },
+            "23.12.2": {
+              "activity": "Fa\u00e7ade Structural Assessment",
+              "unit_of_measurement": "sq ft"
+            },
+            "23.12.3": {
+              "activity": "Graffiti Removal",
+              "unit_of_measurement": "sq ft"
+            },
+            "23.12.4": {
+              "activity": "Concrete & Masonry Waterproofing",
+              "unit_of_measurement": "sq ft"
+            },
+            "23.12.5": {
+              "activity": "Exterior Wood Fa\u00e7ade Waterproofing",
+              "unit_of_measurement": "sq ft"
+            },
+            "23.12.6": {
+              "activity": "Protection Fa\u00e7ade Against Moisture",
+              "unit_of_measurement": "sq ft"
+            }
+          }
+        }
+      }
+    },
+    "24": {
+      "section": "Outdoor Security",
+      "categories": {
+        "24.1": {
+          "category": "CCTV",
+          "activities": {
+            "24.1.1": {
+              "activity": "4 WiFi Security Camera System with Monitor Installation",
+              "unit_of_measurement": "each"
+            },
+            "24.1.2": {
+              "activity": "8 WiFi Security Camera System with Monitor Installation",
+              "unit_of_measurement": "each"
+            },
+            "24.1.3": {
+              "activity": "16 Security Camera System with Human & Vehicle Detection Installation",
+              "unit_of_measurement": "each"
+            }
+          }
+        },
+        "24.2": {
+          "category": "Wireless Cameras",
+          "activities": {
+            "24.2.1": {
+              "activity": "Battery-powered Wireless Smart Home Security Camera Installation",
+              "unit_of_measurement": "each"
+            },
+            "24.2.2": {
+              "activity": "Small Solar Panel for Outdoor Cameras Installation",
+              "unit_of_measurement": "each"
+            },
+            "24.2.3": {
+              "activity": "Gutter Mount Security Camera and Solar Panel Installation",
+              "unit_of_measurement": "each"
+            },
+            "24.2.4": {
+              "activity": "Maintenance (battery replacement, cleaning)",
+              "unit_of_measurement": "each"
+            }
+          }
+        }
+      }
+    }
+  },
+  "Landscape": {
+    "18": {
+      "section": "Outdoor Lighting",
+      "categories": {
+        "18.1": {
+          "category": "Path Lights",
+          "activities": {
+            "18.1.1": {
+              "activity": "Landscape Path Light Kit (6-10 lights) Installation",
+              "unit_of_measurement": "each"
+            },
+            "18.1.2": {
+              "activity": "Solar LED In-Ground Path Light Installation",
+              "unit_of_measurement": "each"
+            },
+            "18.1.3": {
+              "activity": "Deck Post Lighting Installation",
+              "unit_of_measurement": "lin ft"
+            },
+            "18.1.4": {
+              "activity": "Hardwired Path Light Installation",
+              "unit_of_measurement": "each"
+            }
+          }
+        }
+      }
+    },
+    "20": {
+      "section": "Landscaping",
+      "categories": {
+        "20.2": {
+          "category": "Lawn Seeding",
+          "activities": {
+            "20.2.1": {
+              "activity": "Lawn Hand Seeding",
+              "unit_of_measurement": "K sq ft"
+            },
+            "20.2.2": {
+              "activity": "Lawn Hydroseeding",
+              "unit_of_measurement": "K sq ft"
+            },
+            "20.2.3": {
+              "activity": "Lawn Sod Installation",
+              "unit_of_measurement": "K sq ft"
+            },
+            "20.2.4": {
+              "activity": "Artificial Grass Installation",
+              "unit_of_measurement": "K sq ft"
+            },
+            "20.2.5": {
+              "activity": "Lawn Edging Installation ",
+              "unit_of_measurement": "lin ft"
+            }
+          }
+        },
+        "20.3": {
+          "category": "Tree Pruning",
+          "activities": {
+            "20.3.1": {
+              "activity": "Tree Removal (Under 12\u201d Diameter, Large Canopy)",
+              "unit_of_measurement": "each"
+            },
+            "20.3.2": {
+              "activity": "Tree Removal (12\u201d to 24\u201d Diameter, Large Canopy)",
+              "unit_of_measurement": "each"
+            },
+            "20.3.3": {
+              "activity": "Tree Removal (24\u201d to 36\u201d Diameter, Large Canopy)",
+              "unit_of_measurement": "each"
+            },
+            "20.3.4": {
+              "activity": "Tree Stump Grinding",
+              "unit_of_measurement": "each"
+            },
+            "20.3.5": {
+              "activity": "Tree Formative Pruning",
+              "unit_of_measurement": "each"
+            }
+          }
+        },
+        "20.4": {
+          "category": "Planting",
+          "activities": {
+            "20.4.1": {
+              "activity": "Small Tree Planting (Up to 2\u2019 Tall)",
+              "unit_of_measurement": "each"
+            },
+            "20.4.2": {
+              "activity": "Medium Tree Planting (3\u2019 to 5\u2019 Tall)",
+              "unit_of_measurement": "each"
+            },
+            "20.4.3": {
+              "activity": "Large Tree Planting (Over 6\u2019 Tall)",
+              "unit_of_measurement": "each"
+            },
+            "20.4.4": {
+              "activity": "Medium Size Tree Relocation",
+              "unit_of_measurement": "each"
+            },
+            "20.4.5": {
+              "activity": "Shrubs Planting",
+              "unit_of_measurement": "each"
+            },
+            "20.4.6": {
+              "activity": "Perennial Grasses Planting",
+              "unit_of_measurement": "each"
+            }
+          }
+        },
+        "20.5": {
+          "category": "Mulching",
+          "activities": {
+            "20.5.1": {
+              "activity": "Organic Mulching (Up to 3\u201d Deep)",
+              "unit_of_measurement": "sq ft"
+            },
+            "20.5.2": {
+              "activity": "Organic Mulching for Playgrounds",
+              "unit_of_measurement": "sq ft"
+            },
+            "20.5.3": {
+              "activity": "Pea Gravel Pebble Mulching",
+              "unit_of_measurement": "sq ft"
+            },
+            "20.5.4": {
+              "activity": "Mulch Replacement and Top-Up",
+              "unit_of_measurement": "sq ft"
+            },
+            "20.5.5": {
+              "activity": "Mulch Color Covering",
+              "unit_of_measurement": "sq ft"
+            }
+          }
+        },
+        "20.6": {
+          "category": "Landscape Rocks",
+          "activities": {
+            "20.6.1": {
+              "activity": "Ground Cover Rocks Installation",
+              "unit_of_measurement": "sq ft"
+            },
+            "20.6.2": {
+              "activity": "Erosion Control Rocks Installation",
+              "unit_of_measurement": "cu ft"
+            },
+            "20.6.3": {
+              "activity": "Rock Wall Installation",
+              "unit_of_measurement": "sq ft"
+            }
+          }
+        },
+        "20.7": {
+          "category": "Edging",
+          "activities": {
+            "20.7.1": {
+              "activity": "Install Plastic Landscape Edging",
+              "unit_of_measurement": "lin ft"
+            },
+            "20.7.2": {
+              "activity": "Install Metal Landscape Edging",
+              "unit_of_measurement": "lin ft"
+            },
+            "20.7.3": {
+              "activity": "Install Natural Stone Landscape Edging",
+              "unit_of_measurement": "lin ft"
+            },
+            "20.7.4": {
+              "activity": "Install Brick Landscape Edging",
+              "unit_of_measurement": "lin ft"
+            },
+            "20.7.5": {
+              "activity": "Install Wood Landscape Edging",
+              "unit_of_measurement": "lin ft"
+            },
+            "20.7.6": {
+              "activity": "Install Paver Landscape Edging",
+              "unit_of_measurement": "lin ft"
+            }
+          }
+        },
+        "20.8": {
+          "category": "Garden Beds",
+          "activities": {
+            "20.8.1": {
+              "activity": "Raised Garden Bed Installation (Wood)",
+              "unit_of_measurement": "sq ft"
+            },
+            "20.8.2": {
+              "activity": "Raised Garden Bed Installation (Corten Steel)",
+              "unit_of_measurement": "sq ft"
+            },
+            "20.8.3": {
+              "activity": "Raised Garden Bed Installation (Galvanized Steel)",
+              "unit_of_measurement": "sq ft"
+            }
+          }
+        },
+        "20.9": {
+          "category": "Hedge",
+          "activities": {
+            "20.9.1": {
+              "activity": "Hedge Planting",
+              "unit_of_measurement": "each"
+            },
+            "20.9.2": {
+              "activity": "Hedge Pruning",
+              "unit_of_measurement": "hour"
+            }
+          }
+        },
+        "20.10": {
+          "category": "Walkway and Path",
+          "activities": {
+            "20.10.1": {
+              "activity": "Natural Path Installation",
+              "unit_of_measurement": "sq ft"
+            },
+            "20.10.2": {
+              "activity": "Concrete Walkway and Path Installation",
+              "unit_of_measurement": "sq ft"
+            },
+            "20.10.3": {
+              "activity": "Pavers Walkway and Path Installation",
+              "unit_of_measurement": "sq ft"
+            },
+            "20.10.4": {
+              "activity": "Brick Walkway and Path Installation",
+              "unit_of_measurement": "sq ft"
+            },
+            "20.10.5": {
+              "activity": "Stepping Stone Walkway and Path Installation",
+              "unit_of_measurement": "lin ft"
+            },
+            "20.10.6": {
+              "activity": "Crushed Stone or Gravel Path Installation",
+              "unit_of_measurement": "sq ft"
+            },
+            "20.10.7": {
+              "activity": "Surface Maintenance and Weed Control",
+              "unit_of_measurement": "sq ft"
+            }
+          }
+        },
+        "20.11": {
+          "category": "Water Features",
+          "activities": {
+            "20.11.1": {
+              "activity": "Small Landscape Fountain Installation",
+              "unit_of_measurement": "each"
+            },
+            "20.11.2": {
+              "activity": "Preformed Pond Installation",
+              "unit_of_measurement": "each"
+            },
+            "20.11.3": {
+              "activity": "Ponds and Fountains Maintenance",
+              "unit_of_measurement": "each"
+            }
+          }
+        },
+        "20.12": {
+          "category": "Irrigation System",
+          "activities": {
+            "20.12.1": {
+              "activity": "Sprinkler Systems Installation",
+              "unit_of_measurement": "K sq ft"
+            },
+            "20.12.2": {
+              "activity": "Irrigation Timers and Controllers Installation",
+              "unit_of_measurement": "each"
+            },
+            "20.12.3": {
+              "activity": "Drip Irrigation System Installation",
+              "unit_of_measurement": "lin ft"
+            },
+            "20.12.4": {
+              "activity": "Raised Bed Garden Drip Irrigation System Installation",
+              "unit_of_measurement": "lin ft"
+            },
+            "20.12.5": {
+              "activity": "Irrigation System Winterization",
+              "unit_of_measurement": "each"
+            },
+            "20.12.6": {
+              "activity": "Irrigation System Maintenance",
+              "unit_of_measurement": "each"
+            }
+          }
+        },
+        "20.13": {
+          "category": "Drainage",
+          "activities": {
+            "20.13.1": {
+              "activity": "French Drain System Installation",
+              "unit_of_measurement": "lin ft"
+            },
+            "20.13.2": {
+              "activity": "Downspout Runoff Installation",
+              "unit_of_measurement": "each"
+            },
+            "20.13.3": {
+              "activity": "Landscape Drainage Solutions Installation",
+              "unit_of_measurement": "each"
+            },
+            "20.13.4": {
+              "activity": "Driveway Drainage Solutions Installation",
+              "unit_of_measurement": "each"
+            },
+            "20.13.5": {
+              "activity": "Yard Drainage Solutions Installation",
+              "unit_of_measurement": "each"
+            },
+            "20.13.6": {
+              "activity": "Drainage System Cleaning",
+              "unit_of_measurement": "each"
+            }
+          }
+        },
+        "20.14": {
+          "category": "Greenhouses",
+          "activities": {
+            "20.14.1": {
+              "activity": "Aluminum Frame Greenhouse Installation",
+              "unit_of_measurement": "sq ft"
+            },
+            "20.14.2": {
+              "activity": "Metal Orangerie Installation",
+              "unit_of_measurement": "sq ft"
+            },
+            "20.14.3": {
+              "activity": "Greenhouse Seasonal Cleaning",
+              "unit_of_measurement": "sq ft"
+            }
+          }
+        }
+      }
+    }
+  },
+  "Outdoor Kitchen": {
+    "9": {
+      "section": "Outdoor Carpentry",
+      "categories": {
+        "9.4": {
+          "category": "Gazebo",
+          "activities": {
+            "9.4.1": {
+              "activity": "Cedar Gazebo Kit Installation",
+              "unit_of_measurement": "sq ft"
+            },
+            "9.4.2": {
+              "activity": "Concrete Column Gazebo Installation",
+              "unit_of_measurement": "each"
+            },
+            "9.4.3": {
+              "activity": "Gazebo Roof Installation",
+              "unit_of_measurement": "sq ft"
+            },
+            "9.4.4": {
+              "activity": "Gazebo Removal",
+              "unit_of_measurement": "sq ft"
+            }
+          }
+        },
+        "9.5": {
+          "category": "Outdoor Furniture",
+          "activities": {
+            "9.5.1": {
+              "activity": "Outdoor Furniture Assembly",
+              "unit_of_measurement": "each"
+            }
+          }
+        },
+        "9.6": {
+          "category": "Outdoor Storage",
+          "activities": {
+            "9.6.1": {
+              "activity": "Outdoor Storage Concrete Slab Foundation Installation",
+              "unit_of_measurement": "sq ft"
+            },
+            "9.6.2": {
+              "activity": "Outdoor Storage Square Patio Stone Basement Installation",
+              "unit_of_measurement": "sq ft"
+            },
+            "9.6.3": {
+              "activity": "Outdoor Storage Shed Installation",
+              "unit_of_measurement": "sq ft"
+            },
+            "9.6.4": {
+              "activity": "Carport Installation",
+              "unit_of_measurement": "sq ft"
+            },
+            "9.6.5": {
+              "activity": "Storage Building Kit Installation",
+              "unit_of_measurement": "sq ft"
+            },
+            "9.6.6": {
+              "activity": "Patio Cover Installation",
+              "unit_of_measurement": "sq ft"
+            },
+            "9.6.7": {
+              "activity": "Outdoor Storage Removal",
+              "unit_of_measurement": "sq ft"
+            }
+          }
+        }
+      }
+    },
+    "10": {
+      "section": "Outdoor Electrical",
+      "categories": {
+        "10.2": {
+          "category": "Outlet and Switch",
+          "activities": {
+            "10.2.1": {
+              "activity": "Backyard Outlet Installation",
+              "unit_of_measurement": "each"
+            },
+            "10.2.2": {
+              "activity": "Weatherproof Outlet Installation",
+              "unit_of_measurement": "each"
+            },
+            "10.2.3": {
+              "activity": "Backyard Outlet with Switch Installation",
+              "unit_of_measurement": "each"
+            }
+          }
+        }
+      }
+    },
+    "22": {
+      "section": "Outdoor Appliance",
+      "categories": {
+        "22.1": {
+          "category": "Grills",
+          "activities": {
+            "22.1.1": {
+              "activity": "Outdoor Grill Assembly",
+              "unit_of_measurement": "sq ft"
+            },
+            "22.1.2": {
+              "activity": "Outdoor Grill Cleaning",
+              "unit_of_measurement": "sq ft"
+            }
+          }
+        },
+        "22.2": {
+          "category": "Outdoor Kitchen",
+          "activities": {
+            "22.2.1": {
+              "activity": "Outdoor Kitchen Cabinets Installation",
+              "unit_of_measurement": "lin ft"
+            },
+            "22.2.2": {
+              "activity": "Outdoor Kitchen Built-In Grill Installation",
+              "unit_of_measurement": "each"
+            },
+            "22.2.3": {
+              "activity": "Outdoor Kitchen Built-In Grill Installation",
+              "unit_of_measurement": "each"
+            },
+            "22.2.4": {
+              "activity": "Outdoor Kitchen Sink Installation",
+              "unit_of_measurement": "each"
+            },
+            "22.2.5": {
+              "activity": "Outdoor Kitchen Cleaning",
+              "unit_of_measurement": "each"
+            },
+            "22.2.6": {
+              "activity": "Outdoor Kitchen Removal",
+              "unit_of_measurement": "each"
+            }
+          }
+        },
+        "22.8": {
+          "category": "Refrigeration",
+          "activities": {
+            "22.8.1": {
+              "activity": "Built-In Outdoor Cooler Installation",
+              "unit_of_measurement": "each"
+            },
+            "22.8.2": {
+              "activity": "Outdoor Refrigeration Electrical Repair",
+              "unit_of_measurement": "each"
+            },
+            "22.8.3": {
+              "activity": "Outdoor Refrigeration System Maintenance",
+              "unit_of_measurement": "each"
+            }
+          }
+        }
+      }
+    }
+  },
+  "Patio": {
+    "8": {
+      "section": "Outdoor Painting",
+      "categories": {
+        "8.3": {
+          "category": "Deck",
+          "activities": {
+            "8.3.1": {
+              "activity": "Deck Staining and Finishing",
+              "unit_of_measurement": "sq ft"
+            },
+            "8.3.2": {
+              "activity": "Deck Coating (Acrylic Polymer)",
+              "unit_of_measurement": "sq ft"
+            },
+            "8.3.3": {
+              "activity": "Deck Painting (One Coat)",
+              "unit_of_measurement": "sq ft"
+            },
+            "8.3.4": {
+              "activity": "Deck Priming and Painting",
+              "unit_of_measurement": "sq ft"
+            }
+          }
+        },
+        "8.4": {
+          "category": "Window Trim",
+          "activities": {
+            "8.4.1": {
+              "activity": "Window Trim & Jamb Painting",
+              "unit_of_measurement": "each"
+            }
+          }
+        }
+      }
+    },
+    "9": {
+      "section": "Outdoor Carpentry",
+      "categories": {
+        "9.1": {
+          "category": "Deck",
+          "activities": {
+            "9.1.1": {
+              "activity": "Adjustable Helical Post Foundation Installation",
+              "unit_of_measurement": "each"
+            },
+            "9.1.2": {
+              "activity": "Plastic Adjustable Pedestal and Framing Installation",
+              "unit_of_measurement": "sq ft"
+            },
+            "9.1.3": {
+              "activity": "Concrete Blocks and Lumber Foundation Installation",
+              "unit_of_measurement": "sq ft"
+            },
+            "9.1.4": {
+              "activity": "Pressure-Treated Wood Decking Installation",
+              "unit_of_measurement": "sq ft"
+            },
+            "9.1.5": {
+              "activity": "Composite Decking Installation",
+              "unit_of_measurement": "sq ft"
+            },
+            "9.1.6": {
+              "activity": "Deck Stairs Installation (Up to 4 Feet)",
+              "unit_of_measurement": "step"
+            },
+            "9.1.7": {
+              "activity": "Deck Stair Balusters Installation",
+              "unit_of_measurement": "lin ft"
+            },
+            "9.1.8": {
+              "activity": "Deck Railing Installation",
+              "unit_of_measurement": "lin ft"
+            },
+            "9.1.9": {
+              "activity": "Glass Railing Installation",
+              "unit_of_measurement": "each"
+            },
+            "9.1.10": {
+              "activity": "Glass Deck Gate Installation",
+              "unit_of_measurement": "each"
+            },
+            "9.1.11": {
+              "activity": "Aluminum Deck Gate Installation",
+              "unit_of_measurement": "each"
+            },
+            "9.1.12": {
+              "activity": "Non-Slip Aluminum Nosing Installation",
+              "unit_of_measurement": "each"
+            },
+            "9.1.13": {
+              "activity": "Deck Plank Removal",
+              "unit_of_measurement": "sq ft"
+            },
+            "9.1.14": {
+              "activity": "Deck Sanding, Staining, and Finishing",
+              "unit_of_measurement": "sq ft"
+            }
+          }
+        },
+        "9.8": {
+          "category": "Staircases",
+          "activities": {
+            "9.8.1": {
+              "activity": "4-Step Outdoor Stair Installation",
+              "unit_of_measurement": "each"
+            },
+            "9.8.2": {
+              "activity": "5-Step Outdoor Stair Installation",
+              "unit_of_measurement": "each"
+            },
+            "9.8.3": {
+              "activity": "6-Step Outdoor Stair Installation",
+              "unit_of_measurement": "each"
+            },
+            "9.8.4": {
+              "activity": "8-Step Outdoor Stair Installation",
+              "unit_of_measurement": "each"
+            },
+            "9.8.5": {
+              "activity": "6-Foot Staircase Landing Installation",
+              "unit_of_measurement": "each"
+            },
+            "9.8.6": {
+              "activity": "8-Foot Staircase Landing Installation",
+              "unit_of_measurement": "each"
+            },
+            "9.8.7": {
+              "activity": "Outdoor Staircase Concrete Foundation Pillar and Columns Installation",
+              "unit_of_measurement": "each"
+            },
+            "9.8.8": {
+              "activity": "Outdoor Staircase Adjustable Ground Spike Foundation Installation",
+              "unit_of_measurement": "each"
+            },
+            "9.8.9": {
+              "activity": "Outdoor Staircase Step Replacement",
+              "unit_of_measurement": "each"
+            },
+            "9.8.10": {
+              "activity": "Outdoor Staircase Hand Rail Replacement",
+              "unit_of_measurement": "each"
+            },
+            "9.8.11": {
+              "activity": "Outdoor Staircase Removal (Per Rise)",
+              "unit_of_measurement": "each"
+            }
+          }
+        }
+      }
+    },
+    "10": {
+      "section": "Outdoor Electrical",
+      "categories": {
+        "10.2": {
+          "category": "Outlet and Switch",
+          "activities": {
+            "10.2.1": {
+              "activity": "Backyard Outlet Installation",
+              "unit_of_measurement": "each"
+            },
+            "10.2.2": {
+              "activity": "Weatherproof Outlet Installation",
+              "unit_of_measurement": "each"
+            },
+            "10.2.3": {
+              "activity": "Backyard Outlet with Switch Installation",
+              "unit_of_measurement": "each"
+            }
+          }
+        },
+        "10.5": {
+          "category": "Ceiling Fans",
+          "activities": {
+            "10.5.1": {
+              "activity": "Wet Rated Outdoor Ceiling Fan Installation",
+              "unit_of_measurement": "each"
+            }
+          }
+        }
+      }
+    },
+    "18": {
+      "section": "Outdoor Lighting",
+      "categories": {
+        "18.2": {
+          "category": "Deck and Patio",
+          "activities": {
+            "18.2.1": {
+              "activity": "String Light Kit Installation",
+              "unit_of_measurement": "each"
+            },
+            "18.2.2": {
+              "activity": "Deck/Step Light Installation",
+              "unit_of_measurement": "each"
+            },
+            "18.2.3": {
+              "activity": "Deck Post Light Installation",
+              "unit_of_measurement": "each"
+            }
+          }
+        },
+        "18.3": {
+          "category": "Wall Lights ",
+          "activities": {
+            "18.3.1": {
+              "activity": "Single-Story Wall Light Installation",
+              "unit_of_measurement": "each"
+            }
+          }
+        }
+      }
+    },
+    "22": {
+      "section": "Outdoor Appliance",
+      "categories": {
+        "22.1": {
+          "category": "Grills",
+          "activities": {
+            "22.1.1": {
+              "activity": "Outdoor Grill Assembly",
+              "unit_of_measurement": "sq ft"
+            },
+            "22.1.2": {
+              "activity": "Outdoor Grill Cleaning",
+              "unit_of_measurement": "sq ft"
+            }
+          }
+        },
+        "22.2": {
+          "category": "Outdoor Kitchen",
+          "activities": {
+            "22.2.1": {
+              "activity": "Outdoor Kitchen Cabinets Installation",
+              "unit_of_measurement": "lin ft"
+            },
+            "22.2.2": {
+              "activity": "Outdoor Kitchen Built-In Grill Installation",
+              "unit_of_measurement": "each"
+            },
+            "22.2.3": {
+              "activity": "Outdoor Kitchen Built-In Grill Installation",
+              "unit_of_measurement": "each"
+            },
+            "22.2.4": {
+              "activity": "Outdoor Kitchen Sink Installation",
+              "unit_of_measurement": "each"
+            },
+            "22.2.5": {
+              "activity": "Outdoor Kitchen Cleaning",
+              "unit_of_measurement": "each"
+            },
+            "22.2.6": {
+              "activity": "Outdoor Kitchen Removal",
+              "unit_of_measurement": "each"
+            }
+          }
+        },
+        "22.4": {
+          "category": "Fireplace",
+          "activities": {
+            "22.4.1": {
+              "activity": "Compact Outdoor Fireplace Installation",
+              "unit_of_measurement": "each"
+            },
+            "22.4.2": {
+              "activity": "Compact Wood Box Installation",
+              "unit_of_measurement": "each"
+            },
+            "22.4.3": {
+              "activity": "Compact Outdoor Hearth Installation",
+              "unit_of_measurement": "each"
+            },
+            "22.4.4": {
+              "activity": "Fireplace Cleaning",
+              "unit_of_measurement": "each"
+            },
+            "22.4.5": {
+              "activity": "Fireplace Removal",
+              "unit_of_measurement": "each"
+            }
+          }
+        },
+        "22.5": {
+          "category": "Patio Heater",
+          "activities": {
+            "22.5.1": {
+              "activity": "Infrared Ceiling-Mounted Electric Heater Installation",
+              "unit_of_measurement": "each"
+            },
+            "22.5.2": {
+              "activity": "Infrared Electric Heater Replacement",
+              "unit_of_measurement": "each"
+            }
+          }
+        },
+        "22.8": {
+          "category": "Refrigeration",
+          "activities": {
+            "22.8.1": {
+              "activity": "Built-In Outdoor Cooler Installation",
+              "unit_of_measurement": "each"
+            }
+          }
+        },
+        "22.9": {
+          "category": "Outdoor Cooling",
+          "activities": {
+            "22.9.1": {
+              "activity": "Outdoor Mist Cooling System for Small to Midsize Patio Installation",
+              "unit_of_measurement": "each"
+            },
+            "22.9.2": {
+              "activity": "Outdoor Mist Cooling System for Mid to Large Patio Installation",
+              "unit_of_measurement": "each"
+            }
+          }
+        }
+      }
+    },
+    "24": {
+      "section": "Outdoor Security",
+      "categories": {
+        "24.2": {
+          "category": "Wireless Cameras",
+          "activities": {
+            "24.2.1": {
+              "activity": "Battery-powered Wireless Smart Home Security Camera Installation",
+              "unit_of_measurement": "each"
+            },
+            "24.2.2": {
+              "activity": "Small Solar Panel for Outdoor Cameras Installation",
+              "unit_of_measurement": "each"
+            },
+            "24.2.3": {
+              "activity": "Gutter Mount Security Camera and Solar Panel Installation",
+              "unit_of_measurement": "each"
+            }
+          }
+        }
+      }
+    }
+  },
+  "Playground": {
+    "9": {
+      "section": "Outdoor Carpentry",
+      "categories": {
+        "9.7": {
+          "category": "Playground",
+          "activities": {
+            "9.7.1": {
+              "activity": "Swing Sets Installation",
+              "unit_of_measurement": "sq ft"
+            },
+            "9.7.2": {
+              "activity": "Playhouse Installation",
+              "unit_of_measurement": "sq ft"
+            },
+            "9.7.3": {
+              "activity": "Sandbox Installation",
+              "unit_of_measurement": "sq ft"
+            }
+          }
+        }
+      }
+    },
+    "20": {
+      "section": "Landscaping",
+      "categories": {
+        "20.5": {
+          "category": "Mulching",
+          "activities": {
+            "20.5.2": {
+              "activity": "Organic Mulching for Playgrounds",
+              "unit_of_measurement": "sq ft"
+            }
+          }
+        },
+        "20.7": {
+          "category": "Edging",
+          "activities": {
+            "20.7.1": {
+              "activity": "Install Plastic Landscape Edging",
+              "unit_of_measurement": "lin ft"
+            },
+            "20.7.3": {
+              "activity": "Install Natural Stone Landscape Edging",
+              "unit_of_measurement": "lin ft"
+            }
+          }
+        },
+        "20.9": {
+          "category": "Hedge",
+          "activities": {
+            "20.9.1": {
+              "activity": "Hedge Planting",
+              "unit_of_measurement": "each"
+            },
+            "20.9.2": {
+              "activity": "Hedge Pruning",
+              "unit_of_measurement": "hour"
+            }
+          }
+        },
+        "20.10": {
+          "category": "Walkway and Path",
+          "activities": {
+            "20.10.6": {
+              "activity": "Crushed Stone or Gravel Path Installation",
+              "unit_of_measurement": "sq ft"
+            }
+          }
+        }
+      }
+    }
+  }
+}

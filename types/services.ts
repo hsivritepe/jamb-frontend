@@ -1,6 +1,6 @@
 import { LucideIcon } from 'lucide-react';
 
-export interface ServiceItem {
+export interface ServiceCategory {
     id: number;
     title: string;
     image: string;
@@ -32,11 +32,21 @@ export interface ServiceFeature {
     text: string;
 }
 
-export interface ServicePlan {
-    id: number;
-    name: string;
-    price: number;
+export interface ServiceItem {
+    id: string;
+    title: string;
     description: string;
-    features: ServiceFeature[];
-    isPopular?: boolean;
+    price: number;
+    quantity?: number;
+    categoryId: number;
 }
+
+export type EstimateService = {
+    id: string;
+    title: string;
+    description: string;
+    price: number;
+    categoryId?: number;
+    category: string;
+    quantity?: number;
+};

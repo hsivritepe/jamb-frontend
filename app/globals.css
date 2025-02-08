@@ -2,19 +2,30 @@
 @tailwind components;
 @tailwind utilities;
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-    font-feature-settings: 'liga' 1, 'ss01' 1;
+h1,h2,h3,h4,h5,h6 {
+  font-feature-settings: 'liga' 1, 'ss01' 1;
 }
 
-/* Make sure there are no conflicting background colors here */
-
 :root {
-    --color-brand-light: #1948f00d;
-    --color-brand: #1948f0;
-    --color-brand-dark: #1537be;
+  --color-brand: #1948f0;
+  --color-brand-light: #1948f00d;
+  --color-brand-dark: #1537be;
+}
+
+@media print {
+
+  @page {
+    margin: 1cm;
+  }
+
+  header,
+  footer {
+    display: none !important;
+  }
+
+  /* Ensure each big section starts on a new page */
+  .page-break {
+    page-break-before: always;
+  }
+  /* Or page-break-after: always, whichever suits the layout best */
 }
