@@ -137,7 +137,7 @@ function MobileNav({
             <Link
               key={item.name}
               href={item.href}
-              className={`font-medium transition-colors duration-200 ${
+              className={`font-semibold sm:font-medium transition-colors duration-200 ${
                 isActive ? "text-blue-600" : "text-gray-700 hover:text-blue-600"
               }`}
               prefetch={false}
@@ -152,7 +152,7 @@ function MobileNav({
         <Link
           href="/emergency"
           prefetch={false}
-          className={`flex items-center gap-2 font-medium text-gray-700 ${
+          className={`flex items-center gap-2 font-semibold sm:font-medium text-gray-700 ${
             pathname.startsWith("/emergency")
               ? "text-red-600 font-semibold"
               : "border-transparent"
@@ -191,11 +191,11 @@ function MobileNav({
         ) : (
           <Link
             href="/login"
-            className="text-gray-700 hover:text-blue-600 flex items-center gap-2"
+            className="text-gray-700 hover:text-blue-600 font-semibold sm:font-medium flex items-center gap-2"
             onClick={() => setIsMobileMenuOpen(false)}
             title="Login / Register"
           >
-            <User className="w-5 h-5" />
+            <User className="w-5 h-5 font-semibold sm:font-medium" />
             <span>Login</span>
           </Link>
         )}
