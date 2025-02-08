@@ -137,10 +137,8 @@ function MobileNav({
             <Link
               key={item.name}
               href={item.href}
-              className={`font-medium transition-colors duration-200 ${
-                isActive
-                  ? "text-blue-600"
-                  : "text-gray-700 hover:text-blue-600"
+              className={`font-semibold sm:font-medium transition-colors duration-200 ${
+                isActive ? "text-blue-600" : "text-gray-700 hover:text-blue-600"
               }`}
               prefetch={false}
               onClick={() => setIsMobileMenuOpen(false)}
@@ -154,7 +152,7 @@ function MobileNav({
         <Link
           href="/emergency"
           prefetch={false}
-          className={`flex items-center gap-2 font-medium text-gray-700 ${
+          className={`flex items-center gap-2 font-semibold sm:font-medium text-gray-700 ${
             pathname.startsWith("/emergency")
               ? "text-red-600 font-semibold"
               : "border-transparent"
@@ -193,11 +191,11 @@ function MobileNav({
         ) : (
           <Link
             href="/login"
-            className="text-gray-700 hover:text-blue-600 flex items-center gap-2"
+            className="text-gray-700 hover:text-blue-600 font-semibold sm:font-medium flex items-center gap-2"
             onClick={() => setIsMobileMenuOpen(false)}
             title="Login / Register"
           >
-            <User className="w-5 h-5" />
+            <User className="w-5 h-5 font-semibold sm:font-medium" />
             <span>Login</span>
           </Link>
         )}
@@ -464,14 +462,15 @@ export default function Header() {
                 "
                 title="Click to change location"
               >
-                <span className="text-xs font-medium text-gray-500 sm:text-sm">
+                <span className="text-xs font-semibold sm:font-medium text-gray-500 sm:text-sm">
                   Are you here?
                 </span>
                 <strong
                   onClick={() => setShowLocationModal(true)}
                   className="
                     text-sm
-                    font-medium 
+                    font-semibold
+                    sm:font-medium
                     text-black 
                     cursor-pointer 
                     transition-colors 
@@ -493,7 +492,7 @@ export default function Header() {
                     <Link
                       key={item.name}
                       href={item.href}
-                      className={`font-medium transition-colors duration-200 ${
+                      className={`font-bold sm:font-medium transition-colors duration-200 ${
                         isActive
                           ? "text-blue-600"
                           : "text-gray-700 hover:text-blue-600"
@@ -587,29 +586,46 @@ export default function Header() {
 
       {/* Location modal */}
       {showLocationModal && (
-        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-[9999]">
+        <div className="fixed inset-0 bg-black/30 z-50 flex justify-start">
           <div
             ref={locationModalRef}
             className="
-              bg-white 
-              rounded-xl 
-              shadow-lg 
-              w-[90%]
-              max-w-[500px]
-              p-4 
-              text-center
-              sm:p-6 
-              md:p-8
-            "
+        bg-white
+        w-full
+        sm:w-[400px]
+        h-full
+        p-6
+        flex
+        flex-col
+        relative
+        overflow-auto
+      "
           >
-            <h2 className="text-xl font-semibold mb-4 text-gray-800">
+            {/* Close (X) button in top-right */}
+            <button
+              onClick={() => setShowLocationModal(false)}
+              className="
+          absolute
+          top-3
+          right-3
+          text-gray-500
+          hover:text-red-500
+          p-1
+          transition-colors
+        "
+              aria-label="Close location modal"
+            >
+              ✕
+            </button>
+
+            <h2 className="text-xl font-bold sm:font-semibold mb-4 text-gray-800">
               Set Your Location
             </h2>
 
             {/* City */}
             <label
               htmlFor="city-input"
-              className="block text-left text-sm font-medium text-gray-600 mb-1"
+              className="block text-left text-sm font-semibold sm:font-medium text-gray-600 mb-1"
             >
               City
             </label>
@@ -628,7 +644,7 @@ export default function Header() {
             {/* ZIP */}
             <label
               htmlFor="zip-input"
-              className="block text-left text-sm font-medium text-gray-600 mb-1"
+              className="block text-left text-sm font-semibold sm:font-medium text-gray-600 mb-1"
             >
               ZIP Code
             </label>
@@ -647,7 +663,7 @@ export default function Header() {
             {/* State */}
             <label
               htmlFor="state-input"
-              className="block text-left text-sm font-medium text-gray-600 mb-1"
+              className="block text-left text-sm font-semibold sm:font-medium text-gray-600 mb-1"
             >
               State
             </label>
@@ -665,25 +681,25 @@ export default function Header() {
 
             <div className="flex flex-wrap justify-between gap-4 mt-6">
               <button
-                className="flex-1 p-3 font-medium border rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-800 border-gray-300"
+                className="flex-1 p-3 font-semibold sm:font-medium border rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-800 border-gray-300"
                 onClick={handleAutoFill}
               >
                 Auto
               </button>
               <button
-                className="flex-1 p-3 font-medium border rounded-lg bg-green-100 text-green-700 border-green-300 hover:bg-green-200"
+                className="flex-1 p-3 font-semibold sm:font-medium border rounded-lg bg-green-100 text-green-700 border-green-300 hover:bg-green-200"
                 onClick={handleZipLookup}
               >
                 ZIP
               </button>
               <button
-                className="flex-1 p-3 font-medium border rounded-lg bg-red-100 text-red-700 border-red-300 hover:bg-red-200"
+                className="flex-1 p-3 font-semibold sm:font-medium border rounded-lg bg-red-100 text-red-700 border-red-300 hover:bg-red-200"
                 onClick={handleClearLocation}
               >
                 Clear
               </button>
               <button
-                className="flex-1 p-3 font-medium border-none rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+                className="flex-1 p-3 font-semibold sm:font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 border-none"
                 onClick={() => {
                   handleManualLocationSave();
                 }}

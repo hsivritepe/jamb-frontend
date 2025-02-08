@@ -23,7 +23,10 @@ export default function Services() {
   const { location } = useLocation();
 
   // 1) Load chosen "sections" from session
-  const selectedSections: string[] = getSessionItem("services_selectedSections", []);
+  const selectedSections: string[] = getSessionItem(
+    "services_selectedSections",
+    []
+  );
   useEffect(() => {
     if (selectedSections.length === 0) {
       router.push("/calculate");
@@ -36,7 +39,9 @@ export default function Services() {
   );
   const [address, setAddress] = useState<string>(getSessionItem("address", ""));
   const [zip, setZip] = useState<string>(getSessionItem("zip", ""));
-  const [stateName, setStateName] = useState<string>(getSessionItem("stateName", ""));
+  const [stateName, setStateName] = useState<string>(
+    getSessionItem("stateName", "")
+  );
   const [description, setDescription] = useState<string>(
     getSessionItem("description", "")
   );
@@ -44,7 +49,8 @@ export default function Services() {
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
 
   // Build categories map
-  const categoriesBySection: Record<string, { id: string; title: string }[]> = {};
+  const categoriesBySection: Record<string, { id: string; title: string }[]> =
+    {};
   ALL_CATEGORIES.forEach((cat) => {
     if (!categoriesBySection[cat.section]) {
       categoriesBySection[cat.section] = [];
@@ -53,7 +59,10 @@ export default function Services() {
   });
 
   // Restore selected categories
-  const storedSelectedCategories = getSessionItem("selectedCategoriesMap", null);
+  const storedSelectedCategories = getSessionItem(
+    "selectedCategoriesMap",
+    null
+  );
   const initialSelectedCategories: Record<string, string[]> =
     storedSelectedCategories ||
     (() => {
@@ -69,7 +78,10 @@ export default function Services() {
   >(initialSelectedCategories);
 
   // Persist states to session
-  useEffect(() => setSessionItem("services_searchQuery", searchQuery), [searchQuery]);
+  useEffect(
+    () => setSessionItem("services_searchQuery", searchQuery),
+    [searchQuery]
+  );
   useEffect(() => setSessionItem("address", address), [address]);
   useEffect(() => setSessionItem("zip", zip), [zip]);
   useEffect(() => setSessionItem("stateName", stateName), [stateName]);
@@ -100,7 +112,9 @@ export default function Services() {
   ) as Record<string, { id: string; title: string }[]>;
 
   // Expand/collapse
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(
+    new Set()
+  );
   const toggleSection = (section: string) => {
     setExpandedSections((prev) => {
       const next = new Set(prev);
@@ -143,7 +157,9 @@ export default function Services() {
   const handleNext = () => {
     const totalChosen = Object.values(selectedCategoriesMap).flat().length;
     if (totalChosen === 0) {
-      setWarningMessage("Please select at least one category before proceeding.");
+      setWarningMessage(
+        "Please select at least one category before proceeding."
+      );
       return;
     }
     if (!address.trim()) {
@@ -199,7 +215,9 @@ export default function Services() {
 
         <div className="mt-8">
           <div className="flex flex-col md:flex-row justify-between gap-2">
-            <SectionBoxTitle className="flex-shrink-0">Select Your Categories</SectionBoxTitle>
+            <SectionBoxTitle className="flex-shrink-0">
+              Select Your Categories
+            </SectionBoxTitle>
             <div className="flex flex-col items-end md:items-center md:flex-row md:justify-end">
               <Button onClick={handleNext} className="mt-2 md:mt-0">
                 Next →
@@ -212,13 +230,18 @@ export default function Services() {
         <div className="flex flex-col gap-4 mt-8 w-full xl:w-[600px]">
           <SearchServices
             value={searchQuery}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+            onChange={(e: ChangeEvent<HTMLInputElement>) =>
+              setSearchQuery(e.target.value)
+            }
             placeholder="Search within selected sections..."
           />
           <div className="flex justify-between items-center text-sm text-gray-500 mt-2">
             <span>
               No service?{" "}
-              <a href="#" className="text-blue-600 hover:underline focus:outline-none">
+              <a
+                href="#"
+                className="text-blue-600 hover:underline focus:outline-none"
+              >
                 Contact support
               </a>
             </span>
@@ -247,7 +270,8 @@ export default function Services() {
             <div className="flex flex-col gap-3">
               {selectedSections.map((section) => {
                 const allCats = filteredCategoriesBySection[section] || [];
-                const selectedCount = (selectedCategoriesMap[section] || []).length;
+                const selectedCount = (selectedCategoriesMap[section] || [])
+                  .length;
 
                 return (
                   <div
@@ -261,14 +285,15 @@ export default function Services() {
                       className="flex justify-between items-center w-full"
                     >
                       <h3
-                        className={`font-medium text-2xl ${
-                          selectedCount > 0 ? "text-blue-600" : "text-black"
+                        className={`font-semibold sm:font-medium text-2xl ${
+                          selectedCount > 0 ? "text-blue-600" : "text-gray-800"
                         }`}
                       >
                         {section}
                         {selectedCount > 0 && (
                           <span className="text-sm text-gray-500 ml-2">
-                            ({selectedCount} selected)
+                            ({selectedCount}
+                            <span className="hidden sm:inline"> selected</span>)
                           </span>
                         )}
                       </h3>
@@ -288,15 +313,19 @@ export default function Services() {
                         ) : (
                           allCats.map((cat) => {
                             const isSelected =
-                              selectedCategoriesMap[section]?.includes(cat.id) || false;
+                              selectedCategoriesMap[section]?.includes(
+                                cat.id
+                              ) || false;
                             return (
                               <div
                                 key={cat.id}
                                 className="flex justify-between items-center"
                               >
                                 <span
-                                  className={`text-lg transition-colors duration-300 ${
-                                    isSelected ? "text-blue-600" : "text-gray-800"
+                                  className={`text-lg font-medium transition-colors duration-300 ${
+                                    isSelected
+                                      ? "text-blue-600"
+                                      : "text-gray-800"
                                   }`}
                                 >
                                   {cat.title}
@@ -305,7 +334,9 @@ export default function Services() {
                                   <input
                                     type="checkbox"
                                     checked={isSelected}
-                                    onChange={() => handleCategorySelect(section, cat.id)}
+                                    onChange={() =>
+                                      handleCategorySelect(section, cat.id)
+                                    }
                                     className="sr-only peer"
                                   />
                                   <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>

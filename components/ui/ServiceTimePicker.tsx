@@ -242,12 +242,12 @@ export default function ServiceTimePicker({
   const confirmButtonLabel = hasConfirmed ? "Change Date" : "Confirm Date";
 
   return (
-    <div className="bg-white border border-gray-300 rounded-lg p-4 w-full h-auto">
+    <div className="bg-white border border-gray-300 rounded-lg p-2 sm:p-4 w-full h-auto">
       {/* Header */}
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold text-gray-800">
+        <h2 className="pl-2 text-3xl font-bold sm:font-semibold text-gray-800">
           Select Available Date{" "}
-          <span className="text-sm text-gray-500 font-normal">
+          <span className="text-sm text-gray-500 font-semibold sm:font-normal">
             (Impacts Total Labor)
           </span>
         </h2>
@@ -265,7 +265,7 @@ export default function ServiceTimePicker({
       {/* "Anytime in a Month" */}
       <button
         onClick={pickAnytime}
-        className={`w-full py-2 mb-6 border rounded-lg font-medium transition-transform active:scale-95
+        className={`w-full py-2 mb-6 border rounded-lg font-semibold sm:font-medium transition-transform active:scale-95
           ${
             anytimeSelected
               ? "bg-brand text-white border-brand"
@@ -286,7 +286,7 @@ export default function ServiceTimePicker({
               setCurrentMonth(prev);
             }
           }}
-          className="text-blue-600 font-medium transition-transform active:scale-95"
+          className="text-blue-600 font-semibold sm:font-medium transition-transform active:scale-95"
         >
           ← Previous
         </button>
@@ -295,14 +295,14 @@ export default function ServiceTimePicker({
         </span>
         <button
           onClick={() => setCurrentMonth((old) => addMonths(old, 1))}
-          className="text-blue-600 font-medium transition-transform active:scale-95"
+          className="text-blue-600 font-semibold sm:font-medium transition-transform active:scale-95"
         >
           Next →
         </button>
       </div>
 
       {/* Weekday headers */}
-      <div className="grid grid-cols-7 gap-2 text-center text-sm font-medium text-gray-600 mb-2">
+      <div className="grid grid-cols-7 gap-2 text-center text-sm font-semibold sm:font-medium text-gray-600 mb-2">
         <div>Sun</div>
         <div>Mon</div>
         <div>Tue</div>
@@ -386,7 +386,7 @@ export default function ServiceTimePicker({
       <button
         onClick={handleConfirmClick}
         disabled={!selectedDate}
-        className={`w-full mt-6 py-3 rounded-lg font-medium transition-transform active:scale-95
+        className={`w-full mt-6 py-3 rounded-lg font-semibold sm:font-medium transition-transform active:scale-95
           ${
             !selectedDate
               ? "opacity-50 cursor-not-allowed bg-blue-600 text-white"
@@ -403,7 +403,7 @@ export default function ServiceTimePicker({
       {selectedDate && (
         <p className="mt-3 text-center text-md text-gray-700">
           Selected:{" "}
-          <span className="font-medium text-blue-600">
+          <span className="font-semibold sm:font-medium text-blue-600">
             {selectedDate}
             {(() => {
               let matchedHoliday = "";
@@ -425,7 +425,7 @@ export default function ServiceTimePicker({
             })()}
           </span>
           <br />
-          Coefficient: <span className="font-medium">{selectedCoefficient.toFixed(2)}</span>
+          Coefficient: <span className="font-semibold sm:font-medium">{selectedCoefficient.toFixed(2)}</span>
         </p>
       )}
     </div>

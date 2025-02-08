@@ -46,7 +46,7 @@ export default function PaymentOptionPanel({
     <div className="w-full xl:w-[500px] bg-white border border-gray-300 rounded-lg p-4">
       {/* Title */}
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold text-gray-800">
+        <h2 className="text-2xl font-bold sm:font-semibold text-gray-800">
           Payment Option
         </h2>
       </div>
@@ -74,7 +74,7 @@ export default function PaymentOptionPanel({
                 }`}
             >
               <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-gray-800">
+                <h3 className="text-lg font-bold sm:font-semibold text-gray-800">
                   {opt.label}
                 </h3>
               </div>
@@ -98,7 +98,7 @@ export default function PaymentOptionPanel({
 
               <button
                 onClick={() => onConfirm(opt.label, opt.coefficient)}
-                className={`mt-2 px-3 py-2 text-sm font-medium rounded transition-colors ${
+                className={`mt-2 px-3 py-2 text-sm font-semibold sm:font-medium rounded transition-colors ${
                   isSelected
                     ? "bg-red-600 text-white hover:bg-red-700"
                     : "bg-blue-600 text-white hover:bg-blue-700"

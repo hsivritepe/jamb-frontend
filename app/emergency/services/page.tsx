@@ -235,14 +235,15 @@ export default function EmergencyServices() {
                     className="flex justify-between items-center w-full"
                   >
                     <h3
-                      className={`font-medium text-2xl text-left ${
+                      className={`font-semibold sm:font-medium text-2xl text-left ${
                         categorySelectedCount > 0 ? "text-blue-600" : "text-black"
                       }`}
                     >
                       {categoryLabel}
                       {categorySelectedCount > 0 && (
                         <span className="text-sm text-gray-500 ml-2">
-                          ({categorySelectedCount} selected)
+                          ({categorySelectedCount} 
+                            <span className="hidden sm:inline"> selected</span>)
                         </span>
                       )}
                     </h3>

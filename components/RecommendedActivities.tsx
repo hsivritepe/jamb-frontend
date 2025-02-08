@@ -25,8 +25,8 @@ function getApiBaseUrl(): string {
   return process.env.NEXT_PUBLIC_API_BASE_URL || "http://dev.thejamb.com";
 }
 
-/** 
- * POST /work/finishing_materials => fetch finishing materials for a given work_code. 
+/**
+ * POST /work/finishing_materials => fetch finishing materials for a given work_code.
  */
 async function fetchFinishingMaterials(workCode: string) {
   const url = `${getApiBaseUrl()}/work/finishing_materials`;
@@ -46,8 +46,8 @@ async function fetchFinishingMaterials(workCode: string) {
   return res.json();
 }
 
-/** 
- * POST /calculate => compute labor+materials cost. 
+/**
+ * POST /calculate => compute labor+materials cost.
  */
 async function calculatePrice(params: {
   work_code: string;
@@ -66,7 +66,9 @@ async function calculatePrice(params: {
     body: JSON.stringify(params),
   });
   if (!res.ok) {
-    throw new Error(`Failed to calculate price (work_code=${params.work_code}).`);
+    throw new Error(
+      `Failed to calculate price (work_code=${params.work_code}).`
+    );
   }
   return res.json();
 }
@@ -195,16 +197,25 @@ export default function RecommendedActivities({
   }, [originToRecommendedIds, selectedServicesState]);
 
   // finishing materials for recommended => recId => { sections: ... }
-  const [recommendedFinishingMaterialsMap, setRecommendedFinishingMaterialsMap] = useState<
-    Record<string, { sections: Record<string, any[]> }>
-  >({});
+  const [
+    recommendedFinishingMaterialsMap,
+    setRecommendedFinishingMaterialsMap,
+  ] = useState<Record<string, { sections: Record<string, any[]> }>>({});
   // finishingMaterialSelections => recId => string[]
-  const [recommendedFinishingMaterialSelections, setRecommendedFinishingMaterialSelections] =
-    useState<Record<string, string[]>>({});
+  const [
+    recommendedFinishingMaterialSelections,
+    setRecommendedFinishingMaterialSelections,
+  ] = useState<Record<string, string[]>>({});
 
-  const [recommendedQuantities, setRecommendedQuantities] = useState<Record<string, number>>({});
-  const [manualRecInput, setManualRecInput] = useState<Record<string, string | null>>({});
-  const [recommendedCosts, setRecommendedCosts] = useState<Record<string, number>>({});
+  const [recommendedQuantities, setRecommendedQuantities] = useState<
+    Record<string, number>
+  >({});
+  const [manualRecInput, setManualRecInput] = useState<
+    Record<string, string | null>
+  >({});
+  const [recommendedCosts, setRecommendedCosts] = useState<
+    Record<string, number>
+  >({});
   const [isFading, setIsFading] = useState(false);
 
   // Initialize recommendedQuantities if missing
@@ -263,7 +274,9 @@ export default function RecommendedActivities({
         setRecommendedFinishingMaterialSelections(newSelections);
       }
 
-      setRecommendedFinishingMaterialsMap({ ...recommendedFinishingMaterialsMap });
+      setRecommendedFinishingMaterialsMap({
+        ...recommendedFinishingMaterialsMap,
+      });
     }
 
     if (flatRecommended.length > 0) {
@@ -286,7 +299,8 @@ export default function RecommendedActivities({
           try {
             const recId = item.recommendedId;
             const qty = recommendedQuantities[recId] ?? item.min_quantity;
-            const finishingIds = recommendedFinishingMaterialSelections[recId] || [];
+            const finishingIds =
+              recommendedFinishingMaterialSelections[recId] || [];
 
             const dot = dashToDot(recId);
             const resp = await calculatePrice({
@@ -454,8 +468,12 @@ export default function RecommendedActivities({
           xl:max-w-[500px]
         "
       >
-        <h2 className="text-2xl font-medium text-gray-800 mb-4">Maybe You Also Need</h2>
-        <p className="text-md text-gray-500 mt-4">No additional recommendations</p>
+        <h2 className="text-2xl font-medium text-gray-800 mb-4">
+          Maybe You Also Need
+        </h2>
+        <p className="text-md text-gray-500 mt-4">
+          No additional recommendations
+        </p>
       </div>
     );
   }
@@ -478,7 +496,9 @@ export default function RecommendedActivities({
     >
       {/* Title / Pagination */}
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-2xl font-medium text-gray-800">Maybe you also need</h2>
+        <h2 className="text-2xl font-bold sm:font-medium text-gray-800">
+          Maybe You Also Need
+        </h2>
         <div className="flex items-center gap-2">
           <button
             onClick={handlePrev}
@@ -536,86 +556,103 @@ export default function RecommendedActivities({
           return (
             <div
               key={`${item.originId}-${recId}`}
-              className="p-3 bg-white border border-gray-200 rounded shadow-sm flex flex-col justify-between h-[350px]"
+              className="
+    bg-white
+    border
+    border-gray-200
+    rounded
+    shadow-sm
+    flex
+    flex-col
+    h-[350px]
+    overflow-hidden
+  "
             >
-              <div className="w-full h-40 overflow-hidden mb-2 rounded">
+              {/* Full-width image at the top */}
+              <div className="w-full h-40 overflow-hidden">
                 <ServiceImage serviceId={recId} />
               </div>
 
-              <h4 className="text-sm font-semibold text-gray-800 mt-0 line-clamp-2">
-                {item.title}
-              </h4>
-              {item.description && (
-                <p className="text-xs text-gray-600 mt-1 line-clamp-2">
-                  {item.description}
-                </p>
-              )}
+              {/* Card content with padding, using flex-col to separate top vs. bottom */}
+              <div className="flex-1 p-4 flex flex-col">
+                <h4 className="text-medium font-semibold text-gray-800 mt-0 line-clamp-2">
+                  {item.title}
+                </h4>
+                {item.description && (
+                  <p className="text-xs text-gray-600 mt-1 line-clamp-2">
+                    {item.description}
+                  </p>
+                )}
 
-              {/* Quantity controls */}
-              <div className="mt-2">
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() =>
-                      handleRecQuantityChange(
-                        recId,
-                        false,
-                        item.unit_of_measurement,
-                        item.min_quantity
-                      )
-                    }
-                    className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
-                  >
-                    −
-                  </button>
-                  <input
-                    type="text"
-                    value={displayVal}
-                    onClick={() => handleRecClick(recId)}
-                    onBlur={() => handleRecBlur(recId)}
-                    onChange={(e) =>
-                      handleRecManualChange(
-                        recId,
-                        e.target.value,
-                        item.unit_of_measurement,
-                        item.min_quantity
-                      )
-                    }
-                    className="w-16 text-center px-1 py-1 border rounded text-sm"
-                  />
-                  <button
-                    onClick={() =>
-                      handleRecQuantityChange(
-                        recId,
-                        true,
-                        item.unit_of_measurement,
-                        item.min_quantity
-                      )
-                    }
-                    className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
-                  >
-                    +
-                  </button>
-                  <span className="text-xs text-gray-600 ml-1">
-                    {item.unit_of_measurement}
-                  </span>
+                {/* Place quantity controls + cost row at the bottom */}
+                <div className="mt-auto">
+                  {/* Quantity controls */}
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() =>
+                        handleRecQuantityChange(
+                          recId,
+                          false,
+                          item.unit_of_measurement,
+                          item.min_quantity
+                        )
+                      }
+                      className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
+                    >
+                      −
+                    </button>
+                    <input
+                      type="text"
+                      value={displayVal}
+                      onClick={() => handleRecClick(recId)}
+                      onBlur={() => handleRecBlur(recId)}
+                      onChange={(e) =>
+                        handleRecManualChange(
+                          recId,
+                          e.target.value,
+                          item.unit_of_measurement,
+                          item.min_quantity
+                        )
+                      }
+                      className="w-16 text-center px-1 py-1 border rounded text-sm"
+                    />
+                    <button
+                      onClick={() =>
+                        handleRecQuantityChange(
+                          recId,
+                          true,
+                          item.unit_of_measurement,
+                          item.min_quantity
+                        )
+                      }
+                      className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
+                    >
+                      +
+                    </button>
+                    <span className="text-sm text-gray-600 ml-1">
+                      {item.unit_of_measurement}
+                    </span>
+                  </div>
+
+                  {/* Cost + Add/Remove */}
+                  <div className="flex justify-between items-center mt-2">
+                    <span className="text-medium text-blue-600 font-bold">
+                      ${formatWithSeparator(costVal)}
+                    </span>
+                    <button
+                      onClick={() =>
+                        handleAddRecommended(recId, item.min_quantity)
+                      }
+                      className={`text-sm font-semibold px-3 py-1 rounded ${
+                        isSelected
+                          ? "bg-red-600 text-white hover:bg-red-700"
+                          : "bg-blue-600 text-white hover:bg-blue-700"
+                      }`}
+                    >
+                      {isSelected ? "Remove" : "Add"}
+                    </button>
+                  </div>
                 </div>
-              </div>
-
-              {/* cost + add/remove */}
-              <div className="mt-2 flex justify-between items-center">
-                <span className="text-sm text-blue-600 font-semibold">
-                  ${formatWithSeparator(costVal)}
-                </span>
-                <button
-                  onClick={() => handleAddRecommended(recId, item.min_quantity)}
-                  className={`text-xs px-2 py-1 rounded ${
-                    isSelected
-                      ? "bg-red-600 text-white hover:bg-red-700"
-                      : "bg-blue-600 text-white hover:bg-blue-700"
-                  }`}
-                >
-                  {isSelected ? "Remove" : "Add"}
-                </button>
               </div>
             </div>
           );
