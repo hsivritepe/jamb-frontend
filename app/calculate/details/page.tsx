@@ -58,7 +58,7 @@ async function fetchFinishingMaterials(workCode: string) {
   return res.json();
 }
 
-/** POST /calculate => compute labor+materials cost. */
+/** POST /calculate => compute labor + materials cost. */
 async function calculatePrice(params: {
   work_code: string;
   zipcode: string;
@@ -80,7 +80,7 @@ async function calculatePrice(params: {
   return res.json();
 }
 
-/** Simple image component for a service ID, adapted for responsiveness up to 1280px. */
+/** Simple image component for a service ID, adapted for responsiveness. */
 function ServiceImage({ serviceId }: { serviceId: string }) {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
 
@@ -229,7 +229,7 @@ export default function Details() {
     setSessionItem("calculationResultsMap", calculationResultsMap);
   }, [calculationResultsMap]);
 
-  // Expand/collapse a category => possibly fetch finishing materials
+  /** Expand/collapse a category => possibly fetch finishing materials. */
   function toggleCategory(catId: string) {
     setExpandedCategories((old) => {
       const next = new Set(old);
@@ -244,7 +244,7 @@ export default function Details() {
     });
   }
 
-  // Toggle a service in the left side
+  /** Toggle a service. */
   function handleServiceToggle(serviceId: string) {
     setSelectedServicesState((old) => {
       const isOn = old[serviceId] != null;
@@ -291,7 +291,7 @@ export default function Details() {
     setWarningMessage(null);
   }
 
-  // +/- quantity
+  /** Increment or decrement quantity. */
   function handleQuantityChange(
     serviceId: string,
     increment: boolean,
@@ -319,7 +319,7 @@ export default function Details() {
     setManualInputValue((old) => ({ ...old, [serviceId]: null }));
   }
 
-  // typed quantity
+  /** Manual input change. */
   function handleManualQuantityChange(
     serviceId: string,
     val: string,
@@ -346,14 +346,14 @@ export default function Details() {
     }));
   }
 
-  // onBlur => if empty => revert to numeric
+  /** If user leaves input blank => revert. */
   function handleBlurInput(serviceId: string) {
     if (!manualInputValue[serviceId]) {
       setManualInputValue((old) => ({ ...old, [serviceId]: null }));
     }
   }
 
-  // Clear all selected
+  /** Clear all selections. */
   function clearAllSelections() {
     if (!window.confirm("Are you sure you want to clear all services?")) return;
 
@@ -367,7 +367,7 @@ export default function Details() {
     setClientOwnedMaterials({});
   }
 
-  // Load finishing materials for a single service
+  /** Load finishing materials for a single service. */
   async function ensureFinishingMaterialsLoaded(serviceId: string) {
     try {
       if (!finishingMaterialsMapAll[serviceId]) {
@@ -376,11 +376,9 @@ export default function Details() {
         finishingMaterialsMapAll[serviceId] = data;
         setFinishingMaterialsMapAll({ ...finishingMaterialsMapAll });
       }
-      // Initialize finishingMaterialSelections[serviceId] if missing
       if (!finishingMaterialSelections[serviceId]) {
         const fmData = finishingMaterialsMapAll[serviceId];
         if (fmData?.sections) {
-          // we store an object keyed by each sectionName => external_id
           const picksObj: Record<string, string> = {};
           for (const [secName, arr] of Object.entries(fmData.sections)) {
             if (Array.isArray(arr) && arr.length > 0) {
@@ -396,7 +394,7 @@ export default function Details() {
     }
   }
 
-  // Load finishing materials for all services in a category
+  /** Load finishing materials for all services in a category. */
   async function fetchFinishingMaterialsForCategory(
     servicesArr: (typeof ALL_SERVICES)[number][]
   ) {
@@ -408,7 +406,6 @@ export default function Details() {
             const data = await fetchFinishingMaterials(dot);
             finishingMaterialsMapAll[svc.id] = data;
 
-            // initialize picks if missing
             if (!finishingMaterialSelections[svc.id]) {
               if (data?.sections) {
                 const picksObj: Record<string, string> = {};
@@ -430,7 +427,7 @@ export default function Details() {
     }
   }
 
-  // Recompute cost whenever user changes selected services or ZIP changes
+  /** Recompute cost whenever user changes selected services or ZIP changes. */
   useEffect(() => {
     async function recalcAll() {
       const svcIds = Object.keys(selectedServicesState);
@@ -457,7 +454,6 @@ export default function Details() {
             await ensureFinishingMaterialsLoaded(svcId);
 
             const quantity = selectedServicesState[svcId];
-            // gather all external_id from finishingMaterialSelections[svcId] (by section)
             const picksObj = finishingMaterialSelections[svcId] || {};
             const finishingIds = Object.values(picksObj);
 
@@ -490,17 +486,15 @@ export default function Details() {
     recalcAll();
   }, [selectedServicesState, finishingMaterialSelections, location]);
 
-  // Summation of serviceCosts
+  /** Summation of service costs. */
   function calculateTotal() {
     return Object.values(serviceCosts).reduce((a, b) => a + b, 0);
   }
 
-  // Next button => check if there's at least one service and an address
+  /** Next => validate selections and go to estimate page. */
   function handleNext() {
     if (Object.keys(selectedServicesState).length === 0) {
-      setWarningMessage(
-        "Please select at least one service before proceeding."
-      );
+      setWarningMessage("Please select at least one service before proceeding.");
       return;
     }
     if (!address.trim()) {
@@ -510,7 +504,7 @@ export default function Details() {
     router.push("/calculate/estimate");
   }
 
-  // Toggle expanded service details
+  /** Toggle expanded service details. */
   function toggleServiceDetails(serviceId: string) {
     setExpandedServiceDetails((old) => {
       const copy = new Set(old);
@@ -523,7 +517,7 @@ export default function Details() {
     });
   }
 
-  // Find finishing material object
+  /** Find finishing material object. */
   function findFinishingMaterialObj(
     serviceId: string,
     extId: string
@@ -539,7 +533,7 @@ export default function Details() {
     return null;
   }
 
-  // pick a new finishing material => finishingMaterialSelections[serviceId][sectionName] = externalId
+  /** pickMaterial => finishingMaterialSelections[serviceId][sectionName] = externalId. */
   function pickMaterial(
     serviceId: string,
     sectionName: string,
@@ -551,7 +545,7 @@ export default function Details() {
     setFinishingMaterialSelections({ ...finishingMaterialSelections });
   }
 
-  // userHasOwnMaterial
+  /** userHasOwnMaterial => client highlights that item in red. */
   function userHasOwnMaterial(serviceId: string, extId: string) {
     if (!clientOwnedMaterials[serviceId]) {
       clientOwnedMaterials[serviceId] = new Set();
@@ -560,7 +554,7 @@ export default function Details() {
     setClientOwnedMaterials({ ...clientOwnedMaterials });
   }
 
-  // close modal
+  /** Close finishing materials modal. */
   function closeModal() {
     setShowModalServiceId(null);
     setShowModalSectionName(null);
@@ -712,7 +706,7 @@ export default function Details() {
                                         <ServiceImage serviceId={svc.id} />
 
                                         {svc.description && (
-                                          <p className="text-sm text-gray-500 pr-16">
+                                          <p className="text-sm text-gray-500">
                                             {svc.description}
                                           </p>
                                         )}
@@ -770,51 +764,35 @@ export default function Details() {
                                             </span>
                                           </div>
                                           <div className="flex items-center gap-2">
-                                            <span className="text-lg text-blue-600 font-medium text-right">
+                                            <span className="text-lg text-blue-600 font-semibold text-right">
                                               ${formatWithSeparator(finalCost)}
                                             </span>
-                                            {/* Desktop "Details" */}
-                                            <button
-                                              onClick={() =>
-                                                toggleServiceDetails(svc.id)
-                                              }
-                                              className={`text-blue-500 text-sm ml-2 hidden xl:block ${
-                                                detailsExpanded
-                                                  ? ""
-                                                  : "underline"
-                                              }`}
-                                            >
-                                              Details
-                                            </button>
                                           </div>
                                         </div>
 
                                         {/* Mobile "Details" button */}
-                                        <div className="mt-2 flex justify-end xl:hidden">
+                                        <div className="mt-2 flex justify-end">
                                           <button
                                             onClick={() =>
                                               toggleServiceDetails(svc.id)
                                             }
-                                            className={`text-blue-500 text-sm ${
+                                            className={`text-blue-600 text-sm font-medium mb-3 ${
                                               detailsExpanded ? "" : "underline"
                                             }`}
                                           >
-                                            Details
+                                            Cost Breakdown
                                           </button>
                                         </div>
 
                                         {/* Cost breakdown */}
                                         {calcResult && detailsExpanded && (
                                           <div className="mt-4 p-4 bg-gray-50 border rounded">
-                                            <h4 className="text-lg font-semibold text-gray-800 mb-3">
-                                              Cost Breakdown
-                                            </h4>
                                             <div className="flex flex-col gap-2 mb-4">
                                               <div className="flex justify-between">
                                                 <span className="text-md font-medium text-gray-700">
                                                   Labor
                                                 </span>
-                                                <span className="text-md font-medium text-gray-700">
+                                                <span className="text-md font-semibold text-gray-700">
                                                   {calcResult.work_cost
                                                     ? `$${calcResult.work_cost}`
                                                     : "—"}
@@ -824,7 +802,7 @@ export default function Details() {
                                                 <span className="text-md font-medium text-gray-700">
                                                   Materials, tools and equipment
                                                 </span>
-                                                <span className="text-md font-medium text-gray-700">
+                                                <span className="text-md font-semibold text-gray-700">
                                                   {calcResult.material_cost
                                                     ? `$${calcResult.material_cost}`
                                                     : "—"}
@@ -832,11 +810,8 @@ export default function Details() {
                                               </div>
                                             </div>
 
-                                            {Array.isArray(
-                                              calcResult.materials
-                                            ) &&
-                                              calcResult.materials.length >
-                                                0 && (
+                                            {Array.isArray(calcResult.materials) &&
+                                              calcResult.materials.length > 0 && (
                                                 <div className="mt-2">
                                                   <table className="table-auto w-full text-sm text-left text-gray-700">
                                                     <thead>
@@ -857,16 +832,19 @@ export default function Details() {
                                                     </thead>
                                                     <tbody className="divide-y divide-gray-200">
                                                       {calcResult.materials.map(
-                                                        (m: any, i: number) => {
+                                                        (
+                                                          m: any,
+                                                          i: number
+                                                        ) => {
                                                           const fmObj =
                                                             findFinishingMaterialObj(
                                                               svc.id,
                                                               m.external_id
                                                             );
-                                                          const hasImage = fmObj
-                                                            ?.image?.length
-                                                            ? true
-                                                            : false;
+                                                          const hasImage =
+                                                            fmObj?.image?.length
+                                                              ? true
+                                                              : false;
                                                           const isClientOwned =
                                                             clientOwnedMaterials[
                                                               svc.id
@@ -958,9 +936,7 @@ export default function Details() {
                                                               </td>
                                                               <td className="py-3 px-1">
                                                                 $
-                                                                {
-                                                                  m.cost_per_unit
-                                                                }
+                                                                {m.cost_per_unit}
                                                               </td>
                                                               <td className="py-3 px-3">
                                                                 {m.quantity}
@@ -1046,7 +1022,8 @@ export default function Details() {
                                         key={svc.id}
                                         className="grid grid-cols-3 gap-2 text-sm text-gray-600"
                                         style={{
-                                          gridTemplateColumns: "40% 30% 25%",
+                                          gridTemplateColumns:
+                                            "40% 30% 25%",
                                         }}
                                       >
                                         <span>{svc.title}</span>

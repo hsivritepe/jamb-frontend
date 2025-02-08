@@ -890,7 +890,7 @@ export default function RoomDetails() {
                                                 />
 
                                                 {svc.description && (
-                                                  <p className="text-sm text-gray-500 pr-16">
+                                                  <p className="text-sm text-gray-500">
                                                     {svc.description}
                                                   </p>
                                                 )}
@@ -954,45 +954,30 @@ export default function RoomDetails() {
                                                     </span>
                                                   </div>
                                                   <div className="flex items-center gap-2">
-                                                    <span className="text-lg text-blue-600 font-medium text-right">
+                                                    <span className="text-lg text-blue-600 font-semibold text-right">
                                                       $
                                                       {formatWithSeparator(
                                                         finalCost
                                                       )}
                                                     </span>
-                                                    {/* Desktop "Details" button */}
-                                                    <button
-                                                      onClick={() =>
-                                                        toggleServiceDetails(
-                                                          svc.id
-                                                        )
-                                                      }
-                                                      className={`text-blue-500 text-sm ml-2 hidden xl:block ${
-                                                        detailsExpanded
-                                                          ? ""
-                                                          : "underline"
-                                                      }`}
-                                                    >
-                                                      Details
-                                                    </button>
                                                   </div>
                                                 </div>
 
-                                                {/* Mobile "Details" button */}
-                                                <div className="mt-2 flex justify-end xl:hidden">
+                                                {/* "Details" button */}
+                                                <div className="mt-2 flex justify-end">
                                                   <button
                                                     onClick={() =>
                                                       toggleServiceDetails(
                                                         svc.id
                                                       )
                                                     }
-                                                    className={`text-blue-500 text-sm ${
+                                                    className={`text-blue-600 text-sm font-medium mb-3 ${
                                                       detailsExpanded
                                                         ? ""
                                                         : "underline"
                                                     }`}
                                                   >
-                                                    Details
+                                                    Cost Breakdown
                                                   </button>
                                                 </div>
 
@@ -1000,15 +985,12 @@ export default function RoomDetails() {
                                                 {calcResult &&
                                                   detailsExpanded && (
                                                     <div className="mt-4 p-4 bg-gray-50 border rounded">
-                                                      <h4 className="text-lg font-semibold text-gray-800 mb-3">
-                                                        Cost Breakdown
-                                                      </h4>
                                                       <div className="flex flex-col gap-2 mb-4">
                                                         <div className="flex justify-between">
                                                           <span className="text-md font-medium text-gray-700">
                                                             Labor
                                                           </span>
-                                                          <span className="text-md font-medium text-gray-700">
+                                                          <span className="text-md font-semibold text-gray-700">
                                                             {calcResult.work_cost
                                                               ? `$${calcResult.work_cost}`
                                                               : "—"}
@@ -1019,7 +1001,7 @@ export default function RoomDetails() {
                                                             Material, tools and
                                                             equipment
                                                           </span>
-                                                          <span className="text-md font-medium text-gray-700">
+                                                          <span className="text-md font-semibold text-gray-700">
                                                             {calcResult.material_cost
                                                               ? `$${calcResult.material_cost}`
                                                               : "—"}

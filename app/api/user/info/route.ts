@@ -10,7 +10,7 @@ import { getUserInfo } from '@/server/controllers/userController';
  * }
  *
  * Responses:
- * 200 => { ...user data... }
+ * 200 => user info object
  * 400 => { "error": "Bad request" }
  * 401 => { "error": "Unauthorized" }
  */
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // If no error, we have user data
+    // Otherwise, no error => return user data
     return NextResponse.json(result.data, { status: 200 });
   } catch (error) {
     console.error('POST /api/user/info error:', error);

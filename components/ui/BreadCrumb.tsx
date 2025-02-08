@@ -5,9 +5,12 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 
+/**
+ * Represents one breadcrumb step.
+ */
 interface BreadCrumbItem {
-  readonly label: string; // Text label
-  readonly href: string;  // Base path
+  readonly label: string;
+  readonly href: string;
 }
 
 interface BreadCrumbProps {
@@ -15,18 +18,40 @@ interface BreadCrumbProps {
 }
 
 /**
+ * A small helper that preserves user auth 
+ * and clears other session keys.
+ */
+function preserveAuthAndClearOthers() {
+  // Keep these keys
+  const authToken = sessionStorage.getItem("authToken");
+  const profileData = sessionStorage.getItem("profileData");
+
+  // Clear everything
+  sessionStorage.clear();
+
+  // Restore those we want to keep
+  if (authToken) {
+    sessionStorage.setItem("authToken", authToken);
+  }
+  if (profileData) {
+    sessionStorage.setItem("profileData", profileData);
+  }
+}
+
+/**
  * BreadCrumb component:
- * - On phones (<768px), arrows are removed entirely (no ChevronRight).
- * - On tablets/desktops (≥768px), arrows remain as before (absolute positioned).
- * - We still do "..." to shorten the chain on mobile if needed,
- *   and highlight/underline for passed items.
+ * - On phones (<768px), we remove the arrow icon (ChevronRight).
+ * - On tablets/desktops (≥768px), we keep the arrow.
+ * - We also do "..." to shorten the chain on mobile if needed.
+ * - If a breadcrumb link is in the "pathsToClear" array, we 
+ *   selectively clear sessionStorage except the auth token.
  */
 export default function BreadCrumb({ items }: BreadCrumbProps) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
-  // Detect if screen is phone (<768px)
+  // Check if screen is phone (<768px)
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -35,34 +60,38 @@ export default function BreadCrumb({ items }: BreadCrumbProps) {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
-    handleResize(); // initial check on mount
-
+    handleResize(); // run once
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // For potential query params, not used here
+  // Possibly we transform items or use searchParams
   const updatedItems = items.map((item) => item);
 
-  // Determine "current" step
+  // Find current index
   const currentIndex = updatedItems.findIndex((item) => {
+    // Base path ignoring query
     const baseHref = item.href.split("?")[0];
     return baseHref === pathname;
   });
 
-  // Some paths require clearing sessionStorage on click
+  // If user clicks on these top-level pages => clear session data
   const pathsToClear = ["/calculate", "/emergency", "/rooms", "/packages"];
 
-  function handleBreadcrumbClick(
-    e: React.MouseEvent<HTMLAnchorElement>,
-    href: string
-  ) {
+  /**
+   * If user clicks on a breadcrumb that is in `pathsToClear`, 
+   * we preserve auth but remove everything else from sessionStorage.
+   */
+  function handleBreadcrumbClick(e: React.MouseEvent<HTMLAnchorElement>, href: string) {
     e.preventDefault();
-    sessionStorage.clear();
+    preserveAuthAndClearOthers();
     router.push(href);
   }
 
-  // getMobileItems(): shorten chain for mobile if necessary
+  /**
+   * On mobile, we shorten the breadcrumb chain with "..." 
+   * if there are many items.
+   */
   function getMobileItems(all: BreadCrumbItem[], currIndex: number) {
     const length = all.length;
     if (length <= 3) return all;
@@ -87,6 +116,7 @@ export default function BreadCrumb({ items }: BreadCrumbProps) {
     if (currIndex === length - 2 && length > 3) {
       return [firstItem, { label: "...", href: "#" }, currentItem, lastItem];
     }
+    // More complicated case => show first, "...", current, "...", last
     return [
       firstItem,
       { label: "...", href: "#" },
@@ -96,7 +126,6 @@ export default function BreadCrumb({ items }: BreadCrumbProps) {
     ];
   }
 
-  // Decide mobile vs. desktop array
   const displayItems = isMobile
     ? getMobileItems(updatedItems, currentIndex)
     : updatedItems;
@@ -109,7 +138,7 @@ export default function BreadCrumb({ items }: BreadCrumbProps) {
           const isActive = pathname === baseHref;
           const isPassed = index <= currentIndex;
           const isPlaceholder = item.label === "...";
-          const shouldClearStorage = pathsToClear.includes(item.href);
+          const shouldClearStorage = pathsToClear.includes(baseHref);
 
           return (
             <div
@@ -118,11 +147,6 @@ export default function BreadCrumb({ items }: BreadCrumbProps) {
                 isPassed ? "border-b-2 border-brand -mb-[2px]" : ""
               }`}
             >
-              {/**
-               * If "..." => placeholder,
-               * else if passed => link or anchor with onClick (if clear storage),
-               * else => disabled span
-               */}
               {isPlaceholder ? (
                 <span className="flex items-center justify-center py-4 text-gray-400">
                   ...
@@ -156,7 +180,6 @@ export default function BreadCrumb({ items }: BreadCrumbProps) {
 
               {/**
                * If not the last item & not mobile => show arrow
-               * For <768px, no arrow
                */}
               {index < displayItems.length - 1 && !isMobile && (
                 <ChevronRight className="w-5 h-5 absolute top-1/2 -translate-y-1/2 -right-2 text-gray-400" />

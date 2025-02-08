@@ -3,6 +3,43 @@
 ├── app
 │   ├── about
 │   │   └── page.tsx
+│   ├── api
+│   │   ├── orders
+│   │   │   ├── [orderId]
+│   │   │   │   └── route.ts
+│   │   │   └── route.ts
+│   │   └── user
+│   │       ├── [userId]
+│   │       │   └── route.ts
+│   │       ├── address
+│   │       │   └── route.ts
+│   │       ├── auth
+│   │       │   ├── credentials
+│   │       │   │   └── route.ts
+│   │       │   ├── login
+│   │       │   │   └── route.ts
+│   │       │   ├── register
+│   │       │   │   └── route.ts
+│   │       │   └── token
+│   │       │       └── route.ts
+│   │       ├── card
+│   │       │   └── route.ts
+│   │       ├── change-password
+│   │       │   ├── request
+│   │       │   │   └── route.ts
+│   │       │   └── route.ts
+│   │       ├── confirm
+│   │       │   └── route.ts
+│   │       ├── create
+│   │       │   └── route.ts
+│   │       ├── delete
+│   │       │   └── route.tsx
+│   │       ├── info
+│   │       │   └── route.ts
+│   │       ├── profile
+│   │       │   └── route.ts
+│   │       └── resend-activation
+│   │           └── route.ts
 │   ├── calculate
 │   │   ├── checkout
 │   │   │   ├── page.tsx
@@ -15,6 +52,12 @@
 │   │   ├── page.tsx
 │   │   └── services
 │   │       └── page.tsx
+│   ├── dashboard
+│   │   ├── orders
+│   │   │   ├── [orderId]
+│   │   │   │   └── page.tsx
+│   │   │   └── page.tsx
+│   │   └── page.tsx
 │   ├── emergency
 │   │   ├── checkout
 │   │   │   ├── page.tsx
@@ -29,6 +72,8 @@
 │   │       └── page.tsx
 │   ├── globals.css
 │   ├── layout.tsx
+│   ├── login
+│   │   └── page.tsx
 │   ├── packages
 │   │   ├── checkout
 │   │   │   ├── page.tsx
@@ -42,6 +87,14 @@
 │   │   └── services
 │   │       └── page.tsx
 │   ├── page.tsx
+│   ├── password-reset
+│   │   └── page.tsx
+│   ├── profile
+│   │   ├── messages
+│   │   │   └── page.tsx
+│   │   ├── page.tsx
+│   │   └── settings
+│   │       └── page.tsx
 │   └── rooms
 │       ├── checkout
 │       │   ├── page.tsx
@@ -73,6 +126,10 @@
 │   │   ├── HowItWorks.tsx
 │   │   ├── RoomMakeovers.tsx
 │   │   └── ServicesGrid.tsx
+│   ├── icons
+│   │   ├── AppleIcon.tsx
+│   │   ├── FacebookIcon.tsx
+│   │   └── GoogleIcon.tsx
 │   ├── layout
 │   │   ├── Footer.tsx
 │   │   └── Header.tsx
@@ -107,6 +164,7 @@
 │   ├── taxRatesCanada.ts
 │   └── taxRatesUSA.ts
 ├── context
+│   ├── AuthContext.tsx
 │   └── LocationContext.tsx
 ├── data
 │   ├── emergency_services.json
@@ -144,11 +202,11 @@
 │       ├── logo.png
 │       ├── rooms
 │       │   ├── attic.jpg
+│       │   ├── backyard.jpg
 │       │   ├── basement.jpg
 │       │   ├── bathroom.jpg
 │       │   ├── bedroom.jpg
 │       │   ├── driveway.jpg
-│       │   ├── entertainment_area.jpg
 │       │   ├── exterior_cleaning.jpg
 │       │   ├── facade.jpg
 │       │   ├── garage.jpg
@@ -194,6 +252,11 @@
 │       ├── who-is-this-for-img-2.jpg
 │       ├── who-is-this-for-img-3.jpeg
 │       └── who-is-this-for-img-3.jpg
+├── server
+│   ├── controllers
+│   │   ├── orderController.ts
+│   │   └── userController.ts
+│   └── db.ts
 ├── structure.txt
 ├── tailwind.config.js
 ├── tsconfig.json
@@ -208,4 +271,4 @@
     ├── format.ts
     └── session.ts
 
-42 directories, 167 files
+73 directories, 199 files

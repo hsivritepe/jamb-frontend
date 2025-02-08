@@ -851,8 +851,8 @@ export const ROOMS = {
       ],
     },
     {
-      id: "entertainment_area",
-      title: "Entertainment Area",
+      id: "backyard",
+      title: "Backyard",
       services: [
         { id: "9-1-1", title: "Adjustable Helical Post Foundation Installation" },
         { id: "9-1-2", title: "Plastic Adjustable Pedestal and Framing Installation" },

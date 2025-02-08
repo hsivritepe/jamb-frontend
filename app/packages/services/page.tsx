@@ -1014,7 +1014,7 @@ export default function PackageServicesPage() {
                                                 </span>
                                               </div>
                                               <div className="flex items-center gap-2">
-                                                <span className="text-lg text-blue-600 font-medium text-right">
+                                                <span className="text-lg text-blue-600 font-semibold text-right">
                                                   $
                                                   {formatWithSeparator(
                                                     finalCost
@@ -1023,33 +1023,30 @@ export default function PackageServicesPage() {
                                               </div>
                                             </div>
 
-                                            {/* "Details" button => below, right for phone/tablet */}
+                                            {/* "Cost Breakdown" button*/}
                                             <div className="mt-2 flex justify-end">
                                               <button
                                                 onClick={() =>
                                                   toggleCostBreakdown(svc.id)
                                                 }
-                                                className={`text-blue-500 text-sm ${
+                                                className={`text-blue-600 text-sm font-medium mb-3 ${
                                                   isBreakdownOpen
                                                     ? ""
                                                     : "underline"
                                                 }`}
                                               >
-                                                Details
+                                                Cost Breakdown
                                               </button>
                                             </div>
 
                                             {isBreakdownOpen && calcResult && (
                                               <div className="mt-4 p-4 bg-gray-50 border rounded">
-                                                <h4 className="text-md font-semibold text-gray-800 mb-3">
-                                                  Cost Breakdown
-                                                </h4>
                                                 <div className="flex flex-col gap-2 mb-2">
                                                   <div className="flex justify-between">
                                                     <span className="text-md font-medium text-gray-700">
                                                       Labor
                                                     </span>
-                                                    <span>
+                                                    <span className="text-md font-semibold text-gray-700">
                                                       {calcResult.work_cost
                                                         ? `$${calcResult.work_cost}`
                                                         : "—"}
@@ -1060,7 +1057,7 @@ export default function PackageServicesPage() {
                                                       Materials, tools &amp;
                                                       equipment
                                                     </span>
-                                                    <span>
+                                                    <span className="text-md font-semibold text-gray-700">
                                                       {calcResult.material_cost
                                                         ? `$${calcResult.material_cost}`
                                                         : "—"}
@@ -1439,7 +1436,7 @@ export default function PackageServicesPage() {
                                                 </span>
                                               </div>
                                               <div className="flex items-center gap-2">
-                                                <span className="text-lg text-blue-600 font-medium text-right">
+                                                <span className="text-lg text-blue-600 font-semibold text-right">
                                                   $
                                                   {formatWithSeparator(
                                                     finalCost
@@ -1448,33 +1445,30 @@ export default function PackageServicesPage() {
                                               </div>
                                             </div>
 
-                                            {/* "Details" button => below, right for phone/tablet */}
+                                            {/* "Cost Breakdown" button */}
                                             <div className="mt-2 flex justify-end">
                                               <button
                                                 onClick={() =>
                                                   toggleCostBreakdown(svc.id)
                                                 }
-                                                className={`text-blue-500 text-sm ${
+                                                className={`text-blue-600 text-sm font-medium mb-3 ${
                                                   isBreakdownOpen
                                                     ? ""
                                                     : "underline"
                                                 }`}
                                               >
-                                                Details
+                                                Cost Breakdown
                                               </button>
                                             </div>
 
                                             {isBreakdownOpen && calcResult && (
                                               <div className="mt-4 p-4 bg-gray-50 border rounded">
-                                                <h4 className="text-md font-semibold text-gray-800 mb-3">
-                                                  Cost Breakdown
-                                                </h4>
                                                 <div className="flex flex-col gap-2 mb-2">
                                                   <div className="flex justify-between">
                                                     <span className="text-md font-medium text-gray-700">
                                                       Labor
                                                     </span>
-                                                    <span>
+                                                    <span className="text-md font-semibold text-gray-700">
                                                       {calcResult.work_cost
                                                         ? `$${calcResult.work_cost}`
                                                         : "—"}
@@ -1485,7 +1479,7 @@ export default function PackageServicesPage() {
                                                       Materials, tools &amp;
                                                       equipment
                                                     </span>
-                                                    <span>
+                                                    <span className="text-md font-semibold text-gray-700">
                                                       {calcResult.material_cost
                                                         ? `$${calcResult.material_cost}`
                                                         : "—"}
