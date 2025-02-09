@@ -915,7 +915,7 @@ export default function PackageServicesPage() {
                                 className="flex justify-between items-center w-full"
                               >
                                 <h3
-                                  className={`font-semibold sm:font-medium text-2xl ${
+                                  className={`font-semibold sm:font-medium text-xl sm:text-2xl ${
                                     selectedInCat > 0
                                       ? "text-blue-600"
                                       : "text-black"
@@ -1368,7 +1368,7 @@ export default function PackageServicesPage() {
                                 className="flex justify-between items-center w-full"
                               >
                                 <h3
-                                  className={`font-semibold sm:font-medium text-2xl ${
+                                  className={`font-semibold sm:font-medium text-xl sm:text-2xl ${
                                     selectedInCat > 0
                                       ? "text-blue-600"
                                       : "text-black"

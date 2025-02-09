@@ -286,7 +286,7 @@ export default function Services() {
                       className="flex justify-between items-center w-full"
                     >
                       <h3
-                        className={`font-semibold sm:font-medium text-2xl ${
+                        className={`font-semibold sm:font-medium text-xl sm:text-2xl ${
                           selectedCount > 0 ? "text-blue-600" : "text-gray-800"
                         }`}
                       >

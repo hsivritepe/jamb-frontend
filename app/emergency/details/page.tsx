@@ -626,7 +626,7 @@ export default function EmergencyDetails() {
                     onClick={() => handleToggleExpand(service)}
                   >
                     <span
-                      className={`text-2xl font-semibold sm:font-medium ${
+                      className={`text-xl sm:text-2xl font-semibold sm:font-medium ${
                         chosenCount > 0 ? "text-blue-600" : "text-gray-800"
                       }`}
                     >

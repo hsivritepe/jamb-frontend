@@ -845,7 +845,7 @@ export default function Details() {
                             className="flex justify-between items-center w-full"
                           >
                             <h3
-                              className={`font-semibold sm:font-medium text-2xl ${
+                              className={`font-semibold sm:font-medium text-xl sm:text-2xl ${
                                 selectedInCat > 0
                                   ? "text-blue-600"
                                   : "text-gray-800"
@@ -1228,7 +1228,7 @@ export default function Details() {
             <div className="w-full xl:max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden">
               <SectionBoxSubtitle>Summary</SectionBoxSubtitle>
               {Object.keys(selectedServicesState).length === 0 ? (
-                <div className="text-left text-gray-500 text-medium mt-4">
+                <div className="text-left text-gray-500 text-md mt-4">
                   No services selected
                 </div>
               ) : (
@@ -1300,7 +1300,7 @@ export default function Details() {
                     <span className="text-2xl font-semibold text-gray-800">
                       Subtotal:
                     </span>
-                    <span className="text-2xl font-semibold text-blue-600">
+                    <span className="text-xl sm:text-2xl font-bold sm:font-semibold text-blue-600">
                       ${formatWithSeparator(calculateTotal())}
                     </span>
                   </div>

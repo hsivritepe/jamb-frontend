@@ -468,7 +468,7 @@ export default function RecommendedActivities({
           xl:max-w-[500px]
         "
       >
-        <h2 className="text-2xl font-medium text-gray-800 mb-4">
+        <h2 className="text-2xl font-bold sm:font-medium text-gray-800 mb-4">
           Maybe You Also Need
         </h2>
         <p className="text-md text-gray-500 mt-4">
