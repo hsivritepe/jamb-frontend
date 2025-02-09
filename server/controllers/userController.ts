@@ -1,4 +1,4 @@
-import { db } from "@/server/db";
+// import { db } from "@/server/db"; // Commented out because there's no local DB in use
 import bcrypt from "bcrypt";
 import { randomBytes } from "crypto";
 
@@ -22,6 +22,8 @@ export async function createUser(email: string, phoneNumber: string, password: s
     return { error: "empty-body" };
   }
 
+  // NOTE: The following code is commented out since we no longer use a local DB:
+  /*
   // Check if user already exists
   const existing = await db.user.findUnique({ where: { email } });
   if (existing) {
@@ -35,12 +37,13 @@ export async function createUser(email: string, phoneNumber: string, password: s
   await db.user.create({
     data: {
       email,
-      phone: phoneNumber, // or phone_number field in your DB
+      phone: phoneNumber,
       passwordHash: hashedPassword,
-      // Optionally: firstLang, secondLang defaults, sendingAgreed = false, etc.
     },
   });
+  */
 
+  // For now, just return a success object (or do a fetch to your external API)
   return { success: true };
 }
 
@@ -59,6 +62,8 @@ export async function createUser(email: string, phoneNumber: string, password: s
  * 401 => { "error": "Incorrect credentials" }
  */
 export async function authenticateUser(email: string, password: string) {
+  // NOTE: Commenting out local DB logic:
+  /*
   const user = await db.user.findUnique({ where: { email } });
   if (!user) {
     return { error: "Incorrect credentials" };
@@ -69,15 +74,18 @@ export async function authenticateUser(email: string, password: string) {
     return { error: "Incorrect credentials" };
   }
 
-  // Generate a token (dummy example)
+  // Generate a dummy token
   const token = `token-${Date.now()}-${user.id}`;
-  // Save the token in DB
   await db.user.update({
     where: { id: user.id },
     data: { authToken: token },
   });
 
   return { token };
+  */
+
+  // Placeholder response:
+  return { token: "dummy_token" };
 }
 
 /**
@@ -95,6 +103,7 @@ export async function authenticateUser(email: string, password: string) {
  * 404 => { error: "User not found" }
  */
 export async function confirmUser(email: string, code: string) {
+  /*
   const user = await db.user.findUnique({ where: { email } });
   if (!user) {
     return { error: "User not found" };
@@ -110,6 +119,7 @@ export async function confirmUser(email: string, code: string) {
       activationCode: null,
     },
   });
+  */
 
   return { success: true };
 }
@@ -128,26 +138,29 @@ export async function confirmUser(email: string, code: string) {
  * 500 => { error: "Error while sending email code" }
  */
 export async function requestChangePassword(email: string) {
+  /*
   const user = await db.user.findUnique({ where: { email } });
   if (!user) {
     return { error: "User not found" };
   }
 
-  const resetToken = randomBytes(6).toString("hex").slice(0, 6); // 6-char code
+  const resetToken = randomBytes(6).toString("hex").slice(0, 6);
   try {
     await db.user.update({
       where: { email },
       data: {
         resetPasswordToken: resetToken,
-        resetPasswordExpires: new Date(Date.now() + 60 * 60 * 1000), // 1 hour
+        resetPasswordExpires: new Date(Date.now() + 60 * 60 * 1000),
       },
     });
-    // Optionally send email with code (resetToken)
     return { success: true };
   } catch (err) {
     console.error("requestChangePassword:", err);
     return { error: "Error while sending email code" };
   }
+  */
+
+  return { success: true };
 }
 
 /**
@@ -162,10 +175,11 @@ export async function requestChangePassword(email: string) {
  * }
  *
  * 200 => { success: true }
- * 400 => { error: "Bad request" } e.g. code mismatch or expired
+ * 400 => { error: "Bad request" }
  * 401 => { error: "User not found" }
  */
 export async function changePassword(email: string, code: string, newPassword: string) {
+  /*
   const user = await db.user.findUnique({ where: { email } });
   if (!user) {
     return { error: "User not found" };
@@ -188,6 +202,7 @@ export async function changePassword(email: string, code: string, newPassword: s
       resetPasswordExpires: null,
     },
   });
+  */
 
   return { success: true };
 }
@@ -211,6 +226,7 @@ export async function resendActivationCode(email: string) {
     return { error: "Email is required" };
   }
 
+  /*
   const user = await db.user.findUnique({ where: { email } });
   if (!user) {
     return { error: "User not found" };
@@ -225,12 +241,14 @@ export async function resendActivationCode(email: string) {
       where: { email },
       data: { activationCode: newCode },
     });
-    // Optionally send email with new code
     return { success: "Activation code resent" };
   } catch (err) {
     console.error("resendActivationCode error:", err);
     return { error: "Error while sending activation code" };
   }
+  */
+
+  return { success: "Activation code resent" };
 }
 
 /**
@@ -262,6 +280,7 @@ export async function updateUserAddress(
     return { error: "Not valid token or request body" };
   }
 
+  /*
   const user = await db.user.findUnique({ where: { authToken: token } });
   if (!user) {
     return { error: "Not valid token or request body" };
@@ -277,6 +296,7 @@ export async function updateUserAddress(
       addressZipcode: String(zipcode),
     },
   });
+  */
 
   return { success: "ok" };
 }
@@ -312,6 +332,7 @@ export async function updateUserCard(
     return { error: "Not valid token or request body" };
   }
 
+  /*
   const user = await db.user.findUnique({ where: { authToken: token } });
   if (!user) {
     return { error: "Not valid token or request body" };
@@ -328,6 +349,7 @@ export async function updateUserCard(
       cardZipcode: zipcode,
     },
   });
+  */
 
   return { success: "ok" };
 }
@@ -348,19 +370,19 @@ export async function getUserInfo(token: string) {
     return { error: "Bad request" };
   }
 
+  /*
   const user = await db.user.findUnique({ where: { authToken: token } });
   if (!user) {
     return { error: "Unauthorized" };
   }
 
-  // Return the fields you want to expose
   const userInfo = {
     name: user.name || "",
     surname: user.surname || "",
     phone: user.phone || "",
     firstLang: user.firstLang || "",
     secondLang: user.secondLang || "",
-    sendingAgreed: user.sendingAgreed || false,  // If you have this field in DB
+    sendingAgreed: user.sendingAgreed || false,
     card: {
       number: user.cardNumber || "",
       surname: user.cardSurname || "",
@@ -379,12 +401,17 @@ export async function getUserInfo(token: string) {
   };
 
   return { data: userInfo };
+  */
+
+  // Placeholder response
+  return { data: {} };
 }
 
 /**
  * (Optional) Auth with token
  */
 export async function authenticateWithToken(token: string, withProfile?: boolean) {
+  /*
   if (!token) {
     return { error: "Error while auth. Bad Request." };
   }
@@ -405,6 +432,8 @@ export async function authenticateWithToken(token: string, withProfile?: boolean
   }
 
   return { success: "ok" };
+  */
+  return { success: "ok" };
 }
 
 /**
@@ -418,18 +447,16 @@ export async function updateUserProfile(
   secondLang: string,
   sendingAgreed: boolean
 ) {
-  // Validate token
+  /*
   if (!token) {
     return { error: "Bad request" };
   }
 
-  // Look up user by token
   const user = await db.user.findUnique({ where: { authToken: token } });
   if (!user) {
     return { error: "Invalid token" };
   }
 
-  // Update fields as needed
   await db.user.update({
     where: { id: user.id },
     data: {
@@ -440,10 +467,10 @@ export async function updateUserProfile(
       sendingAgreed: sendingAgreed ?? false,
     },
   });
+  */
 
   return { success: true };
 }
-
 
 /**
  * Delete a user account by token.
@@ -460,6 +487,7 @@ export async function updateUserProfile(
  * 404 => { "error": "User not found" }
  */
 export async function deleteUserAccount(token: string) {
+  /*
   if (!token) {
     return { error: "Token is required" };
   }
@@ -469,10 +497,11 @@ export async function deleteUserAccount(token: string) {
     return { error: "User not found" };
   }
 
-  // Perform the deletion
   await db.user.delete({
     where: { id: user.id },
   });
 
+  return { success: "User has been deleted" };
+  */
   return { success: "User has been deleted" };
 }
