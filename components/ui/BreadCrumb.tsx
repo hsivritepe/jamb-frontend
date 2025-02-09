@@ -3,7 +3,7 @@
 export const dynamic = "force-dynamic";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 
 /**
@@ -50,7 +50,6 @@ function preserveAuthAndClearOthers() {
 export default function BreadCrumb({ items }: BreadCrumbProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   // Check if screen is phone (<768px)
   const [isMobile, setIsMobile] = useState(false);
