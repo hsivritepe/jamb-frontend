@@ -14,38 +14,35 @@ import { confirmUser } from '@/server/controllers/userController';
  * 200 => { "success": "User activated successfully" }
  * 400 => { "error": "Invalid or expired code" }
  * 404 => { "error": "User not found" }
- *
- * Description: Confirms the user's account using the activation code.
  */
 export async function POST(req: NextRequest) {
   try {
-    // 1) Parse request body
+    // Parse request body
     const body = await req.json();
     const { email, code } = body || {};
 
-    // 2) Validate input
     if (!email || !code) {
+      // Missing parameters => 400
       return NextResponse.json(
         { error: 'Invalid or missing parameters' },
         { status: 400 }
       );
     }
 
-    // 3) Call the confirmUser logic
-    //    Assume confirmUser returns { success: true }, 
-    //    or { error: 'User not found' } / { error: 'Invalid or expired code' } / etc.
+    // Call the confirmUser logic
+    // Returns { success: boolean; error?: string }
     const result = await confirmUser(email, code);
 
-    if (result?.success) {
-      // User activated
+    // If success === true => user activated
+    if (result.success) {
       return NextResponse.json(
         { success: 'User activated successfully' },
         { status: 200 }
       );
     }
 
-    // Handle possible errors
-    switch (result?.error) {
+    // Otherwise, we have an error
+    switch (result.error) {
       case 'User not found':
         return NextResponse.json(
           { error: 'User not found' },

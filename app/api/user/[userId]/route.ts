@@ -1,3 +1,4 @@
+// app/api/user/[userId]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { confirmUser } from '@/server/controllers/userController';
 
@@ -33,17 +34,11 @@ export async function POST(req: NextRequest) {
     const result = await confirmUser(email, code);
 
     if (result?.error === 'User not found') {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     if (result?.error === 'Invalid or expired code') {
-      return NextResponse.json(
-        { error: 'Invalid or expired code' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid or expired code' }, { status: 400 });
     }
 
     // 3) If everything is ok
@@ -53,7 +48,6 @@ export async function POST(req: NextRequest) {
     );
   } catch (error: any) {
     console.error('POST /api/user/confirm error:', error);
-    // We can also return 400 or 500, depending on your preference
     return NextResponse.json(
       { error: 'Invalid or expired code' },
       { status: 400 }
