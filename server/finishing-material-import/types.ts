@@ -3,7 +3,7 @@
  */
 
 // This is the payload you send to your own endpoint:
-// POST http://dev.thejamb.com/material/add-finishing-material
+// POST https://dev.thejamb.com/material/add-finishing-material
 export interface FinishingMaterialPayload {
     section: number;
     external_id: string;

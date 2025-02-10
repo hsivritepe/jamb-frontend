@@ -35,7 +35,7 @@ export default function PasswordResetPage() {
 
     try {
       // We call /api/user/resend-activation
-      const res = await fetch("http://dev.thejamb.com/user/resend-activation", {
+      const res = await fetch("https://dev.thejamb.com/user/resend-activation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
@@ -74,7 +74,7 @@ export default function PasswordResetPage() {
 
     try {
       // POST /user/change-password
-      const res = await fetch("http://dev.thejamb.com/user/change-password", {
+      const res = await fetch("https://dev.thejamb.com/user/change-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, code, password: newPassword }),
@@ -106,7 +106,7 @@ export default function PasswordResetPage() {
   // After success, we optionally call /user/auth/credentials to auto login
   const autoLogin = async () => {
     try {
-      const res = await fetch("http://dev.thejamb.com/user/auth/credentials", {
+      const res = await fetch("https://dev.thejamb.com/user/auth/credentials", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password: newPassword }),

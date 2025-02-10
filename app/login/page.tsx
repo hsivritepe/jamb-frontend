@@ -36,7 +36,7 @@ export default function LoginOrRegisterPage() {
     }
 
     try {
-      const res = await fetch("http://dev.thejamb.com/user/create", {
+      const res = await fetch("https://dev.thejamb.com/user/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -63,7 +63,7 @@ export default function LoginOrRegisterPage() {
   // =============== LOGIN ===============
   const handleLogin = async () => {
     try {
-      const res = await fetch("http://dev.thejamb.com/user/auth/credentials", {
+      const res = await fetch("https://dev.thejamb.com/user/auth/credentials", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -80,7 +80,7 @@ export default function LoginOrRegisterPage() {
 
         // 2) Immediately fetch user info so we can store it in sessionStorage
         try {
-          const userRes = await fetch("http://dev.thejamb.com/user/info", {
+          const userRes = await fetch("https://dev.thejamb.com/user/info", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ token: data.token }),
@@ -123,7 +123,7 @@ export default function LoginOrRegisterPage() {
     }
 
     try {
-      const res = await fetch("http://dev.thejamb.com/user/change-password/request", {
+      const res = await fetch("https://dev.thejamb.com/user/change-password/request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: resetEmail }),

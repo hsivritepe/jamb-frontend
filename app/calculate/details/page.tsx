@@ -41,7 +41,7 @@ function convertServiceIdToApiFormat(serviceId: string): string {
 
 /** Returns the base API URL or fallback. */
 function getApiBaseUrl(): string {
-  return process.env.NEXT_PUBLIC_API_BASE_URL || "http://dev.thejamb.com";
+  return process.env.NEXT_PUBLIC_API_BASE_URL || "https://dev.thejamb.com";
 }
 
 /** POST /work/finishing_materials => fetch finishing materials. */
@@ -89,7 +89,7 @@ function ServiceImage({ serviceId }: { serviceId: string }) {
   useEffect(() => {
     const firstSegment = serviceId.split("-")[0];
     const code = convertServiceIdToApiFormat(serviceId);
-    const url = `http://dev.thejamb.com/images/${firstSegment}/${code}.jpg`;
+    const url = `https://dev.thejamb.com/images/${firstSegment}/${code}.jpg`;
     setImageSrc(url);
   }, [serviceId]);
 
@@ -102,6 +102,7 @@ function ServiceImage({ serviceId }: { serviceId: string }) {
         alt="Service"
         width={600}
         height={400}
+        unoptimized
         className="w-full h-auto object-cover"
       />
     </div>

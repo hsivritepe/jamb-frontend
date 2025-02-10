@@ -142,7 +142,7 @@ function ServiceImage({ serviceId }: { serviceId: string }) {
   useEffect(() => {
     const firstSegment = serviceId.split("-")[0];
     const code = convertServiceIdToApiFormat(serviceId);
-    const url = `http://dev.thejamb.com/images/${firstSegment}/${code}.jpg`;
+    const url = `https://dev.thejamb.com/images/${firstSegment}/${code}.jpg`;
     setImageSrc(url);
   }, [serviceId]);
 

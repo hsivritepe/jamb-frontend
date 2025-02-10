@@ -226,7 +226,7 @@ export default function Header() {
         setIsLoggedIn(true);
 
         // Optionally fetch user info
-        fetch("http://dev.thejamb.com/user/info", {
+        fetch("https://dev.thejamb.com/user/info", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ token }),

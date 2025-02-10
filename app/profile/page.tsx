@@ -155,7 +155,7 @@ export default function ProfilePage() {
     setErrorMsg("");
 
     try {
-      const res = await fetch("http://dev.thejamb.com/user/info", {
+      const res = await fetch("https://dev.thejamb.com/user/info", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token: _token }),
@@ -223,7 +223,7 @@ export default function ProfilePage() {
     setErrorMsg("");
 
     try {
-      const res = await fetch("http://dev.thejamb.com/user/profile", {
+      const res = await fetch("https://dev.thejamb.com/user/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -266,7 +266,7 @@ export default function ProfilePage() {
     setErrorMsg("");
 
     try {
-      const res = await fetch("http://dev.thejamb.com/user/address", {
+      const res = await fetch("https://dev.thejamb.com/user/address", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

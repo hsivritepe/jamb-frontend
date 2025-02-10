@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { updateUserAddress } from '@/server/controllers/userController';
 
 /**
- * POST http://dev.thejamb.com/api/user/address
+ * POST https://dev.thejamb.com/api/user/address
  *
  * This endpoint allows a user to create or update their address details.
  * It requires the user's token and the necessary address fields.

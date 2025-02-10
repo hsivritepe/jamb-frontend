@@ -22,7 +22,7 @@ function dashToDot(s: string): string {
 
 /** Base API or fallback. */
 function getApiBaseUrl(): string {
-  return process.env.NEXT_PUBLIC_API_BASE_URL || "http://dev.thejamb.com";
+  return process.env.NEXT_PUBLIC_API_BASE_URL || "https://dev.thejamb.com";
 }
 
 /**
@@ -80,7 +80,7 @@ function ServiceImage({ serviceId }: { serviceId: string }) {
   useEffect(() => {
     const [firstSegment] = serviceId.split("-");
     const dot = dashToDot(serviceId);
-    const src = `http://dev.thejamb.com/images/${firstSegment}/${dot}.jpg`;
+    const src = `https://dev.thejamb.com/images/${firstSegment}/${dot}.jpg`;
     setImageSrc(src);
   }, [serviceId]);
 
@@ -91,6 +91,7 @@ function ServiceImage({ serviceId }: { serviceId: string }) {
       alt="Service"
       width={600}
       height={400}
+      //unoptimized
       className="w-full h-full object-cover"
     />
   );
