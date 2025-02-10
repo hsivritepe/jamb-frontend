@@ -25,7 +25,7 @@ export default function AccessPage() {
   }
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-r from-blue-50 to-blue-100 p-4">
+    <main className="min-h-screen flex flex-col items-center justify-center bg-[#F8F9FB] p-4">
       {/* Logo with subtle transformation on hover */}
       <div className="mb-8 transform transition-transform duration-300 hover:scale-105 cursor-pointer">
         <svg
