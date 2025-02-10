@@ -1,6 +1,5 @@
 "use client";
 
-export const dynamic = "force-dynamic";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useEffect, useState } from "react";
@@ -208,16 +207,15 @@ export default function EmergencyDetails() {
     string | null
   >(null);
 
-  // Открыть калькулятор
+  // open calculator
   function openSurfaceCalc(serviceKey: string, activityKey: string) {
     setSurfaceCalcServiceKey(serviceKey);
     setSurfaceCalcActivityKey(activityKey);
     setSurfaceCalcOpen(true);
   }
 
-  // Применить площадь из калькулятора
+  // use calculated area
   function handleApplySquareFeet(serviceId: string, sqFeet: number) {
-    // Применяем к выбранной активности
     if (!surfaceCalcServiceKey || !surfaceCalcActivityKey) return;
 
     const found = ALL_SERVICES.find((x) => x.id === surfaceCalcActivityKey);
@@ -242,7 +240,7 @@ export default function EmergencyDetails() {
       return copy;
     });
 
-    // Закрыть модалку
+    // Close modal
     setSurfaceCalcOpen(false);
   }
   // ----------------------------------------------------------------------------
