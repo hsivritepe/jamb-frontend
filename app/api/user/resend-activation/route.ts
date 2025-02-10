@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { resendActivationCode } from '@/server/controllers/userController';
 
 /**
- * POST http://dev.thejamb.com/api/user/resend-activation
+ * POST https://dev.thejamb.com/api/user/resend-activation
  *
  * This endpoint allows a user to request a resend of the activation code.
  * It requires the user's email and checks if the user exists and is not yet confirmed.

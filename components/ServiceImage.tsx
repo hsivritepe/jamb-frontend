@@ -12,7 +12,7 @@ function convertServiceIdToApiFormat(serviceId: string): string {
 
 /**
  * A reusable component that fetches the service image (image_href) via a POST request
- * to "http://dev.thejamb.com/works" (body: { category: "1.1.1" }),
+ * to "https://dev.thejamb.com/works" (body: { category: "1.1.1" }),
  * then displays it using Next.js Image with a border and rounded corners.
  * This enables automatic image compression/optimization by Next.js.
  */
@@ -23,7 +23,7 @@ export default function ServiceImage({ serviceId }: { serviceId: string }) {
     async function loadServiceImage() {
       try {
         const code = convertServiceIdToApiFormat(serviceId);
-        const fullUrl = "http://dev.thejamb.com/works";
+        const fullUrl = "https://dev.thejamb.com/works";
         const res = await fetch(fullUrl, {
           method: "POST",
           headers: {

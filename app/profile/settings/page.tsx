@@ -99,7 +99,7 @@ export default function SettingsPage() {
     }
 
     try {
-      const response = await fetch("http://dev.thejamb.com/user/delete", {
+      const response = await fetch("https://dev.thejamb.com/user/delete", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token }),

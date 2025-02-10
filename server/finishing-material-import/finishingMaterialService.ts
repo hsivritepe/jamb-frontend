@@ -9,7 +9,7 @@ import { FinishingMaterialPayload, ExtendedProduct } from './types';
  */
 async function materialExistsInDb(externalId: string): Promise<boolean> {
   // For example, you could do:
-  // const resp = await axios.get(`http://dev.thejamb.com/material/check-exists?external_id=${externalId}`);
+  // const resp = await axios.get(`https://dev.thejamb.com/material/check-exists?external_id=${externalId}`);
   // return resp.data.exists;
   return false;
 }
@@ -180,7 +180,7 @@ export function buildFinishingMaterialPayload(
 
 /**
  * POST finishing material to your DB: 
- * http://dev.thejamb.com/material/add-finishing-material
+ * https://dev.thejamb.com/material/add-finishing-material
  */
 export async function addFinishingMaterialToDb(payload: FinishingMaterialPayload) {
   // (optional) check if it already exists
@@ -192,7 +192,7 @@ export async function addFinishingMaterialToDb(payload: FinishingMaterialPayload
 
   try {
     const resp = await axios.post(
-      'http://dev.thejamb.com/material/add-finishing-material',
+      'https://dev.thejamb.com/material/add-finishing-material',
       payload
     );
     return resp.data;

@@ -38,7 +38,7 @@ function convertServiceIdToApiFormat(serviceId: string) {
 
 /** Returns the base API URL. */
 function getApiBaseUrl(): string {
-  return process.env.NEXT_PUBLIC_API_BASE_URL || "http://dev.thejamb.com";
+  return process.env.NEXT_PUBLIC_API_BASE_URL || "https://dev.thejamb.com";
 }
 
 /** Sends a POST /calculate request to the server. */
@@ -96,7 +96,7 @@ function ServiceImage({ activityKey }: { activityKey: string }) {
   useEffect(() => {
     const firstSegment = activityKey.split("-")[0];
     const code = convertServiceIdToApiFormat(activityKey);
-    const url = `http://dev.thejamb.com/images/${firstSegment}/${code}.jpg`;
+    const url = `https://dev.thejamb.com/images/${firstSegment}/${code}.jpg`;
     setImageSrc(url);
   }, [activityKey]);
 

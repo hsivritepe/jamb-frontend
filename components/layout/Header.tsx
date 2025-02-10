@@ -10,11 +10,10 @@ import { useLocation } from "@/context/LocationContext";
 import PreferencesModal from "@/components/ui/PreferencesModal";
 
 /**
- * Changes made:
- * 1) We listen for the custom "authChange" event (so that when the user logs in,
- *    we can update the header icon without a full refresh).
- * 2) We added a circular border for the login icon when not logged in,
- *    and a different background color (and initials) when logged in.
+ * Header:
+ * Displays a logo, location info, and navigation links.
+ * Note: In the Preferences modal, we currently disable all items
+ * except ENG, Feet, and US. We'll support more options in the future.
  */
 
 // Example array for top navigation
@@ -219,15 +218,15 @@ export default function Header() {
   const [userName, setUserName] = useState("");
   const [userSurname, setUserSurname] = useState("");
 
-  // =============== Listen for "authChange" to update login state ===============
+  // We monitor for "authChange" to update login state
   useEffect(() => {
     const checkAuthToken = () => {
       const token = sessionStorage.getItem("authToken");
       if (token) {
         setIsLoggedIn(true);
 
-        // Fetch user info if needed
-        fetch("http://dev.thejamb.com/user/info", {
+        // Optionally fetch user info
+        fetch("https://dev.thejamb.com/user/info", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ token }),
@@ -245,24 +244,19 @@ export default function Header() {
             console.error("Error fetching user info:", err);
           });
       } else {
-        // Not logged in
         setIsLoggedIn(false);
         setUserName("");
         setUserSurname("");
       }
     };
 
-    // Check immediately on mount
     checkAuthToken();
-
-    // Listen for custom event
     window.addEventListener("authChange", checkAuthToken);
 
     return () => {
       window.removeEventListener("authChange", checkAuthToken);
     };
   }, []);
-  // ============================================================================
 
   // Modals
   const [showLocationModal, setShowLocationModal] = useState(false);
@@ -278,7 +272,7 @@ export default function Header() {
     state: "",
   });
 
-  // Language, units, currency
+  // Language, units, currency (currently only ENG, Feet, US are enabled in the modal)
   const [selectedLanguage, setSelectedLanguage] = useState("ENG");
   const [selectedUnit, setSelectedUnit] = useState("Feet");
   const [selectedCurrency, setSelectedCurrency] = useState("US");
@@ -359,12 +353,16 @@ export default function Header() {
       const data = await res.json();
       if (data.results && data.results.length > 0) {
         const comps = data.results[0].address_components;
-        const cityFound = parseCityFromComponents(comps);
-        const stateFound = parseStateFromComponents(comps);
+        const cityFound = comps.find((c: any) =>
+          c.types.includes("locality")
+        )?.long_name;
+        const stateFound = comps.find((c: any) =>
+          c.types.includes("administrative_area_level_1")
+        )?.short_name;
         setManualLocation((prev) => ({
           ...prev,
-          city: cityFound,
-          state: stateFound,
+          city: cityFound ?? prev.city,
+          state: stateFound ?? prev.state,
         }));
       } else {
         alert("No city/state found for this ZIP in the US.");
@@ -407,10 +405,10 @@ export default function Header() {
     };
   }, [showLocationModal, showPreferencesModal]);
 
-  // ================== Build the avatar styling ==================
+  // Build the avatar styling
   let desktopAvatar: JSX.Element;
   if (isLoggedIn) {
-    // Logged-in style => show initials or fallback
+    // If user is logged in, show initials or fallback
     const initials = getInitials(userName, userSurname);
     if (initials) {
       desktopAvatar = (
@@ -419,7 +417,6 @@ export default function Header() {
         </div>
       );
     } else {
-      // fallback
       desktopAvatar = (
         <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 text-white">
           <User className="w-5 h-5" />
@@ -427,14 +424,13 @@ export default function Header() {
       );
     }
   } else {
-    // Not logged => round border icon
+    // Not logged in => show a border icon
     desktopAvatar = (
       <div className="flex items-center justify-center w-8 h-8 rounded-full border-2 border-gray-400 bg-white text-gray-700">
         <User className="w-5 h-5" />
       </div>
     );
   }
-  // ============================================================
 
   return (
     <>
@@ -602,7 +598,7 @@ export default function Header() {
         overflow-auto
       "
           >
-            {/* Close (X) button in top-right */}
+            {/* Close (X) */}
             <button
               onClick={() => setShowLocationModal(false)}
               className="
@@ -701,9 +697,7 @@ export default function Header() {
               </button>
               <button
                 className="flex-1 p-3 font-semibold sm:font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 border-none"
-                onClick={() => {
-                  handleManualLocationSave();
-                }}
+                onClick={handleManualLocationSave}
               >
                 Save
               </button>

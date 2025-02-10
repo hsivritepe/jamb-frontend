@@ -201,7 +201,7 @@ function buildFinishingMaterialPayload(
 /** Имитируем отправку POST-запроса на backend */
 async function addFinishingMaterialToDb(payload: FinishingMaterialPayload): Promise<any> {
   try {
-    const resp = await axios.post('http://dev.thejamb.com/material/add-finishing-material', payload);
+    const resp = await axios.post('https://dev.thejamb.com/material/add-finishing-material', payload);
     return resp.data;
   } catch (error) {
     console.error('Error adding finishing material to DB:', error);

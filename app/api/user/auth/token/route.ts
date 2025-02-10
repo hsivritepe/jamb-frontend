@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authenticateWithToken } from '@/server/controllers/userController';
 
 /**
- * POST http://dev.thejamb.com/api/user/auth/token
+ * POST https://dev.thejamb.com/api/user/auth/token
  *
  * This endpoint allows a user to authenticate using a token. Optionally, it can
  * return the user profile if the "with_profile" flag is set to true in the request body.
