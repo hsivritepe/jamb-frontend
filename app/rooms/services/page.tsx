@@ -47,7 +47,7 @@ function convertServiceIdToApiFormat(serviceId: string) {
 
 /** Returns base API URL or fallback. */
 function getApiBaseUrl(): string {
-  return process.env.NEXT_PUBLIC_API_BASE_URL || "https://dev.thejamb.com/";
+  return process.env.NEXT_PUBLIC_API_BASE_URL || "https://dev.thejamb.com";
 }
 
 /** Fetch finishing materials for a single work_code. */

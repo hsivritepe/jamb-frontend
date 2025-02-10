@@ -90,7 +90,7 @@ function convertServiceIdToApiFormat(serviceId: string) {
 
 /** Provide a fallback base URL if not set. */
 function getApiBaseUrl(): string {
-  return process.env.NEXT_PUBLIC_API_BASE_URL || "https://your-api.example.com";
+  return process.env.NEXT_PUBLIC_API_BASE_URL || "https://dev.thejamb.com";
 }
 
 /** POST /work/finishing_materials => fetch finishing materials for a given work_code. */
