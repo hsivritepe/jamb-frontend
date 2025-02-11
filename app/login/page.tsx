@@ -42,12 +42,13 @@ export default function LoginOrRegisterPage() {
         body: JSON.stringify({
           email,
           phone_number: phoneNumber,
-          password
+          password,
         }),
       });
 
       if (res.ok) {
-        alert("Successfully created account! Check your email for the activation code.");
+        // Instead of just alerting, navigate to the confirm page:
+        router.push(`/confirm?email=${encodeURIComponent(email)}`);
       } else if (res.status === 400) {
         const data = await res.json();
         alert(`Registration error: ${data.error}`);
@@ -68,7 +69,7 @@ export default function LoginOrRegisterPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: loginEmail,
-          password: loginPassword
+          password: loginPassword,
         }),
       });
 
@@ -78,7 +79,7 @@ export default function LoginOrRegisterPage() {
         // 1) Store token in sessionStorage
         sessionStorage.setItem("authToken", data.token);
 
-        // 2) Immediately fetch user info so we can store it in sessionStorage
+        // 2) Fetch user info so we can store it in sessionStorage
         try {
           const userRes = await fetch("https://dev.thejamb.com/user/info", {
             method: "POST",
@@ -87,12 +88,10 @@ export default function LoginOrRegisterPage() {
           });
           if (userRes.ok) {
             const userData = await userRes.json();
-            // Store user info in sessionStorage => "profileData"
             sessionStorage.setItem("profileData", JSON.stringify(userData));
           }
         } catch (err) {
           console.error("Error fetching user info after login:", err);
-          // Not critical, user can still fetch on profile page
         }
 
         // 3) Dispatch the custom "authChange" event so the Header updates
@@ -159,7 +158,9 @@ export default function LoginOrRegisterPage() {
 
           {/* Email */}
           <div className="mb-4">
-            <label className="block text-sm text-gray-600 mb-1">Email address</label>
+            <label className="block text-sm text-gray-600 mb-1">
+              Email address
+            </label>
             <input
               type="email"
               placeholder="E.g. hello@thejamb.com"
@@ -171,7 +172,9 @@ export default function LoginOrRegisterPage() {
 
           {/* Phone */}
           <div className="mb-4">
-            <label className="block text-sm text-gray-600 mb-1">Phone number</label>
+            <label className="block text-sm text-gray-600 mb-1">
+              Phone number
+            </label>
             <input
               type="tel"
               placeholder="+1"
@@ -217,7 +220,9 @@ export default function LoginOrRegisterPage() {
           </button>
 
           <div className="text-center mt-4">
-            <span className="text-sm text-gray-700">Already have an account?</span>{" "}
+            <span className="text-sm text-gray-700">
+              Already have an account?
+            </span>{" "}
             <button
               onClick={() => setShowRegister(false)}
               className="text-blue-600 underline text-sm"
@@ -251,7 +256,9 @@ export default function LoginOrRegisterPage() {
 
               {/* Email */}
               <div className="mb-4">
-                <label className="block text-sm text-gray-600 mb-1">Email address</label>
+                <label className="block text-sm text-gray-600 mb-1">
+                  Email address
+                </label>
                 <input
                   type="email"
                   placeholder="E.g. hello@thejamb.com"
@@ -263,7 +270,9 @@ export default function LoginOrRegisterPage() {
 
               {/* Password */}
               <div className="mb-2">
-                <label className="block text-sm text-gray-600 mb-1">Password</label>
+                <label className="block text-sm text-gray-600 mb-1">
+                  Password
+                </label>
                 <input
                   type="password"
                   placeholder="Your password"
@@ -302,13 +311,18 @@ export default function LoginOrRegisterPage() {
           ) : (
             // =============== FORGOT PASSWORD ===============
             <>
-              <h1 className="text-2xl font-bold mb-6 text-center">Forgot Password</h1>
+              <h1 className="text-2xl font-bold mb-6 text-center">
+                Forgot Password
+              </h1>
               <p className="mb-4 text-sm text-gray-700">
-                Enter your email below. We'll send a reset code if your account exists.
+                Enter your email below. We'll send a reset code if your account
+                exists.
               </p>
 
               <div className="mb-4">
-                <label className="block text-sm text-gray-600 mb-1">Email address</label>
+                <label className="block text-sm text-gray-600 mb-1">
+                  Email address
+                </label>
                 <input
                   type="email"
                   placeholder="E.g. hello@jamb.com"
