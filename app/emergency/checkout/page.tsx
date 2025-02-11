@@ -4,22 +4,39 @@ export const dynamic = "force-dynamic";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import BreadCrumb from "@/components/ui/BreadCrumb";
-import ActionIconsBar from "@/components/ui/ActionIconsBar";
 import { SectionBoxTitle } from "@/components/ui/SectionBoxTitle";
 import { SectionBoxSubtitle } from "@/components/ui/SectionBoxSubtitle";
 import { EMERGENCY_STEPS } from "@/constants/navigation";
 import { EMERGENCY_SERVICES } from "@/constants/emergency";
 import { ALL_SERVICES } from "@/constants/services";
-
-// session utils
 import { getSessionItem, setSessionItem } from "@/utils/session";
-// format helper
 import { formatWithSeparator } from "@/utils/format";
+import React, { FC } from "react";
+import { Printer, Share2, Save } from "lucide-react";
 
 /**
- * Builds an estimate number: "SS-ZZZZZ-YYYYMMDD-HHMM",
- * where SS is a two-letter uppercase state code, ZZZZZ is a 5-digit ZIP code,
- * and the rest is date+time.
+ * A single-button "ActionIconsBar" that displays three icons (Printer, Share, Save)
+ */
+interface SingleButtonBarProps {
+  onPrint?: () => void;
+}
+
+const ActionIconsBar: FC<SingleButtonBarProps> = ({ onPrint }) => {
+  return (
+    <button
+      onClick={onPrint}
+      className="flex items-center gap-2 border border-gray-300 rounded-lg px-4 py-2 text-gray-700 hover:text-gray-900"
+    >
+      <Printer size={20} />
+      <Share2 size={20} />
+      <Save size={20} />
+      <span className="hidden sm:inline text-sm">Print</span>
+    </button>
+  );
+};
+
+/**
+ * Builds an estimate number: "SS-ZZZZZ-YYYYMMDD-HHMM".
  */
 function buildEstimateNumber(stateCode: string, zip: string): string {
   let stateZipBlock = "??-00000";
@@ -43,7 +60,7 @@ function buildEstimateNumber(stateCode: string, zip: string): string {
 
 /**
  * Tries to parse "State, ZIP" by splitting on commas if present,
- * then falls back to a simple regex pattern for "... SomeState 12345" at the end of the string.
+ * then falls back to a simple regex pattern for "... SomeState 12345" at the end.
  */
 function parseStateAndZipFromAddress(fullAddr: string) {
   const parts = fullAddr.split(",").map((p) => p.trim());
@@ -55,7 +72,7 @@ function parseStateAndZipFromAddress(fullAddr: string) {
     }
   }
 
-  // Fallback: use a simplified regex to find "StateName 12345" at end
+  // Fallback: simplified regex to find "StateName 12345" at end
   const regex = /([A-Za-z]+)\s+(\d{5})$/;
   const match = fullAddr.trim().match(regex);
   if (match) {
@@ -65,8 +82,7 @@ function parseStateAndZipFromAddress(fullAddr: string) {
 }
 
 /**
- * Converts a numeric USD amount into words, e.g. "One thousand ...".
- * Simplified example only.
+ * Converts a numeric USD amount into words. Simplified example.
  */
 function numberToWordsUSD(amount: number): string {
   const integerPart = Math.floor(amount);
@@ -114,7 +130,7 @@ function numberToWordsUSD(amount: number): string {
   function threeDigitsToWords(n: number): string {
     const hundreds = Math.floor(n / 100);
     const remainder = n % 100;
-    const hundredPart = hundreds > 0 ? wordsMap[hundreds] + " hundred" : "";
+    const hundredPart = hundreds ? wordsMap[hundreds] + " hundred" : "";
     const remainderPart = remainder ? twoDigitsToWords(remainder) : "";
     if (hundreds && remainder) {
       return hundredPart + " " + remainderPart;
@@ -175,7 +191,7 @@ export default function CheckoutPage() {
   const description = getSessionItem<string>("description", "");
   const date = getSessionItem<string>("selectedTime", "No date selected");
 
-  // Steps array (immediate steps)
+  // Steps array
   const filteredSteps = getSessionItem<{ serviceName: string; steps: any[] }[]>(
     "filteredSteps",
     []
@@ -186,7 +202,7 @@ export default function CheckoutPage() {
   const serviceFeeOnLabor = getSessionItem<number>("serviceFeeOnLabor", 0);
   const serviceFeeOnMaterials = getSessionItem<number>("serviceFeeOnMaterials", 0);
 
-  // Attempt to parse state/zip from session, fallback to parse from fullAddress
+  // Attempt to parse state/zip
   let userStateName = getSessionItem<string>("location_state", "NoState");
   let userZip = getSessionItem<string>("location_zip", "00000");
   if (
@@ -200,17 +216,17 @@ export default function CheckoutPage() {
     }
   }
 
-  // userTaxRate (e.g. 8.25 => 8.25%)
+  // userTaxRate
   const userTaxRate = getSessionItem<number>("userTaxRate", 0);
 
-  // If essential data is missing, redirect
+  // If data missing => redirect
   useEffect(() => {
     if (!selectedActivities || Object.keys(selectedActivities).length === 0 || !fullAddress.trim()) {
       router.push("/emergency/estimate");
     }
   }, [selectedActivities, fullAddress, router]);
 
-  // Store final checkout data in local state once (no infinite loop)
+  // Store final checkout data once
   const [checkoutData, setCheckoutData] = useState<{
     address: string;
     date: string;
@@ -229,7 +245,6 @@ export default function CheckoutPage() {
     };
     setCheckoutData(data);
     setSessionItem("checkoutData", data);
-    // Only run once on mount
   }, []);
 
   if (!checkoutData) {
@@ -265,31 +280,25 @@ export default function CheckoutPage() {
 
   const laborSubtotal = sumLabor();
   const materialsSubtotal = sumMaterials();
-
-  // Apply timeCoefficient to labor only
   const finalLabor = laborSubtotal * timeCoefficient;
-
-  // sumBeforeTax = finalLabor + materialsSubtotal + fees
   const sumBeforeFees = finalLabor + materialsSubtotal;
   const sumBeforeTax = sumBeforeFees + serviceFeeOnLabor + serviceFeeOnMaterials;
 
-  // tax from userTaxRate
   const tax = sumBeforeTax * (userTaxRate / 100);
   const grandTotal = sumBeforeTax + tax;
 
-  // Check for discount or surcharge
   const hasSurchargeOrDiscount = timeCoefficient !== 1;
   const surchargeOrDiscount = hasSurchargeOrDiscount
     ? Math.abs(laborSubtotal * (timeCoefficient - 1))
     : 0;
 
-  // Build final estimate number
+  // Build estimate number
   const estimateNumber = buildEstimateNumber(userStateName, userZip);
 
-  // Convert final total to words
+  // Convert total to words
   const totalInWords = numberToWordsUSD(grandTotal);
 
-  // Build an array => group by derived category
+  // Build array -> group by derived category
   interface RenderItem {
     category: string;
     activityKey: string;
@@ -343,8 +352,6 @@ export default function CheckoutPage() {
   }
 
   const renderItems = buildRenderItems();
-
-  // group them by derived category
   const groupedByCategory: Record<string, RenderItem[]> = {};
   renderItems.forEach((item) => {
     if (!groupedByCategory[item.category]) {
@@ -352,23 +359,14 @@ export default function CheckoutPage() {
     }
     groupedByCategory[item.category].push(item);
   });
-
   const categoryNamesInOrder = Object.keys(groupedByCategory).sort();
 
+  // Handlers
   function handlePlaceOrder() {
     alert("Your emergency order has been placed!");
   }
-
   function handlePrint() {
     router.push("/emergency/checkout/print");
-  }
-
-  function handleShare() {
-    alert("Sharing your order...");
-  }
-
-  function handleSave() {
-    alert("Saving as PDF...");
   }
 
   return (
@@ -393,15 +391,16 @@ export default function CheckoutPage() {
 
         <div className="flex items-center justify-between mt-8">
           <SectionBoxTitle>Checkout</SectionBoxTitle>
-          <ActionIconsBar onPrint={handlePrint} onShare={handleShare} onSave={handleSave} />
+          {/* Single-button version of "ActionIconsBar" calling only onPrint */}
+          <ActionIconsBar onPrint={handlePrint} />
         </div>
 
         <div className="bg-white border border-gray-300 mt-4 p-4 sm:p-6 rounded-lg space-y-6">
           {/* Estimate info */}
           <div>
             <SectionBoxSubtitle>
-            <div>Estimate for Emergency Services</div>
-            <div className="my-2 text-sm text-gray-500">({estimateNumber})</div>
+              <div>Estimate for Emergency Services</div>
+              <div className="my-2 text-sm text-gray-500">({estimateNumber})</div>
             </SectionBoxSubtitle>
             <p className="text-xs text-gray-400 -mt-2 ml-1">
               *This number is temporary and will be replaced with a permanent
@@ -477,7 +476,10 @@ export default function CheckoutPage() {
                                     </thead>
                                     <tbody className="divide-y divide-gray-200">
                                       {item.breakdown.materials.map((m: any, idx2: number) => (
-                                        <tr key={`${m.external_id}-${idx2}`} className="align-top">
+                                        <tr
+                                          key={`${m.external_id}-${idx2}`}
+                                          className="align-top"
+                                        >
                                           <td className="py-2 px-1">{m.name}</td>
                                           <td className="py-2 px-1">
                                             ${formatWithSeparator(parseFloat(m.cost_per_unit))}
@@ -501,7 +503,7 @@ export default function CheckoutPage() {
               })}
             </div>
 
-            {/* Summary: labor, materials, timeCoefficient, fees, tax, total */}
+            {/* Summary */}
             <div className="pt-4 mt-4 border-t">
               <div className="flex justify-between mb-2">
                 <span className="text-lg text-gray-700 font-semibold">Labor</span>
@@ -563,15 +565,13 @@ export default function CheckoutPage() {
                 <span>Total</span>
                 <span>${formatWithSeparator(grandTotal)}</span>
               </div>
-              <p className="text-sm text-gray-500 text-right mt-1">
-                ({totalInWords})
-              </p>
+              <p className="text-sm text-gray-500 text-right mt-1">({totalInWords})</p>
             </div>
           </div>
 
           <hr className="my-6 border-gray-200" />
 
-          {/* 2) Date of Service */}
+          {/* Date of Service */}
           <div>
             <SectionBoxSubtitle>Date of Service</SectionBoxSubtitle>
             <p className="text-gray-800">{date || "No date selected"}</p>
@@ -579,7 +579,7 @@ export default function CheckoutPage() {
 
           <hr className="my-6 border-gray-200" />
 
-          {/* 3) Problem Description */}
+          {/* Problem Description */}
           <div>
             <SectionBoxSubtitle>Problem Description</SectionBoxSubtitle>
             <p className="text-gray-700">{description || "No details provided"}</p>
@@ -587,7 +587,7 @@ export default function CheckoutPage() {
 
           <hr className="my-6 border-gray-200" />
 
-          {/* 4) Address */}
+          {/* Address */}
           <div>
             <SectionBoxSubtitle>Address</SectionBoxSubtitle>
             <p className="text-gray-800">{fullAddress || "No address provided"}</p>
@@ -595,7 +595,7 @@ export default function CheckoutPage() {
 
           <hr className="my-6 border-gray-200" />
 
-          {/* 5) Photos */}
+          {/* Photos */}
           <div>
             <SectionBoxSubtitle>Uploaded Photos</SectionBoxSubtitle>
             <div className="grid grid-cols-6 gap-2">
@@ -615,7 +615,7 @@ export default function CheckoutPage() {
 
           <hr className="my-6 border-gray-200" />
 
-          {/* 6) Steps (immediate steps) */}
+          {/* Steps */}
           <div>
             <SectionBoxSubtitle>Emergency Steps</SectionBoxSubtitle>
             {filteredSteps.length === 0 ? (
