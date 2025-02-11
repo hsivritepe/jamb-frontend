@@ -101,7 +101,7 @@ function ServiceImage({ serviceId }: { serviceId: string }) {
         alt="Service"
         width={600}
         height={400}
-        unoptimized
+        //unoptimized
         className="w-full h-auto object-cover"
       />
     </div>
