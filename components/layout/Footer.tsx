@@ -15,11 +15,11 @@ import {
  * Example arrays. Adjust them to your actual routes.
  */
 const popularServices = [
-  { name: "Electrical", href: "calculate/services" },
-  { name: "Plumbing", href: "calculate/services" },
-  { name: "Painting", href: "calculate/services" },
-  { name: "Tiling", href: "calculate/services" },
-  { name: "Flooring", href: "calculate/services" },
+  { name: "Electrical", href: "/calculate/services" },
+  { name: "Plumbing", href: "/calculate/services" },
+  { name: "Painting", href: "/calculate/services" },
+  { name: "Tiling", href: "/calculate/services" },
+  { name: "Flooring", href: "/calculate/services" },
 ];
 
 const popularRooms = [
