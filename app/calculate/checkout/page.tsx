@@ -6,13 +6,36 @@ import { useEffect, useState } from "react";
 import BreadCrumb from "@/components/ui/BreadCrumb";
 import { SectionBoxTitle } from "@/components/ui/SectionBoxTitle";
 import { SectionBoxSubtitle } from "@/components/ui/SectionBoxSubtitle";
-import ActionIconsBar from "@/components/ui/ActionIconsBar";
 import { CALCULATE_STEPS } from "@/constants/navigation";
 import { ALL_CATEGORIES } from "@/constants/categories";
 import { ALL_SERVICES } from "@/constants/services";
 import { taxRatesUSA } from "@/constants/taxRatesUSA";
 import { useLocation } from "@/context/LocationContext";
 import { getSessionItem, setSessionItem } from "@/utils/session";
+
+/**
+ * A single-button "ActionIconsBar" that displays three icons (Printer, Share, Save)
+ */
+import React, { FC } from "react";
+import { Printer, Share2, Save } from "lucide-react";
+
+interface SingleButtonBarProps {
+  onPrint?: () => void;
+}
+
+const ActionIconsBar: FC<SingleButtonBarProps> = ({ onPrint }) => {
+  return (
+    <button
+      onClick={onPrint}
+      className="flex items-center gap-2 border border-gray-300 rounded-lg px-4 py-2 text-gray-700 hover:text-gray-900"
+    >
+      <Printer size={20} />
+      <Share2 size={20} />
+      <Save size={20} />
+      <span className="hidden sm:inline text-sm">Print</span>
+    </button>
+  );
+};
 
 /**
  * Formats a numeric value with commas and exactly two decimals.
@@ -60,11 +83,9 @@ function buildEstimateNumber(stateCode: string, zip: string): string {
  * Converts a numeric USD amount into spelled-out words (simplified).
  */
 function numberToWordsUSD(amount: number): string {
-  // We'll split into whole dollars + cents
   const wholeDollars = Math.floor(amount);
   const cents = Math.round((amount - wholeDollars) * 100);
 
-  // Helper function for 0..999
   function threeDigitToWords(n: number): string {
     const ones = [
       "",
@@ -120,7 +141,6 @@ function numberToWordsUSD(amount: number): string {
         str += tensWords[t];
         if (o > 0) str += "-" + ones[o];
       } else if (t === 1) {
-        // handle '10..19' if not used teens above
         str += teens[o];
       } else if (o > 0) {
         str += ones[o];
@@ -129,12 +149,9 @@ function numberToWordsUSD(amount: number): string {
     return str.trim();
   }
 
-  // For thousands, etc.
   function numberToWords(num: number): string {
     if (num === 0) return "zero";
     let words = "";
-
-    // handle thousands
     const thousands = Math.floor(num / 1000);
     const remainder = num % 1000;
     if (thousands > 0) {
@@ -150,7 +167,6 @@ function numberToWordsUSD(amount: number): string {
   const dollarsPart = numberToWords(wholeDollars);
   const centsPart = cents < 10 ? `0${cents}` : `${cents}`;
 
-  // Combine final => "one thousand two hundred... and 45/100 dollars"
   return `${dollarsPart} and ${centsPart}/100 dollars`.trim();
 }
 
@@ -168,11 +184,11 @@ export default function CheckoutPage() {
   const router = useRouter();
   const { location } = useLocation();
 
-  // 1) userStateCode, userZip from context
+  // userStateCode, userZip from context
   const userStateCode = location.state || "";
   const userZip = location.zip || "00000";
 
-  // 2) get session data
+  // get session data
   const selectedServicesState: Record<string, number> = getSessionItem(
     "selectedServicesWithQuantity",
     {}
@@ -187,7 +203,7 @@ export default function CheckoutPage() {
   const selectedTime: string | null = getSessionItem("selectedTime", null);
   const timeCoefficient: number = getSessionItem("timeCoefficient", 1);
 
-  // 3) store location to session if valid
+  // store location to session if valid
   useEffect(() => {
     if (userStateCode && userZip) {
       sessionStorage.setItem("location_state", JSON.stringify(userStateCode));
@@ -277,15 +293,9 @@ export default function CheckoutPage() {
     alert("Your order has been placed!");
   }
 
-  // icons
+  // Single callback for our single button
   function handlePrint() {
     router.push("/calculate/checkout/print");
-  }
-  function handleShare() {
-    alert("Sharing your estimate...");
-  }
-  function handleSave() {
-    alert("Saving your estimate as a PDF...");
   }
 
   const finalTotalWords = numberToWordsUSD(finalTotal);
@@ -299,7 +309,10 @@ export default function CheckoutPage() {
       <div className="container mx-auto">
         {/* Top bar */}
         <div className="flex justify-between items-center mt-8">
-          <span className="text-blue-600 cursor-pointer" onClick={() => router.back()}>
+          <span
+            className="text-blue-600 cursor-pointer"
+            onClick={() => router.back()}
+          >
             ← Back
           </span>
           <button
@@ -312,14 +325,19 @@ export default function CheckoutPage() {
 
         <div className="flex items-center justify-between mt-8">
           <SectionBoxTitle>Checkout</SectionBoxTitle>
-          <ActionIconsBar onPrint={handlePrint} onShare={handleShare} onSave={handleSave} />
+          
+          {/* Single-button ActionIconsBar calling only handlePrint */}
+          <ActionIconsBar onPrint={handlePrint} />
         </div>
 
         <div className="bg-white border-gray-300 mt-8 p-4 sm:p-6 rounded-lg space-y-6 border">
           {/* Estimate info */}
           <div>
             <SectionBoxSubtitle>
-              Estimate for Selected Services <span className="ml-0 sm:ml-2 text-sm text-gray-500">({estimateNumber})</span>
+              Estimate for Selected Services{" "}
+              <span className="ml-0 sm:ml-2 text-sm text-gray-500">
+                ({estimateNumber})
+              </span>
             </SectionBoxSubtitle>
             <p className="text-xs text-gray-400 -mt-2 ml-1">
               *This number is temporary and will be replaced with a permanent order number after confirmation.
@@ -366,10 +384,7 @@ export default function CheckoutPage() {
                               : 0;
 
                             return (
-                              <div
-                                key={svc.id}
-                                className="flex flex-col gap-2 mb-4"
-                              >
+                              <div key={svc.id} className="flex flex-col gap-2 mb-4">
                                 <div>
                                   <h3 className="font-medium text-lg text-gray-700">
                                     {sectionIndex}.{catIndex}.{svcIndex}. {svc.title}
@@ -432,33 +447,21 @@ export default function CheckoutPage() {
                                               </tr>
                                             </thead>
                                             <tbody className="divide-y divide-gray-200">
-                                              {calcResult.materials.map(
-                                                (m: any, idx2: number) => (
-                                                  <tr
-                                                    key={`${m.external_id}-${idx2}`}
-                                                    className="align-top"
-                                                  >
-                                                    <td className="py-3 px-1">
-                                                      {m.name}
-                                                    </td>
-                                                    <td className="py-3 px-1">
-                                                      $
-                                                      {formatWithSeparator(
-                                                        parseFloat(m.cost_per_unit)
-                                                      )}
-                                                    </td>
-                                                    <td className="py-3 px-3">
-                                                      {m.quantity}
-                                                    </td>
-                                                    <td className="py-3 px-3">
-                                                      $
-                                                      {formatWithSeparator(
-                                                        parseFloat(m.cost)
-                                                      )}
-                                                    </td>
-                                                  </tr>
-                                                )
-                                              )}
+                                              {calcResult.materials.map((m: any, idx2: number) => (
+                                                <tr
+                                                  key={`${m.external_id}-${idx2}`}
+                                                  className="align-top"
+                                                >
+                                                  <td className="py-3 px-1">{m.name}</td>
+                                                  <td className="py-3 px-1">
+                                                    ${formatWithSeparator(parseFloat(m.cost_per_unit))}
+                                                  </td>
+                                                  <td className="py-3 px-3">{m.quantity}</td>
+                                                  <td className="py-3 px-3">
+                                                    ${formatWithSeparator(parseFloat(m.cost))}
+                                                  </td>
+                                                </tr>
+                                              ))}
                                             </tbody>
                                           </table>
                                         </div>
@@ -528,9 +531,7 @@ export default function CheckoutPage() {
               </div>
 
               <div className="flex justify-between mb-2">
-                <span className="font-semibold text-xl text-gray-800">
-                  Subtotal
-                </span>
+                <span className="font-semibold text-xl text-gray-800">Subtotal</span>
                 <span className="font-semibold text-xl text-gray-800">
                   ${formatWithSeparator(sumBeforeTax)}
                 </span>
