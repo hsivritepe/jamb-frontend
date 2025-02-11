@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createUser } from '@/server/controllers/userController';
 
 /**
- * POST http://dev.thejamb.com/user/create
+ * POST https://dev.thejamb.com/user/create
  *
  * Request body:
  * {

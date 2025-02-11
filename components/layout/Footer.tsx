@@ -9,16 +9,17 @@ import {
   Phone,
   Mail,
   MapPin,
-  LucideIcon,
 } from "lucide-react";
 
-// Example arrays. Adjust them to your actual routes.
+/**
+ * Example arrays. Adjust them to your actual routes.
+ */
 const popularServices = [
-  { name: "Electrical", href: "calculate/services" },
-  { name: "Plumbing", href: "calculate/services" },
-  { name: "Painting", href: "calculate/services" },
-  { name: "Tiling", href: "calculate/services" },
-  { name: "Flooring", href: "calculate/services" },
+  { name: "Electrical", href: "/calculate/services" },
+  { name: "Plumbing", href: "/calculate/services" },
+  { name: "Painting", href: "/calculate/services" },
+  { name: "Tiling", href: "/calculate/services" },
+  { name: "Flooring", href: "/calculate/services" },
 ];
 
 const popularRooms = [
@@ -29,7 +30,6 @@ const popularRooms = [
   { name: "Patio", href: "/rooms/services" },
 ];
 
-// For packages, we might have dynamic routes or query parameters
 const packageLinks = [
   { name: "Basic", href: "/packages/services?packageId=basic_package" },
   { name: "Enhanced", href: "/packages/services?packageId=enhanced_package" },
@@ -39,29 +39,24 @@ const packageLinks = [
   },
 ];
 
-// For "About"
 const aboutLinks = [
   { name: "How it works", href: "/about" },
   { name: "About us", href: "/about" },
-  // "Become a pro" might be a separate link
 ];
 
-/**
- * Footer component:
- * - We only changed the bottom section for tablets (768px–1023px) 
- *   so elements go in two lines (flex-col).
- * - For desktop (≥1024px), they're in one line (flex-row).
- * - For phones (<768px), also in a column by default.
- */
 export default function Footer() {
   return (
-    <footer className="border-t max-w-7xl mx-auto px-4 py-4">
-      <div className="container mx-auto px-4 py-12">
+    <footer className="border-t w-full">
+      <div className="max-w-7xl mx-auto px-4 py-6 sm:py-8 lg:py-12">
+        {/* Top section => grids of links */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Popular services */}
           <div>
-            <h3 className="text-2xl mb-4">Popular services</h3>
-            <ul className="space-y-2">
+            {/* Heading => smaller on mobile, bigger on larger screens */}
+            <h3 className="text-lg sm:text-xl lg:text-2xl mb-4 font-semibold">
+              Popular services
+            </h3>
+            <ul className="space-y-2 text-sm sm:text-base">
               {popularServices.map((service) => (
                 <li key={service.name}>
                   <Link
@@ -77,8 +72,10 @@ export default function Footer() {
 
           {/* Popular rooms renovation */}
           <div>
-            <h3 className="text-2xl mb-4">Popular rooms renovation</h3>
-            <ul className="space-y-2">
+            <h3 className="text-lg sm:text-xl lg:text-2xl mb-4 font-semibold">
+              Popular rooms renovation
+            </h3>
+            <ul className="space-y-2 text-sm sm:text-base">
               {popularRooms.map((room) => (
                 <li key={room.name}>
                   <Link
@@ -94,8 +91,10 @@ export default function Footer() {
 
           {/* Packages */}
           <div>
-            <h3 className="text-2xl mb-4">Packages</h3>
-            <ul className="space-y-2">
+            <h3 className="text-lg sm:text-xl lg:text-2xl mb-4 font-semibold">
+              Packages
+            </h3>
+            <ul className="space-y-2 text-sm sm:text-base">
               {packageLinks.map((pkg) => (
                 <li key={pkg.name}>
                   <Link
@@ -111,8 +110,10 @@ export default function Footer() {
 
           {/* About */}
           <div>
-            <h3 className="text-2xl mb-4">About</h3>
-            <ul className="space-y-2">
+            <h3 className="text-lg sm:text-xl lg:text-2xl mb-4 font-semibold">
+              About
+            </h3>
+            <ul className="space-y-2 text-sm sm:text-base">
               {aboutLinks.map((item) => (
                 <li key={item.name}>
                   <Link
@@ -136,24 +137,38 @@ export default function Footer() {
         </div>
 
         {/* Bottom section */}
-        <div className="mt-12 flex flex-col lg:flex-row justify-between items-center border-t pt-8">
-          {/*
-            First row (phone/tablet => flex-col, desktop => flex-row)
-          */}
-          <div className="flex flex-col lg:flex-row items-center gap-2">
-            <span className="text-gray-500">We're Here to Help</span>
-            <a href="tel:+14374601830" className="text-xl font-medium my-2">
+        <div
+          className="
+            mt-8 sm:mt-12
+            flex flex-col lg:flex-row
+            items-start lg:items-center
+            justify-between
+            border-t
+            pt-6
+            gap-4
+          "
+        >
+          {/* Left side => phone CTA */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+            <span className="text-sm sm:text-base text-gray-500">
+              We're Here to Help
+            </span>
+            <a
+              href="tel:+14374601830"
+              className="text-base sm:text-lg font-medium"
+            >
               +1 437 460 18 30
             </a>
           </div>
 
-          {/*
-            Second row (phone/tablet => flex-col, desktop => flex-row)
-          */}
-          <div className="flex flex-col lg:flex-row items-center gap-2 text-gray-500 mt-4 lg:mt-0">
+          {/* Right side => disclaimers */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 text-gray-500 text-xs sm:text-sm mt-4 lg:mt-0">
             <span>© 2024-25 Jamb. All Rights Reserved.</span>
             <span>Use of this site is subject to certain</span>
-            <Link href="#" className="text-blue-600 hover:text-blue-700">
+            <Link
+              href="#"
+              className="text-blue-600 hover:text-blue-700 underline"
+            >
               Terms Of Use
             </Link>
           </div>

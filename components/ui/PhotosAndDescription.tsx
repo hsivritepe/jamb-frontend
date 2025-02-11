@@ -46,7 +46,7 @@ export default function PhotosAndDescription({
         ${className || ""}
       `}
     >
-      <h2 className="text-2xl font-medium text-gray-800 mb-4">
+      <h2 className="text-2xl font-semibold sm:font-medium text-gray-800 mb-4">
         Upload Photos &amp; Description
       </h2>
 
@@ -55,7 +55,7 @@ export default function PhotosAndDescription({
         <div>
           <label
             htmlFor="photo-upload"
-            className="block w-full px-4 py-2 text-center bg-blue-500 text-white rounded-md 
+            className="block w-full px-4 py-2 text-center font-semibold sm:font-medium bg-blue-500 text-white rounded-md 
                        cursor-pointer hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400"
           >
             Choose Files

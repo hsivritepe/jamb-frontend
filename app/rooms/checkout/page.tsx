@@ -1,18 +1,43 @@
 "use client";
 
+export const dynamic = "force-dynamic";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import BreadCrumb from "@/components/ui/BreadCrumb";
 import { SectionBoxTitle } from "@/components/ui/SectionBoxTitle";
 import { SectionBoxSubtitle } from "@/components/ui/SectionBoxSubtitle";
-import ActionIconsBar from "@/components/ui/ActionIconsBar";
+import React, { FC } from "react";
+import { Printer, Share2, Save } from "lucide-react";
+
+// Data/Constants
 import { ROOMS_STEPS } from "@/constants/navigation";
 import { ROOMS } from "@/constants/rooms";
 import { ALL_SERVICES } from "@/constants/services";
 import { ALL_CATEGORIES } from "@/constants/categories";
+import { getSessionItem } from "@/utils/session";
 
-// Unified session utilities
-import { getSessionItem, setSessionItem } from "@/utils/session";
+/**
+ * A single button that shows three icons: Printer, Share, and Save
+ */
+interface ActionIconsBarProps {
+  onPrint?: () => void;
+}
+
+const ActionIconsBar: FC<ActionIconsBarProps> = ({ onPrint }) => {
+  return (
+    <button
+      onClick={onPrint}
+      className="flex items-center gap-2 border border-gray-300 rounded-lg px-4 py-2 text-gray-700 hover:text-gray-900"
+    >
+      {/* Show the three icons side by side */}
+      <Printer size={20} />
+      <Share2 size={20} />
+      <Save size={20} />
+      {/* The text label is hidden on small screens */}
+      <span className="hidden sm:inline text-sm">Print</span>
+    </button>
+  );
+};
 
 /**
  * Formats a numeric value with commas and exactly two decimals.
@@ -224,7 +249,7 @@ export default function RoomsCheckout() {
     }
   }, [selectedServicesState, address, router]);
 
-  // The set of rooms that actually have chosen services
+  // Rooms actually chosen
   const chosenRoomIds = Object.keys(selectedServicesState).filter(
     (roomId) => Object.keys(selectedServicesState[roomId]).length > 0
   );
@@ -251,20 +276,15 @@ export default function RoomsCheckout() {
   // Convert final total to words
   const finalTotalWords = numberToWordsUSD(finalTotal);
 
-  // Action handlers
+  // Handlers
   function handlePlaceOrder() {
     alert("Your Rooms order has been placed!");
   }
   function handlePrint() {
     router.push("/rooms/checkout/print");
   }
-  function handleShare() {
-    alert("Sharing the Rooms estimate link...");
-  }
-  function handleSave() {
-    alert("Saving the Rooms estimate as PDF...");
-  }
 
+  // Render
   return (
     <main className="min-h-screen pt-24 pb-16">
       <div className="container mx-auto">
@@ -288,21 +308,23 @@ export default function RoomsCheckout() {
           </button>
         </div>
 
-        {/* Header row: "Checkout" + Action icons */}
+        {/* Header row: "Checkout" + Single combined icon button */}
         <div className="flex items-center justify-between">
           <SectionBoxTitle>Checkout</SectionBoxTitle>
-          <ActionIconsBar
-            onPrint={handlePrint}
-            onShare={handleShare}
-            onSave={handleSave}
-          />
+
+          {/*
+            This single button has a rounded border, shows three icons,
+            and only calls handlePrint when clicked.
+          */}
+          <ActionIconsBar onPrint={handlePrint} />
         </div>
 
         <div className="bg-white border border-gray-300 mt-8 p-4 sm:p-6 rounded-lg space-y-6">
-          {/* Title and reference number in a column (always) */}
           <SectionBoxSubtitle>
             <div>Estimate for Selected Rooms</div>
-            <div className="text-sm text-gray-500 mt-1">({estimateNumber})</div>
+            <div className="text-sm text-gray-500 mt-1">
+              ({estimateNumber})
+            </div>
           </SectionBoxSubtitle>
           <p className="text-xs text-gray-400 ml-1">
             *This number is temporary and will be replaced with a permanent
@@ -317,7 +339,6 @@ export default function RoomsCheckout() {
 
               const roomServices = selectedServicesState[roomId] || {};
 
-              // Summation for entire room
               let roomLabor = 0;
               let roomMat = 0;
               for (const svcId of Object.keys(roomServices)) {
@@ -340,8 +361,9 @@ export default function RoomsCheckout() {
                 const sectionName = catObj ? catObj.section : "Other";
 
                 if (!sectionMap[sectionName]) sectionMap[sectionName] = {};
-                if (!sectionMap[sectionName][catId])
+                if (!sectionMap[sectionName][catId]) {
                   sectionMap[sectionName][catId] = [];
+                }
                 sectionMap[sectionName][catId].push(svcId);
               });
 
@@ -656,7 +678,7 @@ export default function RoomsCheckout() {
           <div>
             <SectionBoxSubtitle>Uploaded Photos</SectionBoxSubtitle>
             {photos.length === 0 ? (
-              <p className="text-gray-500 mt-2">No photos uploaded</p>
+              <p className="text-gray-700 mt-2">No photos uploaded</p>
             ) : (
               <div className="grid grid-cols-6 gap-2 mt-4">
                 {photos.map((photo, idx) => (

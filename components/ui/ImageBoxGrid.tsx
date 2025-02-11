@@ -9,12 +9,12 @@ interface Item {
   image: string;
   url: string;
   subcategories: string[];
-  isSelected: boolean; // Whether this item is selected
+  isSelected: boolean;
 }
 
 interface ImageBoxGridProps {
   items: Item[];
-  onSectionClick: (sectionId: string) => void; // Callback for click
+  onSectionClick: (sectionId: string) => void;
   showCount?: boolean;
   moreText?: string;
 }
@@ -24,8 +24,6 @@ interface ImageBoxGridProps {
  * - phone (<768px): 2 columns, no margins
  * - tablet (≥768px): 3 columns
  * - desktop (≥1024px): 4 columns
- * - For selection: smaller "scale-105" so they don't collide
- * - Also changed gap-3 => gap-4 to add spacing
  */
 export function ImageBoxGrid({
   items,
@@ -34,13 +32,10 @@ export function ImageBoxGrid({
   moreText = "categories",
 }: ImageBoxGridProps) {
   return (
-    <div
-      className="
-        /* 2 columns on phone, 3 on md, 4 on lg */
-        grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 
-        gap-5
-      "
-    >
+    <div className="
+      grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 
+      gap-5
+    ">
       {items.map((item) => (
         <div
           key={item.id}
@@ -57,7 +52,6 @@ export function ImageBoxGrid({
           onClick={() => onSectionClick(item.id)}
         >
           <div className="relative overflow-hidden rounded-lg aspect-square w-full">
-            {/* Service image */}
             <Image
               src={item.image}
               alt={item.title}
@@ -67,27 +61,30 @@ export function ImageBoxGrid({
                 object-cover transition-transform
                 ${
                   item.isSelected
-                    ? "scale-105"      /* less aggressive scale on selected */
+                    ? "scale-105"
                     : "group-hover:scale-105"
                 }
               `}
             />
 
             {/* Title overlay */}
-            <div className="absolute inset-x-0 top-0 p-4 bg-gradient-to-b from-black/50 to-transparent">
+            <div className="absolute inset-x-0 top-0 p-2 md:p-4 bg-gradient-to-b from-black/50 to-transparent">
               <h3
                 className="
                   font-medium text-white
-                  text-xl md:text-2xl
+                  text-2xl md:text-3xl xl:text-4xl
                 "
-                style={{
-                  textShadow: "1px 1px 3px rgba(0, 0, 0, 0.8)",
-                }}
+                style={{ textShadow: "1px 1px 3px rgba(0, 0, 0, 0.8)" }}
               >
                 {item.title}
                 {showCount &&
-                  item.subcategories.length > 0 &&
-                  ` (${item.subcategories.length})`}
+                  item.subcategories.length > 0 && (
+                    /* Only show subcategories count on md+ screens or md:inline*/
+                    <span className="hidden">
+                      {" "}
+                      ({item.subcategories.length})
+                    </span>
+                  )}
               </h3>
             </div>
 
@@ -96,7 +93,11 @@ export function ImageBoxGrid({
               <div
                 className={`
                   absolute inset-0 bg-black/50 transition-opacity flex flex-col pt-16 px-4
-                  ${item.isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"}
+                  ${
+                    item.isSelected
+                      ? "opacity-100"
+                      : "opacity-0 group-hover:opacity-100"
+                  }
                 `}
               >
                 <div

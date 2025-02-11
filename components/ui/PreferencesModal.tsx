@@ -38,7 +38,7 @@ interface PreferencesModalProps {
 /**
  * PreferencesModal:
  * A modal that allows the user to select language, units, and currency.
- * The 'show' prop toggles visibility.
+ * Currently only ENG / Feet / US are enabled. Others are shown but disabled.
  */
 export default function PreferencesModal({
   show,
@@ -62,7 +62,7 @@ export default function PreferencesModal({
 
   /**
    * Renders a horizontal group of buttons for a given set of items (languages, units, currencies).
-   * Each button has the same width and toggles its appearance based on selection.
+   * Only one option is "live"; all others are disabled for now. 
    */
   function renderButtonGroup<T extends string>(
     label: string,
@@ -76,19 +76,42 @@ export default function PreferencesModal({
         <p className="block text-lg font-medium text-gray-700 mb-2">{label}</p>
         <div className="flex flex-wrap gap-2">
           {items.map((item) => {
+            // We only enable ENG for Language, Feet for Units, and US for Currency.
+            const isEnabled =
+              (label === "Language" && item === "ENG") ||
+              (label === "Units" && item === "Feet") ||
+              (label === "Currency" && item === "US");
+
             const isSelected = selected === item;
             const displayName = mapFn?.[item] ?? item;
+
+            // Build classes conditionally
+            let buttonClasses =
+              "px-3 py-2 w-24 rounded font-medium border text-center transition-colors";
+
+            if (!isEnabled) {
+              // Disabled (coming soon)
+              buttonClasses +=
+                " bg-gray-300 text-gray-500 border-gray-300 cursor-not-allowed";
+            } else if (isSelected) {
+              buttonClasses +=
+                " bg-blue-600 text-white border-blue-600";
+            } else {
+              buttonClasses +=
+                " bg-gray-200 text-gray-700 hover:bg-gray-300 border-gray-300";
+            }
+
             return (
               <button
                 key={item}
-                onClick={() => onSelect(item)}
-                className={`px-3 py-2 w-24 rounded font-medium border text-center transition-colors
-                  ${
-                    isSelected
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "bg-gray-200 text-gray-700 hover:bg-gray-300 border-gray-300"
-                  }
-                `}
+                onClick={
+                  isEnabled
+                    ? () => onSelect(item)
+                    : undefined /* no onClick if disabled */
+                }
+                disabled={!isEnabled}
+                className={buttonClasses}
+                title={isEnabled ? undefined : "Coming soon"}
               >
                 {displayName}
               </button>
@@ -100,20 +123,10 @@ export default function PreferencesModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-[9999]">
+    <div className="fixed inset-0 bg-black/30 z-50 flex justify-end">
       <div
         ref={preferencesModalRef}
-        className="
-          bg-white
-          p-4 sm:p-6
-          rounded-xl
-          shadow-lg
-          w-[95vw]
-          sm:w-[90%]
-          max-w-[460px]
-          max-h-[90vh]
-          overflow-auto
-        "
+        className="bg-white w-full sm:w-[400px] h-full p-6 flex flex-col relative"
       >
         <h2 className="text-2xl font-bold mb-4 text-gray-800">Preferences</h2>
 
@@ -138,7 +151,7 @@ export default function PreferencesModal({
         )}
 
         {/* Modal action buttons */}
-        <div className="mt-6 flex justify-end gap-3">
+        <div className="mt-auto flex justify-end gap-3">
           <button
             onClick={onClose}
             className="px-4 py-2 rounded bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"

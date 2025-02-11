@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect } from "react";
+export const dynamic = "force-dynamic";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ALL_SERVICES } from "@/constants/services";
 import { ALL_CATEGORIES } from "@/constants/categories";
@@ -9,7 +10,32 @@ import { DisclaimerBlock } from "@/components/ui/DisclaimerBlock";
 import { getSessionItem } from "@/utils/session";
 
 /**
- * Formats a number with commas and exactly two decimals, e.g. 1234 => "1,234.00"
+ * Compress a base64-encoded image by drawing it on a canvas and exporting to JPEG.
+ * The `quality` can be lowered (0.1 to 0.9) to reduce file size. 
+ */
+function compressOnePhoto(base64String: string, quality = 0.4): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => {
+      const offCanvas = document.createElement("canvas");
+      offCanvas.width = image.width;
+      offCanvas.height = image.height;
+      const ctx = offCanvas.getContext("2d");
+      if (!ctx) {
+        return reject(new Error("Canvas 2D context not available"));
+      }
+      ctx.drawImage(image, 0, 0);
+      // Export to JPEG at the specified quality
+      const compressed = offCanvas.toDataURL("image/jpeg", quality);
+      resolve(compressed);
+    };
+    image.onerror = (err) => reject(err);
+    image.src = base64String;
+  });
+}
+
+/**
+ * Formats a numeric value into a US-style string with commas and exactly two decimals.
  */
 function formatWithSeparator(value: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -19,7 +45,7 @@ function formatWithSeparator(value: number): string {
 }
 
 /**
- * Returns the combined state+local tax rate (e.g. 8.85) for a given state code ("CA", "NY", etc.).
+ * Looks up the combined state+local tax rate from taxRatesUSA for a given state code.
  */
 function getTaxRateForState(stateCode: string): number {
   if (!stateCode) return 0;
@@ -30,8 +56,7 @@ function getTaxRateForState(stateCode: string): number {
 }
 
 /**
- * Converts a numeric USD amount into spelled-out English text (simplified).
- * Example: 1234.56 => "One thousand two hundred thirty-four and 56/100 dollars"
+ * Converts a numeric dollar amount into spelled-out English text (simplified).
  */
 function numberToWordsUSD(amount: number): string {
   const onesMap: Record<number, string> = {
@@ -76,65 +101,60 @@ function numberToWordsUSD(amount: number): string {
   function threeDigits(num: number): string {
     const hundreds = Math.floor(num / 100);
     const remainder = num % 100;
-    let result = "";
+    let out = "";
     if (hundreds > 0) {
-      result += `${onesMap[hundreds]} hundred`;
-      if (remainder > 0) result += " ";
+      out += `${onesMap[hundreds]} hundred`;
+      if (remainder > 0) out += " ";
     }
     if (remainder > 0) {
-      if (remainder < 100) result += twoDigits(remainder);
+      if (remainder < 100) out += twoDigits(remainder);
     }
-    return result || "zero";
+    if (!out) return "zero";
+    return out;
   }
 
   let integerPart = Math.floor(amount);
   const decimalPart = Math.round((amount - integerPart) * 100);
   if (integerPart === 0) integerPart = 0;
 
-  let str = "";
+  let spelled = "";
   const units = ["", "thousand", "million", "billion"];
-  let i = 0;
-  while (integerPart > 0 && i < units.length) {
+  let idx = 0;
+  while (integerPart > 0 && idx < units.length) {
     const chunk = integerPart % 1000;
     integerPart = Math.floor(integerPart / 1000);
     if (chunk > 0) {
       const chunkStr = threeDigits(chunk);
-      const label = units[i] ? ` ${units[i]}` : "";
-      str = chunkStr + label + (str ? " " + str : "");
+      const label = units[idx] ? ` ${units[idx]}` : "";
+      spelled = chunkStr + label + (spelled ? ` ${spelled}` : "");
     }
-    i++;
+    idx++;
   }
-  if (!str) str = "zero";
+  if (!spelled) spelled = "zero";
 
-  const dec = decimalPart < 10 ? `0${decimalPart}` : String(decimalPart);
-  return `${str} and ${dec}/100 dollars`;
+  const decimalString = decimalPart < 10 ? `0${decimalPart}` : String(decimalPart);
+  return `${spelled} and ${decimalString}/100 dollars`;
 }
 
 /**
- * Builds an estimate number in the format "CA-94103-YYYYMMDD-HHMM" or fallback.
+ * Builds an estimate reference number, e.g., "CA-94103-20250131-1345"
  */
 function buildEstimateNumber(stateCode: string, zip: string): string {
-  let stateZipPart = "??-00000";
+  let prefix = "??-00000";
   if (stateCode && zip) {
-    stateZipPart = `${stateCode}-${zip}`;
+    prefix = `${stateCode}-${zip}`;
   }
-
   const now = new Date();
   const yyyy = String(now.getFullYear());
   const mm = String(now.getMonth() + 1).padStart(2, "0");
   const dd = String(now.getDate()).padStart(2, "0");
   const hh = String(now.getHours()).padStart(2, "0");
   const mins = String(now.getMinutes()).padStart(2, "0");
-  const dateString = `${yyyy}${mm}${dd}`;
-  const timeString = hh + mins;
-
-  return `${stateZipPart}-${dateString}-${timeString}`;
+  return `${prefix}-${yyyy}${mm}${dd}-${hh}${mins}`;
 }
 
 /**
- * getCategoryNameById:
- * Locates a category by its ID from ALL_CATEGORIES and returns its title,
- * or returns the ID if not found.
+ * getCategoryNameById: returns the category's display title or falls back to the catId.
  */
 function getCategoryNameById(catId: string): string {
   const found = ALL_CATEGORIES.find((c) => c.id === catId);
@@ -144,7 +164,7 @@ function getCategoryNameById(catId: string): string {
 export default function PrintServicesEstimate() {
   const router = useRouter();
 
-  // Load data from session using getSessionItem
+  // Grab data from session
   const selectedServicesState: Record<string, number> = getSessionItem(
     "selectedServicesWithQuantity",
     {}
@@ -154,7 +174,8 @@ export default function PrintServicesEstimate() {
     {}
   );
   const address = getSessionItem("address", "");
-  const photos: string[] = getSessionItem("photos", []);
+  // We'll store photos in local state to compress them
+  const [photos, setPhotos] = useState<string[]>(() => getSessionItem("photos", []));
   const description = getSessionItem("description", "");
   const selectedTime = getSessionItem<string | null>("selectedTime", null);
   const timeCoefficient = getSessionItem<number>("timeCoefficient", 1);
@@ -172,6 +193,23 @@ export default function PrintServicesEstimate() {
     }
   }, [selectedServicesState, address, router]);
 
+  /**
+   * We'll compress any base64 photos on mount, storing them in local state 
+   * at a reduced quality (0.4) to lighten final print file size.
+   */
+  useEffect(() => {
+    if (photos.length > 0) {
+      const tasks = photos.map((original) => compressOnePhoto(original, 0.4));
+      Promise.all(tasks)
+        .then((compressedArr) => {
+          setPhotos(compressedArr);
+        })
+        .catch((err) => {
+          console.warn("Photo compression error:", err);
+        });
+    }
+  }, [photos]);
+
   // Build categories by section
   const categoriesWithSection = selectedCategories
     .map((catId) => ALL_CATEGORIES.find((c) => c.id === catId) || null)
@@ -185,10 +223,10 @@ export default function PrintServicesEstimate() {
     categoriesBySection[cat.section].push(cat.id);
   });
 
-  // Build cat->services map
+  // Build cat -> services map
   const categoryServicesMap: Record<string, (typeof ALL_SERVICES)[number][]> = {};
   selectedCategories.forEach((catId) => {
-    let matched = ALL_SERVICES.filter((svc) => svc.id.startsWith(`${catId}-`));
+    let matched = ALL_SERVICES.filter((svc) => svc.id.startsWith(catId + "-"));
     if (searchQuery) {
       matched = matched.filter((svc) =>
         svc.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -221,25 +259,26 @@ export default function PrintServicesEstimate() {
   const laborSubtotal = calculateLaborSubtotal();
   const materialsSubtotal = calculateMaterialsSubtotal();
   const finalLabor = laborSubtotal * timeCoefficient;
-  const sumBeforeTax = finalLabor + materialsSubtotal + serviceFeeOnLabor + serviceFeeOnMaterials;
+  const sumBeforeTax =
+    finalLabor + materialsSubtotal + serviceFeeOnLabor + serviceFeeOnMaterials;
   const taxRatePercent = getTaxRateForState(userStateCode);
   const taxAmount = sumBeforeTax * (taxRatePercent / 100);
   const finalTotal = sumBeforeTax + taxAmount;
   const finalTotalWords = numberToWordsUSD(finalTotal);
   const estimateNumber = buildEstimateNumber(userStateCode, userZip);
 
-  // Print on mount
+  // On mount => rename document title => print
   useEffect(() => {
     const oldTitle = document.title;
     document.title = `JAMB-Estimate-${estimateNumber}`;
-    const t = setTimeout(() => window.print(), 600);
+    const timer = setTimeout(() => window.print(), 600);
     return () => {
       document.title = oldTitle;
-      clearTimeout(t);
+      clearTimeout(timer);
     };
   }, [estimateNumber]);
 
-  // Materials breakdown, plus labor-by-section
+  // Materials & labor breakdown
   interface MaterialSpec {
     name: string;
     totalQuantity: number;
@@ -252,7 +291,7 @@ export default function PrintServicesEstimate() {
     const cr = calculationResultsMap[svcId];
     if (!cr) continue;
 
-    // find which cat -> which section
+    // find which cat => which section
     const catIdFound = selectedCategories.find((catId) =>
       svcId.startsWith(catId + "-")
     );
@@ -293,44 +332,43 @@ export default function PrintServicesEstimate() {
   );
   const laborDiff = finalLabor - laborSubtotal;
 
+  // Render
   return (
-    <div className="print-page p-4 my-2">
+    <div className="p-4 my-2" style={{ backgroundColor: "#fff" }}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4" style={{ backgroundColor: "transparent" }}>
         <img src="/images/logo.png" alt="JAMB Logo" className="h-10 w-auto" />
       </div>
-      <hr className="border-gray-300 mb-4" />
+      <hr className="border-gray-300 mb-4" style={{ backgroundColor: "#fff" }} />
 
-      <div className="flex justify-between items-center mb-4 mt-12">
+      <div className="flex justify-between items-center mb-4 mt-12" style={{ backgroundColor: "transparent" }}>
         <div>
           <h1 className="text-2xl font-bold">Estimate for Selected Services</h1>
-          <h2 className="text-sm text-gray-500 mt-1">
+          <h2 className="text-sm mt-1" style={{ color: "#555" }}>
             {estimateNumber} (temporary)
           </h2>
         </div>
       </div>
 
       {selectedTime && (
-        <p className="mb-2 text-gray-700">
+        <p className="mb-2" style={{ color: "#333" }}>
           <strong>Date of Service:</strong> {selectedTime}
         </p>
       )}
-      <p className="mb-2">
+      <p className="mb-2" style={{ color: "#333" }}>
         <strong>Address:</strong> {address}
       </p>
-      <p className="mb-4">
+      <p className="mb-4" style={{ color: "#333" }}>
         <strong>Details:</strong> {description || "No details provided"}
       </p>
 
-      {/* Uploaded Photos */}
+      {/* Photos */}
       {photos.length > 0 && (
         <section className="mb-6">
           <h3 className="font-semibold text-xl mb-2">Uploaded Photos</h3>
-
-          {/* 1) If exactly one photo => half the page width */}
           {photos.length === 1 ? (
             <div className="flex w-full justify-center">
-              <div className="w-1/2 overflow-hidden rounded-md border border-gray-300">
+              <div className="w-1/2 overflow-hidden border border-gray-300">
                 <img
                   src={photos[0]}
                   alt="Uploaded Photo"
@@ -339,7 +377,6 @@ export default function PrintServicesEstimate() {
               </div>
             </div>
           ) : photos.length <= 8 ? (
-            /* 2) If 2..8 => single row => grid with exactly `photos.length` columns */
             <div
               className={`grid grid-cols-${photos.length} gap-2 w-full`}
               style={{
@@ -349,7 +386,7 @@ export default function PrintServicesEstimate() {
               {photos.map((photoUrl, idx) => (
                 <div
                   key={idx}
-                  className="overflow-hidden rounded-md border border-gray-300"
+                  className="overflow-hidden border border-gray-300"
                 >
                   <img
                     src={photoUrl}
@@ -360,13 +397,12 @@ export default function PrintServicesEstimate() {
               ))}
             </div>
           ) : (
-            /* 3) If more than 8 => two rows of 8 columns each */
             <div className="flex flex-col gap-2 w-full">
               <div className="grid grid-cols-8 gap-2 w-full">
                 {photos.slice(0, 8).map((photoUrl, idx) => (
                   <div
                     key={idx}
-                    className="overflow-hidden rounded-md border border-gray-300"
+                    className="overflow-hidden border border-gray-300"
                   >
                     <img
                       src={photoUrl}
@@ -380,7 +416,7 @@ export default function PrintServicesEstimate() {
                 {photos.slice(8).map((photoUrl, idx) => (
                   <div
                     key={idx}
-                    className="overflow-hidden rounded-md border border-gray-300"
+                    className="overflow-hidden border border-gray-300"
                   >
                     <img
                       src={photoUrl}
@@ -395,27 +431,36 @@ export default function PrintServicesEstimate() {
         </section>
       )}
 
+      {/* Disclaimer */}
       <div className="mb-8">
         <DisclaimerBlock />
       </div>
 
-      {/* (1) SUMMARY */}
+      {/* 1) SUMMARY */}
       <section className="page-break mt-8">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">1) Summary</h2>
-        <p className="text-sm text-gray-700 mb-4">
+        <h2 className="text-xl font-semibold mb-4" style={{ color: "#333" }}>
+          1) Summary
+        </h2>
+        <p className="text-sm mb-4" style={{ color: "#666" }}>
           This table provides a simple overview of each selected service,
           quantity, and total cost.
         </p>
 
-        <table className="w-full table-auto border border-gray-300 text-sm text-gray-700">
+        <table className="w-full table-auto border text-sm" style={{ color: "#333", borderColor: "#999" }}>
           <thead>
-            <tr className="border-b bg-white">
-              <th className="px-3 py-2 border-r border-gray-300 w-14 text-center">#</th>
-              <th className="px-3 py-2 border-r border-gray-300 text-left">Service</th>
-              <th className="px-3 py-2 border-r border-gray-300 text-center w-20">
+            <tr style={{ borderBottom: "1px solid #999", background: "transparent" }}>
+              <th className="px-3 py-2 border-r text-center" style={{ borderColor: "#999", width: "3.5rem" }}>
+                #
+              </th>
+              <th className="px-3 py-2 border-r text-left" style={{ borderColor: "#999" }}>
+                Service
+              </th>
+              <th className="px-3 py-2 border-r text-center" style={{ borderColor: "#999", width: "5rem" }}>
                 Qty
               </th>
-              <th className="px-3 py-2 text-center w-24">Total Cost</th>
+              <th className="px-3 py-2 text-center" style={{ width: "6rem" }}>
+                Total Cost
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -432,7 +477,11 @@ export default function PrintServicesEstimate() {
                   <tr>
                     <td
                       colSpan={4}
-                      className="px-3 py-2 font-medium bg-gray-100 border-b border-gray-300"
+                      className="px-3 py-2 font-medium"
+                      style={{
+                        borderBottom: "1px solid #999",
+                        background: "transparent",
+                      }}
                     >
                       {sectionIndex}. {sectionName}
                     </td>
@@ -452,7 +501,8 @@ export default function PrintServicesEstimate() {
                         <tr>
                           <td
                             colSpan={4}
-                            className="px-5 py-2 border-b border-gray-200 font-medium"
+                            className="px-5 py-2"
+                            style={{ borderBottom: "1px solid #ccc", background: "transparent" }}
                           >
                             {sectionIndex}.{catIndex}. {catName}
                           </td>
@@ -464,14 +514,14 @@ export default function PrintServicesEstimate() {
                           const finalCost = cr ? parseFloat(cr.total) || 0 : 0;
 
                           return (
-                            <tr key={svc.id} className="border-b last:border-0">
-                              <td className="px-3 py-2 border-r border-gray-300 text-center">
+                            <tr key={svc.id} style={{ borderBottom: "1px solid #ccc" }}>
+                              <td className="px-3 py-2 border-r text-center" style={{ borderColor: "#ccc" }}>
                                 {sectionIndex}.{catIndex}.{svcIndex}
                               </td>
-                              <td className="px-3 py-2 border-r border-gray-300">
+                              <td className="px-3 py-2 border-r" style={{ borderColor: "#ccc" }}>
                                 {svc.title}
                               </td>
-                              <td className="px-3 py-2 border-r border-gray-300 text-center">
+                              <td className="px-3 py-2 border-r text-center" style={{ borderColor: "#ccc" }}>
                                 {qty} {svc.unit_of_measurement}
                               </td>
                               <td className="px-3 py-2 text-center">
@@ -490,18 +540,18 @@ export default function PrintServicesEstimate() {
         </table>
 
         {/* Summary totals */}
-        <div className="border-t pt-4 mt-6 space-y-1 text-sm">
-          <div className="flex justify-between">
+        <div className="border-t pt-4 mt-6 text-sm" style={{ borderColor: "#999" }}>
+          <div className="flex justify-between mb-1">
             <span>Labor total:</span>
             <span>${formatWithSeparator(laborSubtotal)}</span>
           </div>
-          <div className="flex justify-between">
+          <div className="flex justify-between mb-1">
             <span>Materials, tools and equipment:</span>
             <span>${formatWithSeparator(materialsSubtotal)}</span>
           </div>
 
           {timeCoefficient !== 1 && (
-            <div className="flex justify-between">
+            <div className="flex justify-between mb-1">
               <span>
                 {timeCoefficient > 1
                   ? "Surcharge (date selection)"
@@ -514,20 +564,20 @@ export default function PrintServicesEstimate() {
             </div>
           )}
 
-          <div className="flex justify-between">
+          <div className="flex justify-between mb-1">
             <span>Service Fee (15% on labor)</span>
             <span>${formatWithSeparator(serviceFeeOnLabor)}</span>
           </div>
-          <div className="flex justify-between">
+          <div className="flex justify-between mb-1">
             <span>Delivery &amp; Processing (5% on materials)</span>
             <span>${formatWithSeparator(serviceFeeOnMaterials)}</span>
           </div>
 
-          <div className="flex justify-between font-semibold">
+          <div className="flex justify-between font-semibold mb-1">
             <span>Subtotal:</span>
             <span>${formatWithSeparator(sumBeforeTax)}</span>
           </div>
-          <div className="flex justify-between">
+          <div className="flex justify-between mb-1">
             <span>
               Sales tax
               {userStateCode ? ` (${userStateCode})` : ""}
@@ -540,7 +590,7 @@ export default function PrintServicesEstimate() {
             <span>Total:</span>
             <span>${formatWithSeparator(finalTotal)}</span>
           </div>
-          <p className="text-right text-sm text-gray-600">
+          <p className="text-right text-sm" style={{ color: "#666" }}>
             ({finalTotalWords})
           </p>
         </div>
@@ -548,10 +598,10 @@ export default function PrintServicesEstimate() {
 
       {/* 2) COST BREAKDOWN */}
       <section className="page-break mt-10">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">
+        <h2 className="text-xl font-semibold mb-4" style={{ color: "#333" }}>
           2) Cost Breakdown
         </h2>
-        <p className="text-sm text-gray-700 mb-4">
+        <p className="text-sm mb-4" style={{ color: "#666" }}>
           This section shows a detailed breakdown of each service's labor and
           materials cost.
         </p>
@@ -566,7 +616,7 @@ export default function PrintServicesEstimate() {
 
           return (
             <div key={sectionName} className="avoid-break mb-6">
-              <h3 className="text-lg font-bold text-gray-800 mb-2">
+              <h3 className="text-lg font-bold mb-2" style={{ color: "#333" }}>
                 {sectionIndex}. {sectionName}
               </h3>
               {catsWithServices.map((catId, j) => {
@@ -581,7 +631,7 @@ export default function PrintServicesEstimate() {
 
                 return (
                   <div key={catId} className="ml-4 mb-4 avoid-break">
-                    <h4 className="text-base font-semibold text-gray-700 mb-2">
+                    <h4 className="text-base font-semibold mb-2" style={{ color: "#444" }}>
                       {sectionIndex}.{catIndex}. {catName}
                     </h4>
                     {chosenServices.map((svc, k2) => {
@@ -592,17 +642,20 @@ export default function PrintServicesEstimate() {
 
                       return (
                         <div key={svc.id} className="mb-4 avoid-break">
-                          <h5 className="text-sm font-semibold text-gray-800 flex justify-between">
+                          <h5
+                            className="text-sm font-semibold flex justify-between"
+                            style={{ color: "#444" }}
+                          >
                             <span>
                               {sectionIndex}.{catIndex}.{svcIndex}. {svc.title}
                             </span>
                           </h5>
                           {svc.description && (
-                            <p className="text-sm text-gray-500 my-1">
+                            <p className="text-sm my-1" style={{ color: "#777" }}>
                               {svc.description}
                             </p>
                           )}
-                          <p className="text-sm text-gray-800 flex justify-between">
+                          <p className="text-sm flex justify-between" style={{ color: "#444" }}>
                             <span className="font-semibold">
                               {quantity} {svc.unit_of_measurement}
                             </span>
@@ -613,14 +666,15 @@ export default function PrintServicesEstimate() {
 
                           {/* cost breakdown */}
                           {cr && (
-                            <div className="mt-2 p-3 bg-gray-50 border border-gray-300 rounded text-sm text-gray-700">
+                            <div
+                              className="mt-2 p-3 border border-gray-300 rounded text-sm"
+                              style={{ color: "#444", backgroundColor: "transparent" }}
+                            >
                               <div className="flex justify-between mb-1">
                                 <span className="font-semibold">Labor</span>
                                 <span className="font-semibold">
                                   {cr.work_cost
-                                    ? `$${formatWithSeparator(
-                                        parseFloat(cr.work_cost)
-                                      )}`
+                                    ? `$${formatWithSeparator(parseFloat(cr.work_cost))}`
                                     : "—"}
                                 </span>
                               </div>
@@ -630,42 +684,35 @@ export default function PrintServicesEstimate() {
                                 </span>
                                 <span className="font-semibold">
                                   {cr.material_cost
-                                    ? `$${formatWithSeparator(
-                                        parseFloat(cr.material_cost)
-                                      )}`
+                                    ? `$${formatWithSeparator(parseFloat(cr.material_cost))}`
                                     : "—"}
                                 </span>
                               </div>
 
                               {Array.isArray(cr.materials) && cr.materials.length > 0 && (
                                 <div className="mt-2">
-                                  <table className="table-auto w-full text-left text-gray-700">
+                                  <table className="table-auto w-full text-left" style={{ color: "#444" }}>
                                     <thead>
-                                      <tr className="border-b">
+                                      <tr style={{ borderBottom: "1px solid #ccc" }}>
                                         <th className="py-1 px-1">Name</th>
                                         <th className="py-1 px-1">Price</th>
                                         <th className="py-1 px-1">Qty</th>
-                                        <th className="py-1 px-1">
-                                          Subtotal
-                                        </th>
+                                        <th className="py-1 px-1">Subtotal</th>
                                       </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-gray-200">
+                                    <tbody>
                                       {cr.materials.map((m: any, idx2: number) => (
-                                        <tr key={`${m.external_id}-${idx2}`}>
+                                        <tr
+                                          key={`${m.external_id}-${idx2}`}
+                                          style={{ borderBottom: "1px solid #eee" }}
+                                        >
                                           <td className="py-2 px-1">{m.name}</td>
                                           <td className="py-2 px-1">
-                                            $
-                                            {formatWithSeparator(
-                                              parseFloat(m.cost_per_unit)
-                                            )}
+                                            ${formatWithSeparator(parseFloat(m.cost_per_unit))}
                                           </td>
                                           <td className="py-2 px-1">{m.quantity}</td>
                                           <td className="py-2 px-1">
-                                            $
-                                            {formatWithSeparator(
-                                              parseFloat(m.cost)
-                                            )}
+                                            ${formatWithSeparator(parseFloat(m.cost))}
                                           </td>
                                         </tr>
                                       ))}
@@ -688,35 +735,36 @@ export default function PrintServicesEstimate() {
 
       {/* 3) SPECIFICATIONS */}
       <section className="page-break mt-10">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">
+        <h2 className="text-xl font-semibold mb-4" style={{ color: "#333" }}>
           3) Specifications
         </h2>
-        <p className="text-sm text-gray-700 mb-4">
-          This section shows labor by section (including any date
-          surcharges/discounts) and an overall list of materials.
+        <p className="text-sm mb-4" style={{ color: "#666" }}>
+          This section shows labor by section (including date surcharges/discounts) 
+          and an overall list of materials.
         </p>
 
         {/* A) Labor by Section */}
         <div className="mb-8">
-          <h3 className="text-lg font-bold text-gray-800 mb-2">
+          <h3 className="text-lg font-bold mb-2" style={{ color: "#333" }}>
             A) Labor by Section
           </h3>
-          <table className="w-full table-auto border border-gray-300 text-sm text-gray-700 mb-3">
-            <thead className="bg-gray-100">
+          <table
+            className="w-full table-auto border text-sm mb-3"
+            style={{ color: "#333", borderColor: "#999" }}
+          >
+            <thead style={{ background: "transparent" }}>
               <tr>
-                <th className="px-3 py-2 border border-gray-300 text-left">
+                <th className="px-3 py-2 border" style={{ borderColor: "#999", textAlign: "left" }}>
                   Section
                 </th>
-                <th className="px-3 py-2 border  border-gray-300 text-right">
+                <th className="px-3 py-2 border" style={{ borderColor: "#999", textAlign: "right" }}>
                   Labor
                 </th>
               </tr>
             </thead>
             <tbody>
               {Object.keys(categoriesBySection).map((sectionName) => {
-                // Summation for each section
                 let laborSum = 0;
-                // For each category in that section => for each chosen service => accumulate labor
                 const catIds = categoriesBySection[sectionName];
                 catIds.forEach((catId) => {
                   const arr = categoryServicesMap[catId] || [];
@@ -732,11 +780,14 @@ export default function PrintServicesEstimate() {
                 if (laborSum === 0) return null;
 
                 return (
-                  <tr key={sectionName} className="border-b last:border-0">
-                    <td className="px-3 py-2 border border-gray-300">
+                  <tr key={sectionName} style={{ borderBottom: "1px solid #ccc" }}>
+                    <td className="px-3 py-2 border" style={{ borderColor: "#ccc" }}>
                       {sectionName}
                     </td>
-                    <td className="px-3 py-2 border border-gray-300 text-right">
+                    <td
+                      className="px-3 py-2 border text-right"
+                      style={{ borderColor: "#ccc" }}
+                    >
                       ${formatWithSeparator(laborSum)}
                     </td>
                   </tr>
@@ -745,7 +796,7 @@ export default function PrintServicesEstimate() {
             </tbody>
           </table>
           {/* Explanation */}
-          <div className="text-sm">
+          <div className="text-sm" style={{ color: "#444" }}>
             <div className="flex justify-end">
               <span className="mr-6">Labor Sum:</span>
               <span>${formatWithSeparator(laborSubtotal)}</span>
@@ -770,29 +821,33 @@ export default function PrintServicesEstimate() {
 
         {/* B) Overall Materials */}
         <div>
-          <h3 className="text-lg font-bold text-gray-800 mb-2">
+          <h3 className="text-lg font-bold mb-2" style={{ color: "#333" }}>
             B) Overall Materials, tools and equipment
           </h3>
-          {/* If no materials => show message */}
           {materialsSpecArray.length === 0 ? (
-            <p className="text-sm text-gray-700">
+            <p className="text-sm" style={{ color: "#666" }}>
               No materials used in this estimate.
             </p>
           ) : (
             <div>
-              <table className="w-full table-auto border border-gray-300 text-sm text-gray-700">
-                <thead className="bg-gray-100">
+              <table
+                className="w-full table-auto border text-sm"
+                style={{ color: "#333", borderColor: "#999" }}
+              >
+                <thead style={{ background: "transparent" }}>
                   <tr>
-                    <th className="px-3 py-2 border border-gray-300 text-left">
+                    <th className="px-3 py-2 border" style={{ borderColor: "#999", textAlign: "left" }}>
                       Material Name
                     </th>
-                    <th className="px-3 py-2 border border-gray-300 text-center">
+                    <th className="px-3 py-2 border" style={{ borderColor: "#999", textAlign: "center" }}>
                       Qty
                     </th>
-                    <th className="px-3 py-2 border border-gray-300 text-center">
+                    <th className="px-3 py-2 border" style={{ borderColor: "#999", textAlign: "center" }}>
                       Price
                     </th>
-                    <th className="px-3 py-2 border text-center">Subtotal</th>
+                    <th className="px-3 py-2 border" style={{ textAlign: "center" }}>
+                      Subtotal
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -801,14 +856,20 @@ export default function PrintServicesEstimate() {
                       ? mat.totalCost / mat.totalQuantity
                       : 0;
                     return (
-                      <tr key={mat.name} className="border-b last:border-0">
-                        <td className="px-3 py-2 border-r border-gray-300">
+                      <tr key={mat.name} style={{ borderBottom: "1px solid #ccc" }}>
+                        <td className="px-3 py-2 border-r" style={{ borderColor: "#ccc" }}>
                           {mat.name}
                         </td>
-                        <td className="px-3 py-2 border-r border-gray-300 text-center">
+                        <td
+                          className="px-3 py-2 border-r text-center"
+                          style={{ borderColor: "#ccc" }}
+                        >
                           {mat.totalQuantity}
                         </td>
-                        <td className="px-3 py-2 border-r border-gray-300 text-center">
+                        <td
+                          className="px-3 py-2 border-r text-center"
+                          style={{ borderColor: "#ccc" }}
+                        >
                           ${formatWithSeparator(unitPrice)}
                         </td>
                         <td className="px-3 py-2 text-center">
@@ -819,10 +880,8 @@ export default function PrintServicesEstimate() {
                   })}
                 </tbody>
               </table>
-              <div className="flex justify-end mt-2 text-sm font-semibold">
-                <span className="mr-6">
-                  Total Materials, tools and equipment:
-                </span>
+              <div className="flex justify-end mt-2 text-sm font-semibold" style={{ color: "#444" }}>
+                <span className="mr-6">Total Materials, tools and equipment:</span>
                 <span>${formatWithSeparator(totalMaterialsCost)}</span>
               </div>
             </div>

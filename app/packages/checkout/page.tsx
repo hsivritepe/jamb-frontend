@@ -1,11 +1,13 @@
 "use client";
 
+export const dynamic = "force-dynamic";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import BreadCrumb from "@/components/ui/BreadCrumb";
 import { SectionBoxTitle } from "@/components/ui/SectionBoxTitle";
 import { SectionBoxSubtitle } from "@/components/ui/SectionBoxSubtitle";
-import ActionIconsBar from "@/components/ui/ActionIconsBar";
+import React, { FC } from "react";
+import { Printer, Share2, Save } from "lucide-react";
 
 // Navigation and constants
 import { PACKAGES_STEPS } from "@/constants/navigation";
@@ -15,6 +17,27 @@ import { ALL_CATEGORIES } from "@/constants/categories";
 
 // Unified session utilities
 import { getSessionItem, setSessionItem } from "@/utils/session";
+
+/**
+ * A single-button "ActionIconsBar" that displays three icons (Printer, Share, Save)
+ */
+interface SingleButtonProps {
+  onPrint?: () => void;
+}
+
+const ActionIconsBar: FC<SingleButtonProps> = ({ onPrint }) => {
+  return (
+    <button
+      onClick={onPrint}
+      className="flex items-center gap-2 border border-gray-300 rounded-lg px-4 py-2 text-gray-700 hover:text-gray-900"
+    >
+      <Printer size={20} />
+      <Share2 size={20} />
+      <Save size={20} />
+      <span className="hidden sm:inline text-sm">Print</span>
+    </button>
+  );
+};
 
 /**
  * Formats a number with commas and two decimals.
@@ -44,7 +67,6 @@ function formatHouseType(value: string): string {
 
 /**
  * Builds a reference from stateCode + zip + date/time, e.g. "NY-10009-20250812-1420".
- * If state is missing, uses "??".
  */
 function buildOrderReference(stateCode: string, zip: string): string {
   const sc = stateCode ? stateCode.trim().slice(0, 2).toUpperCase() : "??";
@@ -194,7 +216,6 @@ function numberToWordsUSD(amount: number): string {
     return hundredPart || remainderPart || "";
   }
 
-  // minimal thousands approach
   let resultWords: string[] = [];
   const thousandUnits = ["", " thousand", " million", " billion"];
   let temp = integerPart;
@@ -329,12 +350,6 @@ export default function CheckoutPage() {
   function handlePrint() {
     router.push("/packages/checkout/print");
   }
-  function handleShare() {
-    console.log("Share the final checkout link...");
-  }
-  function handleSave() {
-    console.log("Save the final checkout as PDF...");
-  }
 
   // Go back => to estimate
   function handleGoBack() {
@@ -379,14 +394,16 @@ export default function CheckoutPage() {
 
         <div className="flex items-center justify-between mt-8">
           <SectionBoxTitle>Checkout</SectionBoxTitle>
-          <ActionIconsBar onPrint={handlePrint} onShare={handleShare} onSave={handleSave} />
+
+          {/* Single-button version of ActionIconsBar calling only onPrint */}
+          <ActionIconsBar onPrint={handlePrint} />
         </div>
 
         <div className="bg-white border border-gray-300 mt-8 p-4 sm:p-6 rounded-lg space-y-6">
           {/* Reference info */}
           <SectionBoxSubtitle>
-          <div>Estimate for {chosenPackage ? chosenPackage.title : "Unknown"}</div>
-          <div className="text-sm text-gray-500">({referenceNumber})</div>
+            <div>Estimate for {chosenPackage ? chosenPackage.title : "Unknown"}</div>
+            <div className="text-sm text-gray-500">({referenceNumber})</div>
           </SectionBoxSubtitle>
           <p className="text-xs text-gray-400 ml-1">
             *This number is temporary and will be replaced with a permanent
@@ -460,7 +477,7 @@ export default function CheckoutPage() {
                                     </div>
                                     <div className="flex justify-between mb-2">
                                       <span className="text-sm font-medium text-gray-700">
-                                        Materials, tools & equipment
+                                        Materials, tools &amp; equipment
                                       </span>
                                       <span className="text-sm font-medium text-gray-700">
                                         ${formatWithSeparator(matVal)}
@@ -528,7 +545,6 @@ export default function CheckoutPage() {
               </span>
             </div>
 
-            {/* PaymentCoefficient => discount or surcharge */}
             {paymentCoefficient !== 1 && (
               <div className="flex justify-between mb-2">
                 <span className="text-gray-600">

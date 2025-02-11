@@ -1,5 +1,6 @@
 "use client";
 
+export const dynamic = "force-dynamic";
 import { useState, useEffect, ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
 import { ALL_SEARCH_ITEMS } from "@/constants/searchData";
@@ -43,7 +44,7 @@ export default function HeroSection() {
     <section className="pt-4">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
         {/* Left column */}
-        <div className="bg-white rounded-2xl p-4 sm:p-8 flex flex-col justify-between text-sm md:text-base">
+        <div className="bg-white rounded-2xl p-4 sm:p-8 flex flex-col justify-between text-base">
           <div>
             <SectionBoxTitle>
               Smart Estimates,
@@ -61,7 +62,7 @@ export default function HeroSection() {
             onChange={(e: ChangeEvent<HTMLInputElement>) =>
               setSearchQuery(e.target.value)
             }
-            placeholder="Search for any service, room or package"
+            placeholder="Search for any service"
           />
 
           {results.length > 0 && (

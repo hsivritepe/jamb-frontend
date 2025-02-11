@@ -1,5 +1,6 @@
 "use client";
 
+export const dynamic = "force-dynamic";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import BreadCrumb from "@/components/ui/BreadCrumb";
@@ -543,14 +544,14 @@ export default function EmergencyEstimate() {
           {/* Action buttons */}
           <div className="mt-6 space-y-4">
             <button
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium"
+              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold sm:font-medium"
               onClick={handleProceedToCheckout}
             >
               Proceed to Checkout →
             </button>
             <button
               onClick={() => router.back()}
-              className="w-full text-brand border border-brand py-3 rounded-lg font-medium"
+              className="w-full text-brand border border-brand py-3 rounded-lg font-semibold sm:font-medium"
             >
               Add more services →
             </button>

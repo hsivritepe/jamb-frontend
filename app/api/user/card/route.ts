@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { updateUserCard } from '@/server/controllers/userController';
 
 /**
- * POST http://dev.thejamb.com/api/user/card
+ * POST https://dev.thejamb.com/api/user/card
  *
  * This endpoint allows a user to create or update their card details.
  * It requires the user's token and the necessary card fields.

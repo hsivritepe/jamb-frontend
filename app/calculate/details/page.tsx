@@ -14,6 +14,7 @@ import { ALL_SERVICES } from "@/constants/services";
 import { ChevronDown } from "lucide-react";
 import { setSessionItem, getSessionItem } from "@/utils/session";
 import RecommendedActivities from "@/components/RecommendedActivities";
+import FinishingMaterialsModal from "@/components/FinishingMaterialsModal";
 
 /** Interface describing finishing materials returned by /work/finishing_materials. */
 interface FinishingMaterial {
@@ -39,7 +40,7 @@ function convertServiceIdToApiFormat(serviceId: string): string {
 
 /** Returns the base API URL or fallback. */
 function getApiBaseUrl(): string {
-  return process.env.NEXT_PUBLIC_API_BASE_URL || "http://dev.thejamb.com";
+  return process.env.NEXT_PUBLIC_API_BASE_URL || "https://dev.thejamb.com";
 }
 
 /** POST /work/finishing_materials => fetch finishing materials. */
@@ -58,7 +59,7 @@ async function fetchFinishingMaterials(workCode: string) {
   return res.json();
 }
 
-/** POST /calculate => compute labor+materials cost. */
+/** POST /calculate => compute labor + materials cost. */
 async function calculatePrice(params: {
   work_code: string;
   zipcode: string;
@@ -80,14 +81,14 @@ async function calculatePrice(params: {
   return res.json();
 }
 
-/** Simple image component for a service ID, adapted for responsiveness up to 1280px. */
+/** Simple image component for a service ID, adapted for responsiveness. */
 function ServiceImage({ serviceId }: { serviceId: string }) {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
 
   useEffect(() => {
     const firstSegment = serviceId.split("-")[0];
     const code = convertServiceIdToApiFormat(serviceId);
-    const url = `http://dev.thejamb.com/images/${firstSegment}/${code}.jpg`;
+    const url = `https://dev.thejamb.com/images/${firstSegment}/${code}.jpg`;
     setImageSrc(url);
   }, [serviceId]);
 
@@ -100,8 +101,193 @@ function ServiceImage({ serviceId }: { serviceId: string }) {
         alt="Service"
         width={600}
         height={400}
+        unoptimized
         className="w-full h-auto object-cover"
       />
+    </div>
+  );
+}
+
+/**
+ * A modal to help user calculate square footage from length & width
+ * or directly from square meters. Then apply that result to the service quantity.
+ */
+interface SurfaceCalculatorModalProps {
+  show: boolean;
+  onClose: () => void;
+  serviceId: string | null;
+  onApplySquareFeet: (serviceId: string | null, sqFeet: number) => void;
+}
+
+function SurfaceCalculatorModal({
+  show,
+  onClose,
+  serviceId,
+  onApplySquareFeet,
+}: SurfaceCalculatorModalProps) {
+  if (!show) return null;
+
+  // internal states
+  const [system, setSystem] = useState<"ft" | "m">("ft");
+  const [lengthVal, setLengthVal] = useState("");
+  const [widthVal, setWidthVal] = useState("");
+  const [sqMetersVal, setSqMetersVal] = useState("");
+
+  // compute area from length*width => always in sq ft
+  function computeAreaSqFt(): number {
+    const lengthNum = parseFloat(lengthVal) || 0;
+    const widthNum = parseFloat(widthVal) || 0;
+    if (system === "m") {
+      // each dimension in meters => area in m^2 => convert to ft^2
+      // 1 m^2 = 10.7639 ft^2
+      return lengthNum * widthNum * 10.7639;
+    }
+    // system = ft => direct
+    return lengthNum * widthNum;
+  }
+
+  // compute from known sq meters
+  function computeAreaFromSqMeters(): number {
+    const val = parseFloat(sqMetersVal) || 0;
+    return val * 10.7639; // 1 m^2 = 10.7639 ft^2
+  }
+
+  function handleApply() {
+    if (!serviceId) {
+      onClose();
+      return;
+    }
+    // decide which area to take
+    let areaFt = computeAreaSqFt();
+    // if user typed sq meters => prefer that
+    if (sqMetersVal.trim()) {
+      areaFt = computeAreaFromSqMeters();
+    }
+    if (areaFt < 1) areaFt = 1; // minimal
+    onApplySquareFeet(serviceId, Math.round(areaFt));
+    onClose();
+  }
+
+  return (
+    <div className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg w-full max-w-md overflow-hidden relative p-4">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-3 border-b pb-2">
+          <h2 className="text-lg font-semibold text-gray-800">
+            Surface Calculator
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-red-500 px-2"
+            aria-label="Close"
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* short instructions */}
+        <p className="text-sm text-gray-600 mb-4">
+          Enter length & width in meters or feet, or a known m² area to convert
+          to sq ft automatically.
+        </p>
+
+        {/* system toggle */}
+        <div className="mb-4">
+          <span className="text-sm text-gray-700 mr-2">Units (LxW):</span>
+          <button
+            onClick={() => setSystem("ft")}
+            className={`px-3 py-1 border rounded-l ${
+              system === "ft"
+                ? "bg-blue-600 text-white border-blue-600"
+                : "bg-gray-200 text-gray-700 border-gray-300 hover:bg-gray-300"
+            }`}
+          >
+            ft
+          </button>
+          <button
+            onClick={() => setSystem("m")}
+            className={`px-3 py-1 border rounded-r ${
+              system === "m"
+                ? "bg-blue-600 text-white border-blue-600"
+                : "bg-gray-200 text-gray-700 border-gray-300 hover:bg-gray-300"
+            }`}
+          >
+            m
+          </button>
+        </div>
+
+        {/* length + width */}
+        <div className="flex gap-2 mb-4">
+          <div className="flex-1">
+            <label className="block text-sm text-gray-600 mb-1">Length</label>
+            <input
+              type="number"
+              placeholder={`0 (${system})`}
+              value={lengthVal}
+              onChange={(e) => setLengthVal(e.target.value)}
+              className="w-full border rounded px-2 py-1"
+            />
+          </div>
+          <div className="flex-1">
+            <label className="block text-sm text-gray-600 mb-1">Width</label>
+            <input
+              type="number"
+              placeholder={`0 (${system})`}
+              value={widthVal}
+              onChange={(e) => setWidthVal(e.target.value)}
+              className="w-full border rounded px-2 py-1"
+            />
+          </div>
+        </div>
+
+        {/* or known sq meters */}
+        <div className="mb-4">
+          <label className="block text-sm text-gray-600 mb-1">
+            Or known area (m²):
+          </label>
+          <input
+            type="number"
+            className="w-full border rounded px-2 py-1"
+            placeholder="0 m²"
+            value={sqMetersVal}
+            onChange={(e) => setSqMetersVal(e.target.value)}
+          />
+        </div>
+
+        {/* Calculated results */}
+        <div className="mb-4 text-sm text-gray-700">
+          <p className="mb-1">
+            Calculated from length & width:{" "}
+            <span className="font-medium">
+              {Math.round(computeAreaSqFt())} sq ft
+            </span>
+          </p>
+          {sqMetersVal.trim() && (
+            <p>
+              From known m²:{" "}
+              <span className="font-medium">
+                {Math.round(computeAreaFromSqMeters())} sq ft
+              </span>
+            </p>
+          )}
+        </div>
+
+        {/* Footer buttons */}
+        <div className="flex justify-end gap-3 mt-4">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleApply}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Apply
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -217,7 +403,7 @@ export default function Details() {
     Record<string, Set<string>>
   >({});
 
-  // modal for finishing material
+  // State for the finishing-material modal
   const [showModalServiceId, setShowModalServiceId] = useState<string | null>(
     null
   );
@@ -225,11 +411,35 @@ export default function Details() {
     string | null
   >(null);
 
+  // State for the surface calculator
+  const [showSurfaceCalc, setShowSurfaceCalc] = useState(false);
+  const [calcServiceId, setCalcServiceId] = useState<string | null>(null);
+
+  // This is triggered from SurfaceCalculatorModal's "Apply" button
+  function handleApplySquareFeet(serviceId: string | null, sqFeet: number) {
+    if (!serviceId) return;
+    // If the user hasn't turned on the service yet, we could auto-enable,
+    // or just skip. Below we assume the service is already toggled on.
+    setSelectedServicesState((old) => {
+      if (!(serviceId in old)) {
+        return old; // do nothing if not toggled
+      }
+      return {
+        ...old,
+        [serviceId]: sqFeet,
+      };
+    });
+    setManualInputValue((old) => ({
+      ...old,
+      [serviceId]: String(sqFeet),
+    }));
+  }
+
   useEffect(() => {
     setSessionItem("calculationResultsMap", calculationResultsMap);
   }, [calculationResultsMap]);
 
-  // Expand/collapse a category => possibly fetch finishing materials
+  /** Expand/collapse a category => possibly fetch finishing materials. */
   function toggleCategory(catId: string) {
     setExpandedCategories((old) => {
       const next = new Set(old);
@@ -244,7 +454,7 @@ export default function Details() {
     });
   }
 
-  // Toggle a service in the left side
+  /** Toggle a service. */
   function handleServiceToggle(serviceId: string) {
     setSelectedServicesState((old) => {
       const isOn = old[serviceId] != null;
@@ -283,7 +493,6 @@ export default function Details() {
         const newObj = { ...old, [serviceId]: minQ };
 
         setManualInputValue((prev) => ({ ...prev, [serviceId]: String(minQ) }));
-
         ensureFinishingMaterialsLoaded(serviceId);
         return newObj;
       }
@@ -291,7 +500,7 @@ export default function Details() {
     setWarningMessage(null);
   }
 
-  // +/- quantity
+  /** Increment or decrement quantity. */
   function handleQuantityChange(
     serviceId: string,
     increment: boolean,
@@ -319,7 +528,7 @@ export default function Details() {
     setManualInputValue((old) => ({ ...old, [serviceId]: null }));
   }
 
-  // typed quantity
+  /** Manual input change. */
   function handleManualQuantityChange(
     serviceId: string,
     val: string,
@@ -346,14 +555,14 @@ export default function Details() {
     }));
   }
 
-  // onBlur => if empty => revert to numeric
+  /** If user leaves input blank => revert. */
   function handleBlurInput(serviceId: string) {
     if (!manualInputValue[serviceId]) {
       setManualInputValue((old) => ({ ...old, [serviceId]: null }));
     }
   }
 
-  // Clear all selected
+  /** Clear all selections. */
   function clearAllSelections() {
     if (!window.confirm("Are you sure you want to clear all services?")) return;
 
@@ -367,7 +576,7 @@ export default function Details() {
     setClientOwnedMaterials({});
   }
 
-  // Load finishing materials for a single service
+  /** Load finishing materials for a single service. */
   async function ensureFinishingMaterialsLoaded(serviceId: string) {
     try {
       if (!finishingMaterialsMapAll[serviceId]) {
@@ -376,11 +585,9 @@ export default function Details() {
         finishingMaterialsMapAll[serviceId] = data;
         setFinishingMaterialsMapAll({ ...finishingMaterialsMapAll });
       }
-      // Initialize finishingMaterialSelections[serviceId] if missing
       if (!finishingMaterialSelections[serviceId]) {
         const fmData = finishingMaterialsMapAll[serviceId];
         if (fmData?.sections) {
-          // we store an object keyed by each sectionName => external_id
           const picksObj: Record<string, string> = {};
           for (const [secName, arr] of Object.entries(fmData.sections)) {
             if (Array.isArray(arr) && arr.length > 0) {
@@ -396,7 +603,7 @@ export default function Details() {
     }
   }
 
-  // Load finishing materials for all services in a category
+  /** Load finishing materials for all services in a category. */
   async function fetchFinishingMaterialsForCategory(
     servicesArr: (typeof ALL_SERVICES)[number][]
   ) {
@@ -408,7 +615,6 @@ export default function Details() {
             const data = await fetchFinishingMaterials(dot);
             finishingMaterialsMapAll[svc.id] = data;
 
-            // initialize picks if missing
             if (!finishingMaterialSelections[svc.id]) {
               if (data?.sections) {
                 const picksObj: Record<string, string> = {};
@@ -430,7 +636,7 @@ export default function Details() {
     }
   }
 
-  // Recompute cost whenever user changes selected services or ZIP changes
+  /** Recompute cost whenever user changes selected services or ZIP changes. */
   useEffect(() => {
     async function recalcAll() {
       const svcIds = Object.keys(selectedServicesState);
@@ -457,7 +663,6 @@ export default function Details() {
             await ensureFinishingMaterialsLoaded(svcId);
 
             const quantity = selectedServicesState[svcId];
-            // gather all external_id from finishingMaterialSelections[svcId] (by section)
             const picksObj = finishingMaterialSelections[svcId] || {};
             const finishingIds = Object.values(picksObj);
 
@@ -490,12 +695,12 @@ export default function Details() {
     recalcAll();
   }, [selectedServicesState, finishingMaterialSelections, location]);
 
-  // Summation of serviceCosts
+  /** Summation of service costs. */
   function calculateTotal() {
     return Object.values(serviceCosts).reduce((a, b) => a + b, 0);
   }
 
-  // Next button => check if there's at least one service and an address
+  /** Next => validate selections and go to estimate page. */
   function handleNext() {
     if (Object.keys(selectedServicesState).length === 0) {
       setWarningMessage(
@@ -510,7 +715,7 @@ export default function Details() {
     router.push("/calculate/estimate");
   }
 
-  // Toggle expanded service details
+  /** Toggle expanded service details. */
   function toggleServiceDetails(serviceId: string) {
     setExpandedServiceDetails((old) => {
       const copy = new Set(old);
@@ -523,7 +728,7 @@ export default function Details() {
     });
   }
 
-  // Find finishing material object
+  /** Find finishing material object. */
   function findFinishingMaterialObj(
     serviceId: string,
     extId: string
@@ -539,7 +744,7 @@ export default function Details() {
     return null;
   }
 
-  // pick a new finishing material => finishingMaterialSelections[serviceId][sectionName] = externalId
+  /** pickMaterial => finishingMaterialSelections[serviceId][sectionName] = externalId. */
   function pickMaterial(
     serviceId: string,
     sectionName: string,
@@ -551,7 +756,7 @@ export default function Details() {
     setFinishingMaterialSelections({ ...finishingMaterialSelections });
   }
 
-  // userHasOwnMaterial
+  /** userHasOwnMaterial => client highlights that item in red. */
   function userHasOwnMaterial(serviceId: string, extId: string) {
     if (!clientOwnedMaterials[serviceId]) {
       clientOwnedMaterials[serviceId] = new Set();
@@ -560,7 +765,7 @@ export default function Details() {
     setClientOwnedMaterials({ ...clientOwnedMaterials });
   }
 
-  // close modal
+  /** Close finishing materials modal. */
   function closeModal() {
     setShowModalServiceId(null);
     setShowModalSectionName(null);
@@ -640,16 +845,17 @@ export default function Details() {
                             className="flex justify-between items-center w-full"
                           >
                             <h3
-                              className={`font-medium text-2xl ${
+                              className={`font-semibold sm:font-medium text-xl sm:text-2xl ${
                                 selectedInCat > 0
                                   ? "text-blue-600"
-                                  : "text-black"
+                                  : "text-gray-800"
                               }`}
                             >
                               {catTitle}
                               {selectedInCat > 0 && (
                                 <span className="text-sm text-gray-500 ml-2">
-                                  ({selectedInCat} selected)
+                                  ({selectedInCat} 
+                                  <span className="hidden sm:inline"> selected</span>)
                                 </span>
                               )}
                             </h3>
@@ -680,6 +886,17 @@ export default function Details() {
                                   calculationResultsMap[svc.id];
                                 const detailsExpanded =
                                   expandedServiceDetails.has(svc.id);
+
+                                // Let's define a helper to open the surface calc
+                                function openSurfaceCalc() {
+                                  setCalcServiceId(svc.id);
+                                  setShowSurfaceCalc(true);
+                                }
+
+                                const showSurfaceCalcButton =
+                                  svc.unit_of_measurement
+                                    .toLowerCase()
+                                    .includes("sq ft");
 
                                 return (
                                   <div key={svc.id} className="space-y-2">
@@ -712,7 +929,7 @@ export default function Details() {
                                         <ServiceImage serviceId={svc.id} />
 
                                         {svc.description && (
-                                          <p className="text-sm text-gray-500 pr-16">
+                                          <p className="text-sm text-gray-500">
                                             {svc.description}
                                           </p>
                                         )}
@@ -770,61 +987,70 @@ export default function Details() {
                                             </span>
                                           </div>
                                           <div className="flex items-center gap-2">
-                                            <span className="text-lg text-blue-600 font-medium text-right">
+                                            <span className="text-lg text-blue-600 font-semibold text-right">
                                               ${formatWithSeparator(finalCost)}
                                             </span>
-                                            {/* Desktop "Details" */}
+                                          </div>
+                                        </div>
+
+                                        {/* Buttons row: optional "Surface Calc" + "Cost Breakdown" */}
+                                        <div className="mt-2 mb-3 flex items-center">
+                                          {showSurfaceCalcButton ? (
+                                            <>
+                                              <button
+                                                onClick={openSurfaceCalc}
+                                                className="text-blue-600 text-sm font-medium hover:underline mr-auto"
+                                              >
+                                                Surface Calc
+                                              </button>
+                                              <button
+                                                onClick={() =>
+                                                  toggleServiceDetails(svc.id)
+                                                }
+                                                className={`text-blue-600 text-sm font-medium mb-3 ${
+                                                  detailsExpanded
+                                                    ? ""
+                                                    : "underline"
+                                                }`}
+                                              >
+                                                Cost Breakdown
+                                              </button>
+                                            </>
+                                          ) : (
                                             <button
                                               onClick={() =>
                                                 toggleServiceDetails(svc.id)
                                               }
-                                              className={`text-blue-500 text-sm ml-2 hidden xl:block ${
+                                              className={`ml-auto text-blue-600 text-sm font-medium mb-3 ${
                                                 detailsExpanded
                                                   ? ""
                                                   : "underline"
                                               }`}
                                             >
-                                              Details
-                                            </button>
-                                          </div>
-                                        </div>
-
-                                        {/* Mobile "Details" button */}
-                                        <div className="mt-2 flex justify-end xl:hidden">
-                                          <button
-                                            onClick={() =>
-                                              toggleServiceDetails(svc.id)
-                                            }
-                                            className={`text-blue-500 text-sm ${
-                                              detailsExpanded ? "" : "underline"
-                                            }`}
-                                          >
-                                            Details
-                                          </button>
-                                        </div>
-
-                                        {/* Cost breakdown */}
-                                        {calcResult && detailsExpanded && (
-                                          <div className="mt-4 p-4 bg-gray-50 border rounded">
-                                            <h4 className="text-lg font-semibold text-gray-800 mb-3">
                                               Cost Breakdown
-                                            </h4>
+                                            </button>
+                                          )}
+                                        </div>
+
+                                        {/* Cost breakdown menu*/}
+                                        {calcResult && detailsExpanded && (
+                                          <div className="mt-4 p-2 sm:p-4 bg-gray-50 border rounded">
                                             <div className="flex flex-col gap-2 mb-4">
                                               <div className="flex justify-between">
-                                                <span className="text-md font-medium text-gray-700">
+                                                <span className="text-md font-semibold sm:font-medium text-gray-700">
                                                   Labor
                                                 </span>
-                                                <span className="text-md font-medium text-gray-700">
+                                                <span className="text-md font-semibold text-gray-700">
                                                   {calcResult.work_cost
                                                     ? `$${calcResult.work_cost}`
                                                     : "—"}
                                                 </span>
                                               </div>
                                               <div className="flex justify-between">
-                                                <span className="text-md font-medium text-gray-700">
+                                                <span className="text-md font-semibold sm:font-medium text-gray-700">
                                                   Materials, tools and equipment
                                                 </span>
-                                                <span className="text-md font-medium text-gray-700">
+                                                <span className="text-md font-semibold text-gray-700">
                                                   {calcResult.material_cost
                                                     ? `$${calcResult.material_cost}`
                                                     : "—"}
@@ -938,7 +1164,9 @@ export default function Details() {
                                                             >
                                                               <td className="py-3 px-1">
                                                                 {hasImage ? (
-                                                                  <div className="flex items-center gap-2">
+                                                                  //
+                                                                  // On phones => vertical stack, on bigger => horizontal
+                                                                  <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center break-words">
                                                                     <img
                                                                       src={
                                                                         fmObj?.image
@@ -946,9 +1174,9 @@ export default function Details() {
                                                                       alt={
                                                                         m.name
                                                                       }
-                                                                      className="w-8 h-8 object-cover rounded"
+                                                                      className="w-24 h-24 object-cover rounded"
                                                                     />
-                                                                    <span>
+                                                                    <span className="break-words">
                                                                       {m.name}
                                                                     </span>
                                                                   </div>
@@ -1000,7 +1228,7 @@ export default function Details() {
             <div className="w-full xl:max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden">
               <SectionBoxSubtitle>Summary</SectionBoxSubtitle>
               {Object.keys(selectedServicesState).length === 0 ? (
-                <div className="text-left text-gray-500 text-medium mt-4">
+                <div className="text-left text-gray-500 text-md mt-4">
                   No services selected
                 </div>
               ) : (
@@ -1072,7 +1300,7 @@ export default function Details() {
                     <span className="text-2xl font-semibold text-gray-800">
                       Subtotal:
                     </span>
-                    <span className="text-2xl font-semibold text-blue-600">
+                    <span className="text-xl sm:text-2xl font-bold sm:font-semibold text-blue-600">
                       ${formatWithSeparator(calculateTotal())}
                     </span>
                   </div>
@@ -1081,7 +1309,7 @@ export default function Details() {
             </div>
 
             {/* Address block */}
-            <div className="w-full xl:max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
+            <div className="hidden sm:block w-full xl:max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
               <h2 className="text-2xl font-medium text-gray-800 mb-4">
                 Address
               </h2>
@@ -1091,7 +1319,7 @@ export default function Details() {
             </div>
 
             {/* Photos block */}
-            <div className="w-full xl:max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
+            <div className="hidden sm:block w-full xl:max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
               <h2 className="text-2xl font-medium text-gray-800 mb-4">
                 Uploaded Photos
               </h2>
@@ -1114,7 +1342,7 @@ export default function Details() {
             </div>
 
             {/* Additional details */}
-            <div className="w-full xl:max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
+            <div className="hidden sm:block w-full xl:max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
               <h2 className="text-2xl font-medium text-gray-800 mb-4">
                 Additional details
               </h2>
@@ -1135,164 +1363,24 @@ export default function Details() {
       </div>
 
       {/* Finishing-material modal */}
-      {showModalServiceId &&
-        showModalSectionName &&
-        finishingMaterialsMapAll[showModalServiceId] &&
-        finishingMaterialsMapAll[showModalServiceId].sections[
-          showModalSectionName
-        ] && (
-          <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-lg w-[90vw] h-[90vh] md:w-[80vw] md:h-[80vh] xl:w-[70vw] xl:h-[70vh] overflow-hidden relative flex flex-col">
-              {/* Sticky header */}
-              <div className="p-4 border-b flex items-center justify-between sticky top-0 bg-white z-10">
-                <h2 className="text-xl font-semibold">
-                  Choose a finishing material (section {showModalSectionName})
-                </h2>
-                <button
-                  onClick={closeModal}
-                  className="text-red-500 border border-red-500 px-2 py-1 rounded"
-                >
-                  Close
-                </button>
-              </div>
+      <FinishingMaterialsModal
+        showModalServiceId={showModalServiceId}
+        showModalSectionName={showModalSectionName}
+        finishingMaterialsMapAll={finishingMaterialsMapAll}
+        finishingMaterialSelections={finishingMaterialSelections}
+        setFinishingMaterialSelections={setFinishingMaterialSelections}
+        closeModal={closeModal}
+        userHasOwnMaterial={userHasOwnMaterial}
+        formatWithSeparator={formatWithSeparator}
+      />
 
-              {(() => {
-                const picksObj =
-                  finishingMaterialSelections[showModalServiceId] || {};
-                const currentExtId = picksObj[showModalSectionName] || null;
-                if (!currentExtId) return null;
-
-                const fmData = finishingMaterialsMapAll[showModalServiceId];
-                if (!fmData) return null;
-
-                const allMats = Object.values(
-                  fmData.sections || {}
-                ).flat() as FinishingMaterial[];
-                const curMat = allMats.find(
-                  (x) => x.external_id === currentExtId
-                );
-                if (!curMat) return null;
-
-                const curCost = parseFloat(curMat.cost || "0") || 0;
-                return (
-                  <div className="text-sm text-gray-600 border-b p-4 bg-white sticky top-[61px] z-10">
-                    Current material: <strong>{curMat.name}</strong> ($
-                    {formatWithSeparator(curCost)})
-                    <button
-                      onClick={() =>
-                        userHasOwnMaterial(showModalServiceId!, currentExtId)
-                      }
-                      className="ml-4 text-xs text-red-500 border border-red-500 px-2 py-1 rounded"
-                    >
-                      I have my own (Remove later)
-                    </button>
-                  </div>
-                );
-              })()}
-
-              <div className="overflow-auto p-4 flex-1">
-                {(() => {
-                  const fmData = finishingMaterialsMapAll[showModalServiceId];
-                  if (!fmData) {
-                    return (
-                      <p className="text-sm text-gray-500">No data found</p>
-                    );
-                  }
-
-                  const arr = fmData.sections[showModalSectionName] || [];
-                  if (!Array.isArray(arr) || arr.length === 0) {
-                    return (
-                      <p className="text-sm text-gray-500">
-                        No finishing materials in section {showModalSectionName}
-                      </p>
-                    );
-                  }
-
-                  const picksObj =
-                    finishingMaterialSelections[showModalServiceId] || {};
-                  const currentExtId = picksObj[showModalSectionName] || null;
-                  let currentBaseCost = 0;
-                  if (currentExtId) {
-                    const matObj = arr.find(
-                      (m) => m.external_id === currentExtId
-                    );
-                    if (matObj) {
-                      currentBaseCost = parseFloat(matObj.cost || "0") || 0;
-                    }
-                  }
-
-                  return (
-                    <div className="grid grid-cols-2 gap-4 mt-4">
-                      {arr.map((material, i) => {
-                        if (!material.image) return null;
-                        const costNum = parseFloat(material.cost || "0") || 0;
-                        const isSelected =
-                          currentExtId === material.external_id;
-                        const diff = costNum - currentBaseCost;
-                        let diffStr = "";
-                        let diffColor = "";
-                        if (diff > 0) {
-                          diffStr = `+${formatWithSeparator(diff)}`;
-                          diffColor = "text-red-500";
-                        } else if (diff < 0) {
-                          diffStr = `-${formatWithSeparator(Math.abs(diff))}`;
-                          diffColor = "text-green-600";
-                        }
-
-                        return (
-                          <div
-                            key={`${material.external_id}-${i}`}
-                            className={`border rounded p-3 flex flex-col items-center cursor-pointer ${
-                              isSelected ? "border-blue-500" : "border-gray-300"
-                            }`}
-                            onClick={() => {
-                              const serviceObj =
-                                finishingMaterialSelections[
-                                  showModalServiceId!
-                                ] || {};
-                              serviceObj[showModalSectionName!] =
-                                material.external_id;
-                              finishingMaterialSelections[showModalServiceId!] =
-                                serviceObj;
-                              setFinishingMaterialSelections({
-                                ...finishingMaterialSelections,
-                              });
-                            }}
-                          >
-                            <img
-                              src={material.image}
-                              alt={material.name}
-                              className="w-32 h-32 object-cover rounded"
-                            />
-                            <h3 className="text-sm font-medium mt-2 text-center line-clamp-2">
-                              {material.name}
-                            </h3>
-                            <p className="text-xs text-gray-700">
-                              ${formatWithSeparator(costNum)} /{" "}
-                              {material.unit_of_measurement}
-                            </p>
-                            {diff !== 0 && (
-                              <p
-                                className={`text-xs mt-1 font-medium ${diffColor}`}
-                              >
-                                {diffStr}
-                              </p>
-                            )}
-                            {isSelected && (
-                              <span className="text-xs text-blue-600 font-semibold mt-1">
-                                Currently Selected
-                              </span>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                })()}
-              </div>
-            </div>
-          </div>
-        )}
+      {/* SurfaceCalculatorModal */}
+      <SurfaceCalculatorModal
+        show={showSurfaceCalc}
+        onClose={() => setShowSurfaceCalc(false)}
+        serviceId={calcServiceId}
+        onApplySquareFeet={handleApplySquareFeet}
+      />
     </main>
   );
 }

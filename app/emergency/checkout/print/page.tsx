@@ -1,5 +1,6 @@
 "use client";
 
+export const dynamic = "force-dynamic";
 import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { EMERGENCY_SERVICES } from "@/constants/emergency";

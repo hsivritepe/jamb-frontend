@@ -1,5 +1,6 @@
 "use client";
 
+export const dynamic = "force-dynamic";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import BreadCrumb from "@/components/ui/BreadCrumb";
@@ -581,13 +582,13 @@ export default function RoomsEstimate() {
           <div className="mt-6 space-y-4">
             <button
               onClick={handleProceedToCheckout}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold sm:font-medium hover:bg-blue-700 transition-colors"
             >
               Proceed to Checkout →
             </button>
             <button
               onClick={() => router.push("/calculate/details")}
-              className="w-full text-brand border border-brand py-3 rounded-lg font-medium"
+              className="w-full text-brand border border-brand py-3 rounded-lg font-semibold sm:font-medium"
             >
               Add more services →
             </button>
