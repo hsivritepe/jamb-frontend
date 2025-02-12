@@ -38,8 +38,8 @@ const sections = [
 
 export default function WhoIsThisFor() {
   return (
-    <section className="pt-12 pb-24">
-      <div className="container mx-auto px-0 sm:px-4">
+    <section className="py-12">
+      <div className="container mx-auto px-0">
         <SectionBoxTitle>Who Is This For?</SectionBoxTitle>
         {/* 1 column on phones, 2 columns from md */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
