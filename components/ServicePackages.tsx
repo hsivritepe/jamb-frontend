@@ -14,12 +14,7 @@ import { SectionBoxTitle } from "@/components/ui/SectionBoxTitle";
 import { PACKAGES } from "@/constants/packages";
 
 /**
- * ServicePackages component:
- * - Desktop (≥1024px, lg:): unchanged (3 columns for the first row).
- * - Tablet (768px–1023px, md:): the first row becomes one column (md:grid-cols-1).
- * - Phone (<768px): in the "Configure your own package," 
- *   the <div className="flex justify-between"> is switched to flex-col on phone, 
- *   flex-row on md+.
+ * ServicePackages component
  */
 export default function ServicePackages() {
   // Grab 4 packages from PACKAGES array
@@ -41,7 +36,7 @@ export default function ServicePackages() {
   return (
     <section className="py-16">
       <SectionBoxTitle>
-        Tailored Service Packages for Every Home Solution
+      Tailored Service Packages for Your Every Home Need
       </SectionBoxTitle>
 
       <BoxGrid>

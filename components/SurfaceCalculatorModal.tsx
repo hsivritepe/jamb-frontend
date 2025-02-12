@@ -24,15 +24,14 @@ export default function SurfaceCalculatorModal({
   serviceId,
   onApplySquareFeet,
 }: SurfaceCalculatorModalProps) {
-  // Если флаг show = false => не рендерим модалку
+  // If show is false, do not render the modal
   if (!show) {
     return null;
   }
 
-  // Мы можем здесь не проверять serviceId в самом return,
-  // а сделать проверку непосредственно перед вызовом onApplySquareFeet.
+  // We can skip checking serviceId in the return statement and instead do it right before calling onApplySquareFeet.
 
-  // Состояния для системы единиц, длины, ширины, и известной площади (в м²)
+  // States for the units system, length, width, and known area (in m²)
   const [system, setSystem] = useState<"ft" | "m">("ft");
   const [lengthVal, setLengthVal] = useState<string>("");
   const [widthVal, setWidthVal] = useState<string>("");
@@ -42,7 +41,7 @@ export default function SurfaceCalculatorModal({
     const lengthNum = parseFloat(lengthVal) || 0;
     const widthNum = parseFloat(widthVal) || 0;
     if (system === "m") {
-      // convert area from m^2 to ft^2
+      // Convert area from m^2 to ft^2
       return lengthNum * widthNum * 10.7639;
     } else {
       // system = "ft"
@@ -59,7 +58,7 @@ export default function SurfaceCalculatorModal({
   const altArea = computeSqFtFromSquareMeters();
 
   function handleApplyClick() {
-    // Если serviceId действительно null => просто закрываем
+    // If serviceId is indeed null => simply close
     if (!serviceId) {
       onClose();
       return;
@@ -72,7 +71,7 @@ export default function SurfaceCalculatorModal({
     if (finalVal < 1) {
       finalVal = 1;
     }
-    // Теперь TypeScript знает, что serviceId = string
+    // Now TypeScript knows serviceId is a string
     onApplySquareFeet(serviceId, Math.round(finalVal));
     onClose();
   }

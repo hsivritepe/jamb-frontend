@@ -12,9 +12,6 @@ function convertServiceIdToApiFormat(serviceId: string): string {
 
 /**
  * A reusable component that fetches the service image (image_href) via a POST request
- * to "https://dev.thejamb.com/works" (body: { category: "1.1.1" }),
- * then displays it using Next.js Image with a border and rounded corners.
- * This enables automatic image compression/optimization by Next.js.
  */
 export default function ServiceImage({ serviceId }: { serviceId: string }) {
   const [imageHref, setImageHref] = useState<string | null>(null);

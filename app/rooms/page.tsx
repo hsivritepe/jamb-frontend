@@ -56,8 +56,8 @@ export default function Rooms() {
 
         {/* RoomsGrid component displays room options */}
         <RoomsGrid
-          title="Select a room"
-          subtitle="Specify the Required Services on the Next Page"
+          title="Select a Room or Space"
+          subtitle="Specify Which Services You Need on the Next Page"
           searchQuery={searchQuery}
         />
       </div>
