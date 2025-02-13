@@ -1,10 +1,12 @@
 "use client";
 
 export const dynamic = "force-dynamic";
-import { useEffect, useState } from "react";
+
+import React, { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
+// A helper function to get a greeting based on the current time
 function getGreeting(): string {
   const hour = new Date().getHours();
   if (hour < 12) return "Good morning";
@@ -13,8 +15,7 @@ function getGreeting(): string {
 }
 
 /**
- * Defines the structure of each CompositeOrder for client usage.
- * This matches the structure in orderController.ts
+ * Interface for a single CompositeOrder (same as in your code).
  */
 interface CompositeOrder {
   id: number;
@@ -54,29 +55,42 @@ interface CompositeOrder {
 }
 
 /**
- * OrdersPage:
- * Renders a page with three tabs (Active, Saved, Past).
- * When the user selects "Saved", it sends a POST request to /api/orders/list
- * with the user's auth token to fetch saved orders.
+ * OrdersPage component:
+ * - Tabs: Saved, Active, Past (in that order)
+ * - "Saved" tab shows a table with code, total, date, plus sort arrows
+ * - On larger screens => there's an Actions column (delete icon)
+ * - On mobile => we hide the Actions column, show the Delete button within the expanded details
+ * - Clicking the code expands/collapses a details row below the order row
  */
 export default function OrdersPage() {
   const router = useRouter();
 
-  // We store the token and user name for personalization
+  // Token and user info
   const [token, setToken] = useState("");
   const [userName, setUserName] = useState("");
   const [hasName, setHasName] = useState(false);
 
-  // Tab state: "active", "saved", or "past"
-  const [tab, setTab] = useState<"active" | "saved" | "past">("active");
+  // Tab state => "saved" by default
+  const [tab, setTab] = useState<"saved" | "active" | "past">("saved");
 
-  // State to handle saved orders
+  // Orders data
   const [savedOrders, setSavedOrders] = useState<CompositeOrder[] | null>(null);
   const [savedLoading, setSavedLoading] = useState(false);
   const [savedError, setSavedError] = useState<string | null>(null);
 
-  // On mount, check for authToken. If it doesn't exist, redirect to login.
-  // Also, attempt to retrieve profileData to greet the user by name.
+  // Sort state (column & direction). We'll track by "code" | "cost" | "date"
+  const [sortColumn, setSortColumn] = useState<"code" | "cost" | "date" | null>(null);
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+
+  // "Soft-delete" logic: store the ID of an order that's "pending deletion"
+  const [pendingDelete, setPendingDelete] = useState<number | null>(null);
+  const deleteTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Expand/collapse logic
+  const [expandedOrderCode, setExpandedOrderCode] = useState<string | null>(null);
+  const [expandedOrderDetails, setExpandedOrderDetails] = useState<CompositeOrder | null>(null);
+
+  // On mount, check token, user info
   useEffect(() => {
     const storedToken = sessionStorage.getItem("authToken");
     if (!storedToken) {
@@ -100,14 +114,14 @@ export default function OrdersPage() {
     }
   }, [router]);
 
-  // When the user switches to the "saved" tab (and we have a token), fetch the saved orders.
+  // If tab is "saved" => fetch saved orders
   useEffect(() => {
     if (tab === "saved" && token) {
       fetchSavedOrders(token);
     }
   }, [tab, token]);
 
-  // Fetch saved orders from /api/orders/list
+  // --- FETCH saved orders ---
   async function fetchSavedOrders(userToken: string) {
     try {
       setSavedLoading(true);
@@ -126,7 +140,7 @@ export default function OrdersPage() {
       }
 
       const data = await resp.json();
-      setSavedOrders(data); // data should be an array of CompositeOrder
+      setSavedOrders(data); // array of CompositeOrder
     } catch (error: any) {
       console.error("Error fetching saved orders:", error);
       setSavedError(error.message);
@@ -135,23 +149,23 @@ export default function OrdersPage() {
     }
   }
 
-  /**
-   * handleGetOrderDetails:
-   * Example placeholder function to request /api/orders/get
-   * passing token + order_code. You can implement it according to your needs.
-   */
+  // GET details => code is clickable
+  // If user clicks the same code => collapse, else fetch from /api/orders/get
   async function handleGetOrderDetails(orderCode: string) {
+    // If currently expanded is the same => collapse
+    if (expandedOrderCode === orderCode) {
+      setExpandedOrderCode(null);
+      setExpandedOrderDetails(null);
+      return;
+    }
+
     try {
       console.log("Fetching details for order code:", orderCode);
 
-      // Example:
       const resp = await fetch("/api/orders/get", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          token,
-          order_code: orderCode,
-        }),
+        body: JSON.stringify({ token, order_code: orderCode }),
       });
 
       if (!resp.ok) {
@@ -162,21 +176,47 @@ export default function OrdersPage() {
       const orderDetails = await resp.json();
       console.log("Received order details:", orderDetails);
 
-      // You can navigate to a details page or open a modal, etc.
-      // For instance:
+      setExpandedOrderCode(orderCode);
+      setExpandedOrderDetails(orderDetails);
+      // e.g. navigate to a details page if needed:
       // router.push(`/orders/${orderCode}/details`);
-
     } catch (error: any) {
       console.error("Error getting order details:", error);
       alert("Error getting details: " + error.message);
     }
   }
 
-  /**
-   * handleDeleteOrder:
-   * Example placeholder to request /api/orders/delete
-   * passing token + order_code. Then you can refresh the list or show a message.
-   */
+  // Soft-delete approach
+  function initiateDeleteOrder(orderId: number, orderCode: string) {
+    if (pendingDelete === orderId) {
+      return; // Already in progress
+    }
+
+    const confirmMsg = `Are you sure you want to delete order ${orderCode}? You will have 5 seconds to undo.`;
+    if (!window.confirm(confirmMsg)) {
+      return; // user canceled
+    }
+
+    setPendingDelete(orderId);
+
+    // Start a 5-second timer
+    if (deleteTimeoutRef.current) {
+      clearTimeout(deleteTimeoutRef.current);
+    }
+    deleteTimeoutRef.current = setTimeout(() => {
+      handleDeleteOrder(orderCode);
+      setPendingDelete(null);
+    }, 5000);
+  }
+
+  function undoDelete() {
+    if (deleteTimeoutRef.current) {
+      clearTimeout(deleteTimeoutRef.current);
+    }
+    setPendingDelete(null);
+  }
+
+  // Actually call the API to delete
   async function handleDeleteOrder(orderCode: string) {
     try {
       console.log("Deleting order code:", orderCode);
@@ -184,10 +224,7 @@ export default function OrdersPage() {
       const resp = await fetch("/api/orders/delete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          token,
-          order_code: orderCode,
-        }),
+        body: JSON.stringify({ token, order_code: orderCode }),
       });
 
       if (!resp.ok) {
@@ -199,7 +236,7 @@ export default function OrdersPage() {
       console.log("Delete result:", result);
       alert(`Order ${orderCode} deleted!`);
 
-      // Refresh the list after deletion
+      // Refresh
       fetchSavedOrders(token);
     } catch (error: any) {
       console.error("Error deleting order:", error);
@@ -207,17 +244,59 @@ export default function OrdersPage() {
     }
   }
 
+  // Sorting logic
+  function handleSort(column: "code" | "cost" | "date") {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortColumn(column);
+      setSortDirection("asc");
+    }
+  }
+
+  function getSortedOrders(): CompositeOrder[] {
+    if (!savedOrders) return [];
+    if (!sortColumn) return savedOrders;
+
+    const arr = [...savedOrders];
+
+    arr.sort((a, b) => {
+      if (sortColumn === "code") {
+        if (a.code < b.code) return sortDirection === "asc" ? -1 : 1;
+        if (a.code > b.code) return sortDirection === "asc" ? 1 : -1;
+        return 0;
+      } else if (sortColumn === "cost") {
+        const costA = parseFloat(a.subtotal) + parseFloat(a.tax_amount);
+        const costB = parseFloat(b.subtotal) + parseFloat(b.tax_amount);
+        if (costA < costB) return sortDirection === "asc" ? -1 : 1;
+        if (costA > costB) return sortDirection === "asc" ? 1 : -1;
+        return 0;
+      } else if (sortColumn === "date") {
+        const dateA = a.common.selected_date;
+        const dateB = b.common.selected_date;
+        if (dateA < dateB) return sortDirection === "asc" ? -1 : 1;
+        if (dateA > dateB) return sortDirection === "asc" ? 1 : -1;
+        return 0;
+      }
+      return 0;
+    });
+
+    return arr;
+  }
+
   const greetingText = getGreeting();
+  const sortedSavedOrders = getSortedOrders();
+  const savedCount = savedOrders ? savedOrders.length : 0;
 
   return (
     <div className="pt-24 min-h-screen w-full bg-gray-50 pb-10">
       <div className="max-w-7xl mx-auto px-0 sm:px-4">
-        {/* Greeting heading */}
+        {/* Greeting */}
         <h1 className="text-2xl sm:text-3xl font-bold mt-6 mb-2">
           {greetingText}, {hasName ? userName : "Guest"}!
         </h1>
 
-        {/* Navigation row - example links */}
+        {/* Navigation row */}
         <div className="flex items-center justify-between mb-10">
           <div className="flex items-center gap-8">
             <Link href="/profile" className="text-gray-600 hover:text-blue-600">
@@ -235,21 +314,25 @@ export default function OrdersPage() {
           </div>
         </div>
 
-        {/* Tabs: active, saved, past */}
+        {/* Tabs: Saved, Active, Past */}
         <div className="flex items-center gap-4 mb-6 text-sm font-medium">
+          <button
+            onClick={() => setTab("saved")}
+            className={`px-3 py-2 rounded 
+              ${tab === "saved" ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-100"}`}
+          >
+            Saved {savedCount > 0 && (
+              <span className="ml-1 bg-blue-600 text-white rounded-full px-2 py-0.5 text-xs">
+                {savedCount}
+              </span>
+            )}
+          </button>
           <button
             onClick={() => setTab("active")}
             className={`px-3 py-2 rounded 
               ${tab === "active" ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-100"}`}
           >
             Active
-          </button>
-          <button
-            onClick={() => setTab("saved")}
-            className={`px-3 py-2 rounded 
-              ${tab === "saved" ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-100"}`}
-          >
-            Saved
           </button>
           <button
             onClick={() => setTab("past")}
@@ -260,71 +343,200 @@ export default function OrdersPage() {
           </button>
         </div>
 
-        {/* ACTIVE tab content */}
+        {/* ACTIVE tab */}
         {tab === "active" && (
           <div>
             <p className="text-gray-700">No active orders yet.</p>
           </div>
         )}
 
-        {/* SAVED tab content */}
-        {tab === "saved" && (
-          <div>
-            {savedLoading && <p>Loading saved orders...</p>}
-            {savedError && (
-              <p className="text-red-600">Error: {savedError}</p>
-            )}
-            {!savedLoading && !savedError && savedOrders?.length === 0 && (
-              <p>No saved orders yet.</p>
-            )}
-            {!savedLoading && !savedError && savedOrders && savedOrders.length > 0 && (
-              <div className="divide-y divide-gray-200">
-                {savedOrders.map((order) => {
-                  // Calculate sum of subtotal + tax_amount
-                  const totalAmount = (
-                    parseFloat(order.subtotal) + parseFloat(order.tax_amount)
-                  ).toFixed(2);
-
-                  return (
-                    <div
-                      key={order.id}
-                      className="flex items-center justify-between py-3"
-                    >
-                      {/* Left side: code, total, date */}
-                      <div className="text-sm text-gray-700">
-                        <span className="font-semibold text-gray-800">
-                          {order.code}
-                        </span>{" "}
-                        | ${totalAmount} | {order.common.selected_date}
-                      </div>
-
-                      {/* Right side: two buttons (Details, Delete) */}
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleGetOrderDetails(order.code)}
-                          className="bg-blue-600 text-white px-3 py-1 text-sm rounded hover:bg-blue-700"
-                        >
-                          Details
-                        </button>
-                        <button
-                          onClick={() => handleDeleteOrder(order.code)}
-                          className="bg-red-600 text-white px-3 py-1 text-sm rounded hover:bg-red-700"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* PAST tab content */}
+        {/* PAST tab */}
         {tab === "past" && (
           <div>
             <p className="text-gray-700">No past orders yet.</p>
+          </div>
+        )}
+
+        {/* SAVED tab => table */}
+        {tab === "saved" && (
+          <div>
+            {savedLoading && <p>Loading saved orders...</p>}
+            {savedError && <p className="text-red-600">Error: {savedError}</p>}
+
+            {!savedLoading && !savedError && savedOrders?.length === 0 && (
+              <p>No saved orders yet.</p>
+            )}
+
+            {!savedLoading && !savedError && sortedSavedOrders.length > 0 && (
+              <div className="overflow-x-auto">
+                <table className="w-full table-auto border-collapse">
+                  <thead className="bg-gray-100 text-gray-700 text-sm">
+                    <tr>
+                      {/* Code column */}
+                      <th className="py-2 px-3 text-left">
+                        <button
+                          className="flex items-center gap-1"
+                          onClick={() => handleSort("code")}
+                        >
+                          Order #
+                          {sortColumn === "code" && (
+                            <span>
+                              {sortDirection === "asc" ? "▲" : "▼"}
+                            </span>
+                          )}
+                        </button>
+                      </th>
+                      {/* Cost column */}
+                      <th className="py-2 px-3 text-left">
+                        <button
+                          className="flex items-center gap-1"
+                          onClick={() => handleSort("cost")}
+                        >
+                          Total Price
+                          {sortColumn === "cost" && (
+                            <span>
+                              {sortDirection === "asc" ? "▲" : "▼"}
+                            </span>
+                          )}
+                        </button>
+                      </th>
+                      {/* Date column */}
+                      <th className="py-2 px-3 text-left">
+                        <button
+                          className="flex items-center gap-1"
+                          onClick={() => handleSort("date")}
+                        >
+                          Start Date
+                          {sortColumn === "date" && (
+                            <span>
+                              {sortDirection === "asc" ? "▲" : "▼"}
+                            </span>
+                          )}
+                        </button>
+                      </th>
+                      {/* Actions column => hidden on mobile */}
+                      <th className="py-2 px-3 text-right hidden sm:table-cell">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sortedSavedOrders.map((order) => {
+                      const totalAmount = (
+                        parseFloat(order.subtotal) + parseFloat(order.tax_amount)
+                      ).toFixed(2);
+
+                      // Check if this order is currently "pending delete"
+                      const isPendingDelete = pendingDelete === order.id;
+
+                      // Check if this order is expanded
+                      const isExpanded = expandedOrderCode === order.code;
+
+                      return (
+                        <React.Fragment key={order.id}>
+                          <tr
+                            className="border-b text-sm text-gray-700"
+                          >
+                            {/* Code => clickable link => expand/collapse */}
+                            <td className="py-2 px-3">
+                              <span
+                                onClick={() => handleGetOrderDetails(order.code)}
+                                className="text-blue-600 font-medium cursor-pointer hover:underline"
+                              >
+                                {order.code}
+                              </span>
+                            </td>
+                            {/* Cost => total (subtotal + tax) */}
+                            <td className="py-2 px-3">${totalAmount}</td>
+                            {/* Date => order.common.selected_date */}
+                            <td className="py-2 px-3">{order.common.selected_date}</td>
+
+                            {/* Desktop Actions => hidden on mobile */}
+                            <td className="py-2 px-3 text-right hidden sm:table-cell">
+                              {isPendingDelete ? (
+                                <div className="text-red-600 flex items-center gap-2 justify-end">
+                                  <span>Deleting...</span>
+                                  <button
+                                    onClick={undoDelete}
+                                    className="underline text-blue-600 text-xs"
+                                  >
+                                    Undo
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => initiateDeleteOrder(order.id, order.code)}
+                                  className="text-gray-500 hover:text-red-600"
+                                  title="Delete order"
+                                >
+                                  🗑
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+
+                          {/* Expanded row => only if isExpanded */}
+                          {isExpanded && (
+                            <tr className="bg-gray-50">
+                              <td colSpan={4} className="p-4 text-sm text-gray-700">
+                                {/* Show minimal details for now */}
+                                <p className="mb-2">
+                                  <strong>Address:</strong> {order.common.address}
+                                </p>
+                                <p className="mb-2">
+                                  <strong>Description:</strong> {order.common.description}
+                                </p>
+                                <p className="mb-2">
+                                  <strong>Zipcode:</strong> {order.zipcode}
+                                </p>
+                                <p className="mb-2">
+                                  <strong>Tax rate:</strong> {order.tax_rate}%
+                                </p>
+
+                                <p>
+                                  <strong>Works:</strong>
+                                </p>
+                                <ul className="list-disc ml-5">
+                                  {order.works.map((w) => (
+                                    <li key={w.id} className="mb-1">
+                                      <strong>Code:</strong> {w.code} &nbsp;
+                                      <strong>Total:</strong> {w.total} &nbsp;
+                                      <span>(Materials: {w.materials.length})</span>
+                                    </li>
+                                  ))}
+                                </ul>
+
+                                {/* Mobile Delete button => block on mobile, hidden on desktop */}
+                                <div className="mt-4 block sm:hidden">
+                                  {isPendingDelete ? (
+                                    <div className="text-red-600 flex items-center gap-2">
+                                      <span>Deleting...</span>
+                                      <button
+                                        onClick={undoDelete}
+                                        className="underline text-blue-600 text-xs"
+                                      >
+                                        Undo
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      onClick={() => initiateDeleteOrder(order.id, order.code)}
+                                      className="bg-red-600 text-white px-4 py-2 text-sm rounded hover:bg-red-700"
+                                    >
+                                      Delete
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
       </div>
