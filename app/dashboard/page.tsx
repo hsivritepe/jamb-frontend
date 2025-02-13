@@ -6,7 +6,6 @@ import React, { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-// A helper function to get a greeting based on the current time
 function getGreeting(): string {
   const hour = new Date().getHours();
   if (hour < 12) return "Good morning";
@@ -14,9 +13,6 @@ function getGreeting(): string {
   return "Good evening";
 }
 
-/**
- * Interface for a single CompositeOrder (same as in your code).
- */
 interface CompositeOrder {
   id: number;
   code: string;
@@ -54,14 +50,6 @@ interface CompositeOrder {
   }>;
 }
 
-/**
- * OrdersPage component:
- * - Tabs: Saved, Active, Past (in that order)
- * - "Saved" tab shows a table with code, total, date, plus sort arrows
- * - On larger screens => there's an Actions column (delete icon)
- * - On mobile => we hide the Actions column, show the Delete button within the expanded details
- * - Clicking the code expands/collapses a details row below the order row
- */
 export default function OrdersPage() {
   const router = useRouter();
 
@@ -78,11 +66,11 @@ export default function OrdersPage() {
   const [savedLoading, setSavedLoading] = useState(false);
   const [savedError, setSavedError] = useState<string | null>(null);
 
-  // Sort state (column & direction). We'll track by "code" | "cost" | "date"
+  // Sort state
   const [sortColumn, setSortColumn] = useState<"code" | "cost" | "date" | null>(null);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
-  // "Soft-delete" logic: store the ID of an order that's "pending deletion"
+  // "Soft-delete" logic
   const [pendingDelete, setPendingDelete] = useState<number | null>(null);
   const deleteTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -114,14 +102,30 @@ export default function OrdersPage() {
     }
   }, [router]);
 
-  // If tab is "saved" => fetch saved orders
+  // When tab === "saved" && token => try to load from sessionStorage => if no data => fetch
   useEffect(() => {
     if (tab === "saved" && token) {
-      fetchSavedOrders(token);
+      const cached = sessionStorage.getItem("savedOrders");
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached) as CompositeOrder[];
+          setSavedOrders(parsed);
+          // Optionally, we can skip fetch if we trust this data is fresh enough
+          // If you want to ALWAYS trust cache => return here
+          // return;
+        } catch (err) {
+          console.error("Failed to parse savedOrders from sessionStorage:", err);
+        }
+      }
+      // If we want to refresh anyway, call fetch
+      // If you trust the cache fully, only do fetch if there's no cached data
+      if (!cached) {
+        fetchSavedOrders(token);
+      }
     }
   }, [tab, token]);
 
-  // --- FETCH saved orders ---
+  // Actually fetch from /api/orders/list
   async function fetchSavedOrders(userToken: string) {
     try {
       setSavedLoading(true);
@@ -140,7 +144,10 @@ export default function OrdersPage() {
       }
 
       const data = await resp.json();
-      setSavedOrders(data); // array of CompositeOrder
+      setSavedOrders(data);
+
+      // Store in session storage for reuse
+      sessionStorage.setItem("savedOrders", JSON.stringify(data));
     } catch (error: any) {
       console.error("Error fetching saved orders:", error);
       setSavedError(error.message);
@@ -149,10 +156,8 @@ export default function OrdersPage() {
     }
   }
 
-  // GET details => code is clickable
-  // If user clicks the same code => collapse, else fetch from /api/orders/get
+  // If user expands the same code => collapse, else fetch details
   async function handleGetOrderDetails(orderCode: string) {
-    // If currently expanded is the same => collapse
     if (expandedOrderCode === orderCode) {
       setExpandedOrderCode(null);
       setExpandedOrderDetails(null);
@@ -178,8 +183,7 @@ export default function OrdersPage() {
 
       setExpandedOrderCode(orderCode);
       setExpandedOrderDetails(orderDetails);
-      // e.g. navigate to a details page if needed:
-      // router.push(`/orders/${orderCode}/details`);
+
     } catch (error: any) {
       console.error("Error getting order details:", error);
       alert("Error getting details: " + error.message);
@@ -189,17 +193,13 @@ export default function OrdersPage() {
   // Soft-delete approach
   function initiateDeleteOrder(orderId: number, orderCode: string) {
     if (pendingDelete === orderId) {
-      return; // Already in progress
+      return;
     }
-
     const confirmMsg = `Are you sure you want to delete order ${orderCode}? You will have 5 seconds to undo.`;
     if (!window.confirm(confirmMsg)) {
-      return; // user canceled
+      return;
     }
-
     setPendingDelete(orderId);
-
-    // Start a 5-second timer
     if (deleteTimeoutRef.current) {
       clearTimeout(deleteTimeoutRef.current);
     }
@@ -216,7 +216,6 @@ export default function OrdersPage() {
     setPendingDelete(null);
   }
 
-  // Actually call the API to delete
   async function handleDeleteOrder(orderCode: string) {
     try {
       console.log("Deleting order code:", orderCode);
@@ -236,8 +235,9 @@ export default function OrdersPage() {
       console.log("Delete result:", result);
       alert(`Order ${orderCode} deleted!`);
 
-      // Refresh
-      fetchSavedOrders(token);
+      // Refresh => so our local data is up to date
+      // or we can manually remove from savedOrders, then update sessionStorage
+      await fetchSavedOrders(token);
     } catch (error: any) {
       console.error("Error deleting order:", error);
       alert("Error deleting order: " + error.message);
@@ -259,7 +259,6 @@ export default function OrdersPage() {
     if (!sortColumn) return savedOrders;
 
     const arr = [...savedOrders];
-
     arr.sort((a, b) => {
       if (sortColumn === "code") {
         if (a.code < b.code) return sortDirection === "asc" ? -1 : 1;
@@ -426,18 +425,12 @@ export default function OrdersPage() {
                         parseFloat(order.subtotal) + parseFloat(order.tax_amount)
                       ).toFixed(2);
 
-                      // Check if this order is currently "pending delete"
                       const isPendingDelete = pendingDelete === order.id;
-
-                      // Check if this order is expanded
                       const isExpanded = expandedOrderCode === order.code;
 
                       return (
                         <React.Fragment key={order.id}>
-                          <tr
-                            className="border-b text-sm text-gray-700"
-                          >
-                            {/* Code => clickable link => expand/collapse */}
+                          <tr className="border-b text-sm text-gray-700">
                             <td className="py-2 px-3">
                               <span
                                 onClick={() => handleGetOrderDetails(order.code)}
@@ -446,12 +439,8 @@ export default function OrdersPage() {
                                 {order.code}
                               </span>
                             </td>
-                            {/* Cost => total (subtotal + tax) */}
                             <td className="py-2 px-3">${totalAmount}</td>
-                            {/* Date => order.common.selected_date */}
                             <td className="py-2 px-3">{order.common.selected_date}</td>
-
-                            {/* Desktop Actions => hidden on mobile */}
                             <td className="py-2 px-3 text-right hidden sm:table-cell">
                               {isPendingDelete ? (
                                 <div className="text-red-600 flex items-center gap-2 justify-end">
@@ -475,11 +464,9 @@ export default function OrdersPage() {
                             </td>
                           </tr>
 
-                          {/* Expanded row => only if isExpanded */}
                           {isExpanded && (
                             <tr className="bg-gray-50">
                               <td colSpan={4} className="p-4 text-sm text-gray-700">
-                                {/* Show minimal details for now */}
                                 <p className="mb-2">
                                   <strong>Address:</strong> {order.common.address}
                                 </p>
@@ -492,7 +479,6 @@ export default function OrdersPage() {
                                 <p className="mb-2">
                                   <strong>Tax rate:</strong> {order.tax_rate}%
                                 </p>
-
                                 <p>
                                   <strong>Works:</strong>
                                 </p>
