@@ -47,7 +47,6 @@ export default function LoginOrRegisterPage() {
       });
 
       if (res.ok) {
-        // Instead of just alerting, navigate to the confirm page:
         router.push(`/confirm?email=${encodeURIComponent(email)}`);
       } else if (res.status === 400) {
         const data = await res.json();
@@ -122,7 +121,8 @@ export default function LoginOrRegisterPage() {
     }
 
     try {
-      const res = await fetch("https://dev.thejamb.com/user/change-password/request", {
+      // We now call our local Next.js route instead of direct external URL:
+      const res = await fetch("/api/user/change-password/request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: resetEmail }),
@@ -130,18 +130,13 @@ export default function LoginOrRegisterPage() {
 
       if (res.ok) {
         alert("Email has been sent with reset instructions!");
+        // We can navigate to a page that asks for the code + new password:
+        // e.g. /password-reset?email=...
         router.push(`/password-reset?email=${encodeURIComponent(resetEmail)}`);
-      } else if (res.status === 400) {
-        const data = await res.json();
-        alert(`Reset error: ${data.error}`);
-      } else if (res.status === 404) {
-        const data = await res.json();
-        alert(`Reset error: ${data.error}`);
-      } else if (res.status === 500) {
-        const data = await res.json();
-        alert(`Reset error: ${data.error}`);
       } else {
-        alert(`Reset error: status ${res.status}`);
+        // Handle different status codes (400, 404, 500) from our route
+        const data = await res.json();
+        alert(`Reset error: ${data.error || res.statusText}`);
       }
     } catch (error) {
       alert("Failed to request a password reset. Check console.");
