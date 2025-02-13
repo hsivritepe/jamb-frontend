@@ -1,7 +1,3 @@
-// import { db } from "@/server/db"; // Commented out because there's no local DB in use
-import bcrypt from "bcrypt";
-import { randomBytes } from "crypto";
-
 /** 
  * A generic type for returning either success or an error message.
  */
@@ -25,41 +21,23 @@ export async function createUser(
     return { success: false, error: "empty-body" };
   }
 
-  /*
-  // ... DB logic commented out ...
-  // if user exists => return { success: false, error: "User already created" };
-  // else create user => success: true
-  */
-
   // For now, returning success = true
   return { success: true };
 }
 
 /**
- * Authenticate user (stub).
- *
  * POST /user/auth/credentials
  */
 export async function authenticateUser(
   email: string,
   password: string
 ): Promise<{ token?: string; error?: string }> {
-  // If you want a single shape, you could also do success boolean, etc. For now:
-  // We'll return an object that can have token or error
-  /*
-  // DB logic commented out
-  // if no user => return { error: "Incorrect credentials" };
-  // if password mismatch => return { error: "Incorrect credentials" };
-  // else => return { token: "..." };
-  */
 
   // Stub return
   return { token: "dummy_token" };
 }
 
 /**
- * Confirm user registration with code (stub).
- *
  * POST /user/confirm
  */
 export async function confirmUser(
@@ -72,8 +50,6 @@ export async function confirmUser(
 }
 
 /**
- * Request password change (stub).
- *
  * POST /user/change-password/request
  */
 export async function requestChangePassword(email: string): Promise<ControllerResult> {
@@ -83,8 +59,6 @@ export async function requestChangePassword(email: string): Promise<ControllerRe
 }
 
 /**
- * Change password with code (stub).
- *
  * POST /user/change-password
  */
 export async function changePassword(
@@ -98,8 +72,6 @@ export async function changePassword(
 }
 
 /**
- * Resend activation code (stub).
- *
  * POST /user/resend-activation
  */
 export async function resendActivationCode(email: string): Promise<ControllerResult> {
@@ -114,8 +86,6 @@ export async function resendActivationCode(email: string): Promise<ControllerRes
 }
 
 /**
- * Update user address (stub).
- *
  * POST /user/address
  */
 export async function updateUserAddress(
@@ -154,8 +124,6 @@ export async function updateUserCard(
 }
 
 /**
- * Returns user info (stub).
- *
  * POST /user/info
  */
 export async function getUserInfo(token: string): Promise<{
@@ -170,8 +138,6 @@ export async function getUserInfo(token: string): Promise<{
 }
 
 /**
- * Auth with token (stub).
- *
  * POST /user/auth/token
  */
 export async function authenticateWithToken(
@@ -188,8 +154,6 @@ export async function authenticateWithToken(
 }
 
 /**
- * Update user profile (stub).
- *
  * POST /user/profile
  */
 export async function updateUserProfile(
@@ -210,8 +174,6 @@ export async function updateUserProfile(
 }
 
 /**
- * Delete a user account by token (stub).
- *
  * PATCH /user/delete
  */
 export async function deleteUserAccount(token: string): Promise<ControllerResult> {

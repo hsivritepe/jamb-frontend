@@ -14,7 +14,7 @@ const manrope = Manrope({
 
 export const metadata = {
   title: 'JAMB - Home Services',
-  description: 'Home Services Platform',
+  description: 'Improvement and Maintenance',
   icons: {
     icon: '/favicon.ico',
   },
