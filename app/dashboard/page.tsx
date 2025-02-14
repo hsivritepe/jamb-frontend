@@ -53,6 +53,9 @@ interface CompositeOrder {
 export default function OrdersPage() {
   const router = useRouter();
 
+  // We'll store the greeting in state, computed once in useEffect
+  const [greetingText, setGreetingText] = useState("");
+
   // Token and user info
   const [token, setToken] = useState("");
   const [userName, setUserName] = useState("");
@@ -77,6 +80,12 @@ export default function OrdersPage() {
   // Expand/collapse logic
   const [expandedOrderCode, setExpandedOrderCode] = useState<string | null>(null);
   const [expandedOrderDetails, setExpandedOrderDetails] = useState<CompositeOrder | null>(null);
+
+  // On mount => set greeting once
+  useEffect(() => {
+    const msg = getGreeting();
+    setGreetingText(msg);
+  }, []);
 
   // On mount, check token, user info
   useEffect(() => {
@@ -110,15 +119,12 @@ export default function OrdersPage() {
         try {
           const parsed = JSON.parse(cached) as CompositeOrder[];
           setSavedOrders(parsed);
-          // Optionally, we can skip fetch if we trust this data is fresh enough
-          // If you want to ALWAYS trust cache => return here
+          // If you trust the cached data, you can skip fetching
           // return;
         } catch (err) {
           console.error("Failed to parse savedOrders from sessionStorage:", err);
         }
       }
-      // If we want to refresh anyway, call fetch
-      // If you trust the cache fully, only do fetch if there's no cached data
       if (!cached) {
         fetchSavedOrders(token);
       }
@@ -146,7 +152,7 @@ export default function OrdersPage() {
       const data = await resp.json();
       setSavedOrders(data);
 
-      // Store in session storage for reuse
+      // Store in session storage
       sessionStorage.setItem("savedOrders", JSON.stringify(data));
     } catch (error: any) {
       console.error("Error fetching saved orders:", error);
@@ -183,7 +189,6 @@ export default function OrdersPage() {
 
       setExpandedOrderCode(orderCode);
       setExpandedOrderDetails(orderDetails);
-
     } catch (error: any) {
       console.error("Error getting order details:", error);
       alert("Error getting details: " + error.message);
@@ -235,8 +240,7 @@ export default function OrdersPage() {
       console.log("Delete result:", result);
       alert(`Order ${orderCode} deleted!`);
 
-      // Refresh => so our local data is up to date
-      // or we can manually remove from savedOrders, then update sessionStorage
+      // Refresh
       await fetchSavedOrders(token);
     } catch (error: any) {
       console.error("Error deleting order:", error);
@@ -283,7 +287,8 @@ export default function OrdersPage() {
     return arr;
   }
 
-  const greetingText = getGreeting();
+  // We've moved getGreeting() to a one-time effect
+  // so greetingText is stable after initial mount
   const sortedSavedOrders = getSortedOrders();
   const savedCount = savedOrders ? savedOrders.length : 0;
 
