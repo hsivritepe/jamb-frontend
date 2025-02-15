@@ -5,21 +5,22 @@ import { useRouter } from "next/navigation";
 import imageCompression from "browser-image-compression";
 
 /**
- * WorkItem: describes a single work object in your "worksData".
- * Adjust fields to match your actual "composite-order/create" schema.
+ * A single work item in your data:
+ * - We no longer do any "mapUnitOfMeasurement"
+ * - 'unitOfMeasurement' is used as-is.
  */
 interface WorkItem {
-  type: string;               // e.g. "services"
-  code: string;               // e.g. "1.1.1"
-  unitOfMeasurement: string;  // e.g. "each", "sq ft", "lin ft"
-  quantity: number;           // e.g. 1
-  laborCost: number;          // e.g. 100.00
-  materialsCost: number;      // e.g. 10.00
-  serviceFeeOnLabor?: number;     // e.g. 10.00
-  serviceFeeOnMaterials?: number; // e.g. 5.00
-  total: number;                  // e.g. 110.00
-  paymentType?: string;           // e.g. "Monthly" or "upfront"
-  paymentCoefficient?: number;    // e.g. 1.10
+  type: string;
+  code: string;
+  unitOfMeasurement: string;   // e.g. "sq ft", "each", etc.
+  quantity: number;
+  laborCost: number;
+  materialsCost: number;
+  serviceFeeOnLabor?: number;
+  serviceFeeOnMaterials?: number;
+  total: number;
+  paymentType?: string;             // "Monthly", "upfront", etc.
+  paymentCoefficient?: number;      // e.g. 1.10
   materials?: Array<{
     external_id: string;
     quantity: number;
@@ -29,283 +30,38 @@ interface WorkItem {
 }
 
 /**
- * The props for PlaceOrderButton:
+ * PlaceOrderButtonProps:
+ * - photos: array of photo strings (base64 or normal URLs)
+ * - orderData: top-level data for "composite-order/create" (zipcode, address, sums, etc.)
+ *   plus top-level serviceFeeOnLabor, serviceFeeOnMaterials, paymentType, paymentCoefficient
+ * - onOrderSuccess?: optional callback if you have a custom success flow
  */
 interface PlaceOrderButtonProps {
-  /**
-   * Array of photos:
-   * - If base64 => we compress & upload to GCS,
-   * - If already a URL => we include as-is.
-   */
   photos: string[];
-
-  /**
-   * Data required by the server for "composite-order/create".
-   * For instance: zipcode, address, selectedTime, timeCoefficient, sums, and an array of works.
-   */
   orderData: {
     zipcode: string;
     address: string;
     description: string;
-    selectedTime: string;      // e.g. "02/16/2025 (morning)"
-    timeCoefficient: number;   // e.g. 1.40
+    selectedTime: string;
+    timeCoefficient: number;
     laborSubtotal: number;
     sumBeforeTax: number;
     finalTotal: number;
     taxRate: number;
     taxAmount: number;
     worksData: WorkItem[];
-  };
 
-  /**
-   * Optional callback on successful order creation.
-   */
+    // newly used top-level fields
+    serviceFeeOnLabor?: number;      // if undefined => "0.00"
+    serviceFeeOnMaterials?: number;  // if undefined => "0.00"
+    paymentType?: string;            // if undefined => "n/a"
+    paymentCoefficient?: number;     // if undefined => 1
+  };
   onOrderSuccess?: () => void;
 }
 
 /**
- * A helper function to map local "unitOfMeasurement" to the API's valid choices.
- * Adjust the mapping logic as needed to match your backend's enumerations.
- */
-function mapUnitOfMeasurement(localUnit: string): string {
-  // Suppose your server only accepts: "each", "sq_ft", "lin_ft"
-  // We'll do a simple switch or if-else. You can expand as needed.
-  switch (localUnit.toLowerCase()) {
-    case "sq ft":
-    case "sq_ft":
-    case "sq. ft":
-      return "sq_ft";    // the server expects "sq_ft"
-    case "lin ft":
-    case "lin_ft":
-    case "linear ft":
-    case "linear_feet":
-      return "lin_ft";   // the server expects "lin_ft"
-    case "each":
-    default:
-      return "each";     // fallback or default
-  }
-}
-
-/**
- * PlaceOrderButton:
- * 1) Checks login (sessionStorage "authToken"),
- * 2) Compresses base64 photos & uploads them to GCS (if needed),
- * 3) Builds JSON for /api/orders/create => "composite-order/create",
- * 4) Sends POST,
- * 5) Handles success or error,
- * 6) Optionally clears session data & redirects to "/thank-you".
- */
-export default function PlaceOrderButton({
-  photos,
-  orderData,
-  onOrderSuccess,
-}: PlaceOrderButtonProps) {
-  const router = useRouter();
-  const [loading, setLoading] = useState(false);
-
-  /**
-   * Simple login check: read "authToken" from sessionStorage.
-   */
-  function isUserLoggedIn(): boolean {
-    const token = sessionStorage.getItem("authToken");
-    return !!token;
-  }
-
-  /**
-   * Convert base64 => File, then compress => upload => or if a normal URL => skip.
-   * Then create the order by calling /api/orders/create with the final JSON.
-   */
-  async function handlePlaceOrder() {
-    // 1) If not logged in => go to /login
-    if (!isUserLoggedIn()) {
-      router.push("/login");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      // Retrieve token
-      const token = sessionStorage.getItem("authToken");
-      if (!token) {
-        throw new Error("No authToken found. Please log in again.");
-      }
-
-      // 2) Process photos => base64 => compress => upload
-      const uploadedPhotoUrls: string[] = [];
-      for (const photoStr of photos) {
-        if (photoStr.startsWith("data:")) {
-          // It's base64
-          const file = base64ToFile(photoStr);
-          // Compress
-          const options = {
-            maxSizeMB: 1,
-            maxWidthOrHeight: 1920,
-            useWebWorker: true,
-          };
-          const compressedFile = await imageCompression(file, options);
-
-          // Request signed URL from our local route
-          const signedUrlResp = await fetch("/api/gcs-upload", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              name: compressedFile.name,
-              type: compressedFile.type,
-            }),
-          });
-          if (!signedUrlResp.ok) {
-            throw new Error("Failed to get signed URL from /api/gcs-upload");
-          }
-          const { uploadUrl, publicUrl } = await signedUrlResp.json();
-
-          // Upload to GCS
-          const uploadResp = await fetch(uploadUrl, {
-            method: "PUT",
-            headers: { "Content-Type": compressedFile.type },
-            body: compressedFile,
-          });
-          if (!uploadResp.ok) {
-            throw new Error("Photo upload to GCS failed");
-          }
-
-          uploadedPhotoUrls.push(publicUrl);
-        } else {
-          // Already a normal URL => just use as-is
-          uploadedPhotoUrls.push(photoStr);
-        }
-      }
-
-      // 3) Build "works" array for "composite-order/create"
-      const works = orderData.worksData.map((w) => ({
-        type: w.type,
-        code: w.code,
-        // we map local "unitOfMeasurement" => the server's accepted unit
-        unit_of_measurement: mapUnitOfMeasurement(w.unitOfMeasurement),
-        work_count: String(w.quantity),
-        labor_cost: w.laborCost.toFixed(2),
-        materials_cost: w.materialsCost.toFixed(2),
-        service_fee_on_labor: w.serviceFeeOnLabor
-          ? w.serviceFeeOnLabor.toFixed(2)
-          : "0.00",
-        service_fee_on_materials: w.serviceFeeOnMaterials
-          ? w.serviceFeeOnMaterials.toFixed(2)
-          : "0.00",
-        total: w.total.toFixed(2),
-        payment_type: w.paymentType && w.paymentType.trim() !== ""
-          ? w.paymentType
-          : "upfront",
-        payment_coefficient: w.paymentCoefficient
-          ? w.paymentCoefficient.toFixed(2)
-          : "1.00",
-        materials: w.materials
-          ? w.materials.map((m) => ({
-              external_id: m.external_id,
-              quantity: m.quantity,
-              cost_per_unit: m.costPerUnit.toFixed(2),
-              total: m.total.toFixed(2),
-            }))
-          : [],
-      }));
-
-      // 4) Construct the payload (the final JSON).
-      // Make sure the fields match your "composite-order/create" specs:
-      const bodyToSend = {
-        zipcode: orderData.zipcode,
-        user_token: token,
-        common: {
-          address: orderData.address,
-          photos: uploadedPhotoUrls,
-          description: orderData.description,
-          // selected_date => "02/16/2025 (morning)" or "MM/DD/YYYY"
-          selected_date: orderData.selectedTime,
-          date_coefficient: orderData.timeCoefficient.toFixed(2),
-        },
-        works,
-        tax_rate: orderData.taxRate.toFixed(2),
-        tax_amount: orderData.taxAmount.toFixed(2),
-        // date_surcharge => laborSubtotal * (timeCoefficient - 1)
-        date_surcharge: (
-          orderData.laborSubtotal *
-          (orderData.timeCoefficient - 1)
-        ).toFixed(2),
-        // Example fields if your server requires them:
-        service_fee_on_labor: "10.00",
-        service_fee_on_materials: "5.00",
-        payment_type: "Monthly", // or "upfront"
-        payment_coefficient: "1.10",
-        subtotal: orderData.sumBeforeTax.toFixed(2),
-        total: orderData.finalTotal.toFixed(2),
-      };
-
-      console.log("Sending final JSON to /api/orders/create:", bodyToSend);
-
-      // 5) POST to /api/orders/create (which then calls "composite-order/create").
-      const createOrderResp = await fetch("/api/orders/create", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(bodyToSend),
-      });
-
-      if (!createOrderResp.ok) {
-        // parse error from server
-        let errorMessage = "";
-        try {
-          const maybeJson = await createOrderResp.json();
-          errorMessage = maybeJson.error || JSON.stringify(maybeJson);
-        } catch {
-          const text = await createOrderResp.text();
-          errorMessage = text;
-        }
-        throw new Error(errorMessage || `Error: ${createOrderResp.status}`);
-      }
-
-      const resultData = await createOrderResp.json();
-      console.log("Order saved successfully:", resultData);
-
-      // 6) On success => either call onOrderSuccess or do default
-      if (onOrderSuccess) {
-        onOrderSuccess();
-      } else {
-        alert("Order saved successfully!");
-        // For example, store resultData.order_code and resultData.total in sessionStorage
-        sessionStorage.setItem("orderCode", resultData.order_code || "");
-        sessionStorage.setItem("orderTotal", bodyToSend.total || "");
-
-        // Then navigate to /thank-you
-        router.push("/thank-you");
-      }
-
-    } catch (error: any) {
-      console.error("Error placing order:", error);
-      alert("Error placing order: " + error.message);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  /**
-   * Render the button with loading state.
-   */
-  return (
-    <button
-      onClick={handlePlaceOrder}
-      disabled={loading}
-      className="bg-yellow-400 hover:bg-yellow-500 text-black py-3 px-6
-                 rounded-md font-semibold text-lg shadow-sm transition-colors duration-200
-                 disabled:opacity-60 disabled:cursor-not-allowed"
-    >
-      {loading ? "Saving order..." : "Save your order"}
-    </button>
-  );
-}
-
-/**
- * base64ToFile:
- * Helper that converts a base64 data string => File object.
- * If you already have actual Files, you can skip this logic.
+ * Converts a base64-encoded string => File object (synchronously).
  */
 function base64ToFile(base64Data: string): File {
   const match = base64Data.match(/^data:(.*?);base64,(.*)$/);
@@ -325,4 +81,218 @@ function base64ToFile(base64Data: string): File {
   const ext = mimeType.split("/")[1] || "png";
   const fileName = `photo_${Date.now()}.${ext}`;
   return new File([byteArray], fileName, { type: mimeType });
+}
+
+/**
+ * PlaceOrderButton:
+ * 1) If user is not logged in => store temp data => go /login?next=/calculate/checkout
+ * 2) If logged in => compress base64 => upload => build final JSON => POST => success => /thank-you
+ */
+export default function PlaceOrderButton({
+  photos,
+  orderData,
+  onOrderSuccess,
+}: PlaceOrderButtonProps) {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+
+  function isUserLoggedIn(): boolean {
+    return !!sessionStorage.getItem("authToken");
+  }
+
+  async function handlePlaceOrder() {
+    // If not logged in => save data to session => redirect
+    if (!isUserLoggedIn()) {
+      sessionStorage.setItem("tempOrderData", JSON.stringify(orderData));
+      sessionStorage.setItem("tempOrderPhotos", JSON.stringify(photos));
+      router.push("/login?next=/calculate/checkout");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const token = sessionStorage.getItem("authToken");
+      if (!token) {
+        throw new Error("No authToken found. Please log in again.");
+      }
+
+      // 1) Compress / upload photos if they are base64
+      const uploadedPhotoUrls: string[] = [];
+      for (const p of photos) {
+        if (p.startsWith("data:")) {
+          const file = base64ToFile(p);
+          const options = {
+            maxSizeMB: 1,
+            maxWidthOrHeight: 1920,
+            useWebWorker: true,
+          };
+          const compressedFile = await imageCompression(file, options);
+
+          // request a signed URL from /api/gcs-upload
+          const signedUrlResp = await fetch("/api/gcs-upload", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name: compressedFile.name,
+              type: compressedFile.type,
+            }),
+          });
+          if (!signedUrlResp.ok) {
+            throw new Error("Failed to get signed URL from /api/gcs-upload");
+          }
+          const { uploadUrl, publicUrl } = await signedUrlResp.json();
+
+          // upload to GCS
+          const uploadResp = await fetch(uploadUrl, {
+            method: "PUT",
+            headers: { "Content-Type": compressedFile.type },
+            body: compressedFile,
+          });
+          if (!uploadResp.ok) {
+            throw new Error("Photo upload to GCS failed");
+          }
+
+          uploadedPhotoUrls.push(publicUrl);
+        } else {
+          // if normal URL => push as is
+          uploadedPhotoUrls.push(p);
+        }
+      }
+
+      // 2) Build "works" array
+      const works = orderData.worksData.map((w) => ({
+        type: w.type,
+        code: w.code,
+        unit_of_measurement: w.unitOfMeasurement, // use as-is
+        work_count: String(w.quantity),
+        labor_cost: w.laborCost.toFixed(2),
+        materials_cost: w.materialsCost.toFixed(2),
+        service_fee_on_labor: w.serviceFeeOnLabor
+          ? w.serviceFeeOnLabor.toFixed(2)
+          : "0.00",
+        service_fee_on_materials: w.serviceFeeOnMaterials
+          ? w.serviceFeeOnMaterials.toFixed(2)
+          : "0.00",
+        total: w.total.toFixed(2),
+
+        // If user didn't specify => "n/a" or "1.00"
+        payment_type:
+          w.paymentType && w.paymentType.trim() !== ""
+            ? w.paymentType
+            : "n/a",
+        payment_coefficient: w.paymentCoefficient
+          ? w.paymentCoefficient.toFixed(2)
+          : "1.00",
+
+        // materials array
+        materials: w.materials
+          ? w.materials.map((m) => ({
+              external_id: m.external_id,
+              quantity: m.quantity,
+              cost_per_unit: m.costPerUnit.toFixed(2),
+              total: m.total.toFixed(2),
+            }))
+          : [],
+      }));
+
+      // 3) Build top-level fees
+      const serviceFeeOnLabor = orderData.serviceFeeOnLabor
+        ? orderData.serviceFeeOnLabor.toFixed(2)
+        : "0.00";
+      const serviceFeeOnMaterials = orderData.serviceFeeOnMaterials
+        ? orderData.serviceFeeOnMaterials.toFixed(2)
+        : "0.00";
+
+      const paymentType =
+        orderData.paymentType && orderData.paymentType.trim() !== ""
+          ? orderData.paymentType
+          : "n/a";
+      const paymentCoefficient = orderData.paymentCoefficient
+        ? orderData.paymentCoefficient.toFixed(2)
+        : "1.00";
+
+      // 4) Final JSON to send
+      const bodyToSend = {
+        zipcode: orderData.zipcode,
+        user_token: token,
+        common: {
+          address: orderData.address,
+          photos: uploadedPhotoUrls,
+          description: orderData.description,
+          selected_date: orderData.selectedTime,
+          date_coefficient: orderData.timeCoefficient.toFixed(2),
+        },
+        works,
+        tax_rate: orderData.taxRate.toFixed(2),
+        tax_amount: orderData.taxAmount.toFixed(2),
+        date_surcharge: (
+          orderData.laborSubtotal * (orderData.timeCoefficient - 1)
+        ).toFixed(2),
+
+        // top-level service fees
+        service_fee_on_labor: serviceFeeOnLabor,
+        service_fee_on_materials: serviceFeeOnMaterials,
+        payment_type: paymentType,
+        payment_coefficient: paymentCoefficient,
+
+        // final sums
+        subtotal: orderData.sumBeforeTax.toFixed(2),
+        total: orderData.finalTotal.toFixed(2),
+      };
+
+      console.log("Sending final JSON to /api/orders/create:", bodyToSend);
+
+      // 5) POST to /api/orders/create
+      const createOrderResp = await fetch("/api/orders/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(bodyToSend),
+      });
+
+      if (!createOrderResp.ok) {
+        let errorMessage = "";
+        try {
+          const maybeJson = await createOrderResp.json();
+          errorMessage = maybeJson.error || JSON.stringify(maybeJson);
+        } catch {
+          const text = await createOrderResp.text();
+          errorMessage = text;
+        }
+        throw new Error(errorMessage || `Error: ${createOrderResp.status}`);
+      }
+
+      const resultData = await createOrderResp.json();
+      console.log("Order saved successfully:", resultData);
+
+      // 6) success => store code & total => /thank-you
+      if (onOrderSuccess) {
+        onOrderSuccess();
+      } else {
+        alert("Order saved successfully!");
+        sessionStorage.setItem("orderCode", resultData.order_code || "");
+        sessionStorage.setItem("orderTotal", bodyToSend.total || "");
+        router.push("/thank-you");
+      }
+    } catch (err: any) {
+      console.error("Error placing order:", err);
+      alert("Error placing order: " + err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <button
+      onClick={handlePlaceOrder}
+      disabled={loading}
+      className="bg-yellow-400 hover:bg-yellow-500 text-black py-3 px-6
+                 rounded-md font-semibold text-lg shadow-sm transition-colors duration-200
+                 disabled:opacity-60 disabled:cursor-not-allowed"
+    >
+      {loading ? "Saving order..." : "Save your order"}
+    </button>
+  );
 }
