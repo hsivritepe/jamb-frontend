@@ -1,8 +1,9 @@
 "use client";
 
 export const dynamic = "force-dynamic";
+
+import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
 import BreadCrumb from "@/components/ui/BreadCrumb";
 import { SectionBoxTitle } from "@/components/ui/SectionBoxTitle";
 import { SectionBoxSubtitle } from "@/components/ui/SectionBoxSubtitle";
@@ -12,14 +13,62 @@ import { ALL_SERVICES } from "@/constants/services";
 import { taxRatesUSA } from "@/constants/taxRatesUSA";
 import { useLocation } from "@/context/LocationContext";
 import { getSessionItem, setSessionItem } from "@/utils/session";
-import React, { FC } from "react";
 import { Printer, Share2, Save } from "lucide-react";
 
+// Import the custom PlaceOrderButton
+import PlaceOrderButton from "@/components/ui/PlaceOrderButton";
+
+// If you have a specific interface for "work items", define it here. 
+// For brevity, we'll just mention it in `orderData` type.
+interface WorkItem {
+  // Adapt these fields to your real data
+  type: string; 
+  code: string; 
+  unitOfMeasurement: string; 
+  quantity: number;
+  laborCost: number;
+  materialsCost: number;
+  serviceFeeOnLabor?: number;
+  serviceFeeOnMaterials?: number;
+  total: number;
+  paymentType?: string;
+  paymentCoefficient?: number;
+  materials?: Array<{
+    external_id: string;
+    quantity: number;
+    costPerUnit: number;
+    total: number;
+  }>;
+}
+
+/**
+ * This interface for orderData includes all fields
+ * required by our final "composite-order/create" JSON.
+ */
+interface CheckoutOrderData {
+  // Required for the composite order
+  zipcode: string;           // e.g. "10006"
+  address: string;           // Full address
+  description: string;       // "Problem / additional details"
+  selectedTime: string;      // e.g. "05/09/2025 (morning)"
+  timeCoefficient: number;   // e.g. 1.25
+  laborSubtotal: number;     // e.g. sum of all labor
+  sumBeforeTax: number;      // e.g. finalLabor + materials + fees
+  finalTotal: number;        // e.g. sumBeforeTax + tax
+  taxRate: number;           // e.g. 8.00
+  taxAmount: number;         // e.g. 45.95
+  worksData: WorkItem[];     // array of "works" items
+
+  // If you need something else, add here...
+}
+
+/**
+ * A small "print/share/save" icons bar (optional).
+ */
 interface SingleButtonBarProps {
   onPrint?: () => void;
 }
-
-const ActionIconsBar: FC<SingleButtonBarProps> = ({ onPrint }) => {
+const ActionIconsBar: React.FC<SingleButtonBarProps> = ({ onPrint }) => {
   return (
     <button
       onClick={onPrint}
@@ -34,7 +83,8 @@ const ActionIconsBar: FC<SingleButtonBarProps> = ({ onPrint }) => {
 };
 
 /**
- * Formats a numeric value with commas and exactly two decimals.
+ * formatWithSeparator:
+ * Formats a number with commas and exactly two decimals, e.g. 1234.5 => "1,234.50".
  */
 function formatWithSeparator(value: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -44,8 +94,9 @@ function formatWithSeparator(value: number): string {
 }
 
 /**
- * Returns the tax rate (e.g. 8.85) from taxRatesUSA by matching
- * the two-letter state code. If not found, returns 0.
+ * getTaxRateForState:
+ * Given a two-letter state code, returns the combined state & local tax rate from taxRatesUSA.
+ * If not found, returns 0.
  */
 function getTaxRateForState(stateCode: string): number {
   if (!stateCode) return 0;
@@ -56,8 +107,8 @@ function getTaxRateForState(stateCode: string): number {
 }
 
 /**
- * Builds an estimate number in the format:
- * SS-ZZZZZ-YYYYMMDD-HHMM
+ * buildEstimateNumber:
+ * Constructs a string in the format SS-ZZZZZ-YYYYMMDD-HHMM for display.
  */
 function buildEstimateNumber(stateCode: string, zip: string): string {
   let stateZipBlock = "??-00000";
@@ -76,54 +127,56 @@ function buildEstimateNumber(stateCode: string, zip: string): string {
 }
 
 /**
- * Converts a numeric USD amount into spelled-out words (simplified).
+ * numberToWordsUSD:
+ * (Optional) Converts e.g. 123.45 => "one hundred twenty-three and 45/100 dollars".
+ * Only needed if your final payload or display requires spelled-out text.
  */
 function numberToWordsUSD(amount: number): string {
   const wholeDollars = Math.floor(amount);
   const cents = Math.round((amount - wholeDollars) * 100);
 
-  function threeDigitToWords(n: number): string {
-    const ones = [
-      "",
-      "one",
-      "two",
-      "three",
-      "four",
-      "five",
-      "six",
-      "seven",
-      "eight",
-      "nine",
-    ];
-    const teens = [
-      "ten",
-      "eleven",
-      "twelve",
-      "thirteen",
-      "fourteen",
-      "fifteen",
-      "sixteen",
-      "seventeen",
-      "eighteen",
-      "nineteen",
-    ];
-    const tensWords = [
-      "",
-      "",
-      "twenty",
-      "thirty",
-      "forty",
-      "fifty",
-      "sixty",
-      "seventy",
-      "eighty",
-      "ninety",
-    ];
+  // Helper arrays
+  const ones = [
+    "",
+    "one",
+    "two",
+    "three",
+    "four",
+    "five",
+    "six",
+    "seven",
+    "eight",
+    "nine",
+  ];
+  const teens = [
+    "ten",
+    "eleven",
+    "twelve",
+    "thirteen",
+    "fourteen",
+    "fifteen",
+    "sixteen",
+    "seventeen",
+    "eighteen",
+    "nineteen",
+  ];
+  const tensWords = [
+    "",
+    "",
+    "twenty",
+    "thirty",
+    "forty",
+    "fifty",
+    "sixty",
+    "seventy",
+    "eighty",
+    "ninety",
+  ];
 
-    let str = "";
+  function threeDigitToWords(n: number): string {
     const hundred = Math.floor(n / 100);
     const remainder = n % 100;
-
+    let str = "";
     if (hundred > 0) {
       str += ones[hundred] + " hundred";
       if (remainder > 0) str += " ";
@@ -131,15 +184,15 @@ function numberToWordsUSD(amount: number): string {
     if (remainder >= 10 && remainder <= 19) {
       str += teens[remainder - 10];
     } else {
-      const t = Math.floor(remainder / 10);
-      const o = remainder % 10;
-      if (t > 1) {
-        str += tensWords[t];
-        if (o > 0) str += "-" + ones[o];
-      } else if (t === 1) {
-        str += teens[o];
-      } else if (o > 0) {
-        str += ones[o];
+      const tens = Math.floor(remainder / 10);
+      const onesVal = remainder % 10;
+      if (tens > 1) {
+        str += tensWords[tens];
+        if (onesVal > 0) str += "-" + ones[onesVal];
+      } else if (tens === 1) {
+        str += teens[onesVal];
+      } else if (onesVal > 0) {
+        str += ones[onesVal];
       }
     }
     return str.trim();
@@ -160,46 +213,53 @@ function numberToWordsUSD(amount: number): string {
     return words || "zero";
   }
 
-  const dollarsPart = numberToWords(wholeDollars);
-  const centsPart = cents < 10 ? `0${cents}` : `${cents}`;
+  const dollarsPart = numberToWords(Math.floor(amount));
+  const centsPart = cents < 10 ? `0${cents}` : String(cents);
 
   return `${dollarsPart} and ${centsPart}/100 dollars`.trim();
 }
 
 /**
  * getCategoryNameById:
- * Finds a category by its ID from ALL_CATEGORIES and returns its title,
- * or returns the ID itself if not found.
+ * Finds a category in ALL_CATEGORIES. If not found, returns the ID as fallback.
  */
 function getCategoryNameById(catId: string): string {
   const found = ALL_CATEGORIES.find((cat) => cat.id === catId);
   return found ? found.title : catId;
 }
 
+/**
+ * CheckoutPage:
+ * The final checkout/summary page. Shows a breakdown of chosen services, totals, etc.
+ * Also includes the PlaceOrderButton that, on click, checks login + compresses + uploads + creates order.
+ */
 export default function CheckoutPage() {
   const router = useRouter();
   const { location } = useLocation();
 
-  // userStateCode, userZip from context
+  // userState & zip from context
   const userStateCode = location.state || "";
   const userZip = location.zip || "00000";
 
-  // get session data
-  const selectedServicesState: Record<string, number> = getSessionItem(
-    "selectedServicesWithQuantity",
-    {}
-  );
-  const calculationResultsMap: Record<string, any> = getSessionItem(
-    "calculationResultsMap",
-    {}
-  );
-  const address = getSessionItem("address", "");
-  const photos = getSessionItem<string[]>("photos", []);
-  const description = getSessionItem("description", "");
+  // Retrieve data from session
+  const selectedServicesState: Record<string, number> =
+    getSessionItem("selectedServicesWithQuantity", {});
+  const calculationResultsMap: Record<string, any> =
+    getSessionItem("calculationResultsMap", {});
+  const address: string = getSessionItem("address", "");
+  const photos: string[] = getSessionItem("photos", []);
+  const description: string = getSessionItem("description", "");
   const selectedTime: string | null = getSessionItem("selectedTime", null);
   const timeCoefficient: number = getSessionItem("timeCoefficient", 1);
 
-  // store location to session if valid
+  // If no essential data => redirect user back to /calculate/estimate
+  useEffect(() => {
+    if (Object.keys(selectedServicesState).length === 0 || !address) {
+      router.push("/calculate/estimate");
+    }
+  }, [selectedServicesState, address, router]);
+
+  // Optionally store location in session
   useEffect(() => {
     if (userStateCode && userZip) {
       sessionStorage.setItem("location_state", JSON.stringify(userStateCode));
@@ -207,43 +267,7 @@ export default function CheckoutPage() {
     }
   }, [userStateCode, userZip]);
 
-  // If no essential data => redirect
-  useEffect(() => {
-    if (Object.keys(selectedServicesState).length === 0 || !address) {
-      router.push("/calculate/estimate");
-    }
-  }, [selectedServicesState, address, router]);
-
-  // Build the same grouping used in Estimate
-  const selectedCategories: string[] = getSessionItem("services_selectedCategories", []);
-  const searchQuery: string = getSessionItem("services_searchQuery", "");
-
-  // categoriesBySection
-  const categoriesWithSection = selectedCategories
-    .map((catId) => ALL_CATEGORIES.find((c) => c.id === catId) || null)
-    .filter(Boolean) as (typeof ALL_CATEGORIES)[number][];
-
-  const categoriesBySection: Record<string, string[]> = {};
-  categoriesWithSection.forEach((cat) => {
-    if (!categoriesBySection[cat.section]) {
-      categoriesBySection[cat.section] = [];
-    }
-    categoriesBySection[cat.section].push(cat.id);
-  });
-
-  // categoryServicesMap => catId => services
-  const categoryServicesMap: Record<string, (typeof ALL_SERVICES)[number][]> = {};
-  selectedCategories.forEach((catId) => {
-    let matched = ALL_SERVICES.filter((svc) => svc.id.startsWith(`${catId}-`));
-    if (searchQuery) {
-      matched = matched.filter((svc) =>
-        svc.title.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-    categoryServicesMap[catId] = matched;
-  });
-
-  // Summation
+  // Summation logic
   function calculateLaborSubtotal(): number {
     let total = 0;
     for (const svcId of Object.keys(selectedServicesState)) {
@@ -268,33 +292,125 @@ export default function CheckoutPage() {
 
   const laborSubtotal = calculateLaborSubtotal();
   const materialsSubtotal = calculateMaterialsSubtotal();
-
   const finalLabor = laborSubtotal * timeCoefficient;
 
+  // retrieve stored fees
   const serviceFeeOnLabor = getSessionItem("serviceFeeOnLabor", 0);
   const serviceFeeOnMaterials = getSessionItem("serviceFeeOnMaterials", 0);
 
-  const sumBeforeTax = finalLabor + materialsSubtotal + serviceFeeOnLabor + serviceFeeOnMaterials;
+  // sumBeforeTax
+  const sumBeforeTax =
+    finalLabor + materialsSubtotal + serviceFeeOnLabor + serviceFeeOnMaterials;
 
   // tax
   const taxRatePercent = getTaxRateForState(userStateCode);
   const taxAmount = sumBeforeTax * (taxRatePercent / 100);
   const finalTotal = sumBeforeTax + taxAmount;
 
-  // estimate number
+  // for display
   const estimateNumber = buildEstimateNumber(userStateCode, userZip);
 
-  // place order
-  function handlePlaceOrder() {
-    alert("Your order has been placed!");
-  }
-
-  // Single callback for our single button
+  // for printing
   function handlePrint() {
     router.push("/calculate/checkout/print");
   }
 
+  // spelled-out total if needed
   const finalTotalWords = numberToWordsUSD(finalTotal);
+
+  // Prepare "worksData". In a real app, you might do:
+  // loop over selectedServicesState => build array of items.
+  // For brevity, we'll do an empty array or adapt if needed.
+  const worksData: WorkItem[] = [];
+
+  // (Pseudo) build worksData from selectedServicesState & calculationResultsMap:
+  for (const svcId of Object.keys(selectedServicesState)) {
+    const qty = selectedServicesState[svcId];
+    const calcResult = calculationResultsMap[svcId];
+    // find service info from ALL_SERVICES
+    const svcObj = ALL_SERVICES.find((x) => x.id === svcId);
+    if (!svcObj) continue;
+
+    const laborCost = calcResult?.work_cost
+      ? parseFloat(calcResult.work_cost)
+      : 0;
+    const materialsCost = calcResult?.material_cost
+      ? parseFloat(calcResult.material_cost)
+      : 0;
+    const totalVal = calcResult?.total ? parseFloat(calcResult.total) : 0;
+
+    // collect any service fees if needed. 
+    // (Here we'll skip for brevity, or adapt if you have them.)
+    const newWork: WorkItem = {
+      type: "services",
+      code: svcObj.id.replace(/-/g, "."), // "1.1.1" style
+      unitOfMeasurement: svcObj.unit_of_measurement || "each",
+      quantity: qty,
+      laborCost,
+      materialsCost,
+      total: totalVal,
+      // optionally you can do serviceFeeOnLabor, etc.
+      materials: [],
+    };
+
+    // if there is an array of materials => map them
+    if (Array.isArray(calcResult?.materials)) {
+      newWork.materials = calcResult.materials.map((m: any) => ({
+        external_id: m.external_id,
+        quantity: m.quantity,
+        costPerUnit: parseFloat(m.cost_per_unit),
+        total: parseFloat(m.cost),
+      }));
+    }
+
+    worksData.push(newWork);
+  }
+
+  // Build final orderData => for PlaceOrderButton
+  // This matches the new interface CheckoutOrderData
+  const orderData = {
+    zipcode: userZip,
+    address,
+    description,
+    selectedTime: selectedTime || "", // fallback if null
+    timeCoefficient,
+    laborSubtotal,
+    sumBeforeTax,
+    finalTotal,
+    // We'll store e.g. 8.0 for taxRate
+    taxRate: taxRatePercent,
+    taxAmount,
+    worksData,
+  };
+
+  // Possibly build a "category => services" map for display:
+  const selectedCategories: string[] = getSessionItem("services_selectedCategories", []);
+  const searchQuery: string = getSessionItem("services_searchQuery", "");
+
+  // categoriesBySection => used to group sections in the UI
+  const categoriesWithSection = selectedCategories
+    .map((catId) => ALL_CATEGORIES.find((c) => c.id === catId) || null)
+    .filter(Boolean) as (typeof ALL_CATEGORIES)[number][];
+
+  const categoriesBySection: Record<string, string[]> = {};
+  categoriesWithSection.forEach((cat) => {
+    if (!categoriesBySection[cat.section]) {
+      categoriesBySection[cat.section] = [];
+    }
+    categoriesBySection[cat.section].push(cat.id);
+  });
+
+  // categoryServicesMap => catId => services for display
+  const categoryServicesMap: Record<string, (typeof ALL_SERVICES)[number][]> = {};
+  selectedCategories.forEach((catId) => {
+    let arr = ALL_SERVICES.filter((svc) => svc.id.startsWith(`${catId}-`));
+    if (searchQuery) {
+      arr = arr.filter((svc) =>
+        svc.title.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    categoryServicesMap[catId] = arr;
+  });
 
   return (
     <main className="min-h-screen py-24">
@@ -303,7 +419,7 @@ export default function CheckoutPage() {
       </div>
 
       <div className="container mx-auto">
-        {/* Top bar */}
+        {/* Top bar => "Back" link + PlaceOrderButton */}
         <div className="flex justify-between items-center mt-8">
           <span
             className="text-blue-600 cursor-pointer"
@@ -311,43 +427,47 @@ export default function CheckoutPage() {
           >
             ← Back
           </span>
-          <button
-            className="bg-yellow-400 hover:bg-yellow-500 text-black py-3 px-6 rounded-md font-semibold text-lg shadow-sm transition-colors duration-200"
-            onClick={handlePlaceOrder}
-          >
-            Place your order
-          </button>
+
+          {/* Our custom PlaceOrderButton => checks login, compresses, uploads, creates */}
+          <PlaceOrderButton
+            photos={photos}
+            orderData={orderData}
+            // If needed:
+            // onOrderSuccess={() => router.push("/orders/thank-you")}
+          />
         </div>
 
+        {/* Title + print icons */}
         <div className="flex items-center justify-between mt-8">
           <SectionBoxTitle>Checkout</SectionBoxTitle>
-          
-          {/* Single-button ActionIconsBar calling only handlePrint */}
+
           <ActionIconsBar onPrint={handlePrint} />
         </div>
 
+        {/* Main summary area */}
         <div className="bg-white border-gray-300 mt-8 p-4 sm:p-6 rounded-lg space-y-6 border">
           {/* Estimate info */}
           <div>
             <SectionBoxSubtitle>
               Estimate for Selected Services{" "}
-              <span className="ml-0 sm:ml-2 text-sm text-gray-500">
+              <span className="ml-1 text-sm text-gray-500">
                 ({estimateNumber})
               </span>
             </SectionBoxSubtitle>
             <p className="text-xs text-gray-400 -mt-2 ml-1">
-              *This number is temporary and will be replaced with a permanent order number after confirmation.
+              *This number is temporary and will be replaced with a permanent
+              order number after confirmation.
             </p>
 
-            {/* Group by section -> category -> services with numbering */}
+            {/* Display chosen categories => services => cost breakdown */}
             <div className="mt-4 space-y-4">
               {Object.entries(categoriesBySection).map(([sectionName, catIds], i) => {
                 const sectionIndex = i + 1;
-                const catsWithSelected = catIds.filter((catId) => {
+                const catsInSection = catIds.filter((catId) => {
                   const arr = categoryServicesMap[catId] || [];
                   return arr.some((svc) => selectedServicesState[svc.id] != null);
                 });
-                if (catsWithSelected.length === 0) return null;
+                if (catsInSection.length === 0) return null;
 
                 return (
                   <div key={sectionName} className="space-y-4">
@@ -355,35 +475,42 @@ export default function CheckoutPage() {
                       {sectionIndex}. {sectionName}
                     </h3>
 
-                    {catsWithSelected.map((catId, j) => {
+                    {catsInSection.map((catId, j) => {
                       const catIndex = j + 1;
-                      const servicesInCat = categoryServicesMap[catId] || [];
-                      const chosenServices = servicesInCat.filter(
+                      const servicesArr = categoryServicesMap[catId] || [];
+                      const chosen = servicesArr.filter(
                         (svc) => selectedServicesState[svc.id] != null
                       );
-                      if (chosenServices.length === 0) return null;
+                      if (chosen.length === 0) return null;
 
-                      const foundCatName = getCategoryNameById(catId);
+                      const catName = getCategoryNameById(catId);
 
                       return (
-                        <div key={catId} className="ml-0 sm:ml-4 space-y-4">
+                        <div
+                          key={catId}
+                          className="ml-0 sm:ml-4 space-y-4"
+                        >
                           <h4 className="text-xl font-medium text-gray-700">
-                            {sectionIndex}.{catIndex}. {foundCatName}
+                            {sectionIndex}.{catIndex}. {catName}
                           </h4>
 
-                          {chosenServices.map((svc, svcIdx) => {
+                          {chosen.map((svc, svcIdx) => {
                             const svcIndex = svcIdx + 1;
-                            const quantity = selectedServicesState[svc.id] || 1;
+                            const qty = selectedServicesState[svc.id] || 1;
                             const calcResult = calculationResultsMap[svc.id];
                             const finalCost = calcResult
                               ? parseFloat(calcResult.total) || 0
                               : 0;
 
                             return (
-                              <div key={svc.id} className="flex flex-col gap-2 mb-4">
+                              <div
+                                key={svc.id}
+                                className="flex flex-col gap-2 mb-4"
+                              >
                                 <div>
                                   <h3 className="font-medium text-lg text-gray-700">
-                                    {sectionIndex}.{catIndex}.{svcIndex}. {svc.title}
+                                    {sectionIndex}.{catIndex}.{svcIndex}.{" "}
+                                    {svc.title}
                                   </h3>
                                   {svc.description && (
                                     <div className="text-sm text-gray-500 mt-1">
@@ -395,16 +522,16 @@ export default function CheckoutPage() {
                                 {/* quantity + cost */}
                                 <div className="flex items-center justify-between mt-2">
                                   <div className="text-lg font-medium text-gray-700">
-                                    {quantity} {svc.unit_of_measurement}
+                                    {qty} {svc.unit_of_measurement}
                                   </div>
                                   <span className="text-gray-700 font-medium text-lg mr-4">
                                     ${formatWithSeparator(finalCost)}
                                   </span>
                                 </div>
 
-                                {/* cost breakdown => labor/materials */}
                                 {calcResult && (
                                   <div className="mt-2 p-2 sm:p-4 bg-gray-50 border rounded">
+                                    {/* Labor */}
                                     <div className="flex justify-between mb-4">
                                       <span className="text-md font-medium text-gray-700">
                                         Labor
@@ -417,6 +544,7 @@ export default function CheckoutPage() {
                                           : "—"}
                                       </span>
                                     </div>
+                                    {/* Materials */}
                                     <div className="flex justify-between mb-3">
                                       <span className="text-md font-medium text-gray-800">
                                         Materials, tools and equipment
@@ -430,34 +558,57 @@ export default function CheckoutPage() {
                                       </span>
                                     </div>
 
+                                    {/* Materials breakdown table */}
                                     {Array.isArray(calcResult.materials) &&
                                       calcResult.materials.length > 0 && (
                                         <div>
                                           <table className="table-auto w-full text-sm text-left text-gray-700">
                                             <thead>
                                               <tr className="border-b">
-                                                <th className="py-2 px-1">Name</th>
-                                                <th className="py-2 px-1">Price</th>
-                                                <th className="py-2 px-1">Qty</th>
-                                                <th className="py-2 px-1">Subtotal</th>
+                                                <th className="py-2 px-1">
+                                                  Name
+                                                </th>
+                                                <th className="py-2 px-1">
+                                                  Price
+                                                </th>
+                                                <th className="py-2 px-1">
+                                                  Qty
+                                                </th>
+                                                <th className="py-2 px-1">
+                                                  Subtotal
+                                                </th>
                                               </tr>
                                             </thead>
                                             <tbody className="divide-y divide-gray-200">
-                                              {calcResult.materials.map((m: any, idx2: number) => (
-                                                <tr
-                                                  key={`${m.external_id}-${idx2}`}
-                                                  className="align-top"
-                                                >
-                                                  <td className="py-3 px-1">{m.name}</td>
-                                                  <td className="py-3 px-1">
-                                                    ${formatWithSeparator(parseFloat(m.cost_per_unit))}
-                                                  </td>
-                                                  <td className="py-3 px-3">{m.quantity}</td>
-                                                  <td className="py-3 px-3">
-                                                    ${formatWithSeparator(parseFloat(m.cost))}
-                                                  </td>
-                                                </tr>
-                                              ))}
+                                              {calcResult.materials.map(
+                                                (m: any, idx2: number) => (
+                                                  <tr
+                                                    key={`${m.external_id}-${idx2}`}
+                                                    className="align-top"
+                                                  >
+                                                    <td className="py-3 px-1">
+                                                      {m.name}
+                                                    </td>
+                                                    <td className="py-3 px-1">
+                                                      $
+                                                      {formatWithSeparator(
+                                                        parseFloat(
+                                                          m.cost_per_unit
+                                                        )
+                                                      )}
+                                                    </td>
+                                                    <td className="py-3 px-3">
+                                                      {m.quantity}
+                                                    </td>
+                                                    <td className="py-3 px-3">
+                                                      $
+                                                      {formatWithSeparator(
+                                                        parseFloat(m.cost)
+                                                      )}
+                                                    </td>
+                                                  </tr>
+                                                )
+                                              )}
                                             </tbody>
                                           </table>
                                         </div>
@@ -478,7 +629,9 @@ export default function CheckoutPage() {
             {/* Summary => labor/materials/tax/fees */}
             <div className="pt-4 mt-4 border-t">
               <div className="flex justify-between mb-2">
-                <span className="font-semibold text-lg text-gray-600">Labor total</span>
+                <span className="font-semibold text-lg text-gray-600">
+                  Labor total
+                </span>
                 <span className="font-semibold text-lg text-gray-600">
                   ${formatWithSeparator(laborSubtotal)}
                 </span>
@@ -502,7 +655,9 @@ export default function CheckoutPage() {
                   </span>
                   <span
                     className={`font-semibold text-lg ${
-                      timeCoefficient > 1 ? "text-red-600" : "text-green-600"
+                      timeCoefficient > 1
+                        ? "text-red-600"
+                        : "text-green-600"
                     }`}
                   >
                     {timeCoefficient > 1 ? "+" : "-"}$
@@ -512,14 +667,16 @@ export default function CheckoutPage() {
               )}
 
               <div className="flex justify-between mb-2">
-                <span className="text-gray-600">Service Fee (15% on labor)</span>
+                <span className="text-gray-600">
+                  Service Fee (15% on labor)
+                </span>
                 <span className="font-semibold text-lg text-gray-800">
                   ${formatWithSeparator(serviceFeeOnLabor)}
                 </span>
               </div>
               <div className="flex justify-between mb-2">
                 <span className="text-gray-600">
-                  Delivery &amp; Processing (5% on materials)
+                  Delivery & Processing (5% on materials)
                 </span>
                 <span className="font-semibold text-lg text-gray-800">
                   ${formatWithSeparator(serviceFeeOnMaterials)}
@@ -527,7 +684,9 @@ export default function CheckoutPage() {
               </div>
 
               <div className="flex justify-between mb-2">
-                <span className="font-semibold text-xl text-gray-800">Subtotal</span>
+                <span className="font-semibold text-xl text-gray-800">
+                  Subtotal
+                </span>
                 <span className="font-semibold text-xl text-gray-800">
                   ${formatWithSeparator(sumBeforeTax)}
                 </span>
@@ -535,9 +694,11 @@ export default function CheckoutPage() {
 
               <div className="flex justify-between mb-2">
                 <span className="text-gray-600">
-                  Sales tax
-                  {userStateCode ? ` (${userStateCode})` : ""}
-                  {taxRatePercent > 0 ? ` (${taxRatePercent.toFixed(2)}%)` : ""}
+                  Sales tax{" "}
+                  {userStateCode ? `(${userStateCode})` : ""}
+                  {taxRatePercent > 0
+                    ? ` (${taxRatePercent.toFixed(2)}%)`
+                    : ""}
                 </span>
                 <span>${formatWithSeparator(taxAmount)}</span>
               </div>
@@ -568,7 +729,9 @@ export default function CheckoutPage() {
           {/* Problem description */}
           <div>
             <SectionBoxSubtitle>Problem Description</SectionBoxSubtitle>
-            <p className="text-gray-600">{description || "No details provided"}</p>
+            <p className="text-gray-600">
+              {description || "No details provided"}
+            </p>
           </div>
 
           <hr className="my-6 border-gray-200" />

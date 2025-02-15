@@ -8330,9 +8330,9 @@ export const ALL_SERVICES = [
     },
     {
         id: "22-7-7",
-        unit_of_measurement: "sq ft",
-        min_quantity: 50,
-        max_quantity: 10000,
+        unit_of_measurement: "each",
+        min_quantity: 1,
+        max_quantity: 100,
         title: "Outdoor Pool Opening",
         description: "Opening of the outdoor pool for the summer season. This service includes uncovering the pool, plumbing system preparation, water treatment, and system testing. Includes comprehensive labor, rough materials, and necessary equipment usage. Ensures the pool is ready for use.",
         category: SERVICE_CATEGORIES.POOL,
