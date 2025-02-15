@@ -2,14 +2,25 @@
 
 export const dynamic = "force-dynamic";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import GoogleIcon from "@/components/icons/GoogleIcon";
 import FacebookIcon from "@/components/icons/FacebookIcon";
 import AppleIcon from "@/components/icons/AppleIcon";
 
+/**
+ * LoginOrRegisterPage:
+ * - If login is successful, we check "next" from the query, e.g. /login?next=/calculate/checkout.
+ * - If it exists, we push to that path; otherwise we push /profile.
+ * - If the user chooses "Create Account," we also preserve the ?next= param
+ *   when we redirect to /confirm?email=...
+ */
 export default function LoginOrRegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // "nextUrl" is what we use to redirect after successful login
+  const nextUrl = searchParams.get("next") || "";
 
   // Registration form
   const [email, setEmail] = useState("");
@@ -25,7 +36,7 @@ export default function LoginOrRegisterPage() {
   const [showRegister, setShowRegister] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
 
-  // Forgot password email
+  // Forgot password
   const [resetEmail, setResetEmail] = useState("");
 
   // =============== REGISTER ===============
@@ -47,7 +58,13 @@ export default function LoginOrRegisterPage() {
       });
 
       if (res.ok) {
-        router.push(`/confirm?email=${encodeURIComponent(email)}`);
+        // If there's a next param, include it in the confirm page
+        // e.g. /confirm?email=...&next=...
+        let confirmUrl = `/confirm?email=${encodeURIComponent(email)}`;
+        if (nextUrl) {
+          confirmUrl += `&next=${encodeURIComponent(nextUrl)}`;
+        }
+        router.push(confirmUrl);
       } else if (res.status === 400) {
         const data = await res.json();
         alert(`Registration error: ${data.error}`);
@@ -74,11 +91,10 @@ export default function LoginOrRegisterPage() {
 
       if (res.ok) {
         const data = await res.json();
-
-        // 1) Store token in sessionStorage
+        // 1) Save token
         sessionStorage.setItem("authToken", data.token);
 
-        // 2) Fetch user info so we can store it in sessionStorage
+        // 2) Fetch user info
         try {
           const userRes = await fetch("https://dev.thejamb.com/user/info", {
             method: "POST",
@@ -93,11 +109,15 @@ export default function LoginOrRegisterPage() {
           console.error("Error fetching user info after login:", err);
         }
 
-        // 3) Dispatch the custom "authChange" event so the Header updates
+        // 3) Dispatch "authChange"
         window.dispatchEvent(new Event("authChange"));
 
-        // 4) Navigate to /profile
-        router.push("/profile");
+        // 4) If we have ?next=, go there. Otherwise => /profile
+        if (nextUrl) {
+          router.push(nextUrl);
+        } else {
+          router.push("/profile");
+        }
       } else if (res.status === 400) {
         const data = await res.json();
         alert(`Login error: ${data.error}`);
@@ -121,7 +141,6 @@ export default function LoginOrRegisterPage() {
     }
 
     try {
-      // We now call our local Next.js route instead of direct external URL:
       const res = await fetch("/api/user/change-password/request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -130,11 +149,8 @@ export default function LoginOrRegisterPage() {
 
       if (res.ok) {
         alert("Email has been sent with reset instructions!");
-        // We can navigate to a page that asks for the code + new password:
-        // e.g. /password-reset?email=...
         router.push(`/password-reset?email=${encodeURIComponent(resetEmail)}`);
       } else {
-        // Handle different status codes (400, 404, 500) from our route
         const data = await res.json();
         alert(`Reset error: ${data.error || res.statusText}`);
       }
@@ -310,8 +326,7 @@ export default function LoginOrRegisterPage() {
                 Forgot Password
               </h1>
               <p className="mb-4 text-sm text-gray-700">
-                Enter your email below. We'll send a reset code if your account
-                exists.
+                Enter your email below. We'll send a reset code if your account exists.
               </p>
 
               <div className="mb-4">

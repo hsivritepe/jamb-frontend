@@ -1,8 +1,6 @@
-// jamb-frontend/server/controllers/orderController.ts
-
 /**
  * This interface represents the shape of a "composite order"
- * as returned by the external services (list, get, etc.).
+ * as returned by the external services (e.g., /composite-order/list, /composite-order/get).
  */
 export interface CompositeOrder {
   id: number;
@@ -43,52 +41,53 @@ export interface CompositeOrder {
 
 /**
  * listSavedOrders(token: string):
- * Sends a POST request to https://dev.thejamb.com/composite-order/list
- * including the user's token in the request body.
- * Returns an array of CompositeOrder or throws an error if the response is not OK.
+ * Sends a POST request to https://dev.thejamb.com/composite-order/list,
+ * providing the user's token in the request body.
+ * It returns an array of CompositeOrder or throws an error
+ * if the response indicates a failure.
  */
 export async function listSavedOrders(token: string): Promise<CompositeOrder[]> {
-  const url = "https://dev.thejamb.com/composite-order/list";
+  const endpointUrl = "https://dev.thejamb.com/composite-order/list";
 
-  const resp = await fetch(url, {
+  const response = await fetch(endpointUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ token }),
   });
 
-  if (!resp.ok) {
-    if (resp.status === 400) {
-      const errData = await resp.json();
-      throw new Error(errData.error || "Token required (400)");
+  if (!response.ok) {
+    if (response.status === 400) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Token required (400)");
     }
-    if (resp.status === 404) {
-      const errData = await resp.json();
-      const message = Array.isArray(errData.errors)
-        ? errData.errors.join(", ")
+    if (response.status === 404) {
+      const errorData = await response.json();
+      const errorMessage = Array.isArray(errorData.errors)
+        ? errorData.errors.join(", ")
         : "User not found";
-      throw new Error(message || "Not found (404)");
+      throw new Error(errorMessage || "Not found (404)");
     }
-    if (resp.status === 500) {
-      const errData = await resp.json();
-      throw new Error(errData.error || "Internal server error (500)");
+    if (response.status === 500) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Internal server error (500)");
     }
-    throw new Error(`Request failed with status ${resp.status}`);
+    throw new Error(`Request failed with status ${response.status}`);
   }
 
-  const data = await resp.json();
-  return data as CompositeOrder[];
+  const responseData = await response.json();
+  return responseData as CompositeOrder[];
 }
 
 /**
  * getCompositeOrder(token: string, orderCode: string):
- * Sends a POST request to https://dev.thejamb.com/composite-order/get
+ * Sends a POST request to https://dev.thejamb.com/composite-order/get,
  * including the user's token and the order_code in the request body.
- * Returns a single CompositeOrder object or throws an error if the response is not OK.
+ * Returns a single CompositeOrder object or throws an error if the response fails.
  */
 export async function getCompositeOrder(token: string, orderCode: string): Promise<CompositeOrder> {
-  const url = "https://dev.thejamb.com/composite-order/get";
+  const endpointUrl = "https://dev.thejamb.com/composite-order/get";
 
-  const resp = await fetch(url, {
+  const response = await fetch(endpointUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -97,43 +96,42 @@ export async function getCompositeOrder(token: string, orderCode: string): Promi
     }),
   });
 
-  if (!resp.ok) {
-    if (resp.status === 400) {
-      const errData = await resp.json();
-      throw new Error(errData.error || "Token or order code required (400)");
+  if (!response.ok) {
+    if (response.status === 400) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Token or order code required (400)");
     }
-    if (resp.status === 404) {
-      const errData = await resp.json();
-      const message = Array.isArray(errData.errors)
-        ? errData.errors.join(", ")
+    if (response.status === 404) {
+      const errorData = await response.json();
+      const errorMessage = Array.isArray(errorData.errors)
+        ? errorData.errors.join(", ")
         : "User or order not found";
-      throw new Error(message || "Not found (404)");
+      throw new Error(errorMessage || "Not found (404)");
     }
-    if (resp.status === 500) {
-      const errData = await resp.json();
-      throw new Error(errData.error || "Internal server error (500)");
+    if (response.status === 500) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Internal server error (500)");
     }
-    throw new Error(`Request failed with status ${resp.status}`);
+    throw new Error(`Request failed with status ${response.status}`);
   }
 
-  const data = await resp.json();
-  return data as CompositeOrder;
+  const responseData = await response.json();
+  return responseData as CompositeOrder;
 }
 
 /**
  * deleteCompositeOrder(token: string, orderCode: string):
- * Sends a POST request to https://dev.thejamb.com/composite-order/delete
- * including the user's token and the order_code in the request body.
- * If successful, returns an object like { status: "Order deleted" }.
- * Otherwise, throws an error according to the status code.
+ * Sends a POST request to https://dev.thejamb.com/composite-order/delete,
+ * including the user's token and order_code. If successful, returns
+ * an object like { status: "Order deleted" }. Otherwise, throws an error.
  */
 export async function deleteCompositeOrder(
   token: string,
   orderCode: string
 ): Promise<{ status: string }> {
-  const url = "https://dev.thejamb.com/composite-order/delete";
+  const endpointUrl = "https://dev.thejamb.com/composite-order/delete";
 
-  const resp = await fetch(url, {
+  const response = await fetch(endpointUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -142,32 +140,32 @@ export async function deleteCompositeOrder(
     }),
   });
 
-  if (!resp.ok) {
-    if (resp.status === 400) {
-      const errData = await resp.json();
-      throw new Error(errData.error || "Token or order code required (400)");
+  if (!response.ok) {
+    if (response.status === 400) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Token or order code required (400)");
     }
-    if (resp.status === 404) {
-      const errData = await resp.json();
-      const message = Array.isArray(errData.errors)
-        ? errData.errors.join(", ")
+    if (response.status === 404) {
+      const errorData = await response.json();
+      const errorMessage = Array.isArray(errorData.errors)
+        ? errorData.errors.join(", ")
         : "User or order not found";
-      throw new Error(message || "Not found (404)");
+      throw new Error(errorMessage || "Not found (404)");
     }
-    if (resp.status === 500) {
-      const errData = await resp.json();
-      throw new Error(errData.error || "Internal server error (500)");
+    if (response.status === 500) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Internal server error (500)");
     }
-    throw new Error(`Request failed with status ${resp.status}`);
+    throw new Error(`Request failed with status ${response.status}`);
   }
 
-  const data = await resp.json();
-  return data as { status: string };
+  const responseData = await response.json();
+  return responseData as { status: string };
 }
 
 /**
  * This interface defines the payload structure for creating a new composite order
- * via /composite-order/create. It should match the API requirements.
+ * via /composite-order/create. It should align with the API requirements.
  */
 export interface CreateCompositeOrderPayload {
   zipcode: string;
@@ -210,40 +208,40 @@ export interface CreateCompositeOrderPayload {
 /**
  * createCompositeOrder(orderData: CreateCompositeOrderPayload):
  * Sends a POST request to https://dev.thejamb.com/composite-order/create
- * with a JSON body that includes user_token, common, works, and related fields.
- * Returns an object with { message, order_code } if successful,
- * otherwise throws an error based on the status code.
+ * with a JSON body containing user_token, common, works, and related fields.
+ * Returns an object { message, order_code } if successful,
+ * or throws an error based on the status code.
  */
 export async function createCompositeOrder(
   orderData: CreateCompositeOrderPayload
 ): Promise<{ message: string; order_code: string }> {
-  const url = "https://dev.thejamb.com/composite-order/create";
+  const endpointUrl = "https://dev.thejamb.com/composite-order/create";
 
-  const resp = await fetch(url, {
+  const response = await fetch(endpointUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(orderData),
   });
 
-  if (!resp.ok) {
-    if (resp.status === 400) {
-      const errData = await resp.json();
-      // Example: { "errors": ["User not found", "Invalid work data"] }
-      // We combine them into a single error message if it's an array:
-      if (Array.isArray(errData.errors)) {
-        throw new Error(errData.errors.join(", "));
+  if (!response.ok) {
+    if (response.status === 400) {
+      const errorData = await response.json();
+      // For example: { "errors": ["User not found", "Invalid work data"] }
+      if (Array.isArray(errorData.errors)) {
+        // Combine array of errors into one message
+        throw new Error(errorData.errors.join(", "));
       }
-      // Or if there's a single error
-      throw new Error(errData.errors || "Bad request (400)");
+      throw new Error(errorData.errors || "Bad request (400)");
     }
-    if (resp.status === 500) {
-      const errData = await resp.json();
-      throw new Error(errData.error || "Internal server error (500)");
+    if (response.status === 500) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Internal server error (500)");
     }
-    throw new Error(`Request failed with status ${resp.status}`);
+    throw new Error(`Request failed with status ${response.status}`);
   }
 
-  // If 200, we expect { "message": "...", "order_code": "..." }
-  const data = await resp.json();
-  return data as { message: string; order_code: string };
+  // If the status is 200, we expect something like:
+  // { "message": "Composite order created successfully.", "order_code": "20250212-1" }
+  const responseData = await response.json();
+  return responseData as { message: string; order_code: string };
 }

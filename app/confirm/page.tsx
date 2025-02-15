@@ -7,31 +7,28 @@ export default function ConfirmPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Attempt to read the user's email from the query string, e.g. ?email=user@example.com
+  // Attempt to read ?email=... and ?next=... from the URL
   const emailFromQuery = searchParams.get("email") || "";
+  const nextUrl = searchParams.get("next") || "";
+
   const [email, setEmail] = useState(emailFromQuery);
 
-  // We store 6 code digits. Each position corresponds to an input field.
+  // 6 code digits
   const [codeDigits, setCodeDigits] = useState(["", "", "", "", "", ""]);
-
-  // We'll keep refs for each of our 6 input fields so we can programmatically focus them.
   const inputRefs = useRef<HTMLInputElement[]>([]);
 
-  // Focus on the first input field on component mount, if it exists.
+  // On mount => focus the first input
   useEffect(() => {
     inputRefs.current[0]?.focus();
   }, []);
 
-  // Handle single-digit changes. Only allow numeric characters, and move focus to the next field if possible.
+  // handleChangeDigit => numeric only, 1 char, auto-focus next
   function handleChangeDigit(index: number, rawValue: string) {
-    // Only keep numeric input; limit to 1 character.
     const cleanValue = rawValue.replace(/\D/g, "").slice(0, 1);
-
     const updated = [...codeDigits];
     updated[index] = cleanValue;
     setCodeDigits(updated);
 
-    // If a digit was entered, jump to the next input if we're not at the last one.
     if (cleanValue && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
@@ -49,7 +46,7 @@ export default function ConfirmPage() {
     }
 
     try {
-      // Example endpoint: local Next.js route => /api/user/confirm
+      // local route => /api/user/confirm
       const res = await fetch("/api/user/confirm", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -58,8 +55,13 @@ export default function ConfirmPage() {
 
       if (res.ok) {
         alert("User activated successfully!");
-        // After successful activation, go to profile
-        router.push("/profile");
+
+        // after success => we push to login with the same next param
+        let loginUrl = "/login";
+        if (nextUrl) {
+          loginUrl += `?next=${encodeURIComponent(nextUrl)}`;
+        }
+        router.push(loginUrl);
       } else if (res.status === 404) {
         const data = await res.json();
         alert(`User not found: ${data.error}`);
@@ -75,14 +77,12 @@ export default function ConfirmPage() {
     }
   }
 
-  // Allows the user to request a new code (e.g., if the code is expired or lost).
   async function handleResendCode() {
     if (!email.trim()) {
       alert("Email is required.");
       return;
     }
     try {
-      // Example endpoint: local Next.js => /api/user/resend-activation
       const res = await fetch("/api/user/resend-activation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -133,7 +133,7 @@ export default function ConfirmPage() {
               value={digit}
               onChange={(e) => handleChangeDigit(index, e.target.value)}
               onKeyDown={(e) => {
-                // If user presses Backspace on an empty field, move focus to the previous field.
+                // if backspace on empty => go prev
                 if (e.key === "Backspace" && !digit && index > 0) {
                   e.preventDefault();
                   const updated = [...codeDigits];

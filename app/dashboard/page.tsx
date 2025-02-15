@@ -6,6 +6,9 @@ import React, { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
+/**
+ * Returns a greeting based on current hour.
+ */
 function getGreeting(): string {
   const hour = new Date().getHours();
   if (hour < 12) return "Good morning";
@@ -13,6 +16,10 @@ function getGreeting(): string {
   return "Good evening";
 }
 
+/**
+ * Represents one composite order from the API.
+ * Adjust fields and types according to your actual backend response.
+ */
 interface CompositeOrder {
   id: number;
   code: string;
@@ -53,32 +60,46 @@ interface CompositeOrder {
 export default function OrdersPage() {
   const router = useRouter();
 
-  // Token and user info
+  // Greeting state (computed once on mount)
+  const [greetingText, setGreetingText] = useState("");
+
+  // Token & user info from sessionStorage
   const [token, setToken] = useState("");
   const [userName, setUserName] = useState("");
   const [hasName, setHasName] = useState(false);
 
-  // Tab state => "saved" by default
+  // Current tab => "saved" by default
   const [tab, setTab] = useState<"saved" | "active" | "past">("saved");
 
-  // Orders data
+  // Orders and UI states for "saved" tab
   const [savedOrders, setSavedOrders] = useState<CompositeOrder[] | null>(null);
   const [savedLoading, setSavedLoading] = useState(false);
   const [savedError, setSavedError] = useState<string | null>(null);
 
-  // Sort state
+  // Sorting
   const [sortColumn, setSortColumn] = useState<"code" | "cost" | "date" | null>(null);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
-  // "Soft-delete" logic
+  // Soft-delete behavior
   const [pendingDelete, setPendingDelete] = useState<number | null>(null);
   const deleteTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Expand/collapse logic
+  // Expand/collapse details
   const [expandedOrderCode, setExpandedOrderCode] = useState<string | null>(null);
   const [expandedOrderDetails, setExpandedOrderDetails] = useState<CompositeOrder | null>(null);
 
-  // On mount, check token, user info
+  /**
+   * On first mount, compute the greeting text once.
+   */
+  useEffect(() => {
+    const msg = getGreeting();
+    setGreetingText(msg);
+  }, []);
+
+  /**
+   * On mount, check for an auth token in sessionStorage; if none => redirect to /login.
+   * Also parse user profile (if available) to get the user's name.
+   */
   useEffect(() => {
     const storedToken = sessionStorage.getItem("authToken");
     if (!storedToken) {
@@ -102,30 +123,30 @@ export default function OrdersPage() {
     }
   }, [router]);
 
-  // When tab === "saved" && token => try to load from sessionStorage => if no data => fetch
+  /**
+   * When the user selects the "saved" tab and we have a token:
+   * 1) Read any cached orders from sessionStorage (if available) and set them immediately.
+   * 2) Always fetch fresh data from the server (so we have the latest updates).
+   */
   useEffect(() => {
     if (tab === "saved" && token) {
       const cached = sessionStorage.getItem("savedOrders");
       if (cached) {
         try {
           const parsed = JSON.parse(cached) as CompositeOrder[];
-          setSavedOrders(parsed);
-          // Optionally, we can skip fetch if we trust this data is fresh enough
-          // If you want to ALWAYS trust cache => return here
-          // return;
+          setSavedOrders(parsed); // display cached data first
         } catch (err) {
           console.error("Failed to parse savedOrders from sessionStorage:", err);
         }
       }
-      // If we want to refresh anyway, call fetch
-      // If you trust the cache fully, only do fetch if there's no cached data
-      if (!cached) {
-        fetchSavedOrders(token);
-      }
+      // Always fetch from the server to ensure we get the newest data
+      fetchSavedOrders(token);
     }
   }, [tab, token]);
 
-  // Actually fetch from /api/orders/list
+  /**
+   * Fetch saved orders from the server, store them in state and sessionStorage.
+   */
   async function fetchSavedOrders(userToken: string) {
     try {
       setSavedLoading(true);
@@ -146,7 +167,7 @@ export default function OrdersPage() {
       const data = await resp.json();
       setSavedOrders(data);
 
-      // Store in session storage for reuse
+      // Also store in sessionStorage for quick retrieval
       sessionStorage.setItem("savedOrders", JSON.stringify(data));
     } catch (error: any) {
       console.error("Error fetching saved orders:", error);
@@ -156,9 +177,14 @@ export default function OrdersPage() {
     }
   }
 
-  // If user expands the same code => collapse, else fetch details
+  /**
+   * Expand/collapse order details:
+   * - If the user clicks the same order again, collapse it.
+   * - Otherwise, fetch details from /api/orders/get, store them in state.
+   */
   async function handleGetOrderDetails(orderCode: string) {
     if (expandedOrderCode === orderCode) {
+      // Collapse if already expanded
       setExpandedOrderCode(null);
       setExpandedOrderDetails(null);
       return;
@@ -166,7 +192,6 @@ export default function OrdersPage() {
 
     try {
       console.log("Fetching details for order code:", orderCode);
-
       const resp = await fetch("/api/orders/get", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -183,14 +208,16 @@ export default function OrdersPage() {
 
       setExpandedOrderCode(orderCode);
       setExpandedOrderDetails(orderDetails);
-
     } catch (error: any) {
       console.error("Error getting order details:", error);
       alert("Error getting details: " + error.message);
     }
   }
 
-  // Soft-delete approach
+  /**
+   * Initiate a soft-delete: ask for confirmation, then start a 5-second timer.
+   * If the user doesn't undo within 5 seconds, we call handleDeleteOrder().
+   */
   function initiateDeleteOrder(orderId: number, orderCode: string) {
     if (pendingDelete === orderId) {
       return;
@@ -200,15 +227,23 @@ export default function OrdersPage() {
       return;
     }
     setPendingDelete(orderId);
+
+    // Clear any previous timer
     if (deleteTimeoutRef.current) {
       clearTimeout(deleteTimeoutRef.current);
     }
+
+    // Start a new timer => after 5 seconds, actually delete
     deleteTimeoutRef.current = setTimeout(() => {
       handleDeleteOrder(orderCode);
       setPendingDelete(null);
     }, 5000);
   }
 
+  /**
+   * If the user clicks "Undo" before the 5-second timer,
+   * clear the timer and reset pendingDelete.
+   */
   function undoDelete() {
     if (deleteTimeoutRef.current) {
       clearTimeout(deleteTimeoutRef.current);
@@ -216,6 +251,10 @@ export default function OrdersPage() {
     setPendingDelete(null);
   }
 
+  /**
+   * Actually delete the order by calling /api/orders/delete,
+   * then refresh the saved orders list.
+   */
   async function handleDeleteOrder(orderCode: string) {
     try {
       console.log("Deleting order code:", orderCode);
@@ -235,8 +274,7 @@ export default function OrdersPage() {
       console.log("Delete result:", result);
       alert(`Order ${orderCode} deleted!`);
 
-      // Refresh => so our local data is up to date
-      // or we can manually remove from savedOrders, then update sessionStorage
+      // After deletion, fetch the updated list
       await fetchSavedOrders(token);
     } catch (error: any) {
       console.error("Error deleting order:", error);
@@ -244,7 +282,10 @@ export default function OrdersPage() {
     }
   }
 
-  // Sorting logic
+  /**
+   * Handle sorting: if user clicks the same column again, toggle asc/desc.
+   * Otherwise, sort in ascending order first.
+   */
   function handleSort(column: "code" | "cost" | "date") {
     if (sortColumn === column) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
@@ -254,6 +295,9 @@ export default function OrdersPage() {
     }
   }
 
+  /**
+   * Sort the saved orders (if any) based on sortColumn and sortDirection.
+   */
   function getSortedOrders(): CompositeOrder[] {
     if (!savedOrders) return [];
     if (!sortColumn) return savedOrders;
@@ -283,7 +327,7 @@ export default function OrdersPage() {
     return arr;
   }
 
-  const greetingText = getGreeting();
+  // Sorted array of saved orders (based on user's chosen sorting)
   const sortedSavedOrders = getSortedOrders();
   const savedCount = savedOrders ? savedOrders.length : 0;
 
@@ -320,7 +364,8 @@ export default function OrdersPage() {
             className={`px-3 py-2 rounded 
               ${tab === "saved" ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-100"}`}
           >
-            Saved {savedCount > 0 && (
+            Saved{" "}
+            {savedCount > 0 && (
               <span className="ml-1 bg-blue-600 text-white rounded-full px-2 py-0.5 text-xs">
                 {savedCount}
               </span>
@@ -356,7 +401,7 @@ export default function OrdersPage() {
           </div>
         )}
 
-        {/* SAVED tab => table */}
+        {/* SAVED tab => show the table of saved orders */}
         {tab === "saved" && (
           <div>
             {savedLoading && <p>Loading saved orders...</p>}
@@ -379,12 +424,11 @@ export default function OrdersPage() {
                         >
                           Order #
                           {sortColumn === "code" && (
-                            <span>
-                              {sortDirection === "asc" ? "▲" : "▼"}
-                            </span>
+                            <span>{sortDirection === "asc" ? "▲" : "▼"}</span>
                           )}
                         </button>
                       </th>
+
                       {/* Cost column */}
                       <th className="py-2 px-3 text-left">
                         <button
@@ -393,12 +437,11 @@ export default function OrdersPage() {
                         >
                           Total Price
                           {sortColumn === "cost" && (
-                            <span>
-                              {sortDirection === "asc" ? "▲" : "▼"}
-                            </span>
+                            <span>{sortDirection === "asc" ? "▲" : "▼"}</span>
                           )}
                         </button>
                       </th>
+
                       {/* Date column */}
                       <th className="py-2 px-3 text-left">
                         <button
@@ -407,12 +450,11 @@ export default function OrdersPage() {
                         >
                           Start Date
                           {sortColumn === "date" && (
-                            <span>
-                              {sortDirection === "asc" ? "▲" : "▼"}
-                            </span>
+                            <span>{sortDirection === "asc" ? "▲" : "▼"}</span>
                           )}
                         </button>
                       </th>
+
                       {/* Actions column => hidden on mobile */}
                       <th className="py-2 px-3 text-right hidden sm:table-cell">
                         Actions
@@ -421,6 +463,7 @@ export default function OrdersPage() {
                   </thead>
                   <tbody>
                     {sortedSavedOrders.map((order) => {
+                      // Calculate total cost (subtotal + tax)
                       const totalAmount = (
                         parseFloat(order.subtotal) + parseFloat(order.tax_amount)
                       ).toFixed(2);
@@ -464,6 +507,7 @@ export default function OrdersPage() {
                             </td>
                           </tr>
 
+                          {/* Expanded row for order details */}
                           {isExpanded && (
                             <tr className="bg-gray-50">
                               <td colSpan={4} className="p-4 text-sm text-gray-700">
@@ -492,7 +536,7 @@ export default function OrdersPage() {
                                   ))}
                                 </ul>
 
-                                {/* Mobile Delete button => block on mobile, hidden on desktop */}
+                                {/* Mobile-only Delete button */}
                                 <div className="mt-4 block sm:hidden">
                                   {isPendingDelete ? (
                                     <div className="text-red-600 flex items-center gap-2">
@@ -506,7 +550,9 @@ export default function OrdersPage() {
                                     </div>
                                   ) : (
                                     <button
-                                      onClick={() => initiateDeleteOrder(order.id, order.code)}
+                                      onClick={() =>
+                                        initiateDeleteOrder(order.id, order.code)
+                                      }
                                       className="bg-red-600 text-white px-4 py-2 text-sm rounded hover:bg-red-700"
                                     >
                                       Delete

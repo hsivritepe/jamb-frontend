@@ -2140,7 +2140,7 @@
                 "22.7.7": {
                   "activity": "Outdoor Pool Opening",
                   "description": "Opening of the outdoor pool for the summer season. This service includes uncovering the pool, plumbing system preparation, water treatment, and system testing. Includes comprehensive labor, rough materials, and necessary equipment usage. Ensures the pool is ready for use.",
-                  "unit_of_measurement": "sq ft"
+                  "unit_of_measurement": "each"
                 }
               }
             },
