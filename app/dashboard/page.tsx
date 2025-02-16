@@ -5,12 +5,8 @@ export const dynamic = "force-dynamic";
 import React, { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-
 import ExpandedOrderRow from "./ExpandedOrderRow";
 
-/**
- * Returns a greeting based on the current hour.
- */
 function getGreeting(): string {
   const hour = new Date().getHours();
   if (hour < 12) return "Good morning";
@@ -18,10 +14,6 @@ function getGreeting(): string {
   return "Good evening";
 }
 
-/**
- * Represents one composite order from the API.
- * Adjust fields and types according to your actual backend response.
- */
 interface CompositeOrder {
   id: number;
   code: string;
@@ -29,6 +21,10 @@ interface CompositeOrder {
   user_token: string;
   zipcode: string;
   subtotal: string;
+  service_fee_on_labor: string;
+  service_fee_on_materials: string;
+  payment_type: string;
+  payment_coefficient: string;
   tax_rate: string;
   tax_amount: string;
   common: {
@@ -37,21 +33,23 @@ interface CompositeOrder {
     description: string;
     selected_date: string;
     date_coefficient: string;
+    photos: string[];
   };
   works: Array<{
     id: number;
     type: string;
     code: string;
+    name: string;
+    photo: string;
+    description: string;
     unit_of_measurement: string;
     work_count: string;
-    service_fee_on_labor: string;
-    service_fee_on_materials: string;
-    payment_type: string;
-    payment_coefficient: string;
     total: string;
     materials: Array<{
       id: number;
       external_id: string;
+      name: string;
+      photo: string;
       quantity: number;
       cost_per_unit: string;
       cost: string;
@@ -100,7 +98,7 @@ export default function OrdersPage() {
 
   /**
    * On mount, check for an auth token in sessionStorage; if missing => go to /login.
-   * Also parse user profile (if found) to get the user's name for greeting.
+   * Also parse user profile (if found) to get the user's name.
    */
   useEffect(() => {
     const storedToken = sessionStorage.getItem("authToken");
@@ -120,15 +118,15 @@ export default function OrdersPage() {
           setHasName(true);
         }
       } catch (err) {
-        console.warn("Failed to parse profileData in Orders:", err);
+        console.warn("Failed to parse profileData:", err);
       }
     }
   }, [router]);
 
   /**
-   * When the user selects the "saved" tab and we have a token:
-   * 1) Read any cached orders from sessionStorage (if available) and display them immediately.
-   * 2) Always fetch from server so we have the latest data.
+   * If user selects "saved" tab and we have a token:
+   * 1) Load any cached orders from sessionStorage
+   * 2) Always fetch fresh data from the server
    */
   useEffect(() => {
     if (tab === "saved" && token) {
@@ -138,10 +136,10 @@ export default function OrdersPage() {
           const parsed = JSON.parse(cached) as CompositeOrder[];
           setSavedOrders(parsed);
         } catch (err) {
-          console.error("Failed to parse savedOrders from sessionStorage:", err);
+          console.error("Failed to parse savedOrders:", err);
         }
       }
-      // Always fetch fresh data
+      // Always fetch new data
       fetchSavedOrders(token);
     }
   }, [tab, token]);
@@ -168,8 +166,6 @@ export default function OrdersPage() {
 
       const data = await resp.json();
       setSavedOrders(data);
-
-      // Cache in sessionStorage
       sessionStorage.setItem("savedOrders", JSON.stringify(data));
     } catch (error: any) {
       console.error("Error fetching saved orders:", error);
@@ -181,8 +177,8 @@ export default function OrdersPage() {
 
   /**
    * Expand/collapse order details:
-   * 1) If we click the same code again => collapse,
-   * 2) Otherwise => fetch details from /api/orders/get, then expand.
+   * - If already expanded, collapse
+   * - Else fetch from /api/orders/get and expand
    */
   async function handleGetOrderDetails(orderCode: string) {
     if (expandedOrderCode === orderCode) {
@@ -217,20 +213,18 @@ export default function OrdersPage() {
    * Initiate a soft-delete with a 5-second undo window.
    */
   function initiateDeleteOrder(orderId: number, orderCode: string) {
-    if (pendingDelete === orderId) {
-      return;
-    }
+    if (pendingDelete === orderId) return;
+
     const confirmMsg = `Are you sure you want to delete order ${orderCode}? You will have 5 seconds to undo.`;
-    if (!window.confirm(confirmMsg)) {
-      return;
-    }
+    if (!window.confirm(confirmMsg)) return;
+
     setPendingDelete(orderId);
 
     // Clear any previous timer
     if (deleteTimeoutRef.current) {
       clearTimeout(deleteTimeoutRef.current);
     }
-    // Start new timer => 5s => call handleDeleteOrder
+    // Start new timer => 5s => finalize delete
     deleteTimeoutRef.current = setTimeout(() => {
       handleDeleteOrder(orderCode);
       setPendingDelete(null);
@@ -248,7 +242,7 @@ export default function OrdersPage() {
   }
 
   /**
-   * Actually delete the order by calling /api/orders/delete, then refresh the list.
+   * Actually delete the order by calling /api/orders/delete, then refresh.
    */
   async function handleDeleteOrder(orderCode: string) {
     try {
@@ -263,11 +257,9 @@ export default function OrdersPage() {
         throw new Error(errData.error || "Failed to delete order");
       }
 
-      const result = await resp.json();
+      await resp.json();
       alert(`Order ${orderCode} deleted!`);
-
-      // Refresh the list
-      await fetchSavedOrders(token);
+      fetchSavedOrders(token);
     } catch (error: any) {
       console.error("Error deleting order:", error);
       alert("Error deleting order: " + error.message);
@@ -275,7 +267,7 @@ export default function OrdersPage() {
   }
 
   /**
-   * Handle sorting logic. If user clicks the same column => toggle asc/desc.
+   * Handle sorting. If user clicks the same column again, toggle asc/desc.
    */
   function handleSort(column: "code" | "cost" | "date") {
     if (sortColumn === column) {
@@ -287,7 +279,7 @@ export default function OrdersPage() {
   }
 
   /**
-   * Returns the sorted list of orders based on the chosen column and direction.
+   * Returns the sorted list of orders.
    */
   function getSortedOrders(): CompositeOrder[] {
     if (!savedOrders) return [];
@@ -302,10 +294,9 @@ export default function OrdersPage() {
       } else if (sortColumn === "cost") {
         const costA = parseFloat(a.subtotal) + parseFloat(a.tax_amount);
         const costB = parseFloat(b.subtotal) + parseFloat(b.tax_amount);
-        if (costA < costB) return sortDirection === "asc" ? -1 : 1;
-        if (costA > costB) return sortDirection === "asc" ? 1 : -1;
-        return 0;
+        return sortDirection === "asc" ? costA - costB : costB - costA;
       } else if (sortColumn === "date") {
+        // compare date strings
         const dateA = a.common.selected_date;
         const dateB = b.common.selected_date;
         if (dateA < dateB) return sortDirection === "asc" ? -1 : 1;
@@ -314,11 +305,10 @@ export default function OrdersPage() {
       }
       return 0;
     });
-
     return arr;
   }
 
-  // Get the sorted array for display
+  // Final sorted list for rendering
   const sortedSavedOrders = getSortedOrders();
   const savedCount = savedOrders ? savedOrders.length : 0;
 
@@ -392,7 +382,7 @@ export default function OrdersPage() {
           </div>
         )}
 
-        {/* SAVED tab => show the table of saved orders */}
+        {/* SAVED tab => show table of saved orders */}
         {tab === "saved" && (
           <div>
             {savedLoading && <p>Loading saved orders...</p>}
@@ -404,11 +394,10 @@ export default function OrdersPage() {
 
             {!savedLoading && !savedError && sortedSavedOrders.length > 0 && (
               <div className="overflow-x-auto">
-                <table className="w-full table-auto border-collapse">
+                <table className="table-fixed w-full border-collapse">
                   <thead className="bg-gray-100 text-gray-700 text-sm">
                     <tr>
-                      {/* Code column */}
-                      <th className="py-2 px-3 text-left">
+                      <th className="w-1/3 py-2 px-2 text-left sm:w-1/4 sm:px-3">
                         <button
                           className="flex items-center gap-1"
                           onClick={() => handleSort("code")}
@@ -419,9 +408,7 @@ export default function OrdersPage() {
                           )}
                         </button>
                       </th>
-
-                      {/* Cost column */}
-                      <th className="py-2 px-3 text-left">
+                      <th className="w-1/3 py-2 px-0 text-left sm:w-1/4 sm:px-3">
                         <button
                           className="flex items-center gap-1"
                           onClick={() => handleSort("cost")}
@@ -432,9 +419,7 @@ export default function OrdersPage() {
                           )}
                         </button>
                       </th>
-
-                      {/* Date column */}
-                      <th className="py-2 px-3 text-left">
+                      <th className="w-1/3 py-2 px-0 text-left sm:w-1/4 sm:px-3">
                         <button
                           className="flex items-center gap-1"
                           onClick={() => handleSort("date")}
@@ -445,16 +430,13 @@ export default function OrdersPage() {
                           )}
                         </button>
                       </th>
-
-                      {/* Actions column => hidden on mobile */}
-                      <th className="py-2 px-3 text-right hidden sm:table-cell">
+                      <th className="hidden sm:table-cell w-1/4 py-2 px-3 text-right">
                         Actions
                       </th>
                     </tr>
                   </thead>
                   <tbody>
                     {sortedSavedOrders.map((order) => {
-                      // Calculate and format total cost
                       const totalNum = parseFloat(order.subtotal) + parseFloat(order.tax_amount);
                       const totalFormatted = totalNum.toLocaleString("en-US", {
                         style: "currency",
@@ -466,28 +448,26 @@ export default function OrdersPage() {
 
                       return (
                         <React.Fragment key={order.id}>
-                          <tr
-                            className={
-                              isExpanded
-                                ? "text-sm text-gray-700" // no bottom border if expanded
-                                : "border-b text-sm text-gray-700"
-                            }
-                          >
-                            <td className="py-2 px-3">
+                          <tr className="border-b text-sm text-gray-700">
+                            <td className="w-1/3 py-2 px-2 sm:w-1/4 sm:px-3">
                               <span
                                 onClick={() => handleGetOrderDetails(order.code)}
                                 className={
                                   isExpanded
-                                    ? "text-blue-600 font-medium cursor-pointer underline"
+                                    ? "text-red-600 font-medium cursor-pointer underline"
                                     : "text-blue-600 font-medium cursor-pointer hover:underline"
                                 }
                               >
                                 {order.code}
                               </span>
                             </td>
-                            <td className="py-2 px-3">{totalFormatted}</td>
-                            <td className="py-2 px-3">{order.common.selected_date}</td>
-                            <td className="py-2 px-3 text-right hidden sm:table-cell">
+                            <td className="w-1/3 py-2 px-0 sm:w-1/4 sm:px-3">
+                              {totalFormatted}
+                            </td>
+                            <td className="w-1/3 py-2 px-0 sm:w-1/4 sm:px-3">
+                              {order.common.selected_date}
+                            </td>
+                            <td className="hidden sm:table-cell w-1/4 py-2 px-3 text-right">
                               {isPendingDelete ? (
                                 <div className="text-red-600 flex items-center gap-2 justify-end">
                                   <span>Deleting...</span>
@@ -510,7 +490,6 @@ export default function OrdersPage() {
                             </td>
                           </tr>
 
-                          {/* Expanded details row + divider below details */}
                           {isExpanded && expandedOrderDetails && (
                             <>
                               <ExpandedOrderRow
