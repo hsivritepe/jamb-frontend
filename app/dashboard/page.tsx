@@ -7,9 +7,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ExpandedOrderRow from "./ExpandedOrderRow";
 
-/**
- * Returns a greeting based on the current hour.
- */
 function getGreeting(): string {
   const hour = new Date().getHours();
   if (hour < 12) return "Good morning";
@@ -17,9 +14,6 @@ function getGreeting(): string {
   return "Good evening";
 }
 
-/**
- * Updated interface matching your server's response.
- */
 interface CompositeOrder {
   id: number;
   code: string;
@@ -39,6 +33,7 @@ interface CompositeOrder {
     description: string;
     selected_date: string;
     date_coefficient: string;
+    photos: string[];
   };
   works: Array<{
     id: number;
@@ -399,15 +394,9 @@ export default function OrdersPage() {
 
             {!savedLoading && !savedError && sortedSavedOrders.length > 0 && (
               <div className="overflow-x-auto">
-                {/*
-                  Use table-fixed so widths come from <th>.
-                  We'll show 3 equal columns on mobile, each w-1/3 with px-0,
-                  and 4 columns on sm+ screens, each w-1/4 with px-3.
-                */}
                 <table className="table-fixed w-full border-collapse">
                   <thead className="bg-gray-100 text-gray-700 text-sm">
                     <tr>
-                      {/* 1st column: Order # */}
                       <th className="w-1/3 py-2 px-2 text-left sm:w-1/4 sm:px-3">
                         <button
                           className="flex items-center gap-1"
@@ -419,8 +408,6 @@ export default function OrdersPage() {
                           )}
                         </button>
                       </th>
-
-                      {/* 2nd column: Total Price */}
                       <th className="w-1/3 py-2 px-0 text-left sm:w-1/4 sm:px-3">
                         <button
                           className="flex items-center gap-1"
@@ -432,8 +419,6 @@ export default function OrdersPage() {
                           )}
                         </button>
                       </th>
-
-                      {/* 3rd column: Start Date */}
                       <th className="w-1/3 py-2 px-0 text-left sm:w-1/4 sm:px-3">
                         <button
                           className="flex items-center gap-1"
@@ -445,11 +430,6 @@ export default function OrdersPage() {
                           )}
                         </button>
                       </th>
-
-                      {/*
-                        4th column: Actions (hidden on mobile; visible on sm+).
-                        We set w-1/4 here so on desktop we have 4 equal columns.
-                      */}
                       <th className="hidden sm:table-cell w-1/4 py-2 px-3 text-right">
                         Actions
                       </th>
@@ -457,7 +437,6 @@ export default function OrdersPage() {
                   </thead>
                   <tbody>
                     {sortedSavedOrders.map((order) => {
-                      // Calculate total cost
                       const totalNum = parseFloat(order.subtotal) + parseFloat(order.tax_amount);
                       const totalFormatted = totalNum.toLocaleString("en-US", {
                         style: "currency",
@@ -470,37 +449,24 @@ export default function OrdersPage() {
                       return (
                         <React.Fragment key={order.id}>
                           <tr className="border-b text-sm text-gray-700">
-                            {/*
-                              1st column: Order #
-                              On mobile => w-1/3 px-0
-                              On desktop => w-1/4 px-3
-                            */}
-                            <td className="w-1/3 py-2 px-0 sm:w-1/4 sm:px-3">
+                            <td className="w-1/3 py-2 px-2 sm:w-1/4 sm:px-3">
                               <span
                                 onClick={() => handleGetOrderDetails(order.code)}
                                 className={
                                   isExpanded
-                                    ? "text-blue-600 font-medium cursor-pointer underline"
+                                    ? "text-red-600 font-medium cursor-pointer underline"
                                     : "text-blue-600 font-medium cursor-pointer hover:underline"
                                 }
                               >
                                 {order.code}
                               </span>
                             </td>
-
-                            {/* 2nd column: Total Price */}
                             <td className="w-1/3 py-2 px-0 sm:w-1/4 sm:px-3">
                               {totalFormatted}
                             </td>
-
-                            {/* 3rd column: Start Date */}
                             <td className="w-1/3 py-2 px-0 sm:w-1/4 sm:px-3">
                               {order.common.selected_date}
                             </td>
-
-                            {/*
-                              4th column: Actions (only visible on sm+).
-                            */}
                             <td className="hidden sm:table-cell w-1/4 py-2 px-3 text-right">
                               {isPendingDelete ? (
                                 <div className="text-red-600 flex items-center gap-2 justify-end">
@@ -524,7 +490,6 @@ export default function OrdersPage() {
                             </td>
                           </tr>
 
-                          {/* Expanded details row + optional divider */}
                           {isExpanded && expandedOrderDetails && (
                             <>
                               <ExpandedOrderRow
@@ -534,7 +499,6 @@ export default function OrdersPage() {
                                 onDeleteOrder={(id, code) => initiateDeleteOrder(id, code)}
                               />
                               <tr>
-                                {/* Use colSpan=4 to span all columns (including hidden one) */}
                                 <td colSpan={4} className="border-b"></td>
                               </tr>
                             </>

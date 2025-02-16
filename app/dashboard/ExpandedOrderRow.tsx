@@ -21,6 +21,7 @@ interface CompositeOrder {
     description: string;
     selected_date: string;
     date_coefficient: string;
+    photos: string[];
   };
   works: Array<{
     id: number;
@@ -44,14 +45,12 @@ interface CompositeOrder {
   }>;
 }
 
-
 interface ExpandedOrderRowProps {
-  order: CompositeOrder;                  
-  isPendingDelete: boolean;             
-  undoDelete: () => void;        
+  order: CompositeOrder;
+  isPendingDelete: boolean;
+  undoDelete: () => void;
   onDeleteOrder: (orderId: number, orderCode: string) => void;
 }
-
 
 export default function ExpandedOrderRow({
   order,
@@ -59,95 +58,219 @@ export default function ExpandedOrderRow({
   undoDelete,
   onDeleteOrder,
 }: ExpandedOrderRowProps) {
+  /************************************************
+   * 1) Calculate overall labor/materials for entire order
+   ************************************************/
+  const sumWorksTotals = order.works.reduce((acc, w) => acc + parseFloat(w.total), 0);
+  const sumMaterialsCost = order.works.reduce((acc, w) => {
+    const sumMats = w.materials.reduce((mAcc, mat) => mAcc + parseFloat(mat.cost), 0);
+    return acc + sumMats;
+  }, 0);
+
+  // Overall labor total for the entire order
+  const laborTotal = sumWorksTotals - sumMaterialsCost;
+
+  // Surcharge/Discount logic
+  const dateCoefficient = parseFloat(order.common.date_coefficient) || 1;
+  const surchargeOrDiscountValue = laborTotal * dateCoefficient - laborTotal;
+  let surchargeOrDiscountLabel = "";
+  if (dateCoefficient > 1) {
+    surchargeOrDiscountLabel = "Surcharge";
+  } else if (dateCoefficient < 1) {
+    surchargeOrDiscountLabel = "Discount";
+  } else {
+    surchargeOrDiscountLabel = "Surcharge/Discount (none)";
+  }
+
+  // Fees, subtotal, taxes, total
+  const serviceFeeOnLabor = parseFloat(order.service_fee_on_labor || "0");
+  const serviceFeeOnMaterials = parseFloat(order.service_fee_on_materials || "0");
+  const subtotalNum = parseFloat(order.subtotal || "0");
+  const taxRateNum = parseFloat(order.tax_rate || "0");
+  const taxAmountNum = parseFloat(order.tax_amount || "0");
+  const totalPrice = subtotalNum + taxAmountNum;
+
   return (
     <tr className="bg-gray-50">
-      <td colSpan={4} className="px-3 py-3 text-sm text-gray-700">
-        <p><strong>ID:</strong> {order.id}</p>
-        <p><strong>Order Code:</strong> {order.code}</p>
-        <p><strong>User ID:</strong> {order.user_id}</p>
-        <p><strong>User Token:</strong> {order.user_token}</p>
-        <p><strong>Zipcode:</strong> {order.zipcode}</p>
-        <p><strong>Subtotal:</strong> {order.subtotal}</p>
-        <p><strong>Service Fee on Labor:</strong> {order.service_fee_on_labor}</p>
-        <p><strong>Service Fee on Materials:</strong> {order.service_fee_on_materials}</p>
-        <p><strong>Payment Type:</strong> {order.payment_type}</p>
-        <p><strong>Payment Coefficient:</strong> {order.payment_coefficient}</p>
-        <p><strong>Tax Rate:</strong> {order.tax_rate}</p>
-        <p><strong>Tax Amount:</strong> {order.tax_amount}</p>
+      <td colSpan={4} className="px-1 sm:px-3 py-3 text-sm text-gray-700">
+        {/** Header */}
+        <h2 className="text-base sm:text-lg font-bold mb-2">
+          Order for selected {order.works.length > 0 ? order.works[0].type : "N/A"} №{order.code}
+        </h2>
 
-        <hr className="my-3" />
+        {/* Address + Selected Date */}
+        <p className="mb-1">
+          <strong>Address:</strong> {order.common.address}
+        </p>
+        <p className="mb-4">
+          <strong>Start Date:</strong> {order.common.selected_date}
+        </p>
 
-        <h3 className="font-bold mb-1">Common</h3>
-        <p><strong>ID:</strong> {order.common.id}</p>
-        <p><strong>Address:</strong> {order.common.address}</p>
-        <p><strong>Description:</strong> {order.common.description}</p>
-        <p><strong>Selected Date:</strong> {order.common.selected_date}</p>
-        <p><strong>Date Coefficient:</strong> {order.common.date_coefficient}</p>
+        {/** ESTIMATE (works loop) */}
+        <h3 className="text-base sm:text-lg font-bold mb-2">Estimate</h3>
+        {order.works.map((work, idx) => {
+          // For each work, compute per-work labor cost and materials cost
+          const sumWorkMaterials = work.materials.reduce((acc, mat) => acc + parseFloat(mat.cost), 0);
+          const singleWorkLabor = parseFloat(work.total) - sumWorkMaterials;
 
-        <hr className="my-3" />
+          return (
+            <div key={work.id} className="mb-6">
+              {/* Work # + Name */}
+              <p className="text-sm sm:text-base font-semibold mb-2">
+                {idx + 1}. {work.name}
+              </p>
 
-        {/* Works */}
-        <h3 className="font-bold mb-2">Works</h3>
-        {order.works.map((work) => (
-          <div key={work.id} className="mb-4 p-3 border rounded bg-white">
-            <p><strong>ID:</strong> {work.id}</p>
-            <p><strong>Type:</strong> {work.type}</p>
-            <p><strong>Code:</strong> {work.code}</p>
-            <p><strong>Name:</strong> {work.name}</p>
-            <p><strong>Photo:</strong>{" "}
-              <a
-                href={work.photo}
-                target="_blank"
-                rel="noreferrer"
-                className="text-blue-600 underline"
-              >
-                View
-              </a>
-            </p>
-            <p><strong>Description:</strong> {work.description}</p>
-            <p><strong>Unit of Measurement:</strong> {work.unit_of_measurement}</p>
-            <p><strong>Work Count:</strong> {work.work_count}</p>
-            <p><strong>Total:</strong> {work.total}</p>
+              {/*
+                Desktop: show photo left, text right (flex)
+                Mobile: stack vertically
+              */}
+              <div className="sm:flex sm:items-start sm:gap-4">
+                {/* Left: Photo (if any) */}
+                {work.photo && (
+                  <div className="mb-2 sm:mb-0 sm:w-64">
+                    <img
+                      src={work.photo}
+                      alt={work.name || "Work photo"}
+                      className="w-full h-auto object-cover border rounded"
+                    />
+                  </div>
+                )}
 
-            {/* Materials inside work */}
-            <h4 className="font-semibold mt-3">Materials</h4>
-            {work.materials.length > 0 ? (
-              work.materials.map((mat) => (
-                <div key={mat.id} className="ml-4 mt-2 border-l pl-4">
-                  <p><strong>ID:</strong> {mat.id}</p>
-                  <p><strong>External ID:</strong> {mat.external_id}</p>
-                  <p><strong>Name:</strong> {mat.name}</p>
-                  <p>
-                    <strong>Photo:</strong>{" "}
+                {/* Right: Description, quantity, singleWorkLabor, materials cost */}
+                <div className="flex-1">
+                  <p className="mb-2">{work.description}</p>
+                  <p className="mb-2 text-sm font-bold">
+                    <strong>Quantity:</strong> {work.work_count} {work.unit_of_measurement}
+                  </p>
+                  <p className="mb-2">
+                    <strong>Labor Price:</strong> {singleWorkLabor.toFixed(2)}
+                  </p>
+                  <p className="mb-2">
+                    <strong>Materials Cost:</strong> {sumWorkMaterials.toFixed(2)}
+                  </p>
+                </div>
+              </div>
+
+              {/* Materials Table */}
+              {work.materials.length > 0 && (
+                <div className="overflow-auto border rounded my-3">
+                  <table className="min-w-full text-left text-sm">
+                    <thead className="bg-gray-100 border-b">
+                      <tr>
+                        <th className="px-2 py-1 font-semibold">Name</th>
+                        <th className="px-2 py-1 font-semibold">Qty</th>
+                        <th className="px-2 py-1 font-semibold">Price</th>
+                        <th className="px-2 py-1 font-semibold">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {work.materials.map((mat) => (
+                        <tr key={mat.id} className="border-b">
+                          <td className="px-2 py-1 align-top">
+                            {/* If a material has a photo, show it above the name */}
+                            {mat.photo && (
+                              <div className="mb-1">
+                                <img
+                                  src={mat.photo}
+                                  alt={mat.name}
+                                  className="w-32 h-32 object-cover border rounded"
+                                />
+                              </div>
+                            )}
+                            {mat.name}
+                          </td>
+                          <td className="px-2 py-1 align-top">{mat.quantity}</td>
+                          <td className="px-2 py-1 align-top">
+                            ${parseFloat(mat.cost_per_unit).toFixed(2)}
+                          </td>
+                          <td className="px-2 py-1 align-top">
+                            ${parseFloat(mat.cost).toFixed(2)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+        {/** COST SUMMARY FOR THE WHOLE ORDER */}
+        <div className="mb-2 space-y-1">
+          <p>
+            <strong>Labor Total:</strong> {laborTotal.toFixed(2)}
+          </p>
+          <p>
+            <strong>Materials, tools & equipment:</strong> {sumMaterialsCost.toFixed(2)}
+          </p>
+          <p>
+            <strong>{surchargeOrDiscountLabel}:</strong> {surchargeOrDiscountValue.toFixed(2)}
+          </p>
+          <p>
+            <strong>Service Fee on Labor:</strong> {serviceFeeOnLabor.toFixed(2)}
+          </p>
+          <p>
+            <strong>Service Fee on Materials:</strong> {serviceFeeOnMaterials.toFixed(2)}
+          </p>
+        </div>
+
+        {/* Subtotal/Taxes/Total in a highlighted box */}
+        <div className="p-3 bg-gray-100 rounded space-y-1">
+          <p>
+            <strong>Subtotal:</strong>{" "}
+            {subtotalNum.toLocaleString("en-US", {
+              minimumFractionDigits: 2,
+            })}
+          </p>
+          <p>
+            <strong>Taxes ({taxRateNum.toFixed(2)}%):</strong> $
+            {taxAmountNum.toLocaleString("en-US", {
+              minimumFractionDigits: 2,
+            })}
+          </p>
+          <p className="mt-2 font-bold text-lg sm:text-xl">
+            <strong>Total:</strong>{" "}
+            US$
+            {totalPrice.toLocaleString("en-US", {
+              minimumFractionDigits: 2,
+            })}
+          </p>
+        </div>
+
+        {/** BOTTOM BLOCK: COMMON DATA */}
+        <div className="mt-4">
+          {order.common.description && (
+            <p className="italic mb-2">Description: {order.common.description}</p>
+          )}
+
+          {order.common.photos && order.common.photos.length > 0 && (
+            <div>
+              <p className="font-semibold">Common Photos:</p>
+              <ul className="list-disc ml-5 mt-1">
+                {order.common.photos.map((photoUrl) => (
+                  <li key={photoUrl}>
                     <a
-                      href={mat.photo}
+                      href={photoUrl}
                       target="_blank"
                       rel="noreferrer"
                       className="text-blue-600 underline"
                     >
-                      View
+                      {photoUrl}
                     </a>
-                  </p>
-                  <p><strong>Quantity:</strong> {mat.quantity}</p>
-                  <p><strong>Cost per Unit:</strong> {mat.cost_per_unit}</p>
-                  <p><strong>Cost:</strong> {mat.cost}</p>
-                </div>
-              ))
-            ) : (
-              <p className="ml-4 mt-1 italic text-gray-500">No materials</p>
-            )}
-          </div>
-        ))}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
 
-        {/* Кнопка удаления (мобильная версия) */}
-        <div className="mt-4 block sm:hidden">
+        {/** MOBILE-ONLY DELETE BUTTON */}
+        <div className="mt-6 block sm:hidden">
           {isPendingDelete ? (
             <div className="text-red-600 flex items-center gap-2">
               <span>Deleting...</span>
-              <button
-                onClick={undoDelete}
-                className="underline text-blue-600 text-xs"
-              >
+              <button onClick={undoDelete} className="underline text-blue-600 text-xs">
                 Undo
               </button>
             </div>
