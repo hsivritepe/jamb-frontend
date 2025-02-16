@@ -5,22 +5,20 @@ import { useRouter } from "next/navigation";
 import imageCompression from "browser-image-compression";
 
 /**
- * A single work item in your data:
- * - We no longer do any "mapUnitOfMeasurement"
- * - 'unitOfMeasurement' is used as-is.
+ * A single work item in your data.
  */
 interface WorkItem {
   type: string;
   code: string;
-  unitOfMeasurement: string;   // e.g. "sq ft", "each", etc.
+  unitOfMeasurement: string;
   quantity: number;
   laborCost: number;
   materialsCost: number;
   serviceFeeOnLabor?: number;
   serviceFeeOnMaterials?: number;
   total: number;
-  paymentType?: string;             // "Monthly", "upfront", etc.
-  paymentCoefficient?: number;      // e.g. 1.10
+  paymentType?: string;
+  paymentCoefficient?: number;
   materials?: Array<{
     external_id: string;
     quantity: number;
@@ -31,10 +29,9 @@ interface WorkItem {
 
 /**
  * PlaceOrderButtonProps:
- * - photos: array of photo strings (base64 or normal URLs)
- * - orderData: top-level data for "composite-order/create" (zipcode, address, sums, etc.)
- *   plus top-level serviceFeeOnLabor, serviceFeeOnMaterials, paymentType, paymentCoefficient
- * - onOrderSuccess?: optional callback if you have a custom success flow
+ * - photos: array of strings (base64 or normal URLs).
+ * - orderData: top-level data for "composite-order/create".
+ * - onOrderSuccess?: optional callback if you want a custom flow after success.
  */
 interface PlaceOrderButtonProps {
   photos: string[];
@@ -50,12 +47,10 @@ interface PlaceOrderButtonProps {
     taxRate: number;
     taxAmount: number;
     worksData: WorkItem[];
-
-    // newly used top-level fields
-    serviceFeeOnLabor?: number;      // if undefined => "0.00"
-    serviceFeeOnMaterials?: number;  // if undefined => "0.00"
-    paymentType?: string;            // if undefined => "n/a"
-    paymentCoefficient?: number;     // if undefined => 1
+    serviceFeeOnLabor?: number;
+    serviceFeeOnMaterials?: number;
+    paymentType?: string;
+    paymentCoefficient?: number;
   };
   onOrderSuccess?: () => void;
 }
@@ -78,6 +73,7 @@ function base64ToFile(base64Data: string): File {
   }
   const byteArray = new Uint8Array(byteNums);
 
+  // Derive the extension from mimeType if present, else default to png
   const ext = mimeType.split("/")[1] || "png";
   const fileName = `photo_${Date.now()}.${ext}`;
   return new File([byteArray], fileName, { type: mimeType });
@@ -85,8 +81,8 @@ function base64ToFile(base64Data: string): File {
 
 /**
  * PlaceOrderButton:
- * 1) If user is not logged in => store temp data => go /login?next=/calculate/checkout
- * 2) If logged in => compress base64 => upload => build final JSON => POST => success => /thank-you
+ * 1) If user is not logged in => store temp data => redirect to /login
+ * 2) If logged in => compress images => upload => build final JSON => POST => success => /thank-you
  */
 export default function PlaceOrderButton({
   photos,
@@ -96,12 +92,19 @@ export default function PlaceOrderButton({
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
+  /**
+   * Checks if there's an "authToken" in sessionStorage.
+   * If not, user is not considered logged in.
+   */
   function isUserLoggedIn(): boolean {
     return !!sessionStorage.getItem("authToken");
   }
 
+  /**
+   * Main handler for placing the order.
+   */
   async function handlePlaceOrder() {
-    // If not logged in => save data to session => redirect
+    // If not logged in => store data & go to /login
     if (!isUserLoggedIn()) {
       sessionStorage.setItem("tempOrderData", JSON.stringify(orderData));
       sessionStorage.setItem("tempOrderPhotos", JSON.stringify(photos));
@@ -116,11 +119,16 @@ export default function PlaceOrderButton({
         throw new Error("No authToken found. Please log in again.");
       }
 
-      // 1) Compress / upload photos if they are base64
       const uploadedPhotoUrls: string[] = [];
+
+      // Process each photo
       for (const p of photos) {
+        // If starts with "data:", it's a base64-encoded image
         if (p.startsWith("data:")) {
+          // Convert base64 => File
           const file = base64ToFile(p);
+
+          // Compress the file using "browser-image-compression"
           const options = {
             maxSizeMB: 1,
             maxWidthOrHeight: 1920,
@@ -128,7 +136,13 @@ export default function PlaceOrderButton({
           };
           const compressedFile = await imageCompression(file, options);
 
-          // request a signed URL from /api/gcs-upload
+          console.log("Compressed file =>", {
+            name: compressedFile.name,
+            type: compressedFile.type,
+            size: compressedFile.size,
+          });
+
+          // 1) Request signed URL from /api/gcs-upload
           const signedUrlResp = await fetch("/api/gcs-upload", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -137,33 +151,47 @@ export default function PlaceOrderButton({
               type: compressedFile.type,
             }),
           });
+
           if (!signedUrlResp.ok) {
             throw new Error("Failed to get signed URL from /api/gcs-upload");
           }
           const { uploadUrl, publicUrl } = await signedUrlResp.json();
+          console.log("Signed URL =>", uploadUrl);
 
-          // upload to GCS
+          // 2) Upload to GCS via PUT
+          //    NOTE: We add "x-goog-acl" header with "public-read"
+          //    to match extensionHeaders: { 'x-goog-acl': 'public-read' } in route.ts
           const uploadResp = await fetch(uploadUrl, {
             method: "PUT",
-            headers: { "Content-Type": compressedFile.type },
+            headers: {
+              "Content-Type": compressedFile.type,
+              //"x-goog-acl": "public-read", // ensure public-read ACL is applied
+            },
             body: compressedFile,
           });
+
+          // 3) Read GCS response text for debug in case of error
+          const gcsResponseText = await uploadResp.text();
+          console.log("PUT upload response status:", uploadResp.status);
+          console.log("GCS response body =>", gcsResponseText);
+
           if (!uploadResp.ok) {
-            throw new Error("Photo upload to GCS failed");
+            throw new Error(`Photo upload to GCS failed: ${gcsResponseText}`);
           }
 
+          // If upload succeeded, "publicUrl" can be used as <img src="..."/>
           uploadedPhotoUrls.push(publicUrl);
         } else {
-          // if normal URL => push as is
+          // If it's not base64, we assume it's already a valid URL
           uploadedPhotoUrls.push(p);
         }
       }
 
-      // 2) Build "works" array
+      // 3) Build "works" array for the order
       const works = orderData.worksData.map((w) => ({
         type: w.type,
         code: w.code,
-        unit_of_measurement: w.unitOfMeasurement, // use as-is
+        unit_of_measurement: w.unitOfMeasurement,
         work_count: String(w.quantity),
         labor_cost: w.laborCost.toFixed(2),
         materials_cost: w.materialsCost.toFixed(2),
@@ -174,8 +202,6 @@ export default function PlaceOrderButton({
           ? w.serviceFeeOnMaterials.toFixed(2)
           : "0.00",
         total: w.total.toFixed(2),
-
-        // If user didn't specify => "n/a" or "1.00"
         payment_type:
           w.paymentType && w.paymentType.trim() !== ""
             ? w.paymentType
@@ -183,8 +209,6 @@ export default function PlaceOrderButton({
         payment_coefficient: w.paymentCoefficient
           ? w.paymentCoefficient.toFixed(2)
           : "1.00",
-
-        // materials array
         materials: w.materials
           ? w.materials.map((m) => ({
               external_id: m.external_id,
@@ -195,7 +219,7 @@ export default function PlaceOrderButton({
           : [],
       }));
 
-      // 3) Build top-level fees
+      // 4) Build the final JSON to send to /api/orders/create
       const serviceFeeOnLabor = orderData.serviceFeeOnLabor
         ? orderData.serviceFeeOnLabor.toFixed(2)
         : "0.00";
@@ -211,7 +235,6 @@ export default function PlaceOrderButton({
         ? orderData.paymentCoefficient.toFixed(2)
         : "1.00";
 
-      // 4) Final JSON to send
       const bodyToSend = {
         zipcode: orderData.zipcode,
         user_token: token,
@@ -228,14 +251,10 @@ export default function PlaceOrderButton({
         date_surcharge: (
           orderData.laborSubtotal * (orderData.timeCoefficient - 1)
         ).toFixed(2),
-
-        // top-level service fees
         service_fee_on_labor: serviceFeeOnLabor,
         service_fee_on_materials: serviceFeeOnMaterials,
         payment_type: paymentType,
         payment_coefficient: paymentCoefficient,
-
-        // final sums
         subtotal: orderData.sumBeforeTax.toFixed(2),
         total: orderData.finalTotal.toFixed(2),
       };
@@ -267,7 +286,7 @@ export default function PlaceOrderButton({
       const resultData = await createOrderResp.json();
       console.log("Order saved successfully:", resultData);
 
-      // 6) success => store code & total => /thank-you
+      // 6) success => optionally call onOrderSuccess or do a default flow
       if (onOrderSuccess) {
         onOrderSuccess();
       } else {

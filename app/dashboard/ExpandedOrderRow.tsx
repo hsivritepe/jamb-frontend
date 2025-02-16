@@ -250,21 +250,18 @@ export default function ExpandedOrderRow({
 
           {order.common.photos && order.common.photos.length > 0 && (
             <div>
-              <p className="font-semibold">Common Photos:</p>
-              <ul className="list-disc ml-5 mt-1">
+              <p className="font-semibold">Attached Photos:</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-2">
                 {order.common.photos.map((photoUrl) => (
-                  <li key={photoUrl}>
-                    <a
-                      href={photoUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-blue-600 underline"
-                    >
-                      {photoUrl}
-                    </a>
-                  </li>
+                  <div key={photoUrl}>
+                    <img
+                      src={photoUrl}
+                      alt="Order photo"
+                      className="border rounded w-full h-32 object-cover"
+                    />
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
           )}
         </div>

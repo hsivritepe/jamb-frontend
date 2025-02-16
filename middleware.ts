@@ -1,3 +1,4 @@
+// jamb-frontend/middleware.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
@@ -8,12 +9,14 @@ export function middleware(request: NextRequest) {
   // 1) Static files from /_next, /public
   // 2) /access (otherwise we cannot access the page to enter the code)
   // 3) /favicon.ico, /robots.txt, etc.
+  // 4) /api/gcs-upload (our new exception for the GCS upload route)
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/images') ||
     pathname.startsWith('/favicon.ico') ||
     pathname.startsWith('/robots.txt') ||
-    pathname.startsWith('/access')
+    pathname.startsWith('/access') ||
+    pathname.startsWith('/api/gcs-upload') // <--- Added exception here
   ) {
     return NextResponse.next();
   }
