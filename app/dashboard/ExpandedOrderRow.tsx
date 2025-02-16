@@ -45,6 +45,11 @@ interface CompositeOrder {
   }>;
 }
 
+/**
+ * Props for our ExpandedOrderRow. Notice:
+ * - onDeleteOrder expects (orderId: number, orderCode: string)
+ * - isPendingDelete is a boolean the parent decides (if parent's pendingDelete === order.id).
+ */
 interface ExpandedOrderRowProps {
   order: CompositeOrder;
   isPendingDelete: boolean;
@@ -52,22 +57,26 @@ interface ExpandedOrderRowProps {
   onDeleteOrder: (orderId: number, orderCode: string) => void;
 }
 
+/**
+ * This component renders the expanded details of a single order.
+ * It also includes a mobile-only "Delete" button that calls onDeleteOrder.
+ */
 export default function ExpandedOrderRow({
   order,
   isPendingDelete,
   undoDelete,
   onDeleteOrder,
 }: ExpandedOrderRowProps) {
-  /************************************************
-   * 1) Calculate overall labor/materials for entire order
-   ************************************************/
+  /**
+   * 1) Calculate total labor vs. materials for the entire order.
+   */
   const sumWorksTotals = order.works.reduce((acc, w) => acc + parseFloat(w.total), 0);
   const sumMaterialsCost = order.works.reduce((acc, w) => {
     const sumMats = w.materials.reduce((mAcc, mat) => mAcc + parseFloat(mat.cost), 0);
     return acc + sumMats;
   }, 0);
 
-  // Overall labor total for the entire order
+  // Overall labor
   const laborTotal = sumWorksTotals - sumMaterialsCost;
 
   // Surcharge/Discount logic
@@ -91,10 +100,10 @@ export default function ExpandedOrderRow({
   const totalPrice = subtotalNum + taxAmountNum;
 
   return (
-    <tr className="bg-gray-50">
-      <td colSpan={4} className="px-1 sm:px-3 py-3 text-sm text-gray-700">
+    <tr className="bg-gray-100">
+      <td colSpan={4} className="px-2 sm:px-3 py-3 text-sm text-gray-700">
         {/** Header */}
-        <h2 className="text-base sm:text-lg font-bold mb-2">
+        <h2 className="text-xl sm:text-2xl font-bold mb-2">
           Order for selected {order.works.length > 0 ? order.works[0].type : "N/A"} №{order.code}
         </h2>
 
@@ -106,26 +115,22 @@ export default function ExpandedOrderRow({
           <strong>Start Date:</strong> {order.common.selected_date}
         </p>
 
-        {/** ESTIMATE (works loop) */}
-        <h3 className="text-base sm:text-lg font-bold mb-2">Estimate</h3>
+        {/** ESTIMATE (per-work items) */}
+        <h3 className="text-xl sm:text-xl font-bold mb-2">Estimate</h3>
         {order.works.map((work, idx) => {
-          // For each work, compute per-work labor cost and materials cost
+          // For each work, compute single-work labor cost and materials cost
           const sumWorkMaterials = work.materials.reduce((acc, mat) => acc + parseFloat(mat.cost), 0);
           const singleWorkLabor = parseFloat(work.total) - sumWorkMaterials;
 
           return (
-            <div key={work.id} className="mb-6">
+            <div key={work.id} className="mb-8">
               {/* Work # + Name */}
-              <p className="text-sm sm:text-base font-semibold mb-2">
+              <p className="text-lg sm:xl font-bold mb-2">
                 {idx + 1}. {work.name}
               </p>
 
-              {/*
-                Desktop: show photo left, text right (flex)
-                Mobile: stack vertically
-              */}
+              {/* Desktop flex layout: photo left, details right */}
               <div className="sm:flex sm:items-start sm:gap-4">
-                {/* Left: Photo (if any) */}
                 {work.photo && (
                   <div className="mb-2 sm:mb-0 sm:w-64">
                     <img
@@ -136,7 +141,6 @@ export default function ExpandedOrderRow({
                   </div>
                 )}
 
-                {/* Right: Description, quantity, singleWorkLabor, materials cost */}
                 <div className="flex-1">
                   <p className="mb-2">{work.description}</p>
                   <p className="mb-2 text-sm font-bold">
@@ -154,13 +158,13 @@ export default function ExpandedOrderRow({
               {/* Materials Table */}
               {work.materials.length > 0 && (
                 <div className="overflow-auto border rounded my-3">
-                  <table className="min-w-full text-left text-sm">
-                    <thead className="bg-gray-100 border-b">
+                  <table className="min-w-full text-left text-sm bg-white">
+                    <thead className="border-b">
                       <tr>
-                        <th className="px-2 py-1 font-semibold">Name</th>
-                        <th className="px-2 py-1 font-semibold">Qty</th>
-                        <th className="px-2 py-1 font-semibold">Price</th>
-                        <th className="px-2 py-1 font-semibold">Total</th>
+                        <th className="px-2 py-1 font-bold">Name</th>
+                        <th className="px-2 py-1 font-bold">Qty</th>
+                        <th className="px-2 py-1 font-bold">Price</th>
+                        <th className="px-2 py-1 font-bold">Total</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -215,8 +219,8 @@ export default function ExpandedOrderRow({
           </p>
         </div>
 
-        {/* Subtotal/Taxes/Total in a highlighted box */}
-        <div className="p-3 bg-gray-100 rounded space-y-1">
+        {/* Subtotal/Taxes/Total */}
+        <div className="p-3 bg-white rounded space-y-1 border">
           <p>
             <strong>Subtotal:</strong>{" "}
             {subtotalNum.toLocaleString("en-US", {
@@ -231,14 +235,14 @@ export default function ExpandedOrderRow({
           </p>
           <p className="mt-2 font-bold text-lg sm:text-xl">
             <strong>Total:</strong>{" "}
-            US$
+            $
             {totalPrice.toLocaleString("en-US", {
               minimumFractionDigits: 2,
             })}
           </p>
         </div>
 
-        {/** BOTTOM BLOCK: COMMON DATA */}
+        {/** Additional block: common.description, common.photos, etc. */}
         <div className="mt-4">
           {order.common.description && (
             <p className="italic mb-2">Description: {order.common.description}</p>
@@ -265,7 +269,12 @@ export default function ExpandedOrderRow({
           )}
         </div>
 
-        {/** MOBILE-ONLY DELETE BUTTON */}
+        {/**
+         * MOBILE-ONLY DELETE BUTTON:
+         * - This is shown only on small screens (block sm:hidden).
+         * - If isPendingDelete is true, we show "Deleting..." + Undo.
+         * - Otherwise, we show a "Delete" button that calls onDeleteOrder(order.id, order.code).
+         */}
         <div className="mt-6 block sm:hidden">
           {isPendingDelete ? (
             <div className="text-red-600 flex items-center gap-2">

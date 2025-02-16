@@ -7,6 +7,9 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ExpandedOrderRow from "./ExpandedOrderRow";
 
+/**
+ * Helper to return a greeting based on the current hour.
+ */
 function getGreeting(): string {
   const hour = new Date().getHours();
   if (hour < 12) return "Good morning";
@@ -14,6 +17,9 @@ function getGreeting(): string {
   return "Good evening";
 }
 
+/**
+ * Interface describing a composite order.
+ */
 interface CompositeOrder {
   id: number;
   code: string;
@@ -60,18 +66,18 @@ interface CompositeOrder {
 export default function OrdersPage() {
   const router = useRouter();
 
-  // Greeting text (computed once on mount)
+  // Greeting text displayed at the top of the page
   const [greetingText, setGreetingText] = useState("");
 
-  // Token & user info from sessionStorage
+  // Auth token, user name, and boolean if the name is present
   const [token, setToken] = useState("");
   const [userName, setUserName] = useState("");
   const [hasName, setHasName] = useState(false);
 
-  // Current tab => "saved" by default
+  // Which tab is active: "saved", "active", or "past"
   const [tab, setTab] = useState<"saved" | "active" | "past">("saved");
 
-  // Orders and UI states for "saved" tab
+  // List of "saved" orders, loading/error states
   const [savedOrders, setSavedOrders] = useState<CompositeOrder[] | null>(null);
   const [savedLoading, setSavedLoading] = useState(false);
   const [savedError, setSavedError] = useState<string | null>(null);
@@ -80,16 +86,24 @@ export default function OrdersPage() {
   const [sortColumn, setSortColumn] = useState<"code" | "cost" | "date" | null>(null);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
-  // Soft-delete behavior
+  /**
+   * Soft-delete logic:
+   * - We store pendingDelete as an integer order ID, or null if none is pending.
+   * - We use a ref for the deleteTimeout to implement the 5-second "undo" functionality.
+   */
   const [pendingDelete, setPendingDelete] = useState<number | null>(null);
   const deleteTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Expand/collapse logic
+  /**
+   * Expand/collapse logic:
+   * - expandedOrderCode is the "code" (string) of the currently expanded order
+   * - expandedOrderDetails is the full CompositeOrder object fetched from /api/orders/get
+   */
   const [expandedOrderCode, setExpandedOrderCode] = useState<string | null>(null);
   const [expandedOrderDetails, setExpandedOrderDetails] = useState<CompositeOrder | null>(null);
 
   /**
-   * Compute the greeting text on first mount.
+   * Compute greeting on first mount.
    */
   useEffect(() => {
     const msg = getGreeting();
@@ -97,8 +111,9 @@ export default function OrdersPage() {
   }, []);
 
   /**
-   * On mount, check for an auth token in sessionStorage; if missing => go to /login.
-   * Also parse user profile (if found) to get the user's name.
+   * On mount, check for auth token in sessionStorage.
+   * If missing, redirect to /login.
+   * Also parse profileData for the user's name if available.
    */
   useEffect(() => {
     const storedToken = sessionStorage.getItem("authToken");
@@ -124,8 +139,8 @@ export default function OrdersPage() {
   }, [router]);
 
   /**
-   * If user selects "saved" tab and we have a token:
-   * 1) Load any cached orders from sessionStorage
+   * If the user selects "saved" tab and we have a valid token:
+   * 1) Load any cached orders from sessionStorage (if present)
    * 2) Always fetch fresh data from the server
    */
   useEffect(() => {
@@ -136,16 +151,16 @@ export default function OrdersPage() {
           const parsed = JSON.parse(cached) as CompositeOrder[];
           setSavedOrders(parsed);
         } catch (err) {
-          console.error("Failed to parse savedOrders:", err);
+          console.error("Failed to parse savedOrders from sessionStorage:", err);
         }
       }
-      // Always fetch new data
+      // Always fetch fresh data
       fetchSavedOrders(token);
     }
   }, [tab, token]);
 
   /**
-   * Fetch the list of saved orders from /api/orders/list.
+   * Helper function to fetch the list of saved orders from /api/orders/list
    */
   async function fetchSavedOrders(userToken: string) {
     try {
@@ -166,6 +181,8 @@ export default function OrdersPage() {
 
       const data = await resp.json();
       setSavedOrders(data);
+
+      // Cache the results in sessionStorage
       sessionStorage.setItem("savedOrders", JSON.stringify(data));
     } catch (error: any) {
       console.error("Error fetching saved orders:", error);
@@ -177,12 +194,12 @@ export default function OrdersPage() {
 
   /**
    * Expand/collapse order details:
-   * - If already expanded, collapse
-   * - Else fetch from /api/orders/get and expand
+   * - If the user clicks the same order code again, we collapse.
+   * - Otherwise, we fetch /api/orders/get to get full details, then expand.
    */
   async function handleGetOrderDetails(orderCode: string) {
     if (expandedOrderCode === orderCode) {
-      // collapse
+      // collapse if currently expanded
       setExpandedOrderCode(null);
       setExpandedOrderDetails(null);
       return;
@@ -210,11 +227,12 @@ export default function OrdersPage() {
   }
 
   /**
-   * Initiate a soft-delete with a 5-second undo window.
+   * Start a soft-delete process with a 5-second "undo" window.
    */
   function initiateDeleteOrder(orderId: number, orderCode: string) {
-    if (pendingDelete === orderId) return;
-
+    if (pendingDelete === orderId) {
+      return; // already pending
+    }
     const confirmMsg = `Are you sure you want to delete order ${orderCode}? You will have 5 seconds to undo.`;
     if (!window.confirm(confirmMsg)) return;
 
@@ -224,7 +242,7 @@ export default function OrdersPage() {
     if (deleteTimeoutRef.current) {
       clearTimeout(deleteTimeoutRef.current);
     }
-    // Start new timer => 5s => finalize delete
+    // After 5s, finalize the delete
     deleteTimeoutRef.current = setTimeout(() => {
       handleDeleteOrder(orderCode);
       setPendingDelete(null);
@@ -242,7 +260,7 @@ export default function OrdersPage() {
   }
 
   /**
-   * Actually delete the order by calling /api/orders/delete, then refresh.
+   * Actually delete the order by calling /api/orders/delete, then re-fetch the list.
    */
   async function handleDeleteOrder(orderCode: string) {
     try {
@@ -259,7 +277,9 @@ export default function OrdersPage() {
 
       await resp.json();
       alert(`Order ${orderCode} deleted!`);
-      fetchSavedOrders(token);
+
+      // Refresh the list after deletion
+      await fetchSavedOrders(token);
     } catch (error: any) {
       console.error("Error deleting order:", error);
       alert("Error deleting order: " + error.message);
@@ -267,7 +287,7 @@ export default function OrdersPage() {
   }
 
   /**
-   * Handle sorting. If user clicks the same column again, toggle asc/desc.
+   * Handle sorting logic. If user clicks the same column again, toggle asc/desc.
    */
   function handleSort(column: "code" | "cost" | "date") {
     if (sortColumn === column) {
@@ -279,7 +299,7 @@ export default function OrdersPage() {
   }
 
   /**
-   * Returns the sorted list of orders.
+   * Returns a sorted list of orders based on the chosen column and direction.
    */
   function getSortedOrders(): CompositeOrder[] {
     if (!savedOrders) return [];
@@ -288,15 +308,17 @@ export default function OrdersPage() {
     const arr = [...savedOrders];
     arr.sort((a, b) => {
       if (sortColumn === "code") {
+        // Sort by order code lexicographically
         if (a.code < b.code) return sortDirection === "asc" ? -1 : 1;
         if (a.code > b.code) return sortDirection === "asc" ? 1 : -1;
         return 0;
       } else if (sortColumn === "cost") {
+        // Sort by total cost => subtotal + tax_amount
         const costA = parseFloat(a.subtotal) + parseFloat(a.tax_amount);
         const costB = parseFloat(b.subtotal) + parseFloat(b.tax_amount);
         return sortDirection === "asc" ? costA - costB : costB - costA;
       } else if (sortColumn === "date") {
-        // compare date strings
+        // Sort by the "selected_date" string
         const dateA = a.common.selected_date;
         const dateB = b.common.selected_date;
         if (dateA < dateB) return sortDirection === "asc" ? -1 : 1;
@@ -308,12 +330,14 @@ export default function OrdersPage() {
     return arr;
   }
 
-  // Final sorted list for rendering
+  // The final sorted list
   const sortedSavedOrders = getSortedOrders();
+  // The count of saved orders
   const savedCount = savedOrders ? savedOrders.length : 0;
 
   return (
     <div className="pt-24 min-h-screen w-full bg-gray-50 pb-10">
+      {/* Outer container */}
       <div className="max-w-7xl mx-auto px-0 sm:px-4">
         {/* Greeting */}
         <h1 className="text-2xl sm:text-3xl font-bold mt-6 mb-2">
@@ -342,7 +366,7 @@ export default function OrdersPage() {
         <div className="flex items-center gap-4 mb-6 text-sm font-medium">
           <button
             onClick={() => setTab("saved")}
-            className={`px-3 py-2 rounded 
+            className={`px-3 py-2 rounded font-semibold
               ${tab === "saved" ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-100"}`}
           >
             Saved{" "}
@@ -354,14 +378,14 @@ export default function OrdersPage() {
           </button>
           <button
             onClick={() => setTab("active")}
-            className={`px-3 py-2 rounded 
+            className={`px-3 py-2 rounded font-semibold
               ${tab === "active" ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-100"}`}
           >
             Active
           </button>
           <button
             onClick={() => setTab("past")}
-            className={`px-3 py-2 rounded 
+            className={`px-3 py-2 rounded font-semibold
               ${tab === "past" ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-100"}`}
           >
             Past
@@ -382,7 +406,7 @@ export default function OrdersPage() {
           </div>
         )}
 
-        {/* SAVED tab => show table of saved orders */}
+        {/* SAVED tab => shows the table of saved orders */}
         {tab === "saved" && (
           <div>
             {savedLoading && <p>Loading saved orders...</p>}
@@ -397,6 +421,7 @@ export default function OrdersPage() {
                 <table className="table-fixed w-full border-collapse">
                   <thead className="bg-gray-100 text-gray-700 text-sm">
                     <tr>
+                      {/* Order Code column */}
                       <th className="w-1/3 py-2 px-2 text-left sm:w-1/4 sm:px-3">
                         <button
                           className="flex items-center gap-1"
@@ -408,6 +433,8 @@ export default function OrdersPage() {
                           )}
                         </button>
                       </th>
+
+                      {/* Total Price column */}
                       <th className="w-1/3 py-2 px-0 text-left sm:w-1/4 sm:px-3">
                         <button
                           className="flex items-center gap-1"
@@ -419,6 +446,8 @@ export default function OrdersPage() {
                           )}
                         </button>
                       </th>
+
+                      {/* Start Date column */}
                       <th className="w-1/3 py-2 px-0 text-left sm:w-1/4 sm:px-3">
                         <button
                           className="flex items-center gap-1"
@@ -430,6 +459,8 @@ export default function OrdersPage() {
                           )}
                         </button>
                       </th>
+
+                      {/* Actions column (hidden on mobile) */}
                       <th className="hidden sm:table-cell w-1/4 py-2 px-3 text-right">
                         Actions
                       </th>
@@ -437,13 +468,16 @@ export default function OrdersPage() {
                   </thead>
                   <tbody>
                     {sortedSavedOrders.map((order) => {
+                      // Compute the total price for display => (subtotal + tax)
                       const totalNum = parseFloat(order.subtotal) + parseFloat(order.tax_amount);
                       const totalFormatted = totalNum.toLocaleString("en-US", {
                         style: "currency",
                         currency: "USD",
                       });
 
+                      // Check if this order is pending deletion
                       const isPendingDelete = pendingDelete === order.id;
+                      // Check if this order is expanded
                       const isExpanded = expandedOrderCode === order.code;
 
                       return (
@@ -454,8 +488,8 @@ export default function OrdersPage() {
                                 onClick={() => handleGetOrderDetails(order.code)}
                                 className={
                                   isExpanded
-                                    ? "text-red-600 font-medium cursor-pointer underline"
-                                    : "text-blue-600 font-medium cursor-pointer hover:underline"
+                                    ? "text-red-600 font-semibold cursor-pointer underline"
+                                    : "text-blue-600 font-semibold cursor-pointer hover:underline"
                                 }
                               >
                                 {order.code}
@@ -479,6 +513,9 @@ export default function OrdersPage() {
                                   </button>
                                 </div>
                               ) : (
+                                /**
+                                 * The desktop "Delete" button calls initiateDeleteOrder with (order.id, order.code).
+                                 */
                                 <button
                                   onClick={() => initiateDeleteOrder(order.id, order.code)}
                                   className="text-gray-500 hover:text-red-600"
@@ -490,17 +527,20 @@ export default function OrdersPage() {
                             </td>
                           </tr>
 
+                          {/* If expanded, show the ExpandedOrderRow + divider */}
                           {isExpanded && expandedOrderDetails && (
                             <>
                               <ExpandedOrderRow
                                 order={expandedOrderDetails}
+                                // Pass isPendingDelete so the child can show "Deleting..." on mobile
                                 isPendingDelete={isPendingDelete}
                                 undoDelete={undoDelete}
+                                /**
+                                 * The mobile-only Delete button calls onDeleteOrder(orderId, orderCode).
+                                 * We'll pass a function that calls initiateDeleteOrder() with the same logic.
+                                 */
                                 onDeleteOrder={(id, code) => initiateDeleteOrder(id, code)}
                               />
-                              <tr>
-                                <td colSpan={4} className="border-b"></td>
-                              </tr>
                             </>
                           )}
                         </React.Fragment>
