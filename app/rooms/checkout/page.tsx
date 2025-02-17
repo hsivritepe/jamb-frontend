@@ -1,46 +1,51 @@
 "use client";
 
 export const dynamic = "force-dynamic";
+
+import React, { FC, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 import BreadCrumb from "@/components/ui/BreadCrumb";
 import { SectionBoxTitle } from "@/components/ui/SectionBoxTitle";
 import { SectionBoxSubtitle } from "@/components/ui/SectionBoxSubtitle";
-import React, { FC } from "react";
 import { Printer, Share2, Save } from "lucide-react";
 
-// Data/Constants
+// Constants and data
 import { ROOMS_STEPS } from "@/constants/navigation";
 import { ROOMS } from "@/constants/rooms";
 import { ALL_SERVICES } from "@/constants/services";
 import { ALL_CATEGORIES } from "@/constants/categories";
-import { getSessionItem } from "@/utils/session";
+import { getSessionItem, setSessionItem } from "@/utils/session";
 
-/**
- * A single button that shows three icons: Printer, Share, and Save
+// Reusable order submission button
+import PlaceOrderButton from "@/components/ui/PlaceOrderButton";
+
+/** 
+ * ActionIconsBarProps defines the props for the print/share/save button bar.
  */
 interface ActionIconsBarProps {
   onPrint?: () => void;
 }
 
+/** 
+ * ActionIconsBar is a small button that shows three icons (Printer, Share, Save).
+ * On click, it calls the onPrint handler if provided.
+ */
 const ActionIconsBar: FC<ActionIconsBarProps> = ({ onPrint }) => {
   return (
     <button
       onClick={onPrint}
       className="flex items-center gap-2 border border-gray-300 rounded-lg px-4 py-2 text-gray-700 hover:text-gray-900"
     >
-      {/* Show the three icons side by side */}
       <Printer size={20} />
       <Share2 size={20} />
       <Save size={20} />
-      {/* The text label is hidden on small screens */}
       <span className="hidden sm:inline text-sm">Print</span>
     </button>
   );
 };
 
 /**
- * Formats a numeric value with commas and exactly two decimals.
+ * formatWithSeparator formats a number with commas and exactly two decimals.
  */
 function formatWithSeparator(num: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -50,7 +55,8 @@ function formatWithSeparator(num: number): string {
 }
 
 /**
- * Finds a room object by ID from ROOMS.indoor/outdoor arrays, or returns null if not found.
+ * getRoomById finds a room by ID from ROOMS.indoor/outdoor arrays.
+ * If not found, returns null.
  */
 function getRoomById(roomId: string) {
   const allRooms = [...ROOMS.indoor, ...ROOMS.outdoor];
@@ -58,14 +64,16 @@ function getRoomById(roomId: string) {
 }
 
 /**
- * Extracts the category part ("1-1") from a service ID like "1-1-2".
+ * getCategoryIdFromServiceId extracts the "category part" from a service ID.
+ * Example: "1-1-2" => "1-1".
  */
 function getCategoryIdFromServiceId(serviceId: string): string {
   return serviceId.split("-").slice(0, 2).join("-");
 }
 
 /**
- * Returns a category name from ALL_CATEGORIES by its ID, or the ID itself if not found.
+ * getCategoryNameById returns a category's title from ALL_CATEGORIES by its ID.
+ * If not found, returns the ID itself.
  */
 function getCategoryNameById(catId: string): string {
   const found = ALL_CATEGORIES.find((c) => c.id === catId);
@@ -73,21 +81,7 @@ function getCategoryNameById(catId: string): string {
 }
 
 /**
- * Returns either the overridden calc results or the normal calculation results from the server.
- */
-function getCalcResultFor(
-  serviceId: string,
-  overrideCalcResults: Record<string, any>,
-  calculationResultsMap: Record<string, any>
-) {
-  return (
-    overrideCalcResults[serviceId] || calculationResultsMap[serviceId] || null
-  );
-}
-
-/**
- * Builds a reference number using partial state name, zip, and current datetime.
- * Example: "NY-10006-20250910-1415"
+ * buildEstimateNumber constructs a temporary estimate code like "NY-10006-20251122-1530".
  */
 function buildEstimateNumber(stateName: string, zip: string): string {
   let stateZipBlock = "??-00000";
@@ -95,7 +89,6 @@ function buildEstimateNumber(stateName: string, zip: string): string {
     const st = stateName.trim().split(" ")[0].slice(0, 2).toUpperCase();
     stateZipBlock = `${st}-${zip}`;
   }
-
   const now = new Date();
   const yyyy = String(now.getFullYear());
   const mm = String(now.getMonth() + 1).padStart(2, "0");
@@ -107,43 +100,24 @@ function buildEstimateNumber(stateName: string, zip: string): string {
 }
 
 /**
- * Converts a numeric USD amount to words in a simplified manner, e.g. "one hundred and 50/100".
+ * numberToWordsUSD converts a numeric USD amount to an approximate English phrase,
+ * e.g. 123.45 => "one hundred twenty-three and 45/100 dollars".
  */
 function numberToWordsUSD(amount: number): string {
   const integerPart = Math.floor(amount);
   const decimalPart = Math.round((amount - integerPart) * 100);
 
+  // Basic word map for numbers 0..90
   const wordsMap: Record<number, string> = {
-    0: "zero",
-    1: "one",
-    2: "two",
-    3: "three",
-    4: "four",
-    5: "five",
-    6: "six",
-    7: "seven",
-    8: "eight",
-    9: "nine",
-    10: "ten",
-    11: "eleven",
-    12: "twelve",
-    13: "thirteen",
-    14: "fourteen",
-    15: "fifteen",
-    16: "sixteen",
-    17: "seventeen",
-    18: "eighteen",
-    19: "nineteen",
-    20: "twenty",
-    30: "thirty",
-    40: "forty",
-    50: "fifty",
-    60: "sixty",
-    70: "seventy",
-    80: "eighty",
-    90: "ninety",
+    0: "zero", 1: "one", 2: "two", 3: "three", 4: "four",
+    5: "five", 6: "six", 7: "seven", 8: "eight", 9: "nine",
+    10: "ten", 11: "eleven", 12: "twelve", 13: "thirteen", 14: "fourteen",
+    15: "fifteen", 16: "sixteen", 17: "seventeen", 18: "eighteen", 19: "nineteen",
+    20: "twenty", 30: "thirty", 40: "forty", 50: "fifty",
+    60: "sixty", 70: "seventy", 80: "eighty", 90: "ninety",
   };
 
+  // Helper: convert two-digit number into words
   function twoDigitsToWords(n: number): string {
     if (n <= 20) return wordsMap[n] || "";
     if (n < 100) {
@@ -155,6 +129,7 @@ function numberToWordsUSD(amount: number): string {
     return String(n);
   }
 
+  // Helper: convert up to three digits
   function threeDigitsToWords(n: number): string {
     const hundreds = Math.floor(n / 100);
     const remainder = n % 100;
@@ -166,11 +141,14 @@ function numberToWordsUSD(amount: number): string {
     return hundredPart || remainderPart || "";
   }
 
+  // Split the integer part by chunks of 3 digits (thousands, millions, etc.)
   let resultWords: string[] = [];
   const thousands = ["", " thousand", " million", " billion"];
   let temp = integerPart;
   let i = 0;
+
   if (temp === 0) {
+    // handle zero
     resultWords.push("zero");
   }
   while (temp > 0 && i < thousands.length) {
@@ -187,55 +165,48 @@ function numberToWordsUSD(amount: number): string {
   return `${integerWords} and ${decimalStr}/100 dollars`;
 }
 
+/**
+ * RoomsCheckout is the final checkout page for the "Rooms" flow.
+ */
 export default function RoomsCheckout() {
   const router = useRouter();
 
-  // Load data from session
-  const selectedServicesState: Record<
-    string,
-    Record<string, number>
-  > = getSessionItem("rooms_selectedServicesWithQuantity", {});
+  // Load data from session storage
+  const selectedServicesState: Record<string, Record<string, number>> =
+    getSessionItem("rooms_selectedServicesWithQuantity", {});
   const address: string = getSessionItem("address", "");
   const description: string = getSessionItem("description", "");
   const photos: string[] = getSessionItem("photos", []);
 
-  // City/state/zip/country
+  // Additional location data
   const city: string = getSessionItem("city", "");
   const stateName: string = getSessionItem("stateName", "");
   const zip: string = getSessionItem("zip", "");
   const country: string = getSessionItem("country", "");
 
-  // Date/time selection
+  // Date/time from session
   const selectedTime: string | null = getSessionItem("selectedTime", null);
   const timeCoefficient: number = getSessionItem("timeCoefficient", 1);
 
-  // Calculation results
-  const calculationResultsMap: Record<string, any> = getSessionItem(
-    "calculationResultsMap",
-    {}
-  );
-  const overrideCalcResults: Record<string, any> = getSessionItem(
-    "rooms_overrideCalcResults",
-    {}
-  );
+  // Calculation data
+  const calculationResultsMap: Record<string, any> =
+    getSessionItem("calculationResultsMap", {});
+  const overrideCalcResults: Record<string, any> =
+    getSessionItem("rooms_overrideCalcResults", {}); // optional overrides
 
   // Summaries from the previous step
   const laborSubtotal: number = getSessionItem("rooms_laborSubtotal", 0);
-  const materialsSubtotal: number = getSessionItem(
-    "rooms_materialsSubtotal",
-    0
-  );
+  const materialsSubtotal: number = getSessionItem("rooms_materialsSubtotal", 0);
   const sumBeforeTax: number = getSessionItem("rooms_sumBeforeTax", 0);
   const taxRatePercent: number = getSessionItem("rooms_taxRatePercent", 0);
   const taxAmount: number = getSessionItem("rooms_taxAmount", 0);
   const finalTotal: number = getSessionItem("rooms_estimateFinalTotal", 0);
-  const serviceFeeOnLabor: number = getSessionItem("serviceFeeOnLabor", 0);
-  const serviceFeeOnMaterials: number = getSessionItem(
-    "serviceFeeOnMaterials",
-    0
-  );
 
-  // If no selected services or no address => redirect
+  // Additional fees stored in session
+  const serviceFeeOnLabor: number = getSessionItem("serviceFeeOnLabor", 0);
+  const serviceFeeOnMaterials: number = getSessionItem("serviceFeeOnMaterials", 0);
+
+  // If no services or no address => redirect
   useEffect(() => {
     let anySelected = false;
     for (const roomId in selectedServicesState) {
@@ -245,16 +216,17 @@ export default function RoomsCheckout() {
       }
     }
     if (!anySelected || !address.trim()) {
+      // Redirect user if needed
       router.push("/rooms/details");
     }
   }, [selectedServicesState, address, router]);
 
-  // Rooms actually chosen
+  // Rooms that actually have selected services
   const chosenRoomIds = Object.keys(selectedServicesState).filter(
     (roomId) => Object.keys(selectedServicesState[roomId]).length > 0
   );
 
-  // Build a combined address
+  // Build address string
   let constructedAddress = "";
   if (city) constructedAddress += city;
   if (stateName) {
@@ -270,21 +242,146 @@ export default function RoomsCheckout() {
     constructedAddress += country;
   }
 
-  // Build the estimate number
+  // Build estimate code
   const estimateNumber = buildEstimateNumber(stateName, zip);
 
-  // Convert final total to words
+  // Convert total to words
   const finalTotalWords = numberToWordsUSD(finalTotal);
 
-  // Handlers
-  function handlePlaceOrder() {
-    alert("Your Rooms order has been placed!");
+  /**
+   * buildWorksData constructs an array of objects describing each service item.
+   * Each item has type="rooms" so that the backend can distinguish the order source.
+   */
+  function buildWorksData() {
+    const works: Array<{
+      type: string;
+      code: string;
+      unitOfMeasurement: string;
+      quantity: number;
+      laborCost: number;
+      materialsCost: number;
+      serviceFeeOnLabor?: number;
+      serviceFeeOnMaterials?: number;
+      total: number;
+      materials?: Array<{
+        external_id: string;
+        quantity: number;
+        costPerUnit: number;
+        total: number;
+      }>;
+    }> = [];
+
+    // Loop through each room => each service
+    for (const roomId of Object.keys(selectedServicesState)) {
+      const roomServices = selectedServicesState[roomId];
+      for (const svcId of Object.keys(roomServices)) {
+        const qty = roomServices[svcId];
+        // If overrideCalcResults is used, prefer that. Otherwise, fallback to calculationResultsMap
+        const cr = overrideCalcResults[svcId] || calculationResultsMap[svcId];
+        if (!cr) continue;
+
+        // Parse numeric
+        const laborVal = parseFloat(cr.work_cost) || 0;
+        const matVal = parseFloat(cr.material_cost) || 0;
+        const totalVal = laborVal + matVal;
+
+        // Find the service to get unit_of_measurement
+        const foundSvc = ALL_SERVICES.find((x) => x.id === svcId);
+        const unit = foundSvc?.unit_of_measurement || "each";
+
+        // Build materials array
+        let fm: Array<{
+          external_id: string;
+          quantity: number;
+          costPerUnit: number;
+          total: number;
+        }> = [];
+        if (Array.isArray(cr.materials)) {
+          fm = cr.materials.map((m: any) => ({
+            external_id: m.external_id,
+            quantity: m.quantity,
+            costPerUnit: parseFloat(m.cost_per_unit) || 0,
+            total: parseFloat(m.cost) || 0,
+          }));
+        }
+
+        // Push each service item to the works array
+        works.push({
+          type: "rooms", // This marks the item as coming from the Rooms flow
+          code: svcId.replace(/-/g, "."),
+          unitOfMeasurement: unit,
+          quantity: qty,
+          laborCost: laborVal,
+          materialsCost: matVal,
+          total: totalVal,
+          serviceFeeOnLabor: 0,
+          serviceFeeOnMaterials: 0,
+          materials: fm,
+        });
+      }
+    }
+
+    return works;
   }
+
+  /**
+   * handlePrint is triggered by the icons bar if user wants to print the estimate.
+   */
   function handlePrint() {
     router.push("/rooms/checkout/print");
   }
 
-  // Render
+  /**
+   * onOrderSuccess is called by PlaceOrderButton after a successful order creation.
+   * Here we can clear the session keys related to the Rooms flow and redirect.
+   */
+  function onOrderSuccess() {
+    // Clear only the keys associated with Rooms
+    sessionStorage.removeItem("rooms_selectedServicesWithQuantity");
+    sessionStorage.removeItem("rooms_selectedSections");
+    sessionStorage.removeItem("rooms_searchQuery");
+    sessionStorage.removeItem("finishingMaterialSelections");
+    sessionStorage.removeItem("rooms_overrideCalcResults");
+    sessionStorage.removeItem("rooms_laborSubtotal");
+    sessionStorage.removeItem("rooms_materialsSubtotal");
+    sessionStorage.removeItem("rooms_sumBeforeTax");
+    sessionStorage.removeItem("rooms_taxRatePercent");
+    sessionStorage.removeItem("rooms_taxAmount");
+    sessionStorage.removeItem("rooms_estimateFinalTotal");
+
+    // If you also want to clear "global" fields like address, photos, etc., you can do it here:
+    // sessionStorage.removeItem("address");
+    // sessionStorage.removeItem("description");
+    // sessionStorage.removeItem("photos");
+    // sessionStorage.removeItem("selectedTime");
+    // sessionStorage.removeItem("timeCoefficient");
+    // ...
+
+    // Finally, redirect to a thank-you page or anywhere else
+    router.push("/thank-you");
+  }
+
+  /**
+   * This object is passed to PlaceOrderButton for final order creation.
+   */
+  const orderData = {
+    zipcode: zip,
+    address,
+    description,
+    selectedTime: selectedTime || "",
+    timeCoefficient,
+    laborSubtotal,
+    sumBeforeTax,
+    finalTotal,
+    taxRate: taxRatePercent,
+    taxAmount,
+    worksData: buildWorksData(),
+    serviceFeeOnLabor,
+    serviceFeeOnMaterials,
+    paymentType: "n/a",
+    paymentCoefficient: 1,
+  };
+
   return (
     <main className="min-h-screen pt-24 pb-16">
       <div className="container mx-auto">
@@ -292,7 +389,7 @@ export default function RoomsCheckout() {
       </div>
 
       <div className="container mx-auto pt-8">
-        {/* Top row: back + place order */}
+        {/* Top row with "Back" and the universal PlaceOrderButton (if you want a separate button as well, you can place it) */}
         <div className="flex items-center justify-between mb-6">
           <span
             className="text-blue-600 cursor-pointer"
@@ -300,22 +397,18 @@ export default function RoomsCheckout() {
           >
             ← Back
           </span>
-          <button
-            className="bg-yellow-400 hover:bg-yellow-500 text-black py-3 px-6 rounded-md font-semibold text-lg shadow-sm transition-colors duration-200"
-            onClick={handlePlaceOrder}
-          >
-            Place Your Order
-          </button>
+
+          {/* PlaceOrderButton => calls the actual order creation */}
+          <PlaceOrderButton
+            photos={photos}
+            orderData={orderData}
+            onOrderSuccess={onOrderSuccess} // Clear session and redirect
+          />
         </div>
 
-        {/* Header row: "Checkout" + Single combined icon button */}
+        {/* Title row with optional "print/share/save" icons */}
         <div className="flex items-center justify-between">
           <SectionBoxTitle>Checkout</SectionBoxTitle>
-
-          {/*
-            This single button has a rounded border, shows three icons,
-            and only calls handlePrint when clicked.
-          */}
           <ActionIconsBar onPrint={handlePrint} />
         </div>
 
@@ -331,36 +424,36 @@ export default function RoomsCheckout() {
             order number after confirmation.
           </p>
 
-          {/* Rooms breakdown */}
+          {/* Breakdown of each room */}
           <div className="space-y-6 mt-4">
             {chosenRoomIds.map((roomId) => {
               const roomObj = getRoomById(roomId);
               const roomTitle = roomObj ? roomObj.title : roomId;
 
+              // Summation for the current room
               const roomServices = selectedServicesState[roomId] || {};
-
               let roomLabor = 0;
-              let roomMat = 0;
-              for (const svcId of Object.keys(roomServices)) {
-                const cr = getCalcResultFor(
-                  svcId,
-                  overrideCalcResults,
-                  calculationResultsMap
-                );
-                if (!cr) continue;
-                roomLabor += parseFloat(cr.work_cost) || 0;
-                roomMat += parseFloat(cr.material_cost) || 0;
-              }
-              const roomSubtotal = roomLabor + roomMat;
+              let roomMaterials = 0;
 
-              // Build structure => { sectionName => { catId => [svcIds] } }
+              Object.keys(roomServices).forEach((svcId) => {
+                const cr = overrideCalcResults[svcId] || calculationResultsMap[svcId];
+                if (!cr) return;
+                roomLabor += parseFloat(cr.work_cost) || 0;
+                roomMaterials += parseFloat(cr.material_cost) || 0;
+              });
+              const roomSubtotal = roomLabor + roomMaterials;
+
+              // We can create a structure to group by sections -> categories -> services
               const sectionMap: Record<string, Record<string, string[]>> = {};
+
               Object.keys(roomServices).forEach((svcId) => {
                 const catId = getCategoryIdFromServiceId(svcId);
                 const catObj = ALL_CATEGORIES.find((c) => c.id === catId);
                 const sectionName = catObj ? catObj.section : "Other";
 
-                if (!sectionMap[sectionName]) sectionMap[sectionName] = {};
+                if (!sectionMap[sectionName]) {
+                  sectionMap[sectionName] = {};
+                }
                 if (!sectionMap[sectionName][catId]) {
                   sectionMap[sectionName][catId] = [];
                 }
@@ -373,184 +466,126 @@ export default function RoomsCheckout() {
                     {roomTitle}
                   </h3>
 
-                  {Object.entries(sectionMap).map(
-                    ([sectionName, catObjMap], sectionIdx) => {
-                      const sectionNum = sectionIdx + 1;
-                      return (
-                        <div
-                          key={sectionName}
-                          className="ml-0 sm:ml-4 space-y-4"
-                        >
-                          <h4 className="text-xl font-medium text-gray-700">
-                            {sectionNum}. {sectionName}
-                          </h4>
+                  {/* Loop by section -> category -> list of services */}
+                  {Object.entries(sectionMap).map(([secName, catObjMap], idx) => {
+                    const secNumber = idx + 1;
+                    return (
+                      <div key={secName} className="ml-0 sm:ml-4 space-y-4">
+                        <h4 className="text-xl font-medium text-gray-700">
+                          {secNumber}. {secName}
+                        </h4>
 
-                          {Object.entries(catObjMap).map(
-                            ([catId, svcList], catIdx) => {
-                              const catNum = `${sectionNum}.${catIdx + 1}`;
-                              const catName = getCategoryNameById(catId);
+                        {Object.entries(catObjMap).map(([catId, svcIds], catIdx) => {
+                          const catNumber = `${secNumber}.${catIdx + 1}`;
+                          const catName = getCategoryNameById(catId);
 
-                              return (
-                                <div
-                                  key={catId}
-                                  className="ml-0 sm:ml-4 space-y-4"
-                                >
-                                  <h5 className="font-medium text-lg text-gray-700">
-                                    {catNum}. {catName}
-                                  </h5>
+                          return (
+                            <div key={catId} className="ml-0 sm:ml-4 space-y-4">
+                              <h5 className="font-medium text-lg text-gray-700">
+                                {catNumber}. {catName}
+                              </h5>
 
-                                  {svcList.map((svcId, svcIdx) => {
-                                    const svcNum = `${catNum}.${svcIdx + 1}`;
-                                    const foundSvc = ALL_SERVICES.find(
-                                      (s) => s.id === svcId
-                                    );
-                                    const svcTitle = foundSvc
-                                      ? foundSvc.title
-                                      : svcId;
-                                    const svcDesc = foundSvc?.description || "";
-                                    const qty = roomServices[svcId] || 1;
+                              {svcIds.map((svcId, svcIndex) => {
+                                const svcNum = `${catNumber}.${svcIndex + 1}`;
+                                const foundSvc = ALL_SERVICES.find((s) => s.id === svcId);
+                                const svcTitle = foundSvc?.title || svcId;
+                                const svcDesc = foundSvc?.description || "";
+                                const qty = roomServices[svcId] || 1;
 
-                                    const cr = getCalcResultFor(
-                                      svcId,
-                                      overrideCalcResults,
-                                      calculationResultsMap
-                                    );
-                                    const laborCost = cr
-                                      ? parseFloat(cr.work_cost) || 0
-                                      : 0;
-                                    const matCost = cr
-                                      ? parseFloat(cr.material_cost) || 0
-                                      : 0;
-                                    const totalCost = laborCost + matCost;
+                                const cr = overrideCalcResults[svcId] || calculationResultsMap[svcId];
+                                const laborCost = cr ? parseFloat(cr.work_cost) || 0 : 0;
+                                const matCost = cr ? parseFloat(cr.material_cost) || 0 : 0;
+                                const totalCost = laborCost + matCost;
 
-                                    return (
-                                      <div
-                                        key={svcId}
-                                        className="pl-0 sm:pl-4 border-gray-200 mb-6 space-y-2"
-                                      >
-                                        <h6 className="font-medium text-md text-gray-700">
-                                          {svcNum}. {svcTitle}
-                                        </h6>
+                                return (
+                                  <div key={svcId} className="pl-0 sm:pl-4 mb-6 space-y-2">
+                                    <h6 className="font-medium text-md text-gray-700">
+                                      {svcNum}. {svcTitle}
+                                    </h6>
 
-                                        {svcDesc && (
-                                          <p className="text-sm text-gray-500 mt-1">
-                                            {svcDesc}
-                                          </p>
-                                        )}
+                                    {svcDesc && (
+                                      <p className="text-sm text-gray-500 mt-1">
+                                        {svcDesc}
+                                      </p>
+                                    )}
 
-                                        <div className="flex items-center justify-between mt-1">
-                                          <div className="text-md font-medium text-gray-700">
-                                            {qty}{" "}
-                                            {foundSvc?.unit_of_measurement ||
-                                              "units"}
-                                          </div>
-                                          <div className="text-md font-medium text-gray-700 mr-2">
-                                            ${formatWithSeparator(totalCost)}
-                                          </div>
+                                    <div className="flex items-center justify-between mt-1">
+                                      <div className="text-md font-medium text-gray-700">
+                                        {qty} {foundSvc?.unit_of_measurement || "units"}
+                                      </div>
+                                      <div className="text-md font-medium text-gray-700 mr-2">
+                                        ${formatWithSeparator(totalCost)}
+                                      </div>
+                                    </div>
+
+                                    {cr && (
+                                      <div className="mt-2 p-2 sm:p-4 bg-gray-50 border rounded">
+                                        <div className="flex justify-between mb-3">
+                                          <span className="text-md font-medium text-gray-700">
+                                            Labor
+                                          </span>
+                                          <span className="text-md font-medium text-gray-700">
+                                            {cr.work_cost
+                                              ? `$${formatWithSeparator(parseFloat(cr.work_cost))}`
+                                              : "—"}
+                                          </span>
+                                        </div>
+                                        <div className="flex justify-between mb-3">
+                                          <span className="text-md font-medium text-gray-700">
+                                            Materials, tools and equipment
+                                          </span>
+                                          <span className="text-md font-medium text-gray-700">
+                                            {cr.material_cost
+                                              ? `$${formatWithSeparator(parseFloat(cr.material_cost))}`
+                                              : "—"}
+                                          </span>
                                         </div>
 
-                                        {cr && (
-                                          <div className="mt-2 p-2 sm:p-4 bg-gray-50 border rounded">
-                                            <div className="flex justify-between mb-3">
-                                              <span className="text-md font-medium text-gray-700">
-                                                Labor
-                                              </span>
-                                              <span className="text-md font-medium text-gray-700">
-                                                {cr.work_cost
-                                                  ? `$${formatWithSeparator(
-                                                      parseFloat(cr.work_cost)
-                                                    )}`
-                                                  : "—"}
-                                              </span>
-                                            </div>
-                                            <div className="flex justify-between mb-3">
-                                              <span className="text-md font-medium text-gray-700">
-                                                Materials, tools and equipment
-                                              </span>
-                                              <span className="text-md font-medium text-gray-700">
-                                                {cr.material_cost
-                                                  ? `$${formatWithSeparator(
-                                                      parseFloat(
-                                                        cr.material_cost
-                                                      )
-                                                    )}`
-                                                  : "—"}
-                                              </span>
-                                            </div>
-
-                                            {Array.isArray(cr.materials) &&
-                                              cr.materials.length > 0 && (
-                                                <div className="mt-4">
-                                                  <table className="table-auto w-full text-sm text-left text-gray-700">
-                                                    <thead>
-                                                      <tr className="border-b">
-                                                        <th className="py-2 px-1 sm:px-3">
-                                                          Name
-                                                        </th>
-                                                        <th className="py-2 px-1 sm:px-3">
-                                                          Price
-                                                        </th>
-                                                        <th className="py-2 px-1 sm:px-3">
-                                                          Qty
-                                                        </th>
-                                                        <th className="py-2 px-1 sm:px-3">
-                                                          Subtotal
-                                                        </th>
-                                                      </tr>
-                                                    </thead>
-                                                    <tbody className="divide-y divide-gray-200">
-                                                      {cr.materials.map(
-                                                        (
-                                                          m: any,
-                                                          i2: number
-                                                        ) => (
-                                                          <tr
-                                                            key={`${m.external_id}-${i2}`}
-                                                            className="align-top"
-                                                          >
-                                                            <td className="py-3 px-3">
-                                                              {m.name}
-                                                            </td>
-                                                            <td className="py-3 px-3">
-                                                              $
-                                                              {formatWithSeparator(
-                                                                parseFloat(
-                                                                  m.cost_per_unit
-                                                                )
-                                                              )}
-                                                            </td>
-                                                            <td className="py-3 px-3">
-                                                              {m.quantity}
-                                                            </td>
-                                                            <td className="py-3 px-3">
-                                                              $
-                                                              {formatWithSeparator(
-                                                                parseFloat(
-                                                                  m.cost
-                                                                )
-                                                              )}
-                                                            </td>
-                                                          </tr>
-                                                        )
-                                                      )}
-                                                    </tbody>
-                                                  </table>
-                                                </div>
-                                              )}
+                                        {Array.isArray(cr.materials) && cr.materials.length > 0 && (
+                                          <div className="mt-4">
+                                            <table className="table-auto w-full text-sm text-left text-gray-700">
+                                              <thead>
+                                                <tr className="border-b">
+                                                  <th className="py-2 px-1 sm:px-3">Name</th>
+                                                  <th className="py-2 px-1 sm:px-3">Price</th>
+                                                  <th className="py-2 px-1 sm:px-3">Qty</th>
+                                                  <th className="py-2 px-1 sm:px-3">Subtotal</th>
+                                                </tr>
+                                              </thead>
+                                              <tbody className="divide-y divide-gray-200">
+                                                {cr.materials.map((m: any, i2: number) => {
+                                                  const priceVal = parseFloat(m.cost_per_unit);
+                                                  const subVal = parseFloat(m.cost);
+                                                  return (
+                                                    <tr key={`${m.external_id}-${i2}`} className="align-top">
+                                                      <td className="py-3 px-3">{m.name}</td>
+                                                      <td className="py-3 px-3">
+                                                        ${formatWithSeparator(priceVal)}
+                                                      </td>
+                                                      <td className="py-3 px-3">{m.quantity}</td>
+                                                      <td className="py-3 px-3">
+                                                        ${formatWithSeparator(subVal)}
+                                                      </td>
+                                                    </tr>
+                                                  );
+                                                })}
+                                              </tbody>
+                                            </table>
                                           </div>
                                         )}
                                       </div>
-                                    );
-                                  })}
-                                </div>
-                              );
-                            }
-                          )}
-                        </div>
-                      );
-                    }
-                  )}
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
 
+                  {/* Room total */}
                   <div className="flex justify-between items-center mt-2">
                     <span className="font-medium text-xl text-gray-700">
                       {roomTitle} Total:
@@ -567,9 +602,7 @@ export default function RoomsCheckout() {
           {/* Overall summary */}
           <div className="pt-4 mt-4 border-t">
             <div className="flex justify-between mb-2">
-              <span className="font-semibold text-lg text-gray-600">
-                Labor total:
-              </span>
+              <span className="font-semibold text-lg text-gray-600">Labor total:</span>
               <span className="font-semibold text-lg text-gray-600">
                 ${formatWithSeparator(laborSubtotal)}
               </span>
@@ -584,6 +617,7 @@ export default function RoomsCheckout() {
               </span>
             </div>
 
+            {/* Time-based surcharge or discount */}
             {timeCoefficient !== 1 && (
               <div className="flex justify-between mb-2">
                 <span className="text-gray-600">
@@ -646,22 +680,18 @@ export default function RoomsCheckout() {
             </span>
           </div>
 
-          {/* Date of Service */}
+          {/* Date of service */}
           <hr className="my-6 border-gray-200" />
           <div>
             <SectionBoxSubtitle>Work Start Date</SectionBoxSubtitle>
-            <p className="text-gray-700">
-              {selectedTime || "No date selected"}
-            </p>
+            <p className="text-gray-700">{selectedTime || "No date selected"}</p>
           </div>
 
           {/* Additional details */}
           <hr className="my-6 border-gray-200" />
           <div>
             <SectionBoxSubtitle>Additional Details</SectionBoxSubtitle>
-            <p className="text-gray-700">
-              {description || "No details provided"}
-            </p>
+            <p className="text-gray-700">{description || "No details provided"}</p>
           </div>
 
           {/* Address */}

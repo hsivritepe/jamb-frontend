@@ -184,7 +184,7 @@ export default function ExpandedOrderRow({
                                 <img
                                   src={mat.photo}
                                   alt={mat.name}
-                                  className="w-32 h-32 object-cover border rounded"
+                                  className="w-32 h-32 object-cover rounded"
                                 />
                               </div>
                             )}
