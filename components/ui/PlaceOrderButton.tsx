@@ -56,6 +56,36 @@ interface PlaceOrderButtonProps {
 }
 
 /**
+ * Detect whether a base64 string is a HEIC image (e.g. 'data:image/heic...' or 'data:image/heif...').
+ */
+function isHeicBase64(base64Data: string): boolean {
+  const match = base64Data.match(/^data:(image\/[^;]+);base64,/);
+  if (!match) return false;
+  const mimeType = match[1].toLowerCase();
+  return mimeType.includes("heic") || mimeType.includes("heif");
+}
+
+/**
+ * Converts a HEIC base64 string => File with image/jpeg.
+ * This dynamically imports `heic2any` inside.
+ */
+async function convertHeicBase64ToFile(base64Data: string): Promise<File> {
+  // First, reuse base64ToFile to get a "File" with type 'image/heic'
+  const heicFile = base64ToFile(base64Data);
+
+  // Then convert to JPEG via heic2any (dynamic import)
+  const { default: heic2any } = await import("heic2any");
+
+  const converted = await heic2any({
+    blob: heicFile,
+    toType: "image/jpeg",
+    quality: 0.8, // adjust if needed
+  });
+  const blobParts = Array.isArray(converted) ? converted : [converted];
+  return new File(blobParts, `photo_${Date.now()}.jpeg`, { type: "image/jpeg" });
+}
+
+/**
  * Converts a base64-encoded string => File object (synchronously).
  */
 function base64ToFile(base64Data: string): File {
@@ -104,7 +134,7 @@ export default function PlaceOrderButton({
    * Main handler for placing the order.
    */
   async function handlePlaceOrder() {
-    // If not logged in => store data & go to /login
+    // If not logged in => store data => /login
     if (!isUserLoggedIn()) {
       sessionStorage.setItem("tempOrderData", JSON.stringify(orderData));
       sessionStorage.setItem("tempOrderPhotos", JSON.stringify(photos));
@@ -120,71 +150,90 @@ export default function PlaceOrderButton({
       }
 
       const uploadedPhotoUrls: string[] = [];
+      let anyPhotoFailed = false; // track if any upload fails
 
       // Process each photo
       for (const p of photos) {
         // If starts with "data:", it's a base64-encoded image
         if (p.startsWith("data:")) {
-          // Convert base64 => File
-          const file = base64ToFile(p);
+          try {
+            let file: File;
 
-          // Compress the file using "browser-image-compression"
-          const options = {
-            maxSizeMB: 1,
-            maxWidthOrHeight: 1920,
-            useWebWorker: true,
-          };
-          const compressedFile = await imageCompression(file, options);
+            // 1) Check if it's HEIC
+            if (isHeicBase64(p)) {
+              console.log("Detected HEIC base64 => converting to JPEG...");
+              file = await convertHeicBase64ToFile(p);
+              console.log("HEIC converted =>", file);
+            } else {
+              // otherwise, regular base64 => File
+              file = base64ToFile(p);
+            }
 
-          console.log("Compressed file =>", {
-            name: compressedFile.name,
-            type: compressedFile.type,
-            size: compressedFile.size,
-          });
+            // 2) Compress the file using "browser-image-compression"
+            const options = {
+              maxSizeMB: 1,
+              maxWidthOrHeight: 1920,
+              useWebWorker: true,
+            };
+            const compressedFile = await imageCompression(file, options);
 
-          // 1) Request signed URL from /api/gcs-upload
-          const signedUrlResp = await fetch("/api/gcs-upload", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
+            console.log("Compressed file =>", {
               name: compressedFile.name,
               type: compressedFile.type,
-            }),
-          });
+              size: compressedFile.size,
+            });
 
-          if (!signedUrlResp.ok) {
-            throw new Error("Failed to get signed URL from /api/gcs-upload");
+            // 3) Request signed URL from /api/gcs-upload
+            const signedUrlResp = await fetch("/api/gcs-upload", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                name: compressedFile.name,
+                type: compressedFile.type,
+              }),
+            });
+
+            if (!signedUrlResp.ok) {
+              throw new Error("Failed to get signed URL from /api/gcs-upload");
+            }
+            const { uploadUrl, publicUrl } = await signedUrlResp.json();
+            console.log("Signed URL =>", uploadUrl);
+
+            // 4) Upload to GCS via PUT
+            const uploadResp = await fetch(uploadUrl, {
+              method: "PUT",
+              headers: {
+                "Content-Type": compressedFile.type,
+              },
+              body: compressedFile,
+            });
+
+            // 5) Read GCS response text in case of error
+            const gcsResponseText = await uploadResp.text();
+            console.log("PUT upload response status:", uploadResp.status);
+            console.log("GCS response body =>", gcsResponseText);
+
+            if (!uploadResp.ok) {
+              throw new Error(`Photo upload to GCS failed: ${gcsResponseText}`);
+            }
+
+            // If upload succeeded, push the final URL
+            uploadedPhotoUrls.push(publicUrl);
+          } catch (photoErr) {
+            anyPhotoFailed = true;
+            console.error("Photo upload failed, skipping this image:", photoErr);
           }
-          const { uploadUrl, publicUrl } = await signedUrlResp.json();
-          console.log("Signed URL =>", uploadUrl);
-
-          // 2) Upload to GCS via PUT
-          //    NOTE: We add "x-goog-acl" header with "public-read"
-          //    to match extensionHeaders: { 'x-goog-acl': 'public-read' } in route.ts
-          const uploadResp = await fetch(uploadUrl, {
-            method: "PUT",
-            headers: {
-              "Content-Type": compressedFile.type,
-              //"x-goog-acl": "public-read", // ensure public-read ACL is applied
-            },
-            body: compressedFile,
-          });
-
-          // 3) Read GCS response text for debug in case of error
-          const gcsResponseText = await uploadResp.text();
-          console.log("PUT upload response status:", uploadResp.status);
-          console.log("GCS response body =>", gcsResponseText);
-
-          if (!uploadResp.ok) {
-            throw new Error(`Photo upload to GCS failed: ${gcsResponseText}`);
-          }
-
-          // If upload succeeded, "publicUrl" can be used as <img src="..."/>
-          uploadedPhotoUrls.push(publicUrl);
         } else {
-          // If it's not base64, we assume it's already a valid URL
+          // If not base64 => likely a URL from session => just reuse
           uploadedPhotoUrls.push(p);
         }
+      }
+
+      // If some photos failed, optionally notify user but proceed
+      if (anyPhotoFailed) {
+        alert(
+          "Some photos failed to upload, but the order will still be placed without those images."
+        );
       }
 
       // 3) Build "works" array for the order
@@ -237,7 +286,7 @@ export default function PlaceOrderButton({
 
       const bodyToSend = {
         zipcode: orderData.zipcode,
-        user_token: token,
+        user_token: sessionStorage.getItem("authToken"), // or token
         common: {
           address: orderData.address,
           photos: uploadedPhotoUrls,
