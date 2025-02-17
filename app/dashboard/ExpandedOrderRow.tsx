@@ -179,8 +179,9 @@ export default function ExpandedOrderRow({
                       {work.materials.map((mat) => (
                         <tr key={mat.id} className="border-b">
                           <td className="px-2 py-1 align-top">
+                            {mat.name}
                             {mat.photo && (
-                              <div className="mb-1">
+                              <div className="my-1">
                                 <img
                                   src={mat.photo}
                                   alt={mat.name}
@@ -188,7 +189,6 @@ export default function ExpandedOrderRow({
                                 />
                               </div>
                             )}
-                            {mat.name}
                           </td>
                           <td className="px-2 py-1 align-top">{mat.quantity}</td>
                           <td className="px-2 py-1 align-top">
