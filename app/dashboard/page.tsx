@@ -6,6 +6,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ExpandedOrderRow from "./ExpandedOrderRow";
+import { Printer, Trash2 } from "lucide-react"; // <-- Importing both icons from lucide-react
 
 /**
  * Helper to return a greeting based on the current hour.
@@ -502,6 +503,16 @@ export default function OrdersPage() {
                               {order.common.selected_date}
                             </td>
                             <td className="hidden sm:table-cell w-1/4 py-2 px-3 text-right">
+                              {/* Print button (new) */}
+                              <button
+                                onClick={() => router.push(`/dashboard/print/${order.code}`)}
+                                className="text-gray-500 hover:text-blue-600 mr-3"
+                                title="Print order"
+                              >
+                                <Printer size={16} />
+                              </button>
+
+                              {/* Delete logic with Trash2 icon */}
                               {isPendingDelete ? (
                                 <div className="text-red-600 flex items-center gap-2 justify-end">
                                   <span>Deleting...</span>
@@ -513,32 +524,24 @@ export default function OrdersPage() {
                                   </button>
                                 </div>
                               ) : (
-                                /**
-                                 * The desktop "Delete" button calls initiateDeleteOrder with (order.id, order.code).
-                                 */
                                 <button
                                   onClick={() => initiateDeleteOrder(order.id, order.code)}
                                   className="text-gray-500 hover:text-red-600"
                                   title="Delete order"
                                 >
-                                  🗑
+                                  <Trash2 size={16} />
                                 </button>
                               )}
                             </td>
                           </tr>
 
-                          {/* If expanded, show the ExpandedOrderRow + divider */}
+                          {/* If expanded, show the ExpandedOrderRow */}
                           {isExpanded && expandedOrderDetails && (
                             <>
                               <ExpandedOrderRow
                                 order={expandedOrderDetails}
-                                // Pass isPendingDelete so the child can show "Deleting..." on mobile
                                 isPendingDelete={isPendingDelete}
                                 undoDelete={undoDelete}
-                                /**
-                                 * The mobile-only Delete button calls onDeleteOrder(orderId, orderCode).
-                                 * We'll pass a function that calls initiateDeleteOrder() with the same logic.
-                                 */
                                 onDeleteOrder={(id, code) => initiateDeleteOrder(id, code)}
                               />
                             </>

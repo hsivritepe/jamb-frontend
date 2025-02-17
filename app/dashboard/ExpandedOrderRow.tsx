@@ -1,6 +1,8 @@
 "use client";
 
 import React from "react";
+import { useRouter } from "next/navigation";
+import { Printer, Trash2 } from "lucide-react";
 
 interface CompositeOrder {
   id: number;
@@ -46,7 +48,6 @@ interface CompositeOrder {
 }
 
 /**
- * Props for our ExpandedOrderRow. Notice:
  * - onDeleteOrder expects (orderId: number, orderCode: string)
  * - isPendingDelete is a boolean the parent decides (if parent's pendingDelete === order.id).
  */
@@ -59,7 +60,7 @@ interface ExpandedOrderRowProps {
 
 /**
  * This component renders the expanded details of a single order.
- * It also includes a mobile-only "Delete" button that calls onDeleteOrder.
+ * It also includes "Print" and "Delete" buttons (both desktop and mobile).
  */
 export default function ExpandedOrderRow({
   order,
@@ -67,6 +68,8 @@ export default function ExpandedOrderRow({
   undoDelete,
   onDeleteOrder,
 }: ExpandedOrderRowProps) {
+  const router = useRouter(); // used to push to /dashboard/print/[orderCode]
+
   /**
    * 1) Calculate total labor vs. materials for the entire order.
    */
@@ -119,7 +122,10 @@ export default function ExpandedOrderRow({
         <h3 className="text-xl sm:text-xl font-bold mb-2">Estimate</h3>
         {order.works.map((work, idx) => {
           // For each work, compute single-work labor cost and materials cost
-          const sumWorkMaterials = work.materials.reduce((acc, mat) => acc + parseFloat(mat.cost), 0);
+          const sumWorkMaterials = work.materials.reduce(
+            (acc, mat) => acc + parseFloat(mat.cost),
+            0
+          );
           const singleWorkLabor = parseFloat(work.total) - sumWorkMaterials;
 
           return (
@@ -144,13 +150,15 @@ export default function ExpandedOrderRow({
                 <div className="flex-1">
                   <p className="mb-2">{work.description}</p>
                   <p className="mb-2 text-sm font-bold">
-                    <strong>Quantity:</strong> {work.work_count} {work.unit_of_measurement}
+                    <strong>Quantity:</strong> {work.work_count}{" "}
+                    {work.unit_of_measurement}
                   </p>
                   <p className="mb-2">
                     <strong>Labor Price:</strong> {singleWorkLabor.toFixed(2)}
                   </p>
                   <p className="mb-2">
-                    <strong>Materials Cost:</strong> {sumWorkMaterials.toFixed(2)}
+                    <strong>Materials Cost:</strong>{" "}
+                    {sumWorkMaterials.toFixed(2)}
                   </p>
                 </div>
               </div>
@@ -171,7 +179,6 @@ export default function ExpandedOrderRow({
                       {work.materials.map((mat) => (
                         <tr key={mat.id} className="border-b">
                           <td className="px-2 py-1 align-top">
-                            {/* If a material has a photo, show it above the name */}
                             {mat.photo && (
                               <div className="mb-1">
                                 <img
@@ -185,7 +192,8 @@ export default function ExpandedOrderRow({
                           </td>
                           <td className="px-2 py-1 align-top">{mat.quantity}</td>
                           <td className="px-2 py-1 align-top">
-                            ${parseFloat(mat.cost_per_unit).toFixed(2)}
+                            $
+                            {parseFloat(mat.cost_per_unit).toFixed(2)}
                           </td>
                           <td className="px-2 py-1 align-top">
                             ${parseFloat(mat.cost).toFixed(2)}
@@ -206,16 +214,20 @@ export default function ExpandedOrderRow({
             <strong>Labor Total:</strong> {laborTotal.toFixed(2)}
           </p>
           <p>
-            <strong>Materials, tools & equipment:</strong> {sumMaterialsCost.toFixed(2)}
+            <strong>Materials, tools & equipment:</strong>{" "}
+            {sumMaterialsCost.toFixed(2)}
           </p>
           <p>
-            <strong>{surchargeOrDiscountLabel}:</strong> {surchargeOrDiscountValue.toFixed(2)}
+            <strong>{surchargeOrDiscountLabel}:</strong>{" "}
+            {surchargeOrDiscountValue.toFixed(2)}
           </p>
           <p>
-            <strong>Service Fee on Labor:</strong> {serviceFeeOnLabor.toFixed(2)}
+            <strong>Service Fee on Labor:</strong>{" "}
+            {serviceFeeOnLabor.toFixed(2)}
           </p>
           <p>
-            <strong>Service Fee on Materials:</strong> {serviceFeeOnMaterials.toFixed(2)}
+            <strong>Service Fee on Materials:</strong>{" "}
+            {serviceFeeOnMaterials.toFixed(2)}
           </p>
         </div>
 
@@ -228,7 +240,8 @@ export default function ExpandedOrderRow({
             })}
           </p>
           <p>
-            <strong>Taxes ({taxRateNum.toFixed(2)}%):</strong> $
+            <strong>Taxes ({taxRateNum.toFixed(2)}%):</strong>{" "}
+            $
             {taxAmountNum.toLocaleString("en-US", {
               minimumFractionDigits: 2,
             })}
@@ -245,7 +258,9 @@ export default function ExpandedOrderRow({
         {/** Additional block: common.description, common.photos, etc. */}
         <div className="mt-4">
           {order.common.description && (
-            <p className="italic mb-2">Description: {order.common.description}</p>
+            <p className="italic mb-2">
+              Description: {order.common.description}
+            </p>
           )}
 
           {order.common.photos && order.common.photos.length > 0 && (
@@ -257,7 +272,7 @@ export default function ExpandedOrderRow({
                     <img
                       src={photoUrl}
                       alt="Order photo"
-                      className="border rounded w-full h-32 object-cover"
+                      className="border rounded w-full h-32 sm:h-64 object-cover"
                     />
                   </div>
                 ))}
@@ -267,12 +282,20 @@ export default function ExpandedOrderRow({
         </div>
 
         {/**
-         * MOBILE-ONLY DELETE BUTTON:
-         * - This is shown only on small screens (block sm:hidden).
-         * - If isPendingDelete is true, we show "Deleting..." + Undo.
-         * - Otherwise, we show a "Delete" button that calls onDeleteOrder(order.id, order.code).
+         * DESKTOP (hidden on mobile): Print + Delete buttons
          */}
-        <div className="mt-6 block sm:hidden">
+        <div className="mt-6 hidden sm:flex items-center gap-3 justify-end">
+          {/* Print button (desktop) */}
+          <button
+            onClick={() => router.push(`/dashboard/print/${order.code}`)}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            title="Print order"
+          >
+            <Printer size={16} />
+            <span>Print</span>
+          </button>
+
+          {/* Delete logic (desktop) */}
           {isPendingDelete ? (
             <div className="text-red-600 flex items-center gap-2">
               <span>Deleting...</span>
@@ -283,9 +306,45 @@ export default function ExpandedOrderRow({
           ) : (
             <button
               onClick={() => onDeleteOrder(order.id, order.code)}
-              className="bg-red-600 text-white px-4 py-2 text-sm rounded hover:bg-red-700"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+              title="Delete order"
             >
-              Delete
+              <Trash2 size={16} />
+              <span>Delete</span>
+            </button>
+          )}
+        </div>
+
+        {/**
+         * MOBILE ONLY => block sm:hidden => Print + Delete
+         */}
+        <div className="mt-6 flex sm:hidden items-center gap-3">
+          {/* Print button (mobile) */}
+          <button
+            onClick={() => router.push(`/dashboard/print/${order.code}`)}
+            className="inline-flex items-center gap-2 px-3 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+            title="Print order"
+          >
+            <Printer size={16} />
+            <span>Print</span>
+          </button>
+
+          {/* Delete logic (mobile) */}
+          {isPendingDelete ? (
+            <div className="text-red-600 flex items-center gap-2">
+              <span>Deleting...</span>
+              <button onClick={undoDelete} className="underline text-blue-600 text-xs">
+                Undo
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => onDeleteOrder(order.id, order.code)}
+              className="inline-flex items-center gap-2 px-3 py-2 bg-red-600 text-white text-sm rounded hover:bg-red-700"
+              title="Delete order"
+            >
+              <Trash2 size={16} />
+              <span>Delete</span>
             </button>
           )}
         </div>
