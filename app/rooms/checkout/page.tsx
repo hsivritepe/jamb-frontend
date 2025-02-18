@@ -107,7 +107,7 @@ function numberToWordsUSD(amount: number): string {
   const integerPart = Math.floor(amount);
   const decimalPart = Math.round((amount - integerPart) * 100);
 
-  // Basic word map for numbers 0..90
+  // Basic word map for 0..90
   const wordsMap: Record<number, string> = {
     0: "zero", 1: "one", 2: "two", 3: "three", 4: "four",
     5: "five", 6: "six", 7: "seven", 8: "eight", 9: "nine",
@@ -117,7 +117,6 @@ function numberToWordsUSD(amount: number): string {
     60: "sixty", 70: "seventy", 80: "eighty", 90: "ninety",
   };
 
-  // Helper: convert two-digit number into words
   function twoDigitsToWords(n: number): string {
     if (n <= 20) return wordsMap[n] || "";
     if (n < 100) {
@@ -129,7 +128,6 @@ function numberToWordsUSD(amount: number): string {
     return String(n);
   }
 
-  // Helper: convert up to three digits
   function threeDigitsToWords(n: number): string {
     const hundreds = Math.floor(n / 100);
     const remainder = n % 100;
@@ -141,14 +139,12 @@ function numberToWordsUSD(amount: number): string {
     return hundredPart || remainderPart || "";
   }
 
-  // Split the integer part by chunks of 3 digits (thousands, millions, etc.)
   let resultWords: string[] = [];
   const thousands = ["", " thousand", " million", " billion"];
   let temp = integerPart;
   let i = 0;
 
   if (temp === 0) {
-    // handle zero
     resultWords.push("zero");
   }
   while (temp > 0 && i < thousands.length) {
@@ -216,7 +212,6 @@ export default function RoomsCheckout() {
       }
     }
     if (!anySelected || !address.trim()) {
-      // Redirect user if needed
       router.push("/rooms/details");
     }
   }, [selectedServicesState, address, router]);
@@ -242,15 +237,11 @@ export default function RoomsCheckout() {
     constructedAddress += country;
   }
 
-  // Build estimate code
   const estimateNumber = buildEstimateNumber(stateName, zip);
-
-  // Convert total to words
   const finalTotalWords = numberToWordsUSD(finalTotal);
 
   /**
-   * buildWorksData constructs an array of objects describing each service item.
-   * Each item has type="rooms" so that the backend can distinguish the order source.
+   * buildWorksData constructs an array describing each service item.
    */
   function buildWorksData() {
     const works: Array<{
@@ -271,25 +262,20 @@ export default function RoomsCheckout() {
       }>;
     }> = [];
 
-    // Loop through each room => each service
     for (const roomId of Object.keys(selectedServicesState)) {
       const roomServices = selectedServicesState[roomId];
       for (const svcId of Object.keys(roomServices)) {
         const qty = roomServices[svcId];
-        // If overrideCalcResults is used, prefer that. Otherwise, fallback to calculationResultsMap
         const cr = overrideCalcResults[svcId] || calculationResultsMap[svcId];
         if (!cr) continue;
 
-        // Parse numeric
         const laborVal = parseFloat(cr.work_cost) || 0;
         const matVal = parseFloat(cr.material_cost) || 0;
         const totalVal = laborVal + matVal;
 
-        // Find the service to get unit_of_measurement
         const foundSvc = ALL_SERVICES.find((x) => x.id === svcId);
         const unit = foundSvc?.unit_of_measurement || "each";
 
-        // Build materials array
         let fm: Array<{
           external_id: string;
           quantity: number;
@@ -305,9 +291,8 @@ export default function RoomsCheckout() {
           }));
         }
 
-        // Push each service item to the works array
         works.push({
-          type: "rooms", // This marks the item as coming from the Rooms flow
+          type: "rooms",
           code: svcId.replace(/-/g, "."),
           unitOfMeasurement: unit,
           quantity: qty,
@@ -320,23 +305,14 @@ export default function RoomsCheckout() {
         });
       }
     }
-
     return works;
   }
 
   /**
-   * handlePrint is triggered by the icons bar if user wants to print the estimate.
-   */
-  function handlePrint() {
-    router.push("/rooms/checkout/print");
-  }
-
-  /**
-   * onOrderSuccess is called by PlaceOrderButton after a successful order creation.
-   * Here we can clear the session keys related to the Rooms flow and redirect.
+   * If the order is successful => remove the "rooms" keys => then go /thank-you
    */
   function onOrderSuccess() {
-    // Clear only the keys associated with Rooms
+    // Clear only the keys associated with rooms
     sessionStorage.removeItem("rooms_selectedServicesWithQuantity");
     sessionStorage.removeItem("rooms_selectedSections");
     sessionStorage.removeItem("rooms_searchQuery");
@@ -349,24 +325,19 @@ export default function RoomsCheckout() {
     sessionStorage.removeItem("rooms_taxAmount");
     sessionStorage.removeItem("rooms_estimateFinalTotal");
 
-    // If you also want to clear "global" fields like address, photos, etc., you can do it here:
+    // Optionally remove other global fields
     // sessionStorage.removeItem("address");
-    // sessionStorage.removeItem("description");
-    // sessionStorage.removeItem("photos");
-    // sessionStorage.removeItem("selectedTime");
-    // sessionStorage.removeItem("timeCoefficient");
-    // ...
+    sessionStorage.removeItem("description");
+    sessionStorage.removeItem("photos");
+    sessionStorage.removeItem("selectedTime");
+    sessionStorage.removeItem("timeCoefficient");
 
-    // Finally, redirect to a thank-you page or anywhere else
     router.push("/thank-you");
   }
 
-  /**
-   * This object is passed to PlaceOrderButton for final order creation.
-   */
   const orderData = {
     zipcode: zip,
-    address,
+    address: constructedAddress.trim(),
     description,
     selectedTime: selectedTime || "",
     timeCoefficient,
@@ -389,7 +360,7 @@ export default function RoomsCheckout() {
       </div>
 
       <div className="container mx-auto pt-8">
-        {/* Top row with "Back" and the universal PlaceOrderButton (if you want a separate button as well, you can place it) */}
+        {/* Top row with "Back" and the universal PlaceOrderButton */}
         <div className="flex items-center justify-between mb-6">
           <span
             className="text-blue-600 cursor-pointer"
@@ -398,18 +369,17 @@ export default function RoomsCheckout() {
             ← Back
           </span>
 
-          {/* PlaceOrderButton => calls the actual order creation */}
           <PlaceOrderButton
             photos={photos}
             orderData={orderData}
-            onOrderSuccess={onOrderSuccess} // Clear session and redirect
+            onOrderSuccess={onOrderSuccess}
           />
         </div>
 
         {/* Title row with optional "print/share/save" icons */}
         <div className="flex items-center justify-between">
           <SectionBoxTitle>Checkout</SectionBoxTitle>
-          <ActionIconsBar onPrint={handlePrint} />
+          <ActionIconsBar onPrint={() => router.push("/rooms/checkout/print")} />
         </div>
 
         <div className="bg-white border border-gray-300 mt-8 p-4 sm:p-6 rounded-lg space-y-6">
@@ -428,13 +398,11 @@ export default function RoomsCheckout() {
           <div className="space-y-6 mt-4">
             {chosenRoomIds.map((roomId) => {
               const roomObj = getRoomById(roomId);
-              const roomTitle = roomObj ? roomObj.title : roomId;
+              if (!roomObj) return null;
 
-              // Summation for the current room
               const roomServices = selectedServicesState[roomId] || {};
               let roomLabor = 0;
               let roomMaterials = 0;
-
               Object.keys(roomServices).forEach((svcId) => {
                 const cr = overrideCalcResults[svcId] || calculationResultsMap[svcId];
                 if (!cr) return;
@@ -443,9 +411,8 @@ export default function RoomsCheckout() {
               });
               const roomSubtotal = roomLabor + roomMaterials;
 
-              // We can create a structure to group by sections -> categories -> services
+              // Build structure to group services by category
               const sectionMap: Record<string, Record<string, string[]>> = {};
-
               Object.keys(roomServices).forEach((svcId) => {
                 const catId = getCategoryIdFromServiceId(svcId);
                 const catObj = ALL_CATEGORIES.find((c) => c.id === catId);
@@ -463,10 +430,9 @@ export default function RoomsCheckout() {
               return (
                 <div key={roomId} className="space-y-4">
                   <h3 className="text-2xl font-semibold text-gray-800">
-                    {roomTitle}
+                    {roomObj.title}
                   </h3>
 
-                  {/* Loop by section -> category -> list of services */}
                   {Object.entries(sectionMap).map(([secName, catObjMap], idx) => {
                     const secNumber = idx + 1;
                     return (
@@ -488,11 +454,10 @@ export default function RoomsCheckout() {
                               {svcIds.map((svcId, svcIndex) => {
                                 const svcNum = `${catNumber}.${svcIndex + 1}`;
                                 const foundSvc = ALL_SERVICES.find((s) => s.id === svcId);
-                                const svcTitle = foundSvc?.title || svcId;
-                                const svcDesc = foundSvc?.description || "";
-                                const qty = roomServices[svcId] || 1;
+                                if (!foundSvc) return null;
 
                                 const cr = overrideCalcResults[svcId] || calculationResultsMap[svcId];
+                                const qty = roomServices[svcId];
                                 const laborCost = cr ? parseFloat(cr.work_cost) || 0 : 0;
                                 const matCost = cr ? parseFloat(cr.material_cost) || 0 : 0;
                                 const totalCost = laborCost + matCost;
@@ -500,18 +465,18 @@ export default function RoomsCheckout() {
                                 return (
                                   <div key={svcId} className="pl-0 sm:pl-4 mb-6 space-y-2">
                                     <h6 className="font-medium text-md text-gray-700">
-                                      {svcNum}. {svcTitle}
+                                      {svcNum}. {foundSvc.title}
                                     </h6>
 
-                                    {svcDesc && (
+                                    {foundSvc.description && (
                                       <p className="text-sm text-gray-500 mt-1">
-                                        {svcDesc}
+                                        {foundSvc.description}
                                       </p>
                                     )}
 
                                     <div className="flex items-center justify-between mt-1">
                                       <div className="text-md font-medium text-gray-700">
-                                        {qty} {foundSvc?.unit_of_measurement || "units"}
+                                        {qty} {foundSvc.unit_of_measurement}
                                       </div>
                                       <div className="text-md font-medium text-gray-700 mr-2">
                                         ${formatWithSeparator(totalCost)}
@@ -588,7 +553,7 @@ export default function RoomsCheckout() {
                   {/* Room total */}
                   <div className="flex justify-between items-center mt-2">
                     <span className="font-medium text-xl text-gray-700">
-                      {roomTitle} Total:
+                      {roomObj.title} Total:
                     </span>
                     <span className="font-medium text-xl text-gray-700">
                       ${formatWithSeparator(roomSubtotal)}
@@ -617,7 +582,6 @@ export default function RoomsCheckout() {
               </span>
             </div>
 
-            {/* Time-based surcharge or discount */}
             {timeCoefficient !== 1 && (
               <div className="flex justify-between mb-2">
                 <span className="text-gray-600">

@@ -56,7 +56,7 @@ interface PlaceOrderButtonProps {
 }
 
 /**
- * Detect whether a base64 string is a HEIC image (e.g. 'data:image/heic...' or 'data:image/heif...').
+ * Detect whether a base64 string is a HEIC image.
  */
 function isHeicBase64(base64Data: string): boolean {
   const match = base64Data.match(/^data:(image\/[^;]+);base64,/);
@@ -66,27 +66,23 @@ function isHeicBase64(base64Data: string): boolean {
 }
 
 /**
- * Converts a HEIC base64 string => File with image/jpeg.
- * This dynamically imports `heic2any` inside.
+ * Converts a HEIC base64 => File (JPEG).
  */
 async function convertHeicBase64ToFile(base64Data: string): Promise<File> {
-  // First, reuse base64ToFile to get a "File" with type 'image/heic'
   const heicFile = base64ToFile(base64Data);
 
-  // Then convert to JPEG via heic2any (dynamic import)
   const { default: heic2any } = await import("heic2any");
-
   const converted = await heic2any({
     blob: heicFile,
     toType: "image/jpeg",
-    quality: 0.8, // adjust if needed
+    quality: 0.8,
   });
   const blobParts = Array.isArray(converted) ? converted : [converted];
   return new File(blobParts, `photo_${Date.now()}.jpeg`, { type: "image/jpeg" });
 }
 
 /**
- * Converts a base64-encoded string => File object (synchronously).
+ * Converts any base64 => File.
  */
 function base64ToFile(base64Data: string): File {
   const match = base64Data.match(/^data:(.*?);base64,(.*)$/);
@@ -103,7 +99,6 @@ function base64ToFile(base64Data: string): File {
   }
   const byteArray = new Uint8Array(byteNums);
 
-  // Derive the extension from mimeType if present, else default to png
   const ext = mimeType.split("/")[1] || "png";
   const fileName = `photo_${Date.now()}.${ext}`;
   return new File([byteArray], fileName, { type: mimeType });
@@ -122,19 +117,12 @@ export default function PlaceOrderButton({
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
-  /**
-   * Checks if there's an "authToken" in sessionStorage.
-   * If not, user is not considered logged in.
-   */
   function isUserLoggedIn(): boolean {
     return !!sessionStorage.getItem("authToken");
   }
 
-  /**
-   * Main handler for placing the order.
-   */
   async function handlePlaceOrder() {
-    // If not logged in => store data => /login
+    // If user not logged in => store data => redirect
     if (!isUserLoggedIn()) {
       sessionStorage.setItem("tempOrderData", JSON.stringify(orderData));
       sessionStorage.setItem("tempOrderPhotos", JSON.stringify(photos));
@@ -150,26 +138,19 @@ export default function PlaceOrderButton({
       }
 
       const uploadedPhotoUrls: string[] = [];
-      let anyPhotoFailed = false; // track if any upload fails
+      let anyPhotoFailed = false;
 
-      // Process each photo
+      // Upload each photo
       for (const p of photos) {
-        // If starts with "data:", it's a base64-encoded image
         if (p.startsWith("data:")) {
           try {
             let file: File;
-
-            // 1) Check if it's HEIC
             if (isHeicBase64(p)) {
-              console.log("Detected HEIC base64 => converting to JPEG...");
               file = await convertHeicBase64ToFile(p);
-              console.log("HEIC converted =>", file);
             } else {
-              // otherwise, regular base64 => File
               file = base64ToFile(p);
             }
 
-            // 2) Compress the file using "browser-image-compression"
             const options = {
               maxSizeMB: 1,
               maxWidthOrHeight: 1920,
@@ -177,13 +158,6 @@ export default function PlaceOrderButton({
             };
             const compressedFile = await imageCompression(file, options);
 
-            console.log("Compressed file =>", {
-              name: compressedFile.name,
-              type: compressedFile.type,
-              size: compressedFile.size,
-            });
-
-            // 3) Request signed URL from /api/gcs-upload
             const signedUrlResp = await fetch("/api/gcs-upload", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -192,14 +166,11 @@ export default function PlaceOrderButton({
                 type: compressedFile.type,
               }),
             });
-
             if (!signedUrlResp.ok) {
               throw new Error("Failed to get signed URL from /api/gcs-upload");
             }
             const { uploadUrl, publicUrl } = await signedUrlResp.json();
-            console.log("Signed URL =>", uploadUrl);
 
-            // 4) Upload to GCS via PUT
             const uploadResp = await fetch(uploadUrl, {
               method: "PUT",
               headers: {
@@ -207,36 +178,29 @@ export default function PlaceOrderButton({
               },
               body: compressedFile,
             });
-
-            // 5) Read GCS response text in case of error
             const gcsResponseText = await uploadResp.text();
-            console.log("PUT upload response status:", uploadResp.status);
-            console.log("GCS response body =>", gcsResponseText);
-
             if (!uploadResp.ok) {
               throw new Error(`Photo upload to GCS failed: ${gcsResponseText}`);
             }
 
-            // If upload succeeded, push the final URL
             uploadedPhotoUrls.push(publicUrl);
           } catch (photoErr) {
             anyPhotoFailed = true;
-            console.error("Photo upload failed, skipping this image:", photoErr);
+            console.error("Photo upload failed:", photoErr);
           }
         } else {
-          // If not base64 => likely a URL from session => just reuse
+          // Already a URL
           uploadedPhotoUrls.push(p);
         }
       }
 
-      // If some photos failed, optionally notify user but proceed
       if (anyPhotoFailed) {
         alert(
           "Some photos failed to upload, but the order will still be placed without those images."
         );
       }
 
-      // 3) Build "works" array for the order
+      // Build works
       const works = orderData.worksData.map((w) => ({
         type: w.type,
         code: w.code,
@@ -252,9 +216,7 @@ export default function PlaceOrderButton({
           : "0.00",
         total: w.total.toFixed(2),
         payment_type:
-          w.paymentType && w.paymentType.trim() !== ""
-            ? w.paymentType
-            : "n/a",
+          w.paymentType && w.paymentType.trim() !== "" ? w.paymentType : "n/a",
         payment_coefficient: w.paymentCoefficient
           ? w.paymentCoefficient.toFixed(2)
           : "1.00",
@@ -268,7 +230,7 @@ export default function PlaceOrderButton({
           : [],
       }));
 
-      // 4) Build the final JSON to send to /api/orders/create
+      // Compose JSON
       const serviceFeeOnLabor = orderData.serviceFeeOnLabor
         ? orderData.serviceFeeOnLabor.toFixed(2)
         : "0.00";
@@ -286,7 +248,7 @@ export default function PlaceOrderButton({
 
       const bodyToSend = {
         zipcode: orderData.zipcode,
-        user_token: sessionStorage.getItem("authToken"), // or token
+        user_token: token,
         common: {
           address: orderData.address,
           photos: uploadedPhotoUrls,
@@ -310,7 +272,7 @@ export default function PlaceOrderButton({
 
       console.log("Sending final JSON to /api/orders/create:", bodyToSend);
 
-      // 5) POST to /api/orders/create
+      // POST /api/orders/create
       const createOrderResp = await fetch("/api/orders/create", {
         method: "POST",
         headers: {
@@ -319,7 +281,6 @@ export default function PlaceOrderButton({
         },
         body: JSON.stringify(bodyToSend),
       });
-
       if (!createOrderResp.ok) {
         let errorMessage = "";
         try {
@@ -335,13 +296,17 @@ export default function PlaceOrderButton({
       const resultData = await createOrderResp.json();
       console.log("Order saved successfully:", resultData);
 
-      // 6) success => optionally call onOrderSuccess or do a default flow
+      // Always store code & total => so that /thank-you can show them
+      const orderCode = resultData.order_code || "";
+      const orderTotal = bodyToSend.total || "";
+
+      sessionStorage.setItem("orderCode", orderCode);
+      sessionStorage.setItem("orderTotal", orderTotal);
+
+      // If onOrderSuccess => call it, else => go /thank-you
       if (onOrderSuccess) {
         onOrderSuccess();
       } else {
-        alert("Order saved successfully!");
-        sessionStorage.setItem("orderCode", resultData.order_code || "");
-        sessionStorage.setItem("orderTotal", bodyToSend.total || "");
         router.push("/thank-you");
       }
     } catch (err: any) {

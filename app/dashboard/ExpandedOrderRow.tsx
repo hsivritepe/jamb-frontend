@@ -70,9 +70,7 @@ export default function ExpandedOrderRow({
 }: ExpandedOrderRowProps) {
   const router = useRouter(); // used to push to /dashboard/print/[orderCode]
 
-  /**
-   * 1) Calculate total labor vs. materials for the entire order.
-   */
+  // 1) Calculate total labor vs. materials for the entire order.
   const sumWorksTotals = order.works.reduce((acc, w) => acc + parseFloat(w.total), 0);
   const sumMaterialsCost = order.works.reduce((acc, w) => {
     const sumMats = w.materials.reduce((mAcc, mat) => mAcc + parseFloat(mat.cost), 0);
@@ -128,6 +126,9 @@ export default function ExpandedOrderRow({
           );
           const singleWorkLabor = parseFloat(work.total) - sumWorkMaterials;
 
+          // Convert the quantity from string to float to localize it
+          const workCountVal = parseFloat(work.work_count);
+
           return (
             <div key={work.id} className="mb-8">
               {/* Work # + Name */}
@@ -150,15 +151,23 @@ export default function ExpandedOrderRow({
                 <div className="flex-1">
                   <p className="mb-2">{work.description}</p>
                   <p className="mb-2 text-sm font-bold">
-                    <strong>Quantity:</strong> {work.work_count}{" "}
+                    <strong>Quantity:</strong>{" "}
+                    {workCountVal.toLocaleString("en-US", {
+                      minimumFractionDigits: 0,
+                    })}{" "}
                     {work.unit_of_measurement}
                   </p>
                   <p className="mb-2">
-                    <strong>Labor Price:</strong> {singleWorkLabor.toFixed(2)}
+                    <strong>Labor:</strong>{" "}
+                    {singleWorkLabor.toLocaleString("en-US", {
+                      minimumFractionDigits: 2,
+                    })}
                   </p>
                   <p className="mb-2">
-                    <strong>Materials Cost:</strong>{" "}
-                    {sumWorkMaterials.toFixed(2)}
+                    <strong>Materials, tools & equipment: </strong>{" "}
+                    {sumWorkMaterials.toLocaleString("en-US", {
+                      minimumFractionDigits: 2,
+                    })}
                   </p>
                 </div>
               </div>
@@ -190,13 +199,21 @@ export default function ExpandedOrderRow({
                               </div>
                             )}
                           </td>
-                          <td className="px-2 py-1 align-top">{mat.quantity}</td>
                           <td className="px-2 py-1 align-top">
-                            $
-                            {parseFloat(mat.cost_per_unit).toFixed(2)}
+                            {mat.quantity.toLocaleString("en-US", {
+                              minimumFractionDigits: 0,
+                            })}
                           </td>
                           <td className="px-2 py-1 align-top">
-                            ${parseFloat(mat.cost).toFixed(2)}
+                            {parseFloat(mat.cost_per_unit).toLocaleString(
+                              "en-US",
+                              { minimumFractionDigits: 2 }
+                            )}
+                          </td>
+                          <td className="px-2 py-1 align-top">
+                            {parseFloat(mat.cost).toLocaleString("en-US", {
+                              minimumFractionDigits: 2,
+                            })}
                           </td>
                         </tr>
                       ))}
@@ -211,23 +228,26 @@ export default function ExpandedOrderRow({
         {/** COST SUMMARY FOR THE WHOLE ORDER */}
         <div className="mb-2 space-y-1">
           <p>
-            <strong>Labor Total:</strong> {laborTotal.toFixed(2)}
+            <strong>Labor Total:</strong>{" "}
+            {laborTotal.toLocaleString("en-US", { minimumFractionDigits: 2 })}
           </p>
           <p>
             <strong>Materials, tools & equipment:</strong>{" "}
-            {sumMaterialsCost.toFixed(2)}
+            {sumMaterialsCost.toLocaleString("en-US", { minimumFractionDigits: 2 })}
           </p>
           <p>
             <strong>{surchargeOrDiscountLabel}:</strong>{" "}
-            {surchargeOrDiscountValue.toFixed(2)}
+            {surchargeOrDiscountValue.toLocaleString("en-US", {
+              minimumFractionDigits: 2,
+            })}
           </p>
           <p>
             <strong>Service Fee on Labor:</strong>{" "}
-            {serviceFeeOnLabor.toFixed(2)}
+            {serviceFeeOnLabor.toLocaleString("en-US", { minimumFractionDigits: 2 })}
           </p>
           <p>
-            <strong>Service Fee on Materials:</strong>{" "}
-            {serviceFeeOnMaterials.toFixed(2)}
+            <strong>Delivery & Processing Fee:</strong>{" "}
+            {serviceFeeOnMaterials.toLocaleString("en-US", { minimumFractionDigits: 2 })}
           </p>
         </div>
 
@@ -240,15 +260,16 @@ export default function ExpandedOrderRow({
             })}
           </p>
           <p>
-            <strong>Taxes ({taxRateNum.toFixed(2)}%):</strong>{" "}
+            <strong>
+              Taxes ({taxRateNum.toLocaleString("en-US", { minimumFractionDigits: 2 })}%):
+            </strong>{" "}
             $
             {taxAmountNum.toLocaleString("en-US", {
               minimumFractionDigits: 2,
             })}
           </p>
           <p className="mt-2 font-bold text-lg sm:text-xl">
-            <strong>Total:</strong>{" "}
-            $
+            <strong>Total:</strong> $
             {totalPrice.toLocaleString("en-US", {
               minimumFractionDigits: 2,
             })}
