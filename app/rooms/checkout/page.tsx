@@ -226,7 +226,7 @@ export default function RoomsCheckout() {
     (roomId) => Object.keys(selectedServicesState[roomId]).length > 0
   );
 
-  // Build address string
+  // Build address string from city, state, zip, country
   let constructedAddress = "";
   if (city) constructedAddress += city;
   if (stateName) {
@@ -351,11 +351,11 @@ export default function RoomsCheckout() {
 
     // If you also want to clear "global" fields like address, photos, etc., you can do it here:
     // sessionStorage.removeItem("address");
-    // sessionStorage.removeItem("description");
-    // sessionStorage.removeItem("photos");
-    // sessionStorage.removeItem("selectedTime");
-    // sessionStorage.removeItem("timeCoefficient");
-    // ...
+    sessionStorage.removeItem("description");
+    sessionStorage.removeItem("photos");
+    sessionStorage.removeItem("selectedTime");
+    sessionStorage.removeItem("timeCoefficient");
+    
 
     // Finally, redirect to a thank-you page or anywhere else
     router.push("/thank-you");
@@ -366,7 +366,8 @@ export default function RoomsCheckout() {
    */
   const orderData = {
     zipcode: zip,
-    address,
+    // We override the address with the newly constructed full address:
+    address: constructedAddress.trim(),
     description,
     selectedTime: selectedTime || "",
     timeCoefficient,
