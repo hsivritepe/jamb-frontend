@@ -83,6 +83,9 @@ export default function ExpandedOrderRow({
   // Surcharge/Discount logic
   const dateCoefficient = parseFloat(order.common.date_coefficient) || 1;
   const surchargeOrDiscountValue = laborTotal * dateCoefficient - laborTotal;
+  // <-- Добавляем ручное округление:
+  const exactSurchargeValue = Math.round(surchargeOrDiscountValue * 100) / 100;
+
   let surchargeOrDiscountLabel = "";
   if (dateCoefficient > 1) {
     surchargeOrDiscountLabel = "Surcharge";
@@ -119,7 +122,6 @@ export default function ExpandedOrderRow({
         {/** ESTIMATE (per-work items) */}
         <h3 className="text-xl sm:text-xl font-bold mb-2">Estimate</h3>
         {order.works.map((work, idx) => {
-          // For each work, compute single-work labor cost and materials cost
           const sumWorkMaterials = work.materials.reduce(
             (acc, mat) => acc + parseFloat(mat.cost),
             0
@@ -237,7 +239,7 @@ export default function ExpandedOrderRow({
           </p>
           <p>
             <strong>{surchargeOrDiscountLabel}:</strong>{" "}
-            {surchargeOrDiscountValue.toLocaleString("en-US", {
+            {exactSurchargeValue.toLocaleString("en-US", {
               minimumFractionDigits: 2,
             })}
           </p>
@@ -263,7 +265,6 @@ export default function ExpandedOrderRow({
             <strong>
               Taxes ({taxRateNum.toLocaleString("en-US", { minimumFractionDigits: 2 })}%):
             </strong>{" "}
-            $
             {taxAmountNum.toLocaleString("en-US", {
               minimumFractionDigits: 2,
             })}
