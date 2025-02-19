@@ -17,6 +17,8 @@ interface CompositeOrder {
   payment_coefficient: string;
   tax_rate: string;
   tax_amount: string;
+  date_surcharge: string;
+  total: string;
   common: {
     id: number;
     address: string;
@@ -70,38 +72,33 @@ export default function ExpandedOrderRow({
 }: ExpandedOrderRowProps) {
   const router = useRouter(); // used to push to /dashboard/print/[orderCode]
 
-  // 1) Calculate total labor vs. materials for the entire order.
+  // 1) Calculate labor total
   const sumWorksTotals = order.works.reduce((acc, w) => acc + parseFloat(w.total), 0);
   const sumMaterialsCost = order.works.reduce((acc, w) => {
     const sumMats = w.materials.reduce((mAcc, mat) => mAcc + parseFloat(mat.cost), 0);
     return acc + sumMats;
   }, 0);
 
-  // Overall labor
   const laborTotal = sumWorksTotals - sumMaterialsCost;
-
-  // Surcharge/Discount logic
-  const dateCoefficient = parseFloat(order.common.date_coefficient) || 1;
-  const surchargeOrDiscountValue = laborTotal * dateCoefficient - laborTotal;
-  // <-- Добавляем ручное округление:
-  const exactSurchargeValue = Math.round(surchargeOrDiscountValue * 100) / 100;
+  const dateSurchargeNum = parseFloat(order.date_surcharge || "0");
 
   let surchargeOrDiscountLabel = "";
-  if (dateCoefficient > 1) {
+  if (dateSurchargeNum > 0) {
     surchargeOrDiscountLabel = "Surcharge";
-  } else if (dateCoefficient < 1) {
+  } else if (dateSurchargeNum < 0) {
     surchargeOrDiscountLabel = "Discount";
   } else {
     surchargeOrDiscountLabel = "Surcharge/Discount (none)";
   }
 
-  // Fees, subtotal, taxes, total
+  // Fees, subtotal, taxes, and total from the API
   const serviceFeeOnLabor = parseFloat(order.service_fee_on_labor || "0");
   const serviceFeeOnMaterials = parseFloat(order.service_fee_on_materials || "0");
   const subtotalNum = parseFloat(order.subtotal || "0");
   const taxRateNum = parseFloat(order.tax_rate || "0");
   const taxAmountNum = parseFloat(order.tax_amount || "0");
-  const totalPrice = subtotalNum + taxAmountNum;
+  // Use order.total directly (instead of subtotal + tax_amount).
+  const totalNum = parseFloat(order.total || "0");
 
   return (
     <tr className="bg-gray-100">
@@ -128,7 +125,7 @@ export default function ExpandedOrderRow({
           );
           const singleWorkLabor = parseFloat(work.total) - sumWorkMaterials;
 
-          // Convert the quantity from string to float to localize it
+          // Convert the quantity from string to float for display
           const workCountVal = parseFloat(work.work_count);
 
           return (
@@ -207,10 +204,9 @@ export default function ExpandedOrderRow({
                             })}
                           </td>
                           <td className="px-2 py-1 align-top">
-                            {parseFloat(mat.cost_per_unit).toLocaleString(
-                              "en-US",
-                              { minimumFractionDigits: 2 }
-                            )}
+                            {parseFloat(mat.cost_per_unit).toLocaleString("en-US", {
+                              minimumFractionDigits: 2,
+                            })}
                           </td>
                           <td className="px-2 py-1 align-top">
                             {parseFloat(mat.cost).toLocaleString("en-US", {
@@ -239,7 +235,7 @@ export default function ExpandedOrderRow({
           </p>
           <p>
             <strong>{surchargeOrDiscountLabel}:</strong>{" "}
-            {exactSurchargeValue.toLocaleString("en-US", {
+            {dateSurchargeNum.toLocaleString("en-US", {
               minimumFractionDigits: 2,
             })}
           </p>
@@ -271,7 +267,7 @@ export default function ExpandedOrderRow({
           </p>
           <p className="mt-2 font-bold text-lg sm:text-xl">
             <strong>Total:</strong> $
-            {totalPrice.toLocaleString("en-US", {
+            {totalNum.toLocaleString("en-US", {
               minimumFractionDigits: 2,
             })}
           </p>

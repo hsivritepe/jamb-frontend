@@ -9,11 +9,18 @@ export interface CompositeOrder {
   user_token: string;
   zipcode: string;
   subtotal: string;
+  service_fee_on_labor: string;      // newly added
+  service_fee_on_materials: string;  // newly added
+  payment_type: string;             // newly added
+  payment_coefficient: string;      // newly added
   tax_rate: string;
   tax_amount: string;
+  date_surcharge: string;           // newly added
+  total: string;                    // newly added
   common: {
     id: number;
     address: string;
+    photos: string[];               // newly added
     description: string;
     selected_date: string;
     date_coefficient: string;
@@ -22,16 +29,17 @@ export interface CompositeOrder {
     id: number;
     type: string;
     code: string;
+    name: string;                   // newly added
+    photo: string;                  // newly added
+    description: string;            // newly added
     unit_of_measurement: string;
     work_count: string;
-    service_fee_on_labor: string;
-    service_fee_on_materials: string;
-    payment_type: string;
-    payment_coefficient: string;
     total: string;
     materials: Array<{
       id: number;
       external_id: string;
+      name: string;                 // newly added
+      photo: string;                // newly added
       quantity: number;
       cost_per_unit: string;
       cost: string;
@@ -43,8 +51,7 @@ export interface CompositeOrder {
  * listSavedOrders(token: string):
  * Sends a POST request to https://dev.thejamb.com/composite-order/list,
  * providing the user's token in the request body.
- * It returns an array of CompositeOrder or throws an error
- * if the response indicates a failure.
+ * Returns an array of CompositeOrder or throws an error if the response indicates a failure.
  */
 export async function listSavedOrders(token: string): Promise<CompositeOrder[]> {
   const endpointUrl = "https://dev.thejamb.com/composite-order/list";
@@ -226,9 +233,7 @@ export async function createCompositeOrder(
   if (!response.ok) {
     if (response.status === 400) {
       const errorData = await response.json();
-      // For example: { "errors": ["User not found", "Invalid work data"] }
       if (Array.isArray(errorData.errors)) {
-        // Combine array of errors into one message
         throw new Error(errorData.errors.join(", "));
       }
       throw new Error(errorData.errors || "Bad request (400)");
@@ -240,8 +245,84 @@ export async function createCompositeOrder(
     throw new Error(`Request failed with status ${response.status}`);
   }
 
-  // If the status is 200, we expect something like:
-  // { "message": "Composite order created successfully.", "order_code": "20250212-1" }
+  // Expected 200 response: { "message": "Composite order created successfully.", "order_code": "..." }
   const responseData = await response.json();
   return responseData as { message: string; order_code: string };
+}
+
+/**
+ * This interface defines the payload structure for updating a composite order
+ * via /composite-order/update. It should match the API requirements.
+ */
+export interface UpdateCompositeOrderPayload {
+  user_token: string;
+  order_code: string;
+  common: {
+    selected_date: string;
+    date_coefficient: string;
+  };
+  works: Array<{
+    type: string;
+    code: string;
+    unit_of_measurement: string;
+    work_count: string;
+    labor_cost: string;
+    materials_cost: string;
+    total: string;
+    materials: Array<{
+      external_id: string;
+      quantity: number;
+      cost_per_unit: string;
+      total: string;
+    }>;
+  }>;
+  tax_rate: string;
+  tax_amount: string;
+  service_fee_on_labor: string;
+  service_fee_on_materials: string;
+  payment_type: string;
+  payment_coefficient: string;
+  date_surcharge: string;
+  subtotal: string;
+  total: string;
+}
+
+/**
+ * updateCompositeOrder(orderData: UpdateCompositeOrderPayload):
+ * Sends a POST request to https://dev.thejamb.com/composite-order/update
+ * with a JSON body containing user_token, order_code, and other fields.
+ * If the request is successful (HTTP 200), returns an object { message: string }.
+ * Otherwise, throws an error with the appropriate message.
+ */
+export async function updateCompositeOrder(
+  orderData: UpdateCompositeOrderPayload
+): Promise<{ message: string }> {
+  const endpointUrl = "https://dev.thejamb.com/composite-order/update";
+
+  const response = await fetch(endpointUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(orderData),
+  });
+
+  if (!response.ok) {
+    if (response.status === 400) {
+      const errorData = await response.json();
+      // Example: { "errors": ["User not found", "Invalid work data"] }
+      if (Array.isArray(errorData.errors)) {
+        throw new Error(errorData.errors.join(", "));
+      }
+      throw new Error(errorData.errors || "Bad request (400)");
+    }
+    if (response.status === 500) {
+      // Example: { "error": "Internal server error" }
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Internal server error (500)");
+    }
+    throw new Error(`Request failed with status ${response.status}`);
+  }
+
+  // Expected 200 response: { "message": "Composite order updated successfully." }
+  const responseData = await response.json();
+  return responseData as { message: string };
 }
