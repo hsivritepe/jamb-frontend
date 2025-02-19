@@ -1,6 +1,7 @@
 "use client";
 
 export const dynamic = "force-dynamic";
+
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, ChangeEvent } from "react";
 import BreadCrumb from "@/components/ui/BreadCrumb";
@@ -10,17 +11,19 @@ import { SectionBoxTitle } from "@/components/ui/SectionBoxTitle";
 import { SectionBoxSubtitle } from "@/components/ui/SectionBoxSubtitle";
 import { taxRatesUSA } from "@/constants/taxRatesUSA";
 import { taxRatesCanada } from "@/constants/taxRatesCanada";
-
-// Session utilities
 import { getSessionItem, setSessionItem } from "@/utils/session";
 
-/** Safely parse a string to a number. If invalid, return 0. */
+/**
+ * Safely converts a string to a number. Returns 0 if invalid.
+ */
 function parseNumberOrZero(val: string): number {
   const num = parseFloat(val);
   return Number.isNaN(num) ? 0 : num;
 }
 
-/** Default house/apartment info. */
+/**
+ * Default house/apartment info if none is found in session.
+ */
 const defaultHouseInfo = {
   country: "",
   city: "",
@@ -49,41 +52,43 @@ export default function PackagesDetailsHomePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Try to read packageId from query or from session
+  // Try reading the packageId from query or session
   let packageId = searchParams.get("packageId");
   if (!packageId) {
     packageId = getSessionItem("packages_currentPackageId", "");
   }
 
-  // If no packageId, optionally redirect
+  // Optionally redirect if no packageId
   useEffect(() => {
     if (!packageId) {
-      // router.push("/packages"); // optional
+      // router.push("/packages");
     }
   }, [packageId]);
 
-  // Always store the packageId in session
+  // Always store packageId in session
   useEffect(() => {
     if (packageId) {
       setSessionItem("packages_currentPackageId", packageId);
     }
   }, [packageId]);
 
-  // Load house info from session or use default
+  // Load or initialize house info
   const [houseInfo, setHouseInfo] = useState(() =>
     getSessionItem("packages_houseInfo", defaultHouseInfo)
   );
 
-  // Whenever houseInfo changes, persist to session
+  // Whenever houseInfo changes, persist it
   useEffect(() => {
     setSessionItem("packages_houseInfo", houseInfo);
   }, [houseInfo]);
 
+  // Handle basic text/select changes
   function handleChange(e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     const { name, value } = e.target;
     setHouseInfo((prev) => ({ ...prev, [name]: value }));
   }
 
+  // Handle numeric inputs
   function handleNumber(e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     const { name, value } = e.target;
     setHouseInfo((prev) => ({
@@ -92,7 +97,9 @@ export default function PackagesDetailsHomePage() {
     }));
   }
 
-  /** Try to auto-detect location from ipapi.co. */
+  /**
+   * Auto-detect location from ipapi.co
+   */
   async function handleAutoFillLocation() {
     try {
       const response = await fetch("https://ipapi.co/json/");
@@ -120,14 +127,16 @@ export default function PackagesDetailsHomePage() {
     }
   }
 
-  /** Validate and go next. */
+  /**
+   * Validate and go to the next step.
+   */
   function handleNext() {
     if (!houseInfo.addressLine.trim()) {
       alert("Please enter your street address before proceeding.");
       return;
     }
     if (!houseInfo.city.trim() || !houseInfo.zip.trim()) {
-      alert("Please enter city & ZIP (or auto-fill) before proceeding.");
+      alert("Please enter city & ZIP (or use auto-detect) before proceeding.");
       return;
     }
     if (!houseInfo.houseType) {
@@ -137,15 +146,16 @@ export default function PackagesDetailsHomePage() {
     router.push(`/packages/services?packageId=${packageId}`);
   }
 
-  /** Clear form. */
+  /**
+   * Clear the entire form.
+   */
   function handleClearAll() {
-    const confirmed = window.confirm(
-      "Are you sure you want to clear all data?"
-    );
+    const confirmed = window.confirm("Are you sure you want to clear all data?");
     if (!confirmed) return;
     setHouseInfo(defaultHouseInfo);
   }
 
+  // Toggles
   function toggleGarage() {
     setHouseInfo((prev) => ({
       ...prev,
@@ -153,7 +163,6 @@ export default function PackagesDetailsHomePage() {
       garageCount: !prev.hasGarage ? 1 : 0,
     }));
   }
-
   function toggleYard() {
     setHouseInfo((prev) => ({
       ...prev,
@@ -161,7 +170,6 @@ export default function PackagesDetailsHomePage() {
       yardArea: 0,
     }));
   }
-
   function togglePool() {
     setHouseInfo((prev) => ({
       ...prev,
@@ -169,7 +177,6 @@ export default function PackagesDetailsHomePage() {
       poolArea: 0,
     }));
   }
-
   function toggleBoiler() {
     setHouseInfo((prev) => ({
       ...prev,
@@ -186,13 +193,13 @@ export default function PackagesDetailsHomePage() {
       <div className="container mx-auto xl:px-0">
         <BreadCrumb items={PACKAGES_STEPS} />
 
-        {/* Top row: Title and Next button */}
+        {/* Top: Title + Next */}
         <div className="flex justify-between items-center mt-8">
           <SectionBoxTitle>Home Details</SectionBoxTitle>
           <Button onClick={handleNext}>Next →</Button>
         </div>
 
-        {/* Sub-header and Clear button */}
+        {/* Sub-header + Clear */}
         <div className="flex justify-between items-center mt-8 xl:max-w-3xl">
           <p className="text-gray-600">
             Please provide details about your home
@@ -207,9 +214,9 @@ export default function PackagesDetailsHomePage() {
 
         {/* Main form container */}
         <div className="bg-white border border-gray-300 mt-6 p-6 rounded-lg space-y-6 w-full xl:max-w-3xl">
-          {/* Address & Location */}
+          {/* Address */}
           <div>
-            <SectionBoxSubtitle>Address & Location</SectionBoxSubtitle>
+            <SectionBoxSubtitle>Address &amp; Location</SectionBoxSubtitle>
 
             <label className="block text-sm font-medium text-gray-700 mt-2">
               Street Address
@@ -238,7 +245,6 @@ export default function PackagesDetailsHomePage() {
                   className="w-full px-4 py-2 border border-gray-300 rounded"
                 />
               </div>
-
               {/* ZIP */}
               <div className="w-full xl:w-1/2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -256,6 +262,7 @@ export default function PackagesDetailsHomePage() {
             </div>
 
             <div className="flex flex-col xl:flex-row gap-4 mt-4">
+              {/* Country */}
               <div className="w-full xl:w-1/3">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Country
@@ -272,6 +279,7 @@ export default function PackagesDetailsHomePage() {
                 </select>
               </div>
 
+              {/* State => US */}
               {isUS && (
                 <div className="w-full xl:w-1/3">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -293,6 +301,7 @@ export default function PackagesDetailsHomePage() {
                 </div>
               )}
 
+              {/* Province => Canada */}
               {isCanada && (
                 <div className="w-full xl:w-1/3">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -314,7 +323,7 @@ export default function PackagesDetailsHomePage() {
                 </div>
               )}
 
-              {/* Auto-detect button */}
+              {/* Auto-detect */}
               <div className="w-full xl:w-1/3 flex items-end">
                 <button
                   type="button"
@@ -380,10 +389,12 @@ export default function PackagesDetailsHomePage() {
                   value={
                     houseInfo.squareFootage === 0 ? "" : houseInfo.squareFootage
                   }
-                  onChange={(e) => {
-                    const val = parseNumberOrZero(e.target.value);
-                    setHouseInfo((prev) => ({ ...prev, squareFootage: val }));
-                  }}
+                  onChange={(e) =>
+                    setHouseInfo((prev) => ({
+                      ...prev,
+                      squareFootage: parseNumberOrZero(e.target.value),
+                    }))
+                  }
                   placeholder="e.g. 1800"
                   className="w-full px-4 py-2 border border-gray-300 rounded"
                 />
@@ -565,10 +576,12 @@ export default function PackagesDetailsHomePage() {
                     type="text"
                     name="yardArea"
                     value={houseInfo.yardArea === 0 ? "" : houseInfo.yardArea}
-                    onChange={(e) => {
-                      const val = parseNumberOrZero(e.target.value);
-                      setHouseInfo((prev) => ({ ...prev, yardArea: val }));
-                    }}
+                    onChange={(e) =>
+                      setHouseInfo((prev) => ({
+                        ...prev,
+                        yardArea: parseNumberOrZero(e.target.value),
+                      }))
+                    }
                     placeholder="e.g. 300"
                     className="w-full xl:w-1/2 px-4 py-2 border border-gray-300 rounded"
                   />
@@ -599,10 +612,12 @@ export default function PackagesDetailsHomePage() {
                     type="text"
                     name="poolArea"
                     value={houseInfo.poolArea === 0 ? "" : houseInfo.poolArea}
-                    onChange={(e) => {
-                      const val = parseNumberOrZero(e.target.value);
-                      setHouseInfo((prev) => ({ ...prev, poolArea: val }));
-                    }}
+                    onChange={(e) =>
+                      setHouseInfo((prev) => ({
+                        ...prev,
+                        poolArea: parseNumberOrZero(e.target.value),
+                      }))
+                    }
                     placeholder="e.g. 250"
                     className="w-full xl:w-1/2 px-4 py-2 border border-gray-300 rounded"
                   />
