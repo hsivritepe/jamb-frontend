@@ -9,7 +9,6 @@ export default function Home() {
   return (
     <main className="min-h-screen pt-20">
       <HeroSection />
-      {/* Possibly, if you need location data, you can do: const { location } = useLocation(); */}
       <ServicesGrid title="Comprehensive Home Services<br />at Your Fingertips" />
       <HowItWorks />
       <RoomMakeovers />

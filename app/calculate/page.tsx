@@ -7,19 +7,17 @@ import BreadCrumb from "@/components/ui/BreadCrumb";
 import ServicesGrid from "@/components/home/ServicesGrid";
 import SearchServices from "@/components/SearchServices";
 import { CALCULATE_STEPS } from "@/constants/navigation";
-
-// Unified session utilities
 import { setSessionItem, getSessionItem } from "@/utils/session";
 
 export default function Calculate() {
   const router = useRouter();
 
-  // Load the search query from session storage (if any)
+  // Load initial search query from session storage
   const [searchQuery, setSearchQuery] = useState<string>(() =>
     getSessionItem("services_searchQuery", "")
   );
 
-  // Whenever the searchQuery changes, persist it to session storage
+  // Persist search query to session storage on change
   useEffect(() => {
     setSessionItem("services_searchQuery", searchQuery);
   }, [searchQuery]);
@@ -27,7 +25,7 @@ export default function Calculate() {
   return (
     <main className="min-h-screen pt-24">
       <div className="container mx-auto">
-        {/* Breadcrumb navigation for the "Calculate" flow */}
+        {/* Breadcrumb */}
         <BreadCrumb items={CALCULATE_STEPS} />
 
         {/* Search bar */}
@@ -39,7 +37,7 @@ export default function Calculate() {
           />
         </div>
 
-        {/* ServicesGrid displays categories/sections where user can pick services */}
+        {/* Services Grid */}
         <ServicesGrid searchQuery={searchQuery} />
       </div>
     </main>

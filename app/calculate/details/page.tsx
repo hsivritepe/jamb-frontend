@@ -101,7 +101,6 @@ function ServiceImage({ serviceId }: { serviceId: string }) {
         alt="Service"
         width={600}
         height={400}
-        //unoptimized
         className="w-full h-auto object-cover"
       />
     </div>
@@ -110,7 +109,7 @@ function ServiceImage({ serviceId }: { serviceId: string }) {
 
 /**
  * A modal to help user calculate square footage from length & width
- * or directly from square meters. Then apply that result to the service quantity.
+ * or directly from square meters.
  */
 interface SurfaceCalculatorModalProps {
   show: boolean;

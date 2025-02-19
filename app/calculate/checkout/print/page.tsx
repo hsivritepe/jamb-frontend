@@ -174,7 +174,7 @@ export default function PrintServicesEstimate() {
     {}
   );
   const address = getSessionItem("address", "");
-  // We'll store photos in local state to compress them
+  // store photos in local state to compress them
   const [photos, setPhotos] = useState<string[]>(() => getSessionItem("photos", []));
   const description = getSessionItem("description", "");
   const selectedTime = getSessionItem<string | null>("selectedTime", null);
@@ -194,8 +194,7 @@ export default function PrintServicesEstimate() {
   }, [selectedServicesState, address, router]);
 
   /**
-   * We'll compress any base64 photos on mount, storing them in local state 
-   * at a reduced quality (0.4) to lighten final print file size.
+   * Compress any base64 photos on mount, storing them in local state
    */
   useEffect(() => {
     if (photos.length > 0) {

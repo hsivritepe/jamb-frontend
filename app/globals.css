@@ -2,17 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 
-  1) GLOBAL FONT-WEIGHT FOR MOBILE
-  
-  This media query applies a heavier font weight (e.g., 500)
-  to html and body on screens up to 640px wide.
-  Adjust the value as needed.
-
-  Note: If you have Tailwind utility classes (like font-thin, font-light, etc.)
-  in some components, those may override this global setting. 
-  Use !important if you want to force this override, or remove conflicting classes.
-*/
+/* Increase font-weight on screens up to 640px wide */
 @media (max-width: 640px) {
   html,
   body {
@@ -20,12 +10,7 @@
   }
 }
 
-/*
-  2) FONT FEATURE SETTINGS FOR HEADINGS
-  
-  Enabling ligatures ('liga') and a stylistic set ('ss01') for H1–H6 headings.
-  Make sure your font supports these OpenType features.
-*/
+/* Enable custom OpenType features for headings */
 h1,
 h2,
 h3,
@@ -35,27 +20,14 @@ h6 {
   font-feature-settings: 'liga' 1, 'ss01' 1;
 }
 
-/*
-  3) BRAND COLORS
-  
-  These CSS variables can be used in your components or Tailwind config.
-  They are defined in :root so that they're globally available.
-*/
+/* Global brand color variables */
 :root {
   --color-brand: #1948f0;
   --color-brand-light: #1948f00d;
   --color-brand-dark: #1537be;
 }
 
-/*
-  4) PRINT ADJUSTMENTS
-  
-  Everything inside @media print gets applied when printing:
-  - A 1cm margin for each printed page.
-  - Header and footer are hidden.
-  - .page-break elements force a new page.
-  - Background colors are removed for a cleaner print layout.
-*/
+/* Print-specific adjustments */
 @media print {
   @page {
     margin: 1cm;
@@ -66,19 +38,11 @@ h6 {
     display: none !important;
   }
 
-  /* 
-    Force certain sections to start on a new page if you like.
-    Just add the "page-break" class in your markup.
-  */
   .page-break {
     page-break-before: always;
   }
 
-  /*
-    Remove any background color when printing.
-    You could also remove border or text colors here if desired.
-  */
   * {
-    background-color: #fff !important; /* or 'transparent' */
+    background-color: #fff !important;
   }
 }

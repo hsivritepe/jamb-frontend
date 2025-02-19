@@ -8,7 +8,7 @@ import Image from "next/image";
 export default function StepByStep({ title, steps }: StepByStepProps) {
   return (
     <div className="py-12">
-      <div className="container mx-auto px-0 sm:px-4">
+      <div className="container mx-auto px-0 ">
         <SectionBoxTitle>{title}</SectionBoxTitle>
         <div className="mx-auto mt-8 space-y-8">
           {steps.map((step, index) => {
