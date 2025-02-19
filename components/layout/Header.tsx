@@ -1,6 +1,7 @@
 "use client";
 
 export const dynamic = "force-dynamic";
+
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -10,13 +11,9 @@ import { useLocation } from "@/context/LocationContext";
 import PreferencesModal from "@/components/ui/PreferencesModal";
 
 /**
- * Header:
- * Displays a logo, location info, and navigation links.
- * Note: In the Preferences modal, we currently disable all items
- * except ENG, Feet, and US. We'll support more options in the future.
+ * Header component with logo, location info, and navigation.
+ * The PreferencesModal only supports ENG, Feet, and US for now.
  */
-
-// Example array for top navigation
 const navigation: NavigationItem[] = [
   { name: "Services", href: "/calculate" },
   { name: "Rooms", href: "/rooms" },
@@ -40,7 +37,7 @@ const languageMap: Record<string, string> = {
 };
 
 /**
- * Truncates text to `maxLength`, adding "..." if needed.
+ * Truncates text to a maximum length.
  */
 function truncateText(text: string, maxLength: number) {
   if (text.length > maxLength) {
@@ -50,7 +47,7 @@ function truncateText(text: string, maxLength: number) {
 }
 
 /**
- * Parse city name from Google Geocode results.
+ * Gets the city name from Google geocode components.
  */
 function parseCityFromComponents(components: any[]): string {
   let cityObj = components.find((c: any) => c.types.includes("locality"));
@@ -67,7 +64,7 @@ function parseCityFromComponents(components: any[]): string {
 }
 
 /**
- * Parse state short_name from Google Geocode results.
+ * Gets the state short name from Google geocode components.
  */
 function parseStateFromComponents(components: any[]): string {
   const stateObj = components.find((c: any) =>
@@ -80,21 +77,19 @@ function parseStateFromComponents(components: any[]): string {
 }
 
 /**
- * Returns the initials from firstName + lastName. If both empty => "".
+ * Returns initials (e.g., from firstName + lastName).
  */
 function getInitials(firstName: string, lastName: string): string {
   const f = firstName.trim();
   const s = lastName.trim();
-  if (!f && !s) {
-    return "";
-  }
+  if (!f && !s) return "";
   const i1 = f ? f[0].toUpperCase() : "";
   const i2 = s ? s[0].toUpperCase() : "";
   return i1 + i2;
 }
 
 /**
- * Subcomponent for mobile menu logic.
+ * Mobile nav subcomponent for menu logic.
  */
 function MobileNav({
   isMobileMenuOpen,
@@ -121,7 +116,6 @@ function MobileNav({
 }) {
   if (!isMobileMenuOpen) return null;
 
-  // If logged in => show "Full Name" or "My Account"
   let mobileLoggedInLabel = "My Account";
   const fullName = (userName + " " + userSurname).trim();
   if (fullName.length > 1) {
@@ -211,7 +205,7 @@ function MobileNav({
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // LOCATION
+  // Location state
   const { location, setLocation } = useLocation();
 
   // Auth state
@@ -219,14 +213,14 @@ export default function Header() {
   const [userName, setUserName] = useState("");
   const [userSurname, setUserSurname] = useState("");
 
-  // We monitor for "authChange" to update login state
+  // Handle "authChange" for login state
   useEffect(() => {
     const checkAuthToken = () => {
       const token = sessionStorage.getItem("authToken");
       if (token) {
         setIsLoggedIn(true);
 
-        // Optionally fetch user info
+        // Fetch user info
         fetch("https://dev.thejamb.com/user/info", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -259,21 +253,22 @@ export default function Header() {
     };
   }, []);
 
-  // Modals
+  // Location modal
   const [showLocationModal, setShowLocationModal] = useState(false);
   const locationModalRef = useRef<HTMLDivElement>(null);
 
+  // Preferences modal
   const [showPreferencesModal, setShowPreferencesModal] = useState(false);
   const preferencesModalRef = useRef<HTMLDivElement>(null);
 
-  // Manual location states
+  // Manual location input
   const [manualLocation, setManualLocation] = useState({
     city: "",
     zip: "",
     state: "",
   });
 
-  // Language, units, currency (currently only ENG, Feet, US are enabled in the modal)
+  // Preferences for language, units, currency
   const [selectedLanguage, setSelectedLanguage] = useState("ENG");
   const [selectedUnit, setSelectedUnit] = useState("Feet");
   const [selectedCurrency, setSelectedCurrency] = useState("US");
@@ -406,10 +401,9 @@ export default function Header() {
     };
   }, [showLocationModal, showPreferencesModal]);
 
-  // Build the avatar styling
+  // Determine avatar for desktop
   let desktopAvatar: JSX.Element;
   if (isLoggedIn) {
-    // If user is logged in, show initials or fallback
     const initials = getInitials(userName, userSurname);
     if (initials) {
       desktopAvatar = (
@@ -425,7 +419,6 @@ export default function Header() {
       );
     }
   } else {
-    // Not logged in => show a border icon
     desktopAvatar = (
       <div className="flex items-center justify-center w-8 h-8 rounded-full border-2 border-gray-400 bg-white text-gray-700">
         <User className="w-5 h-5" />
@@ -589,29 +582,29 @@ export default function Header() {
           <div
             ref={locationModalRef}
             className="
-        bg-white
-        w-full
-        sm:w-[400px]
-        h-full
-        p-6
-        flex
-        flex-col
-        relative
-        overflow-auto
-      "
+              bg-white
+              w-full
+              sm:w-[400px]
+              h-full
+              p-6
+              flex
+              flex-col
+              relative
+              overflow-auto
+            "
           >
             {/* Close (X) */}
             <button
               onClick={() => setShowLocationModal(false)}
               className="
-          absolute
-          top-3
-          right-3
-          text-gray-500
-          hover:text-red-500
-          p-1
-          transition-colors
-        "
+                absolute
+                top-3
+                right-3
+                text-gray-500
+                hover:text-red-500
+                p-1
+                transition-colors
+              "
               aria-label="Close location modal"
             >
               ✕
