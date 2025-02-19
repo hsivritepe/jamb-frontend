@@ -1,12 +1,15 @@
 "use client";
 
 export const dynamic = "force-dynamic";
-import { useEffect, useState } from "react";
+
+import React, { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import ExpandedOrderRow from "./ExpandedOrderRow";
+import { Printer, Trash2 } from "lucide-react"; // <-- Importing both icons from lucide-react
 
 /**
- * Helper for time-based greeting
+ * Helper to return a greeting based on the current hour.
  */
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -15,16 +18,104 @@ function getGreeting(): string {
   return "Good evening";
 }
 
+/**
+ * Interface describing a composite order.
+ */
+interface CompositeOrder {
+  id: number;
+  code: string;
+  user_id: number;
+  user_token: string;
+  zipcode: string;
+  subtotal: string;
+  service_fee_on_labor: string;
+  service_fee_on_materials: string;
+  payment_type: string;
+  payment_coefficient: string;
+  tax_rate: string;
+  tax_amount: string;
+  common: {
+    id: number;
+    address: string;
+    description: string;
+    selected_date: string;
+    date_coefficient: string;
+    photos: string[];
+  };
+  works: Array<{
+    id: number;
+    type: string;
+    code: string;
+    name: string;
+    photo: string;
+    description: string;
+    unit_of_measurement: string;
+    work_count: string;
+    total: string;
+    materials: Array<{
+      id: number;
+      external_id: string;
+      name: string;
+      photo: string;
+      quantity: number;
+      cost_per_unit: string;
+      cost: string;
+    }>;
+  }>;
+}
+
 export default function OrdersPage() {
   const router = useRouter();
-  const [token, setToken] = useState("");
 
+  // Greeting text displayed at the top of the page
+  const [greetingText, setGreetingText] = useState("");
+
+  // Auth token, user name, and boolean if the name is present
+  const [token, setToken] = useState("");
   const [userName, setUserName] = useState("");
   const [hasName, setHasName] = useState(false);
 
-  // Tab state: "active", "saved", or "past"
-  const [tab, setTab] = useState<"active" | "saved" | "past">("active");
+  // Which tab is active: "saved", "active", or "past"
+  const [tab, setTab] = useState<"saved" | "active" | "past">("saved");
 
+  // List of "saved" orders, loading/error states
+  const [savedOrders, setSavedOrders] = useState<CompositeOrder[] | null>(null);
+  const [savedLoading, setSavedLoading] = useState(false);
+  const [savedError, setSavedError] = useState<string | null>(null);
+
+  // Sorting
+  const [sortColumn, setSortColumn] = useState<"code" | "cost" | "date" | null>(null);
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+
+  /**
+   * Soft-delete logic:
+   * - We store pendingDelete as an integer order ID, or null if none is pending.
+   * - We use a ref for the deleteTimeout to implement the 5-second "undo" functionality.
+   */
+  const [pendingDelete, setPendingDelete] = useState<number | null>(null);
+  const deleteTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  /**
+   * Expand/collapse logic:
+   * - expandedOrderCode is the "code" (string) of the currently expanded order
+   * - expandedOrderDetails is the full CompositeOrder object fetched from /api/orders/get
+   */
+  const [expandedOrderCode, setExpandedOrderCode] = useState<string | null>(null);
+  const [expandedOrderDetails, setExpandedOrderDetails] = useState<CompositeOrder | null>(null);
+
+  /**
+   * Compute greeting on first mount.
+   */
+  useEffect(() => {
+    const msg = getGreeting();
+    setGreetingText(msg);
+  }, []);
+
+  /**
+   * On mount, check for auth token in sessionStorage.
+   * If missing, redirect to /login.
+   * Also parse profileData for the user's name if available.
+   */
   useEffect(() => {
     const storedToken = sessionStorage.getItem("authToken");
     if (!storedToken) {
@@ -33,7 +124,6 @@ export default function OrdersPage() {
     }
     setToken(storedToken);
 
-    // Attempt to read user's name from "profileData"
     const storedProfile = sessionStorage.getItem("profileData");
     if (storedProfile) {
       try {
@@ -44,28 +134,223 @@ export default function OrdersPage() {
           setHasName(true);
         }
       } catch (err) {
-        console.warn("Failed to parse profileData in Orders:", err);
+        console.warn("Failed to parse profileData:", err);
       }
     }
   }, [router]);
 
-  const greetingText = getGreeting();
+  /**
+   * If the user selects "saved" tab and we have a valid token:
+   * 1) Load any cached orders from sessionStorage (if present)
+   * 2) Always fetch fresh data from the server
+   */
+  useEffect(() => {
+    if (tab === "saved" && token) {
+      const cached = sessionStorage.getItem("savedOrders");
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached) as CompositeOrder[];
+          setSavedOrders(parsed);
+        } catch (err) {
+          console.error("Failed to parse savedOrders from sessionStorage:", err);
+        }
+      }
+      // Always fetch fresh data
+      fetchSavedOrders(token);
+    }
+  }, [tab, token]);
+
+  /**
+   * Helper function to fetch the list of saved orders from /api/orders/list
+   */
+  async function fetchSavedOrders(userToken: string) {
+    try {
+      setSavedLoading(true);
+      setSavedError(null);
+      setSavedOrders(null);
+
+      const resp = await fetch("/api/orders/list", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: userToken }),
+      });
+
+      if (!resp.ok) {
+        const errData = await resp.json();
+        throw new Error(errData.error || "Failed to fetch saved orders");
+      }
+
+      const data = await resp.json();
+      setSavedOrders(data);
+
+      // Cache the results in sessionStorage
+      sessionStorage.setItem("savedOrders", JSON.stringify(data));
+    } catch (error: any) {
+      console.error("Error fetching saved orders:", error);
+      setSavedError(error.message);
+    } finally {
+      setSavedLoading(false);
+    }
+  }
+
+  /**
+   * Expand/collapse order details:
+   * - If the user clicks the same order code again, we collapse.
+   * - Otherwise, we fetch /api/orders/get to get full details, then expand.
+   */
+  async function handleGetOrderDetails(orderCode: string) {
+    if (expandedOrderCode === orderCode) {
+      // collapse if currently expanded
+      setExpandedOrderCode(null);
+      setExpandedOrderDetails(null);
+      return;
+    }
+
+    try {
+      const resp = await fetch("/api/orders/get", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, order_code: orderCode }),
+      });
+
+      if (!resp.ok) {
+        const errData = await resp.json();
+        throw new Error(errData.error || "Failed to fetch order details");
+      }
+
+      const orderDetails = await resp.json();
+      setExpandedOrderCode(orderCode);
+      setExpandedOrderDetails(orderDetails);
+    } catch (error: any) {
+      console.error("Error getting order details:", error);
+      alert("Error getting details: " + error.message);
+    }
+  }
+
+  /**
+   * Start a soft-delete process with a 5-second "undo" window.
+   */
+  function initiateDeleteOrder(orderId: number, orderCode: string) {
+    if (pendingDelete === orderId) {
+      return; // already pending
+    }
+    const confirmMsg = `Are you sure you want to delete order ${orderCode}? You will have 5 seconds to undo.`;
+    if (!window.confirm(confirmMsg)) return;
+
+    setPendingDelete(orderId);
+
+    // Clear any previous timer
+    if (deleteTimeoutRef.current) {
+      clearTimeout(deleteTimeoutRef.current);
+    }
+    // After 5s, finalize the delete
+    deleteTimeoutRef.current = setTimeout(() => {
+      handleDeleteOrder(orderCode);
+      setPendingDelete(null);
+    }, 5000);
+  }
+
+  /**
+   * Undo the pending soft-delete if done within 5 seconds.
+   */
+  function undoDelete() {
+    if (deleteTimeoutRef.current) {
+      clearTimeout(deleteTimeoutRef.current);
+    }
+    setPendingDelete(null);
+  }
+
+  /**
+   * Actually delete the order by calling /api/orders/delete, then re-fetch the list.
+   */
+  async function handleDeleteOrder(orderCode: string) {
+    try {
+      const resp = await fetch("/api/orders/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, order_code: orderCode }),
+      });
+
+      if (!resp.ok) {
+        const errData = await resp.json();
+        throw new Error(errData.error || "Failed to delete order");
+      }
+
+      await resp.json();
+      alert(`Order ${orderCode} deleted!`);
+
+      // Refresh the list after deletion
+      await fetchSavedOrders(token);
+    } catch (error: any) {
+      console.error("Error deleting order:", error);
+      alert("Error deleting order: " + error.message);
+    }
+  }
+
+  /**
+   * Handle sorting logic. If user clicks the same column again, toggle asc/desc.
+   */
+  function handleSort(column: "code" | "cost" | "date") {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortColumn(column);
+      setSortDirection("asc");
+    }
+  }
+
+  /**
+   * Returns a sorted list of orders based on the chosen column and direction.
+   */
+  function getSortedOrders(): CompositeOrder[] {
+    if (!savedOrders) return [];
+    if (!sortColumn) return savedOrders;
+
+    const arr = [...savedOrders];
+    arr.sort((a, b) => {
+      if (sortColumn === "code") {
+        // Sort by order code lexicographically
+        if (a.code < b.code) return sortDirection === "asc" ? -1 : 1;
+        if (a.code > b.code) return sortDirection === "asc" ? 1 : -1;
+        return 0;
+      } else if (sortColumn === "cost") {
+        // Sort by total cost => subtotal + tax_amount
+        const costA = parseFloat(a.subtotal) + parseFloat(a.tax_amount);
+        const costB = parseFloat(b.subtotal) + parseFloat(b.tax_amount);
+        return sortDirection === "asc" ? costA - costB : costB - costA;
+      } else if (sortColumn === "date") {
+        // Sort by the "selected_date" string
+        const dateA = a.common.selected_date;
+        const dateB = b.common.selected_date;
+        if (dateA < dateB) return sortDirection === "asc" ? -1 : 1;
+        if (dateA > dateB) return sortDirection === "asc" ? 1 : -1;
+        return 0;
+      }
+      return 0;
+    });
+    return arr;
+  }
+
+  // The final sorted list
+  const sortedSavedOrders = getSortedOrders();
+  // The count of saved orders
+  const savedCount = savedOrders ? savedOrders.length : 0;
 
   return (
     <div className="pt-24 min-h-screen w-full bg-gray-50 pb-10">
+      {/* Outer container */}
       <div className="max-w-7xl mx-auto px-0 sm:px-4">
-        {/* Greeting heading */}
+        {/* Greeting */}
         <h1 className="text-2xl sm:text-3xl font-bold mt-6 mb-2">
           {greetingText}, {hasName ? userName : "Guest"}!
         </h1>
 
-        {/* Navigation row => includes "Messages" */}
+        {/* Navigation row */}
         <div className="flex items-center justify-between mb-10">
           <div className="flex items-center gap-8">
             <Link href="/profile" className="text-gray-600 hover:text-blue-600">
               Profile
             </Link>
-            {/* Active => Orders */}
             <Link href="/dashboard" className="text-blue-600 border-b-2 border-blue-600">
               Orders
             </Link>
@@ -78,44 +363,196 @@ export default function OrdersPage() {
           </div>
         </div>
 
-        {/* Tabs: active, saved, past */}
+        {/* Tabs: Saved, Active, Past */}
         <div className="flex items-center gap-4 mb-6 text-sm font-medium">
           <button
+            onClick={() => setTab("saved")}
+            className={`px-3 py-2 rounded font-semibold
+              ${tab === "saved" ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-100"}`}
+          >
+            Saved{" "}
+            {savedCount > 0 && (
+              <span className="ml-1 bg-blue-600 text-white rounded-full px-2 py-0.5 text-xs">
+                {savedCount}
+              </span>
+            )}
+          </button>
+          <button
             onClick={() => setTab("active")}
-            className={`px-3 py-2 rounded 
+            className={`px-3 py-2 rounded font-semibold
               ${tab === "active" ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-100"}`}
           >
             Active
           </button>
           <button
-            onClick={() => setTab("saved")}
-            className={`px-3 py-2 rounded 
-              ${tab === "saved" ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-100"}`}
-          >
-            Saved
-          </button>
-          <button
             onClick={() => setTab("past")}
-            className={`px-3 py-2 rounded 
+            className={`px-3 py-2 rounded font-semibold
               ${tab === "past" ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-100"}`}
           >
             Past
           </button>
         </div>
 
+        {/* ACTIVE tab */}
         {tab === "active" && (
           <div>
             <p className="text-gray-700">No active orders yet.</p>
           </div>
         )}
-        {tab === "saved" && (
-          <div>
-            <p className="text-gray-700">No saved orders yet.</p>
-          </div>
-        )}
+
+        {/* PAST tab */}
         {tab === "past" && (
           <div>
             <p className="text-gray-700">No past orders yet.</p>
+          </div>
+        )}
+
+        {/* SAVED tab => shows the table of saved orders */}
+        {tab === "saved" && (
+          <div>
+            {savedLoading && <p>Loading saved orders...</p>}
+            {savedError && <p className="text-red-600">Error: {savedError}</p>}
+
+            {!savedLoading && !savedError && savedOrders?.length === 0 && (
+              <p>No saved orders yet.</p>
+            )}
+
+            {!savedLoading && !savedError && sortedSavedOrders.length > 0 && (
+              <div className="overflow-x-auto">
+                <table className="table-fixed w-full border-collapse">
+                  <thead className="bg-gray-100 text-gray-700 text-sm">
+                    <tr>
+                      {/* Order Code column */}
+                      <th className="w-1/3 py-2 px-2 text-left sm:w-1/4 sm:px-3">
+                        <button
+                          className="flex items-center gap-1"
+                          onClick={() => handleSort("code")}
+                        >
+                          Order #
+                          {sortColumn === "code" && (
+                            <span>{sortDirection === "asc" ? "▲" : "▼"}</span>
+                          )}
+                        </button>
+                      </th>
+
+                      {/* Total Price column */}
+                      <th className="w-1/3 py-2 px-0 text-left sm:w-1/4 sm:px-3">
+                        <button
+                          className="flex items-center gap-1"
+                          onClick={() => handleSort("cost")}
+                        >
+                          Total Price
+                          {sortColumn === "cost" && (
+                            <span>{sortDirection === "asc" ? "▲" : "▼"}</span>
+                          )}
+                        </button>
+                      </th>
+
+                      {/* Start Date column */}
+                      <th className="w-1/3 py-2 px-0 text-left sm:w-1/4 sm:px-3">
+                        <button
+                          className="flex items-center gap-1"
+                          onClick={() => handleSort("date")}
+                        >
+                          Start Date
+                          {sortColumn === "date" && (
+                            <span>{sortDirection === "asc" ? "▲" : "▼"}</span>
+                          )}
+                        </button>
+                      </th>
+
+                      {/* Actions column (hidden on mobile) */}
+                      <th className="hidden sm:table-cell w-1/4 py-2 px-3 text-right">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sortedSavedOrders.map((order) => {
+                      // Compute the total price for display => (subtotal + tax)
+                      const totalNum = parseFloat(order.subtotal) + parseFloat(order.tax_amount);
+                      const totalFormatted = totalNum.toLocaleString("en-US", {
+                        style: "currency",
+                        currency: "USD",
+                      });
+
+                      // Check if this order is pending deletion
+                      const isPendingDelete = pendingDelete === order.id;
+                      // Check if this order is expanded
+                      const isExpanded = expandedOrderCode === order.code;
+
+                      return (
+                        <React.Fragment key={order.id}>
+                          <tr className="border-b text-sm text-gray-700">
+                            <td className="w-1/3 py-2 px-2 sm:w-1/4 sm:px-3">
+                              <span
+                                onClick={() => handleGetOrderDetails(order.code)}
+                                className={
+                                  isExpanded
+                                    ? "text-red-600 font-semibold cursor-pointer underline"
+                                    : "text-blue-600 font-semibold cursor-pointer hover:underline"
+                                }
+                              >
+                                {order.code}
+                              </span>
+                            </td>
+                            <td className="w-1/3 py-2 px-0 sm:w-1/4 sm:px-3">
+                              {totalFormatted}
+                            </td>
+                            <td className="w-1/3 py-2 px-0 sm:w-1/4 sm:px-3">
+                              {order.common.selected_date}
+                            </td>
+                            <td className="hidden sm:table-cell w-1/4 py-2 px-3 text-right">
+                              {/* Print button (new) */}
+                              <button
+                                onClick={() => router.push(`/dashboard/print/${order.code}`)}
+                                className="text-gray-500 hover:text-blue-600 mr-3"
+                                title="Print order"
+                              >
+                                <Printer size={16} />
+                              </button>
+
+                              {/* Delete logic with Trash2 icon */}
+                              {isPendingDelete ? (
+                                <div className="text-red-600 flex items-center gap-2 justify-end">
+                                  <span>Deleting...</span>
+                                  <button
+                                    onClick={undoDelete}
+                                    className="underline text-blue-600 text-xs"
+                                  >
+                                    Undo
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => initiateDeleteOrder(order.id, order.code)}
+                                  className="text-gray-500 hover:text-red-600"
+                                  title="Delete order"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+
+                          {/* If expanded, show the ExpandedOrderRow */}
+                          {isExpanded && expandedOrderDetails && (
+                            <>
+                              <ExpandedOrderRow
+                                order={expandedOrderDetails}
+                                isPendingDelete={isPendingDelete}
+                                undoDelete={undoDelete}
+                                onDeleteOrder={(id, code) => initiateDeleteOrder(id, code)}
+                              />
+                            </>
+                          )}
+                        </React.Fragment>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
       </div>

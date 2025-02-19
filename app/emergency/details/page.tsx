@@ -19,7 +19,7 @@ import { formatWithSeparator } from "@/utils/format";
 
 // Modal components
 import FinishingMaterialsModal from "@/components/FinishingMaterialsModal";
-import SurfaceCalculatorModal from "@/components/SurfaceCalculatorModal"; // <-- ваш компонент калькулятора
+import SurfaceCalculatorModal from "@/components/SurfaceCalculatorModal";
 
 interface FinishingMaterial {
   id: number;

@@ -2,6 +2,14 @@
 
 import React, { ChangeEvent } from "react";
 
+/**
+ * PhotosAndDescriptionProps:
+ * - photos: array of strings that will store base64-encoded images
+ * - description: user-provided text
+ * - onSetPhotos: state updater function for the photos array
+ * - onSetDescription: state updater for the description text
+ * - className (optional): additional CSS classes
+ */
 interface PhotosAndDescriptionProps {
   photos: string[];
   description: string;
@@ -11,9 +19,13 @@ interface PhotosAndDescriptionProps {
 }
 
 /**
- * A reusable PhotosAndDescription:
- * - Phones/tablets (<1280px): w-full.
- * - Desktops (≥1280px): old style "max-w-[500px] ml-auto".
+ * PhotosAndDescription:
+ * This component allows users to pick image files, which are then read as
+ * base64-encoded strings using FileReader.readAsDataURL. The resulting base64
+ * strings (e.g. "data:image/jpeg;base64,...") are added to `photos`.
+ *
+ * The `PlaceOrderButton` checks for `p.startsWith("data:")` to identify
+ * base64 images and upload them to Google Cloud Storage.
  */
 export default function PhotosAndDescription({
   photos,
@@ -22,17 +34,54 @@ export default function PhotosAndDescription({
   onSetDescription,
   className,
 }: PhotosAndDescriptionProps) {
+  /**
+   * handleFileChange:
+   * When the user selects files, we convert each file into a base64 string
+   * and update the `photos` array. We do not use blob: URLs here to ensure
+   * that our `PlaceOrderButton` can detect base64 images for compression/upload.
+   */
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
+    // Limit to 12 total images
     if (files.length > 12 || photos.length + files.length > 12) {
       alert("You can upload up to 12 photos total.");
       e.target.value = "";
       return;
     }
-    const fileUrls = files.map((file) => URL.createObjectURL(file));
-    onSetPhotos((prev) => [...prev, ...fileUrls]);
+
+    // Convert each selected file to a base64 data URL
+    const readers = files.map((file) => {
+      return new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          if (!ev.target?.result) {
+            return reject("No result from FileReader");
+          }
+          // result is something like "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEA..."
+          resolve(ev.target.result as string);
+        };
+        reader.onerror = (err) => reject(err);
+        reader.readAsDataURL(file);
+      });
+    });
+
+    // Wait until all files have been read, then add them to our photos array
+    Promise.all(readers)
+      .then((base64Strings) => {
+        onSetPhotos((prev) => [...prev, ...base64Strings]);
+      })
+      .catch((err) => {
+        console.error("Error reading files:", err);
+      });
+
+    // Clear the file input, so the user can select the same file again if needed
+    e.target.value = "";
   };
 
+  /**
+   * handleRemovePhoto:
+   * Removes a photo (by index) from the array of photos.
+   */
   const handleRemovePhoto = (index: number) => {
     onSetPhotos((prev) => prev.filter((_, i) => i !== index));
   };
@@ -95,7 +144,7 @@ export default function PhotosAndDescription({
           </div>
         </div>
 
-        {/* Textarea */}
+        {/* Description textarea */}
         <div>
           <textarea
             rows={5}

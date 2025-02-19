@@ -2,36 +2,46 @@
 
 export const dynamic = "force-dynamic";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import GoogleIcon from "@/components/icons/GoogleIcon";
 import FacebookIcon from "@/components/icons/FacebookIcon";
 import AppleIcon from "@/components/icons/AppleIcon";
 
-export default function LoginOrRegisterPage() {
-  const router = useRouter();
 
-  // Registration form
+export default function LoginOrRegisterPage() {
+  // Router for navigation
+  const router = useRouter();
+  // Search params to read "next" from the query string
+  const searchParams = useSearchParams();
+  const nextUrl = searchParams.get("next") || "";
+
+  // Form states for registration
   const [email, setEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
   const [agreedToTos, setAgreedToTos] = useState(false);
 
-  // Login form
+  // Form states for login
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
 
-  // Toggles
+  // Forgot password flow
+  const [resetEmail, setResetEmail] = useState("");
+
+  // UI toggles
   const [showRegister, setShowRegister] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
 
-  // Forgot password email
-  const [resetEmail, setResetEmail] = useState("");
-
-  // =============== REGISTER ===============
+  /**
+   * handleRegister:
+   * 1) Validates "agreedToTos" checkbox.
+   * 2) Sends a POST request to create a new user.
+   * 3) On success, redirects to the /confirm page (optionally appending &next=...).
+   */
   const handleRegister = async () => {
     if (!agreedToTos) {
-      alert("Please agree to the terms and conditions.");
+      alert("Please agree to the Terms & Conditions.");
       return;
     }
 
@@ -47,8 +57,12 @@ export default function LoginOrRegisterPage() {
       });
 
       if (res.ok) {
-        // Instead of just alerting, navigate to the confirm page:
-        router.push(`/confirm?email=${encodeURIComponent(email)}`);
+        // If there's a next param, include it in the confirm URL
+        let confirmUrl = `/confirm?email=${encodeURIComponent(email)}`;
+        if (nextUrl) {
+          confirmUrl += `&next=${encodeURIComponent(nextUrl)}`;
+        }
+        router.push(confirmUrl);
       } else if (res.status === 400) {
         const data = await res.json();
         alert(`Registration error: ${data.error}`);
@@ -61,7 +75,14 @@ export default function LoginOrRegisterPage() {
     }
   };
 
-  // =============== LOGIN ===============
+  /**
+   * handleLogin:
+   * 1) Sends a POST request to authenticate user credentials.
+   * 2) Saves the returned auth token to sessionStorage.
+   * 3) Optionally fetches and stores user info in "profileData".
+   * 4) Triggers "authChange" to let the app know user is logged in.
+   * 5) Redirects to "nextUrl" or defaults to /profile if "nextUrl" doesn't exist.
+   */
   const handleLogin = async () => {
     try {
       const res = await fetch("https://dev.thejamb.com/user/auth/credentials", {
@@ -75,11 +96,10 @@ export default function LoginOrRegisterPage() {
 
       if (res.ok) {
         const data = await res.json();
-
         // 1) Store token in sessionStorage
         sessionStorage.setItem("authToken", data.token);
 
-        // 2) Fetch user info so we can store it in sessionStorage
+        // 2) Fetch user info
         try {
           const userRes = await fetch("https://dev.thejamb.com/user/info", {
             method: "POST",
@@ -94,11 +114,15 @@ export default function LoginOrRegisterPage() {
           console.error("Error fetching user info after login:", err);
         }
 
-        // 3) Dispatch the custom "authChange" event so the Header updates
+        // 3) Dispatch custom "authChange" event
         window.dispatchEvent(new Event("authChange"));
 
-        // 4) Navigate to /profile
-        router.push("/profile");
+        // 4) Redirect to "nextUrl" if provided; otherwise, fallback to /profile
+        if (nextUrl) {
+          router.push(nextUrl);
+        } else {
+          router.push("/profile");
+        }
       } else if (res.status === 400) {
         const data = await res.json();
         alert(`Login error: ${data.error}`);
@@ -109,12 +133,16 @@ export default function LoginOrRegisterPage() {
         alert(`Login error. Status: ${res.status}`);
       }
     } catch (error) {
-      alert("Login failed. Check console.");
+      alert("Login failed. Check console for details.");
       console.error("Login error:", error);
     }
   };
 
-  // =============== FORGOT PASSWORD ===============
+  /**
+   * handleForgotPassword:
+   * 1) If the user enters a valid email, sends a request for password reset.
+   * 2) On success, it shows a message and navigates to /password-reset?email=...
+   */
   const handleForgotPassword = async () => {
     if (!resetEmail.trim()) {
       alert("Please enter your email for password reset.");
@@ -122,29 +150,21 @@ export default function LoginOrRegisterPage() {
     }
 
     try {
-      const res = await fetch("https://dev.thejamb.com/user/change-password/request", {
+      const res = await fetch("/api/user/change-password/request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: resetEmail }),
       });
 
       if (res.ok) {
-        alert("Email has been sent with reset instructions!");
+        alert("Email sent with reset instructions!");
         router.push(`/password-reset?email=${encodeURIComponent(resetEmail)}`);
-      } else if (res.status === 400) {
-        const data = await res.json();
-        alert(`Reset error: ${data.error}`);
-      } else if (res.status === 404) {
-        const data = await res.json();
-        alert(`Reset error: ${data.error}`);
-      } else if (res.status === 500) {
-        const data = await res.json();
-        alert(`Reset error: ${data.error}`);
       } else {
-        alert(`Reset error: status ${res.status}`);
+        const data = await res.json();
+        alert(`Reset error: ${data.error || res.statusText}`);
       }
     } catch (error) {
-      alert("Failed to request a password reset. Check console.");
+      alert("Failed to request a password reset. Check the console.");
       console.error("Forgot Password error:", error);
     }
   };
@@ -152,7 +172,11 @@ export default function LoginOrRegisterPage() {
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-gray-50 px-4 py-10">
       {showRegister ? (
-        // ================= REGISTER FORM =================
+        /**
+         * ====================
+         * REGISTRATION FORM
+         * ====================
+         */
         <div className="w-full max-w-md bg-white p-8 mt-20 rounded-lg shadow">
           <h1 className="text-2xl font-bold mb-6 text-center">Create Account</h1>
 
@@ -196,7 +220,7 @@ export default function LoginOrRegisterPage() {
             />
           </div>
 
-          {/* TOS */}
+          {/* Terms & Conditions */}
           <div className="mb-4 flex items-center gap-2">
             <input
               type="checkbox"
@@ -233,7 +257,7 @@ export default function LoginOrRegisterPage() {
 
           {/* Social login icons */}
           <div className="mt-8 text-center">
-            <p className="text-gray-500 text-sm mb-2">Sign with</p>
+            <p className="text-gray-500 text-sm mb-2">Sign in with</p>
             <div className="flex justify-center gap-4">
               <button className="border p-3 rounded hover:bg-gray-100 flex items-center justify-center">
                 <GoogleIcon className="w-6 h-6" />
@@ -248,13 +272,17 @@ export default function LoginOrRegisterPage() {
           </div>
         </div>
       ) : (
-        // ================= LOGIN FORM =================
+        /**
+         * ====================
+         * LOGIN FORM
+         * ====================
+         */
         <div className="w-full max-w-md bg-white p-8 rounded-lg shadow">
           {!showForgotPassword ? (
             <>
               <h1 className="text-2xl font-bold mb-6 text-center">Login</h1>
 
-              {/* Email */}
+              {/* Email input */}
               <div className="mb-4">
                 <label className="block text-sm text-gray-600 mb-1">
                   Email address
@@ -268,7 +296,7 @@ export default function LoginOrRegisterPage() {
                 />
               </div>
 
-              {/* Password */}
+              {/* Password input */}
               <div className="mb-2">
                 <label className="block text-sm text-gray-600 mb-1">
                   Password
@@ -309,14 +337,18 @@ export default function LoginOrRegisterPage() {
               </div>
             </>
           ) : (
-            // =============== FORGOT PASSWORD ===============
+            /**
+             * ============================
+             * FORGOT PASSWORD SECTION
+             * ============================
+             */
             <>
               <h1 className="text-2xl font-bold mb-6 text-center">
                 Forgot Password
               </h1>
               <p className="mb-4 text-sm text-gray-700">
-                Enter your email below. We'll send a reset code if your account
-                exists.
+                Enter your email below. We'll send a reset code if your
+                account exists.
               </p>
 
               <div className="mb-4">

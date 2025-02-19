@@ -23,17 +23,17 @@ dotenv.config({ path: path.join(__dirname, '..', '..', '.env.local') });
 // ---------------------------------------------------------
 // 1) finishing_material_sections.json
 // ---------------------------------------------------------
-import finishingMaterialSections from './finishing_material_sections.json'; // или require(...), если удобнее
+import finishingMaterialSections from './finishing_material_sections.json';
 
 interface FinishingMaterialSectionItem {
   id: string;
   material_external_id: string;
   material_name: string;
   work_code: string;
-  section: string;
+  section: string;  // "1", "2" ... (если нужна поддержка "1.1.1" — уберите parseInt)
 }
 
-// Превращаем .data в массив, если структура у вас такова
+// Превращаем .data в массив (если структура у вас такова)
 const dataArray: FinishingMaterialSectionItem[] = finishingMaterialSections.data || [];
 
 // ---------------------------------------------------------
@@ -81,7 +81,6 @@ function getApiKeyOrThrow(): string {
   return key;
 }
 
-// Минимальные интерфейсы
 interface ProductResponse {
   product?: {
     item_id?: string;
@@ -92,9 +91,11 @@ interface ProductResponse {
       currency?: string;
       unit?: string;
     };
-    // и другие поля (specifications, breadcrumbs и т.д.)
+    breadcrumbs?: Array<{ link?: string; title?: string }>;
+    // и другие поля
   };
 }
+
 interface CategoryResultItem {
   position: number;
   product: {
@@ -102,11 +103,13 @@ interface CategoryResultItem {
     title?: string;
   };
 }
+
 interface CategoryResponse {
   category_results?: CategoryResultItem[];
   search_results?: CategoryResultItem[];
 }
 
+// Запрашиваем один товар
 async function fetchProduct(itemId: string): Promise<ProductResponse> {
   const apiKey = getApiKeyOrThrow();
   const response = await axios.get<ProductResponse>(BIGBOX_API_URL, {
@@ -119,10 +122,7 @@ async function fetchProduct(itemId: string): Promise<ProductResponse> {
   return response.data;
 }
 
-/**
- * В зависимости от URL, можно вызвать type='category' или 'search'.
- * Здесь просто делаем 'category' для примера.
- */
+// Запрашиваем категорию/поиск по ссылке из бредкрамба
 async function fetchCategoryByUrl(hdUrl: string, requestType: 'category' | 'search'): Promise<CategoryResponse> {
   const apiKey = getApiKeyOrThrow();
   const response = await axios.get<CategoryResponse>(BIGBOX_API_URL, {
@@ -136,31 +136,25 @@ async function fetchCategoryByUrl(hdUrl: string, requestType: 'category' | 'sear
 }
 
 // ---------------------------------------------------------
-// 5) Функции "добавления в БД" (пример)
+// 5) "Добавление в БД" (пример)
 // ---------------------------------------------------------
-
 interface ExtendedProduct {
   item_id?: string;
   title?: string;
+  main_image?: {
+    link: string;
+  };
   buybox_winner?: {
     price?: number;
     unit?: string;
   };
-  main_image?: {
-    link: string;
-  };
-  specifications?: Array<{
-    name?: string;
-    value?: string;
-    group_name?: string;
-  }>;
-  // и прочие поля по желанию
+  breadcrumbs?: Array<{ link?: string; title?: string }>;
 }
 
 interface FinishingMaterialPayload {
-  section: number;
+  section: number;               // Если section может быть '1.1.1', замените на string
   external_id: string;
-  name: string;
+  name: string;                  // Название материала
   image_href: string;
   unit_of_measurement: string;
   quantity_in_packaging: number;
@@ -168,39 +162,62 @@ interface FinishingMaterialPayload {
   work_code: string;
 }
 
-/** Для примера предполагаем, что упаковка всегда "1". */
+// Простейшая функция: всегда возвращаем 1
 function determineQuantityInPackaging(product: ExtendedProduct): number {
   return 1;
 }
 
-/** Собираем данные для POST на сервер /material/add-finishing-material */
-function buildFinishingMaterialPayload(
-  section: number,
-  externalId: string,
-  workCode: string,
+/**
+ * Собираем FinishingMaterialPayload, но теперь для **основного** товара
+ * берём `name` из `row.material_name`.
+ */
+function buildMainFinishingMaterialPayload(
+  row: FinishingMaterialSectionItem,   // наши данные из JSON
   product: ExtendedProduct
 ): FinishingMaterialPayload {
-  const name = product.title || 'Untitled';
-  const image = product.main_image?.link || '';
-  const cost = product.buybox_winner?.price || 0;
-  const unitOfMeasurement = product.buybox_winner?.unit || 'each';
-  const quantity = determineQuantityInPackaging(product);
+  // Если "section" всегда целое — используем parseInt(row.section, 10)
+  // Если нужно хранить "1.1.1", просто оставьте row.section как строку (сменив интерфейс).
+  const sectionNum = parseInt(row.section, 10);
 
   return {
-    section,
-    external_id: externalId,
-    name,
-    image_href: image,
-    unit_of_measurement: unitOfMeasurement,
-    quantity_in_packaging: quantity,
-    cost,
-    work_code: workCode
+    section: sectionNum,
+    external_id: row.material_external_id,
+    name: row.material_name,   // <-- Берём название из .json, а не из product.title
+    image_href: product.main_image?.link || '',
+    unit_of_measurement: product.buybox_winner?.unit || 'each',
+    quantity_in_packaging: determineQuantityInPackaging(product),
+    cost: product.buybox_winner?.price || 0,
+    work_code: row.work_code,  // <-- Берём код работ из .json
   };
 }
 
-/** Имитируем отправку POST-запроса на backend */
+/**
+ * Для "breadcrumb"-товаров у нас **нет** row.material_name,
+ * поэтому берём title из BigBox (или просто "Untitled").
+ */
+function buildBreadcrumbFinishingMaterialPayload(
+  section: number,
+  itemId: string,
+  workCode: string,
+  product: ExtendedProduct
+): FinishingMaterialPayload {
+  return {
+    section,
+    external_id: itemId,
+    name: product.title || 'Untitled',
+    image_href: product.main_image?.link || '',
+    unit_of_measurement: product.buybox_winner?.unit || 'each',
+    quantity_in_packaging: determineQuantityInPackaging(product),
+    cost: product.buybox_winner?.price || 0,
+    work_code: workCode,
+  };
+}
+
+// Функция-обёртка, имитирующая запрос на ваш бэкенд
 async function addFinishingMaterialToDb(payload: FinishingMaterialPayload): Promise<any> {
   try {
+    console.log('DEBUG: Sending payload =>', payload); // <-- Чтобы увидеть, что реально уходит на сервер
+
     const resp = await axios.post('https://dev.thejamb.com/material/add-finishing-material', payload);
     return resp.data;
   } catch (error) {
@@ -210,7 +227,7 @@ async function addFinishingMaterialToDb(payload: FinishingMaterialPayload): Prom
 }
 
 // ---------------------------------------------------------
-// 6) Обработка последнего бредкрамба => до 10 товаров
+// 6) Обработка бредкрамба (до 10 товаров)
 // ---------------------------------------------------------
 async function processBreadcrumbCategory(breadcrumbUrl: string, workCode: string, section: number) {
   console.log(`\n[Breadcrumb] Attempting to fetch: ${breadcrumbUrl}`);
@@ -252,7 +269,8 @@ async function processBreadcrumbCategory(breadcrumbUrl: string, workCode: string
       if (collectedSet.has(itemId)) {
         console.log(`[Breadcrumb] itemId=${itemId} is already in collectedSet => skip add.`);
       } else {
-        const catPayload = buildFinishingMaterialPayload(section, itemId, workCode, catProd);
+        // Тут берём title из catProd (нет row.material_name)
+        const catPayload = buildBreadcrumbFinishingMaterialPayload(section, itemId, workCode, catProd);
         const catResult = await addFinishingMaterialToDb(catPayload);
         console.log(`[Breadcrumb] itemId=${itemId} => added:`, catResult);
 
@@ -266,12 +284,12 @@ async function processBreadcrumbCategory(breadcrumbUrl: string, workCode: string
 }
 
 // ---------------------------------------------------------
-// 7) Основной процесс для каждой строки finishing_material_sections
+// 7) Основной цикл обработки
 // ---------------------------------------------------------
 async function processOneMaterial(row: FinishingMaterialSectionItem) {
   console.log(`\n=== Processing main externalId=${row.material_external_id}, work_code=${row.work_code}, section=${row.section} ===`);
 
-  // 1) Запрашиваем BigBox для основного товара
+  // 1) Вызываем BigBox для основного товара
   let mainResp: ProductResponse;
   try {
     mainResp = await fetchProduct(row.material_external_id);
@@ -286,16 +304,13 @@ async function processOneMaterial(row: FinishingMaterialSectionItem) {
     return;
   }
 
-  // 2) Если нет в collectedSet => добавляем в БД
+  // 2) Если нет в collectedSet => добавляем
   if (collectedSet.has(row.material_external_id)) {
     console.log(`Main itemId=${row.material_external_id} is already in DB => skip add.`);
   } else {
-    const mainPayload = buildFinishingMaterialPayload(
-      parseInt(row.section, 10),
-      row.material_external_id,
-      row.work_code,
-      mainProd
-    );
+    // Формируем payload (берём название и work_code из row)
+    const mainPayload = buildMainFinishingMaterialPayload(row, mainProd);
+
     try {
       const mainResult = await addFinishingMaterialToDb(mainPayload);
       console.log(`Added main itemId=${row.material_external_id}:`, mainResult);
@@ -307,12 +322,14 @@ async function processOneMaterial(row: FinishingMaterialSectionItem) {
     }
   }
 
-  // 3) Берём последний breadcrumb => получаем до 10 товаров => добавляем (если их нет в collectedSet)
-  const breadcrumbs = (mainProd as any).breadcrumbs;
+  // 3) Берём последний бредкрамб => до 10 товаров
+  const breadcrumbs = mainProd.breadcrumbs;
   if (Array.isArray(breadcrumbs) && breadcrumbs.length > 0) {
     const lastCrumb = breadcrumbs[breadcrumbs.length - 1];
     if (lastCrumb?.link) {
-      await processBreadcrumbCategory(lastCrumb.link, row.work_code, parseInt(row.section, 10));
+      // section всё тот же (преобразуем row.section), work_code — row.work_code
+      const sectionNum = parseInt(row.section, 10);
+      await processBreadcrumbCategory(lastCrumb.link, row.work_code, sectionNum);
     }
   } else {
     console.log('No breadcrumbs array found or empty => skip category approach.');
@@ -320,13 +337,13 @@ async function processOneMaterial(row: FinishingMaterialSectionItem) {
 }
 
 // ---------------------------------------------------------
-// 8) Запуск основного цикла
+// 8) Запуск
 // ---------------------------------------------------------
 async function runImport() {
   for (const row of dataArray) {
     const extId = row.material_external_id;
 
-    // Пропускаем, если уже обработано
+    // Пропускаем, если progress.json говорит, что уже обработано
     if (progressData.processed[extId]) {
       console.log(`Skipping externalId=${extId} => progress.json says processed.`);
       continue;
@@ -340,7 +357,6 @@ async function runImport() {
       saveProgress();
     } catch (err) {
       console.error(`Error processing extId=${extId}`, err);
-      // Можно сделать break или continue, в зависимости от логики
     }
   }
 

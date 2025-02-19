@@ -4,7 +4,7 @@
 const nextConfig = {
   images: {
     domains: ["dev.thejamb.com"],
-    unoptimized: true,
+    //unoptimized: true,
   },
   reactStrictMode: true,
 };

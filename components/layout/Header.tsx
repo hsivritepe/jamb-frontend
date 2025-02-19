@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, ChevronDown, User } from "lucide-react";
+import { Menu, X, AlertTriangle, ChevronDown, User } from "lucide-react";
 import { NavigationItem } from "@/types/common";
 import { useLocation } from "@/context/LocationContext";
 import PreferencesModal from "@/components/ui/PreferencesModal";
@@ -159,6 +159,7 @@ function MobileNav({
           }`}
           onClick={() => setIsMobileMenuOpen(false)}
         >
+          <AlertTriangle size={18} className="text-red-600" />
           Emergency
         </Link>
 
@@ -186,7 +187,7 @@ function MobileNav({
             title="Go to your account"
           >
             <User className="w-5 h-5" />
-            <span>{mobileLoggedInLabel}</span>
+            <span className="font-semibold sm:font-medium">{mobileLoggedInLabel}</span>
           </Link>
         ) : (
           <Link
@@ -515,7 +516,8 @@ export default function Header() {
                         : "border-transparent"
                     }`}
                 >
-                  <span>🚨</span>Emergency
+                  <AlertTriangle size={18} className="text-red-600" />
+                  Emergency
                 </Link>
 
                 {/* Preferences */}
@@ -615,7 +617,7 @@ export default function Header() {
               ✕
             </button>
 
-            <h2 className="text-xl font-bold sm:font-semibold mb-4 text-gray-800">
+            <h2 className="text-2xl font-bold sm:font-semibold mb-4 text-gray-800">
               Set Your Location
             </h2>
 
