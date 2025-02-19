@@ -31,13 +31,7 @@ export const metadata = {
         url: "/images/about-emergency.jpg",
       },
     ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "JAMB – Home Services",
-    description: "We help with improvements & maintenance",
-    images: ["/images/about-emergency.jpg"],
-  },
+  }
 };
 
 export default function RootLayout({ children }: LayoutProps) {

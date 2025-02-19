@@ -4,29 +4,28 @@ export const dynamic = "force-dynamic";
 
 import React, { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { Printer } from "lucide-react"; // optional icon if you want to show a print button somewhere
 import { DisclaimerBlock } from "@/components/ui/DisclaimerBlock";
 import { ALL_SERVICES } from "@/constants/services";
 import { ALL_CATEGORIES } from "@/constants/categories";
 
 /**
- * Interface describing a single material inside a work item.
+ * Represents a material used within a work item.
  */
 interface OrderMaterial {
   id: number;
   name: string;
-  cost: string;            // total cost for these materials
-  cost_per_unit: string;   // cost per 1 unit
+  cost: string;
+  cost_per_unit: string;
   quantity: number;
   photo?: string;
 }
 
 /**
- * Interface describing a single work item in the order.
+ * Represents a single work item in the order.
  */
 interface OrderWork {
   id: number;
-  code: string;        
+  code: string;
   name: string;
   total: string;
   photo?: string;
@@ -35,11 +34,11 @@ interface OrderWork {
 }
 
 /**
- * Interface describing the top-level CompositeOrder from the server.
+ * Represents the top-level CompositeOrder object.
  */
 interface CompositeOrder {
   id: number;
-  code: string;  // the overall order code
+  code: string;
   user_id: number;
   subtotal: string;
   tax_amount: string;
@@ -50,13 +49,13 @@ interface CompositeOrder {
     description: string;
     selected_date: string;
     date_coefficient: string;
-    photos: string[]; 
+    photos: string[];
   };
   works: OrderWork[];
 }
 
 /**
- * Format a numeric value with commas and exactly two decimals, e.g. 1234.5 => "1,234.50"
+ * Formats a numeric value with commas and two decimals.
  */
 function formatWithSeparator(value: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -66,7 +65,7 @@ function formatWithSeparator(value: number): string {
 }
 
 /**
- * Converts a numeric dollar amount into spelled-out English text (simplified).
+ * Converts a numeric dollar amount to simplified English text.
  */
 function numberToWordsUSD(amount: number): string {
   const onesMap: Record<number, string> = {
@@ -147,8 +146,7 @@ function numberToWordsUSD(amount: number): string {
 }
 
 /**
- * If the server code is "4.1.2" with dots, we replace them with '-' => "4-1-2"
- * Then we extract the first two parts => "4-1" as the category ID.
+ * Replaces dots in a code (e.g., "4.1.2") with dashes => "4-1-2".
  */
 function extractCategoryId(workCode: string): string {
   const normalized = workCode.replace(/\./g, "-");
@@ -160,32 +158,29 @@ function extractCategoryId(workCode: string): string {
 }
 
 /**
- * Find a category object in ALL_CATEGORIES by ID, or null if not found.
+ * Finds a matching category in ALL_CATEGORIES by ID.
  */
 function findCategoryObj(categoryId: string) {
   return ALL_CATEGORIES.find((c) => c.id === categoryId) || null;
 }
 
 /**
- * Optionally find a service object in ALL_SERVICES by full code (e.g. "4-1-2") if needed.
+ * Finds a matching service in ALL_SERVICES by ID.
  */
 function findServiceObj(serviceId: string) {
   return ALL_SERVICES.find((svc) => svc.id === serviceId) || null;
 }
 
 /**
- * The main PrintOrderPage that fetches a real existing order from /api/orders/get
- * and displays a print layout with sections & categories, replicating your previous styles.
- * After user closes or finishes printing, we do router.back().
+ * Prints an order with detailed cost breakdown.
  */
 export default function PrintOrderPage() {
   const router = useRouter();
   const params = useParams();
-
   const [order, setOrder] = useState<CompositeOrder | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // On mount => fetch order from server
+  // Fetch order data on mount
   useEffect(() => {
     const code = params?.orderCode;
     if (!code) {
@@ -226,24 +221,18 @@ export default function PrintOrderPage() {
     fetchOrder();
   }, [params, router]);
 
-  /**
-   * We handle auto-print, plus a "go back" after printing is closed (onafterprint).
-   */
+  // Auto-print and go back after printing
   useEffect(() => {
     if (!loading && order) {
       const oldTitle = document.title;
       document.title = `JAMB-Order-${order.code}`;
 
-      // Trigger print after short delay
       const printTimer = setTimeout(() => window.print(), 600);
-
-      // After user finishes/abandons printing => router.back()
       const handleAfterPrint = () => {
         router.back();
       };
       window.onafterprint = handleAfterPrint;
 
-      // Cleanup on unmount
       return () => {
         document.title = oldTitle;
         clearTimeout(printTimer);
@@ -259,7 +248,6 @@ export default function PrintOrderPage() {
     return <div className="p-4">No order found.</div>;
   }
 
-  // Let's parse top-level amounts
   const subtotalNum = parseFloat(order.subtotal) || 0;
   const taxAmountNum = parseFloat(order.tax_amount) || 0;
   const finalTotal = subtotalNum + taxAmountNum;
@@ -275,13 +263,15 @@ export default function PrintOrderPage() {
 
   let laborSubtotal = 0;
   let materialsSubtotal = 0;
+  const materialsSpecMap: Record<
+    string,
+    { name: string; totalQty: number; totalCost: number }
+  > = {};
 
-  const materialsSpecMap: Record<string, { name: string; totalQty: number; totalCost: number }> = {};
-
+  // Group works by section & category, calculate totals
   order.works.forEach((w) => {
-    const catId = extractCategoryId(w.code); 
+    const catId = extractCategoryId(w.code);
     const catObj = findCategoryObj(catId);
-
     const sectionName = catObj?.section ?? "Unknown Section";
     const categoryName = catObj?.title ?? `Unknown Category (${catId})`;
 
@@ -316,21 +306,19 @@ export default function PrintOrderPage() {
   });
 
   const finalLabor = laborSubtotal * dateCoeff;
-  const sumBeforeTax = finalLabor + materialsSubtotal + serviceFeeLabor + serviceFeeMaterials;
   const materialsSpecArray = Object.values(materialsSpecMap);
   const totalMaterialsCost = materialsSpecArray.reduce((acc, x) => acc + x.totalCost, 0);
-
   const spelledOutTotal = numberToWordsUSD(finalTotal);
 
   return (
     <div className="p-4 my-2 bg-white">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4 bg-transparent">
+      <div className="flex items-center justify-between mb-4">
         <img src="/images/logo.png" alt="JAMB Logo" className="h-10 w-auto" />
       </div>
-      <hr className="border-gray-300 mb-4 bg-white" />
+      <hr className="border-gray-300 mb-4" />
 
-      <div className="flex justify-between items-center mb-4 mt-12 bg-transparent">
+      <div className="flex justify-between items-center mb-4 mt-12">
         <div>
           <h1 className="text-2xl font-bold">Order #{order.code}</h1>
         </div>
@@ -382,17 +370,17 @@ export default function PrintOrderPage() {
 
       {/* 1) SUMMARY */}
       <section className="page-break mt-8">
-        <h2 className="text-xl font-semibold mb-4 text-gray-900">
-          1) Summary
-        </h2>
+        <h2 className="text-xl font-semibold mb-4 text-gray-900">1) Summary</h2>
         <p className="text-sm mb-4 text-gray-600">
-          This table provides a simple overview of each selected service and total cost.
+          Overview of each selected service and total cost.
         </p>
-
         <table className="w-full table-auto border text-sm" style={{ borderColor: "#999" }}>
           <thead>
-            <tr className="border-b bg-transparent" style={{ borderColor: "#999" }}>
-              <th className="px-3 py-2 border-r text-center" style={{ width: "3rem", borderColor: "#999" }}>
+            <tr className="border-b" style={{ borderColor: "#999" }}>
+              <th
+                className="px-3 py-2 border-r text-center"
+                style={{ width: "3rem", borderColor: "#999" }}
+              >
                 #
               </th>
               <th className="px-3 py-2 border-r text-left" style={{ borderColor: "#999" }}>
@@ -431,10 +419,16 @@ export default function PrintOrderPage() {
                           const costVal = parseFloat(w.total) || 0;
                           return (
                             <tr key={w.id} style={{ borderBottom: "1px solid #ccc" }}>
-                              <td className="px-3 py-2 border-r text-center" style={{ borderColor: "#ccc" }}>
+                              <td
+                                className="px-3 py-2 border-r text-center"
+                                style={{ borderColor: "#ccc" }}
+                              >
                                 {sectionIndex}.{catIndex}.{wIndex}
                               </td>
-                              <td className="px-3 py-2 border-r" style={{ borderColor: "#ccc" }}>
+                              <td
+                                className="px-3 py-2 border-r"
+                                style={{ borderColor: "#ccc" }}
+                              >
                                 {w.name}
                               </td>
                               <td className="px-3 py-2 text-center">
@@ -452,7 +446,6 @@ export default function PrintOrderPage() {
           </tbody>
         </table>
 
-        {/* Summary totals */}
         <div className="border-t pt-4 mt-6 text-sm">
           <div className="flex justify-between mb-1">
             <span>Labor total:</span>
@@ -491,21 +484,16 @@ export default function PrintOrderPage() {
             <span>Total:</span>
             <span>${formatWithSeparator(finalTotal)}</span>
           </div>
-          <p className="text-right text-sm text-gray-600">
-            {spelledOutTotal}
-          </p>
+          <p className="text-right text-sm text-gray-600">{spelledOutTotal}</p>
         </div>
       </section>
 
       {/* 2) COST BREAKDOWN */}
       <section className="page-break mt-10">
-        <h2 className="text-xl font-semibold mb-4 text-gray-900">
-          2) Cost Breakdown
-        </h2>
+        <h2 className="text-xl font-semibold mb-4 text-gray-900">2) Cost Breakdown</h2>
         <p className="text-sm mb-4 text-gray-600">
-          Detailed breakdown of each service's labor and materials cost.
+          Detailed labor and materials cost for each service.
         </p>
-
         {Array.from(sectionMap.entries()).map(([sectionName, catEntries], i) => {
           const sectionIndex = i + 1;
           return (
@@ -537,7 +525,9 @@ export default function PrintOrderPage() {
                             </span>
                           </h5>
                           {w.description && (
-                            <p className="text-sm my-1 text-gray-600">{w.description}</p>
+                            <p className="text-sm my-1 text-gray-600">
+                              {w.description}
+                            </p>
                           )}
                           <p className="text-sm flex justify-between text-gray-700 mb-1">
                             <span className="font-semibold">Total cost</span>
@@ -545,10 +535,7 @@ export default function PrintOrderPage() {
                               ${formatWithSeparator(totalCost)}
                             </span>
                           </p>
-                          <div
-                            className="mt-2 p-3 border border-gray-300 rounded text-sm bg-gray-50"
-                            style={{ color: "#444" }}
-                          >
+                          <div className="mt-2 p-3 border border-gray-300 rounded text-sm bg-gray-50">
                             <div className="flex justify-between mb-1">
                               <span className="font-semibold">Labor</span>
                               <span className="font-semibold">
@@ -556,12 +543,13 @@ export default function PrintOrderPage() {
                               </span>
                             </div>
                             <div className="flex justify-between mb-3">
-                              <span className="font-semibold">Materials, Tools & Equipment</span>
+                              <span className="font-semibold">
+                                Materials, Tools & Equipment
+                              </span>
                               <span className="font-semibold">
                                 ${formatWithSeparator(matCost)}
                               </span>
                             </div>
-
                             {w.materials.length > 0 && (
                               <div className="mt-2">
                                 <table className="table-auto w-full text-left text-gray-700">
@@ -574,7 +562,7 @@ export default function PrintOrderPage() {
                                     </tr>
                                   </thead>
                                   <tbody>
-                                    {w.materials.map((m, idx2) => {
+                                    {w.materials.map((m) => {
                                       const cpu = parseFloat(m.cost_per_unit) || 0;
                                       const sub = parseFloat(m.cost) || 0;
                                       return (
@@ -610,18 +598,14 @@ export default function PrintOrderPage() {
 
       {/* 3) SPECIFICATIONS */}
       <section className="page-break mt-10">
-        <h2 className="text-xl font-semibold mb-4 text-gray-900">
-          3) Specifications
-        </h2>
+        <h2 className="text-xl font-semibold mb-4 text-gray-900">3) Specifications</h2>
         <p className="text-sm mb-4 text-gray-600">
-          Additional breakdown of labor by section, overall materials, date coefficient, etc.
+          Additional detail for labor by section, materials total, and date coefficient.
         </p>
 
         {/* A) Labor by Section */}
         <div className="mb-8">
-          <h3 className="text-lg font-bold mb-2 text-gray-800">
-            A) Labor by Section
-          </h3>
+          <h3 className="text-lg font-bold mb-2 text-gray-800">A) Labor by Section</h3>
           <table className="w-full table-auto border text-sm mb-3" style={{ borderColor: "#999" }}>
             <thead>
               <tr>
@@ -649,11 +633,18 @@ export default function PrintOrderPage() {
                 if (sectionLaborSum === 0) return null;
 
                 return (
-                  <tr key={sectionName} className="border-b" style={{ borderColor: "#ccc" }}>
+                  <tr
+                    key={sectionName}
+                    className="border-b"
+                    style={{ borderColor: "#ccc" }}
+                  >
                     <td className="px-3 py-2 border" style={{ borderColor: "#ccc" }}>
                       {sectionName}
                     </td>
-                    <td className="px-3 py-2 border text-right" style={{ borderColor: "#ccc" }}>
+                    <td
+                      className="px-3 py-2 border text-right"
+                      style={{ borderColor: "#ccc" }}
+                    >
                       ${formatWithSeparator(sectionLaborSum)}
                     </td>
                   </tr>
@@ -669,9 +660,7 @@ export default function PrintOrderPage() {
             </div>
             {dateCoeff !== 1 && (
               <div className="flex justify-end mt-1">
-                <span className="mr-6">
-                  {dateCoeff > 1 ? "Surcharge" : "Discount"}:
-                </span>
+                <span className="mr-6">{dateCoeff > 1 ? "Surcharge" : "Discount"}:</span>
                 <span>
                   {dateCoeff > 1 ? "+" : "-"}$
                   {formatWithSeparator(Math.abs(finalLabor - laborSubtotal))}
@@ -694,19 +683,34 @@ export default function PrintOrderPage() {
             <p className="text-sm text-gray-600">No materials in this order.</p>
           ) : (
             <div>
-              <table className="w-full table-auto border text-sm" style={{ borderColor: "#999" }}>
+              <table
+                className="w-full table-auto border text-sm"
+                style={{ borderColor: "#999" }}
+              >
                 <thead>
                   <tr style={{ background: "transparent" }}>
-                    <th className="px-3 py-2 border" style={{ textAlign: "left", borderColor: "#999" }}>
+                    <th
+                      className="px-3 py-2 border"
+                      style={{ textAlign: "left", borderColor: "#999" }}
+                    >
                       Material Name
                     </th>
-                    <th className="px-3 py-2 border" style={{ textAlign: "center", borderColor: "#999" }}>
+                    <th
+                      className="px-3 py-2 border"
+                      style={{ textAlign: "center", borderColor: "#999" }}
+                    >
                       Qty
                     </th>
-                    <th className="px-3 py-2 border" style={{ textAlign: "center", borderColor: "#999" }}>
+                    <th
+                      className="px-3 py-2 border"
+                      style={{ textAlign: "center", borderColor: "#999" }}
+                    >
                       Price
                     </th>
-                    <th className="px-3 py-2 border" style={{ textAlign: "center", borderColor: "#999" }}>
+                    <th
+                      className="px-3 py-2 border"
+                      style={{ textAlign: "center", borderColor: "#999" }}
+                    >
                       Subtotal
                     </th>
                   </tr>
@@ -719,10 +723,16 @@ export default function PrintOrderPage() {
                         <td className="px-3 py-2 border-r" style={{ borderColor: "#ccc" }}>
                           {m.name}
                         </td>
-                        <td className="px-3 py-2 border-r text-center" style={{ borderColor: "#ccc" }}>
+                        <td
+                          className="px-3 py-2 border-r text-center"
+                          style={{ borderColor: "#ccc" }}
+                        >
                           {m.totalQty}
                         </td>
-                        <td className="px-3 py-2 border-r text-center" style={{ borderColor: "#ccc" }}>
+                        <td
+                          className="px-3 py-2 border-r text-center"
+                          style={{ borderColor: "#ccc" }}
+                        >
                           ${formatWithSeparator(unitPrice)}
                         </td>
                         <td className="px-3 py-2 text-center">

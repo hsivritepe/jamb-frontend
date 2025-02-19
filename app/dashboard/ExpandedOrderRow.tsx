@@ -70,7 +70,7 @@ export default function ExpandedOrderRow({
   undoDelete,
   onDeleteOrder,
 }: ExpandedOrderRowProps) {
-  const router = useRouter(); // used to push to /dashboard/print/[orderCode]
+  const router = useRouter();
 
   // 1) Calculate labor total
   const sumWorksTotals = order.works.reduce((acc, w) => acc + parseFloat(w.total), 0);
@@ -97,7 +97,6 @@ export default function ExpandedOrderRow({
   const subtotalNum = parseFloat(order.subtotal || "0");
   const taxRateNum = parseFloat(order.tax_rate || "0");
   const taxAmountNum = parseFloat(order.tax_amount || "0");
-  // Use order.total directly (instead of subtotal + tax_amount).
   const totalNum = parseFloat(order.total || "0");
 
   return (
