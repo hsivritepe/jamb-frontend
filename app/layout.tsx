@@ -1,26 +1,42 @@
-import { Manrope } from 'next/font/google';
-import Header from '@/components/layout/Header';
-import Footer from '@/components/layout/Footer';
-import { LayoutProps } from '@/types/layout';
-import './globals.css';
-import { LocationProvider } from '@/context/LocationContext';
-import { Suspense } from 'react';
+import { Manrope } from "next/font/google";
+import Header from "@/components/layout/Header";
+import Footer from "@/components/layout/Footer";
+import { LayoutProps } from "@/types/layout";
+import "./globals.css";
+import { LocationProvider } from "@/context/LocationContext";
+import { Suspense } from "react";
 
 const manrope = Manrope({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  preload: false, // remove preload error
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  preload: false, // avoid preload warning
 });
 
 export const metadata = {
-  title: 'JAMB - Home Services',
-  description: 'Improvement and Maintenance',
+  title: "JAMB – Home Services",
+  description: "We help with improvements & maintenance",
   icons: {
-    icon: '/favicon.ico',
+    icon: "/favicon.ico",
   },
   robots: {
     index: false,
     follow: false,
+  },
+  openGraph: {
+    title: "JAMB – Home Services",
+    description: "We help with improvements & maintenance",
+    url: "https://thejamb.com/",
+    images: [
+      {
+        url: "/images/about-emergency.jpg",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "JAMB – Home Services",
+    description: "We help with improvements & maintenance",
+    images: ["/images/about-emergency.jpg"],
   },
 };
 
