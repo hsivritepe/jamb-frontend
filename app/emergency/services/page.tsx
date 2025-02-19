@@ -1,6 +1,7 @@
 "use client";
 
 export const dynamic = "force-dynamic";
+
 import { useState, useEffect, ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
 import BreadCrumb from "@/components/ui/BreadCrumb";
@@ -14,17 +15,12 @@ import {
 import { ChevronDown } from "lucide-react";
 import { SectionBoxTitle } from "@/components/ui/SectionBoxTitle";
 import { useLocation } from "@/context/LocationContext";
-import {
-  setSessionItem,
-  getSessionItem,
-} from "@/utils/session";
-
+import { setSessionItem, getSessionItem } from "@/utils/session";
 import AddressSection from "@/components/ui/AddressSection";
 import PhotosAndDescription from "@/components/ui/PhotosAndDescription";
 
 /**
- * clearSessionPreserveAuth will clear most session storage except "authToken" and "profileData".
- * This is used to reset the user's in-progress emergency data, while keeping them logged in if applicable.
+ * Clears most session storage but preserves auth tokens and profile info.
  */
 function clearSessionPreserveAuth() {
   const authToken = sessionStorage.getItem("authToken");
@@ -34,20 +30,16 @@ function clearSessionPreserveAuth() {
   if (profileData) sessionStorage.setItem("profileData", profileData);
 }
 
-/**
- * The EmergencyServices page allows the user to select categories of emergency services
- * and provide their address, photos, and description.
- */
 export default function EmergencyServices() {
   const router = useRouter();
   const { location } = useLocation();
 
-  // On mount, clear the session except auth, so we start fresh
+  // Clear session (except auth) on mount
   useEffect(() => {
     clearSessionPreserveAuth();
   }, []);
 
-  // Selected services are stored in a structure: { [categoryName]: [serviceKey, ...] }
+  // Service selection state
   const [selectedServices, setSelectedServices] = useState<Record<string, string[]>>(
     getSessionItem("selectedServices", {})
   );
@@ -57,7 +49,7 @@ export default function EmergencyServices() {
   );
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
 
-  // Address-related states
+  // Address/Contact info
   const [address, setAddress] = useState<string>(getSessionItem("address", ""));
   const [zip, setZip] = useState<string>(getSessionItem("zip", ""));
   const [stateName, setStateName] = useState<string>(
@@ -70,7 +62,7 @@ export default function EmergencyServices() {
   );
   const [photos, setPhotos] = useState<string[]>(getSessionItem("photos", []));
 
-  // Whenever these states change, store them in session
+  // Persist states in session storage
   useEffect(() => setSessionItem("selectedServices", selectedServices), [selectedServices]);
   useEffect(() => setSessionItem("searchQuery", searchQuery), [searchQuery]);
   useEffect(() => setSessionItem("address", address), [address]);
@@ -79,18 +71,17 @@ export default function EmergencyServices() {
   useEffect(() => setSessionItem("description", description), [description]);
   useEffect(() => setSessionItem("photos", photos), [photos]);
 
-  // Keep a combined "fullAddress" so we can pass it along
+  // Combine address for convenience
   useEffect(() => {
     const combinedAddress = [address, stateName, zip].filter(Boolean).join(", ");
     setSessionItem("fullAddress", combinedAddress);
   }, [address, stateName, zip]);
 
-  // Determine how many total emergency services exist
-  const totalServices = Object.values(EMERGENCY_SERVICES).flatMap(({ services }) => 
-    Object.keys(services)
-  ).length;
+  // Count total available emergency services
+  const totalServices = Object.values(EMERGENCY_SERVICES)
+    .flatMap(({ services }) => Object.keys(services)).length;
 
-  // Toggling a category's expansion
+  // Expand/collapse category sections
   function toggleCategory(category: string) {
     setExpandedCategories((prev) => {
       const next = new Set(prev);
@@ -99,12 +90,12 @@ export default function EmergencyServices() {
     });
   }
 
-  // Selecting or unselecting a single service
+  // Toggle a single service
   function handleServiceSelect(category: string, serviceKey: string) {
     setSelectedServices((prev) => {
       const current = prev[category] || [];
       const isSelected = current.includes(serviceKey);
-      if (!isSelected) setWarningMessage(null); // clear any warning
+      if (!isSelected) setWarningMessage(null);
       return {
         ...prev,
         [category]: isSelected
@@ -114,7 +105,7 @@ export default function EmergencyServices() {
     });
   }
 
-  // Clear all selected services
+  // Clear all
   function handleClearSelection() {
     const confirmed = window.confirm(
       "Are you sure you want to clear all selected services? This will also collapse all categories."
@@ -124,7 +115,7 @@ export default function EmergencyServices() {
     setExpandedCategories(new Set());
   }
 
-  // Pressing "Next" => need at least one service, and address + state + zip
+  // Validate and go next
   function handleNextClick() {
     const anyServiceSelected = Object.values(selectedServices).some((list) => list.length > 0);
     if (!anyServiceSelected) {
@@ -138,7 +129,7 @@ export default function EmergencyServices() {
     router.push("/emergency/details");
   }
 
-  // Handling location autofill
+  // Handlers for address input
   function handleAddressChange(e: ChangeEvent<HTMLInputElement>) {
     setAddress(e.target.value);
   }
@@ -158,11 +149,11 @@ export default function EmergencyServices() {
     }
   }
 
-  // Filtered services by search query
+  // Filter services by search
   const filteredServices: EmergencyServicesType = searchQuery
     ? Object.entries(EMERGENCY_SERVICES).reduce((acc, [category, { services }]) => {
-        const matching = Object.entries(services).filter(([serviceKey]) =>
-          serviceKey.toLowerCase().includes(searchQuery.toLowerCase())
+        const matching = Object.entries(services).filter(([key]) =>
+          key.toLowerCase().includes(searchQuery.toLowerCase())
         );
         if (matching.length > 0) {
           acc[category] = { services: Object.fromEntries(matching) };
@@ -174,11 +165,11 @@ export default function EmergencyServices() {
   return (
     <main className="min-h-screen pt-24 pb-16">
       <div className="container mx-auto">
-        {/* Breadcrumb for Emergency steps */}
+        {/* Breadcrumb */}
         <BreadCrumb items={EMERGENCY_STEPS} />
       </div>
 
-      {/* Title and Next button */}
+      {/* Header */}
       <div className="container mx-auto mt-8">
         <div className="flex flex-col xl:flex-row justify-between items-start gap-2 w-full">
           <SectionBoxTitle className="text-left">
@@ -190,7 +181,7 @@ export default function EmergencyServices() {
         </div>
       </div>
 
-      {/* Search bar and Clear button */}
+      {/* Search and Clear */}
       <div className="container w-full xl:w-[600px] mt-6 mb-4">
         <SearchServices
           value={searchQuery}
@@ -200,7 +191,10 @@ export default function EmergencyServices() {
         <div className="flex justify-between items-center text-sm text-gray-500 mt-2">
           <span>
             No service?{" "}
-            <a href="#" className="text-blue-600 hover:underline focus:outline-none">
+            <a
+              href="#"
+              className="text-blue-600 hover:underline focus:outline-none"
+            >
               Contact emergency support
             </a>
           </span>
@@ -213,25 +207,25 @@ export default function EmergencyServices() {
         </div>
       </div>
 
-      {/* Warning messages */}
+      {/* Warning */}
       <div className="container mx-auto h-6 mt-4 text-left">
         {warningMessage && <p className="text-red-500">{warningMessage}</p>}
       </div>
 
-      {/* Main content => Categories on the left, Address/Photos on the right */}
+      {/* Main layout */}
       <div className="container mx-auto flex flex-col xl:flex-row gap-6 w-full mt-4">
-        {/* LEFT: categories */}
+        {/* Categories */}
         <div className="w-full xl:flex-1">
           <div className="flex flex-col gap-3 mt-3 w-full">
             {Object.entries(filteredServices).map(([category, { services }]) => {
-              const categorySelectedCount = selectedServices[category]?.length || 0;
+              const selectedCount = selectedServices[category]?.length || 0;
               const categoryLabel = category.replace(/([A-Z])/g, " $1").trim();
 
               return (
                 <div
                   key={category}
                   className={`p-4 border rounded-xl bg-white ${
-                    categorySelectedCount > 0 ? "border-blue-500" : "border-gray-300"
+                    selectedCount > 0 ? "border-blue-500" : "border-gray-300"
                   }`}
                 >
                   <button
@@ -239,15 +233,14 @@ export default function EmergencyServices() {
                     className="flex justify-between items-center w-full"
                   >
                     <h3
-                      className={`font-semibold sm:font-medium text-xl sm:text-2xl text-left ${
-                        categorySelectedCount > 0 ? "text-blue-600" : "text-black"
+                      className={`font-semibold sm:font-medium text-xl sm:text-2xl ${
+                        selectedCount > 0 ? "text-blue-600" : "text-black"
                       }`}
                     >
                       {categoryLabel}
-                      {categorySelectedCount > 0 && (
+                      {selectedCount > 0 && (
                         <span className="text-sm text-gray-500 ml-2">
-                          ({categorySelectedCount}
-                          <span className="hidden sm:inline"> selected</span>)
+                          ({selectedCount} selected)
                         </span>
                       )}
                     </h3>
@@ -265,13 +258,15 @@ export default function EmergencyServices() {
                           .replace(/([A-Z])/g, " $1")
                           .replace(/^./, (char) => char.toUpperCase())
                           .trim();
-                        const isSelected =
-                          selectedServices[category]?.includes(serviceKey) || false;
+                        const isSelected = selectedServices[category]?.includes(serviceKey) || false;
 
                         return (
-                          <div key={serviceKey} className="flex justify-between items-center">
+                          <div
+                            key={serviceKey}
+                            className="flex justify-between items-center"
+                          >
                             <span
-                              className={`text-lg transition-colors duration-300 ${
+                              className={`text-lg ${
                                 isSelected ? "text-blue-600" : "text-gray-800"
                               }`}
                             >
@@ -284,8 +279,8 @@ export default function EmergencyServices() {
                                 onChange={() => handleServiceSelect(category, serviceKey)}
                                 className="sr-only peer"
                               />
-                              <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
-                              <div className="absolute top-[2px] left-[2px] w-[22px] h-[22px] bg-white rounded-full shadow-md peer-checked:translate-x-[24px] transform transition-transform duration-300"></div>
+                              <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300" />
+                              <div className="absolute top-[2px] left-[2px] w-[22px] h-[22px] bg-white rounded-full shadow-md peer-checked:translate-x-[24px] transform transition-transform duration-300" />
                             </label>
                           </div>
                         );
@@ -298,7 +293,7 @@ export default function EmergencyServices() {
           </div>
         </div>
 
-        {/* RIGHT: address / photos / description */}
+        {/* Address and Photos */}
         <div className="w-full xl:w-1/2 flex flex-col gap-6 mt-6 xl:mt-0">
           <AddressSection
             address={address}
