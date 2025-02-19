@@ -14,8 +14,6 @@ import { taxRatesUSA } from "@/constants/taxRatesUSA";
 import { useLocation } from "@/context/LocationContext";
 import { getSessionItem, setSessionItem } from "@/utils/session";
 import { Printer, Share2, Save } from "lucide-react";
-
-// We import a custom PlaceOrderButton component that will POST the order
 import PlaceOrderButton from "@/components/ui/PlaceOrderButton";
 
 interface WorkItem {
