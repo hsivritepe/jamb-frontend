@@ -4,9 +4,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import imageCompression from "browser-image-compression";
 
-/**
- * A single work item in your data.
- */
+
 interface WorkItem {
   type: string;
   code: string;
@@ -27,12 +25,7 @@ interface WorkItem {
   }>;
 }
 
-/**
- * PlaceOrderButtonProps:
- * - photos: array of strings (base64 or normal URLs).
- * - orderData: top-level data for "composite-order/create".
- * - onOrderSuccess?: optional callback if you want a custom flow after success.
- */
+
 interface PlaceOrderButtonProps {
   photos: string[];
   orderData: {
@@ -106,8 +99,9 @@ function base64ToFile(base64Data: string): File {
 
 /**
  * PlaceOrderButton:
- * 1) If user is not logged in => store temp data => redirect to /login
- * 2) If logged in => compress images => upload => build final JSON => POST => success => /thank-you
+ * 1) If user is not logged in => store data => redirect to /login?next=...
+ *    (the "next" parameter is chosen based on the first "worksData[i].type")
+ * 2) If user is logged in => compress images => upload => build final JSON => POST => success => /thank-you
  */
 export default function PlaceOrderButton({
   photos,
@@ -122,14 +116,34 @@ export default function PlaceOrderButton({
   }
 
   async function handlePlaceOrder() {
-    // If user not logged in => store data => redirect
+    // 1) Check if user is logged in
     if (!isUserLoggedIn()) {
+      // Save temp data in session (so it can be recovered after login)
       sessionStorage.setItem("tempOrderData", JSON.stringify(orderData));
       sessionStorage.setItem("tempOrderPhotos", JSON.stringify(photos));
-      router.push("/login?next=/calculate/checkout");
+
+      // Determine nextPath by analyzing worksData[0].type
+      let nextPath = "/calculate/checkout"; // default
+      if (orderData.worksData.length > 0) {
+        const firstType = orderData.worksData[0].type;
+        if (firstType === "emergency") {
+          nextPath = "/emergency/checkout";
+        } else if (firstType === "rooms") {
+          nextPath = "/rooms/checkout";
+        } else if (firstType === "packages") {
+          nextPath = "/packages/checkout";
+        } else if (firstType === "services") {
+          nextPath = "/calculate/checkout";
+        }
+        // add more else-if if needed
+      }
+
+      // Then push to login with the chosen next path
+      router.push(`/login?next=${encodeURIComponent(nextPath)}`);
       return;
     }
 
+    // 2) If user is already logged in => proceed with order creation
     setLoading(true);
     try {
       const token = sessionStorage.getItem("authToken");
@@ -140,7 +154,7 @@ export default function PlaceOrderButton({
       const uploadedPhotoUrls: string[] = [];
       let anyPhotoFailed = false;
 
-      // Upload each photo
+      // Upload each photo if it's base64
       for (const p of photos) {
         if (p.startsWith("data:")) {
           try {
@@ -158,6 +172,7 @@ export default function PlaceOrderButton({
             };
             const compressedFile = await imageCompression(file, options);
 
+            // Get a GCS "signed URL" from your server
             const signedUrlResp = await fetch("/api/gcs-upload", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -169,8 +184,10 @@ export default function PlaceOrderButton({
             if (!signedUrlResp.ok) {
               throw new Error("Failed to get signed URL from /api/gcs-upload");
             }
+
             const { uploadUrl, publicUrl } = await signedUrlResp.json();
 
+            // Upload the file to GCS
             const uploadResp = await fetch(uploadUrl, {
               method: "PUT",
               headers: {
@@ -183,13 +200,14 @@ export default function PlaceOrderButton({
               throw new Error(`Photo upload to GCS failed: ${gcsResponseText}`);
             }
 
+            // Keep track of the final public URL
             uploadedPhotoUrls.push(publicUrl);
           } catch (photoErr) {
             anyPhotoFailed = true;
             console.error("Photo upload failed:", photoErr);
           }
         } else {
-          // Already a URL
+          // Already a normal URL, just push it
           uploadedPhotoUrls.push(p);
         }
       }
@@ -200,7 +218,7 @@ export default function PlaceOrderButton({
         );
       }
 
-      // Build works
+      // Build the "works" array for the JSON POST
       const works = orderData.worksData.map((w) => ({
         type: w.type,
         code: w.code,
@@ -230,7 +248,7 @@ export default function PlaceOrderButton({
           : [],
       }));
 
-      // Compose JSON
+      // Additional numeric data
       const serviceFeeOnLabor = orderData.serviceFeeOnLabor
         ? orderData.serviceFeeOnLabor.toFixed(2)
         : "0.00";
@@ -238,14 +256,13 @@ export default function PlaceOrderButton({
         ? orderData.serviceFeeOnMaterials.toFixed(2)
         : "0.00";
 
-      const paymentType =
-        orderData.paymentType && orderData.paymentType.trim() !== ""
-          ? orderData.paymentType
-          : "n/a";
+      // Payment type is optional at top level; you can still pass "n/a" if you want
+      const paymentType = "n/a";
       const paymentCoefficient = orderData.paymentCoefficient
         ? orderData.paymentCoefficient.toFixed(2)
         : "1.00";
 
+      // Final JSON body
       const bodyToSend = {
         zipcode: orderData.zipcode,
         user_token: token,
@@ -296,14 +313,13 @@ export default function PlaceOrderButton({
       const resultData = await createOrderResp.json();
       console.log("Order saved successfully:", resultData);
 
-      // Always store code & total => so that /thank-you can show them
+      // Store order code & total so /thank-you can display them
       const orderCode = resultData.order_code || "";
       const orderTotal = bodyToSend.total || "";
-
       sessionStorage.setItem("orderCode", orderCode);
       sessionStorage.setItem("orderTotal", orderTotal);
 
-      // If onOrderSuccess => call it, else => go /thank-you
+      // If onOrderSuccess was provided, call it. Otherwise, go to thank-you.
       if (onOrderSuccess) {
         onOrderSuccess();
       } else {
