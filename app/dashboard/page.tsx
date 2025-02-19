@@ -6,7 +6,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ExpandedOrderRow from "./ExpandedOrderRow";
-import { Printer, Trash2 } from "lucide-react"; // <-- Importing both icons from lucide-react
+import { Printer, Trash2 } from "lucide-react";
 
 /**
  * Helper to return a greeting based on the current hour.
@@ -34,6 +34,8 @@ interface CompositeOrder {
   payment_coefficient: string;
   tax_rate: string;
   tax_amount: string;
+  date_surcharge: string;
+  total: string;
   common: {
     id: number;
     address: string;
@@ -87,19 +89,9 @@ export default function OrdersPage() {
   const [sortColumn, setSortColumn] = useState<"code" | "cost" | "date" | null>(null);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
-  /**
-   * Soft-delete logic:
-   * - We store pendingDelete as an integer order ID, or null if none is pending.
-   * - We use a ref for the deleteTimeout to implement the 5-second "undo" functionality.
-   */
+  // Soft-delete logic
   const [pendingDelete, setPendingDelete] = useState<number | null>(null);
   const deleteTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  /**
-   * Expand/collapse logic:
-   * - expandedOrderCode is the "code" (string) of the currently expanded order
-   * - expandedOrderDetails is the full CompositeOrder object fetched from /api/orders/get
-   */
   const [expandedOrderCode, setExpandedOrderCode] = useState<string | null>(null);
   const [expandedOrderDetails, setExpandedOrderDetails] = useState<CompositeOrder | null>(null);
 
@@ -314,9 +306,9 @@ export default function OrdersPage() {
         if (a.code > b.code) return sortDirection === "asc" ? 1 : -1;
         return 0;
       } else if (sortColumn === "cost") {
-        // Sort by total cost => subtotal + tax_amount
-        const costA = parseFloat(a.subtotal) + parseFloat(a.tax_amount);
-        const costB = parseFloat(b.subtotal) + parseFloat(b.tax_amount);
+        // Sort by total cost field
+        const costA = parseFloat(a.total);
+        const costB = parseFloat(b.total);
         return sortDirection === "asc" ? costA - costB : costB - costA;
       } else if (sortColumn === "date") {
         // Sort by the "selected_date" string
@@ -469,8 +461,8 @@ export default function OrdersPage() {
                   </thead>
                   <tbody>
                     {sortedSavedOrders.map((order) => {
-                      // Compute the total price for display => (subtotal + tax)
-                      const totalNum = parseFloat(order.subtotal) + parseFloat(order.tax_amount);
+                      // Use the 'total' field from /api/orders/get
+                      const totalNum = parseFloat(order.total);
                       const totalFormatted = totalNum.toLocaleString("en-US", {
                         style: "currency",
                         currency: "USD",
