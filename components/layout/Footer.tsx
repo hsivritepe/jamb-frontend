@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 
 /**
- * Example arrays. Adjust them to your actual routes.
+ * Example link arrays. Replace them with your actual routes/data if needed.
  */
 const popularServices = [
   { name: "Electrical", href: "/calculate/services" },
@@ -48,11 +48,10 @@ export default function Footer() {
   return (
     <footer className="border-t w-full">
       <div className="max-w-7xl mx-auto px-4 py-6 sm:py-8 lg:py-12">
-        {/* Top section => grids of links */}
+        {/* Top section: grids of links */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Popular services */}
           <div>
-            {/* Heading => smaller on mobile, bigger on larger screens */}
             <h3 className="text-lg sm:text-xl lg:text-2xl mb-4 font-semibold">
               Popular services
             </h3>
@@ -70,7 +69,7 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Popular rooms renovation */}
+          {/* Popular rooms */}
           <div>
             <h3 className="text-lg sm:text-xl lg:text-2xl mb-4 font-semibold">
               Popular rooms renovation
@@ -148,16 +147,16 @@ export default function Footer() {
             gap-4
           "
         >
-          {/* Left side => phone CTA */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+          {/* Left side => email CTA */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2">
             <span className="text-sm sm:text-base text-gray-500">
               We're Here to Help
             </span>
             <a
-              href="tel:+14374601830"
-              className="text-base sm:text-lg font-medium"
+              href="mailto:info@thejamb.com"
+              className="text-base sm:text-base font-light text-blue-600 underline"
             >
-              +1 437 460 18 30
+              info@thejamb.com
             </a>
           </div>
 

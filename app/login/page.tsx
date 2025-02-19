@@ -1,30 +1,32 @@
 "use client";
 
 export const dynamic = "force-dynamic";
+
 import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import GoogleIcon from "@/components/icons/GoogleIcon";
 import FacebookIcon from "@/components/icons/FacebookIcon";
 import AppleIcon from "@/components/icons/AppleIcon";
 
-
 export default function LoginOrRegisterPage() {
-  // Router for navigation
+  // Navigation
   const router = useRouter();
-  // Search params to read "next" from the query string
   const searchParams = useSearchParams();
   const nextUrl = searchParams.get("next") || "";
 
-  // Form states for registration
+  // Registration form states
   const [email, setEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
   const [agreedToTos, setAgreedToTos] = useState(false);
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
 
-  // Form states for login
+  // Login form states
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
 
   // Forgot password flow
   const [resetEmail, setResetEmail] = useState("");
@@ -34,10 +36,7 @@ export default function LoginOrRegisterPage() {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   /**
-   * handleRegister:
-   * 1) Validates "agreedToTos" checkbox.
-   * 2) Sends a POST request to create a new user.
-   * 3) On success, redirects to the /confirm page (optionally appending &next=...).
+   * Creates a new user account (registration).
    */
   const handleRegister = async () => {
     if (!agreedToTos) {
@@ -57,7 +56,6 @@ export default function LoginOrRegisterPage() {
       });
 
       if (res.ok) {
-        // If there's a next param, include it in the confirm URL
         let confirmUrl = `/confirm?email=${encodeURIComponent(email)}`;
         if (nextUrl) {
           confirmUrl += `&next=${encodeURIComponent(nextUrl)}`;
@@ -70,18 +68,13 @@ export default function LoginOrRegisterPage() {
         alert(`Registration error: ${res.status}`);
       }
     } catch (error) {
-      alert("Registration failed. Check console for details.");
+      alert("Registration failed. Try again, please.");
       console.error("Registration error:", error);
     }
   };
 
   /**
-   * handleLogin:
-   * 1) Sends a POST request to authenticate user credentials.
-   * 2) Saves the returned auth token to sessionStorage.
-   * 3) Optionally fetches and stores user info in "profileData".
-   * 4) Triggers "authChange" to let the app know user is logged in.
-   * 5) Redirects to "nextUrl" or defaults to /profile if "nextUrl" doesn't exist.
+   * Logs in existing users and stores their auth token.
    */
   const handleLogin = async () => {
     try {
@@ -96,10 +89,9 @@ export default function LoginOrRegisterPage() {
 
       if (res.ok) {
         const data = await res.json();
-        // 1) Store token in sessionStorage
         sessionStorage.setItem("authToken", data.token);
 
-        // 2) Fetch user info
+        // Fetch user info
         try {
           const userRes = await fetch("https://dev.thejamb.com/user/info", {
             method: "POST",
@@ -114,10 +106,8 @@ export default function LoginOrRegisterPage() {
           console.error("Error fetching user info after login:", err);
         }
 
-        // 3) Dispatch custom "authChange" event
+        // Notify app and redirect
         window.dispatchEvent(new Event("authChange"));
-
-        // 4) Redirect to "nextUrl" if provided; otherwise, fallback to /profile
         if (nextUrl) {
           router.push(nextUrl);
         } else {
@@ -139,9 +129,7 @@ export default function LoginOrRegisterPage() {
   };
 
   /**
-   * handleForgotPassword:
-   * 1) If the user enters a valid email, sends a request for password reset.
-   * 2) On success, it shows a message and navigates to /password-reset?email=...
+   * Requests a password reset email for the entered address.
    */
   const handleForgotPassword = async () => {
     if (!resetEmail.trim()) {
@@ -172,11 +160,9 @@ export default function LoginOrRegisterPage() {
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-gray-50 px-4 py-10">
       {showRegister ? (
-        /**
-         * ====================
-         * REGISTRATION FORM
-         * ====================
-         */
+        // ==================================
+        //         REGISTRATION FORM
+        // ==================================
         <div className="w-full max-w-md bg-white p-8 mt-20 rounded-lg shadow">
           <h1 className="text-2xl font-bold mb-6 text-center">Create Account</h1>
 
@@ -211,13 +197,22 @@ export default function LoginOrRegisterPage() {
           {/* Password */}
           <div className="mb-4">
             <label className="block text-sm text-gray-600 mb-1">Password</label>
-            <input
-              type="password"
-              placeholder="At least 6 chars"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded"
-            />
+            <div className="relative">
+              <input
+                type={showRegisterPassword ? "text" : "password"}
+                placeholder="At least 6 chars"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowRegisterPassword(!showRegisterPassword)}
+                className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-gray-700"
+              >
+                {showRegisterPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
+            </div>
           </div>
 
           {/* Terms & Conditions */}
@@ -272,11 +267,9 @@ export default function LoginOrRegisterPage() {
           </div>
         </div>
       ) : (
-        /**
-         * ====================
-         * LOGIN FORM
-         * ====================
-         */
+        // ==================================
+        //           LOGIN FORM
+        // ==================================
         <div className="w-full max-w-md bg-white p-8 rounded-lg shadow">
           {!showForgotPassword ? (
             <>
@@ -301,13 +294,22 @@ export default function LoginOrRegisterPage() {
                 <label className="block text-sm text-gray-600 mb-1">
                   Password
                 </label>
-                <input
-                  type="password"
-                  placeholder="Your password"
-                  value={loginPassword}
-                  onChange={(e) => setLoginPassword(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded"
-                />
+                <div className="relative">
+                  <input
+                    type={showLoginPassword ? "text" : "password"}
+                    placeholder="Your password"
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowLoginPassword(!showLoginPassword)}
+                    className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-gray-700"
+                  >
+                    {showLoginPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
               </div>
 
               <div className="mb-6 text-right">
@@ -337,18 +339,15 @@ export default function LoginOrRegisterPage() {
               </div>
             </>
           ) : (
-            /**
-             * ============================
-             * FORGOT PASSWORD SECTION
-             * ============================
-             */
+            // ==================================
+            //       FORGOT PASSWORD
+            // ==================================
             <>
               <h1 className="text-2xl font-bold mb-6 text-center">
                 Forgot Password
               </h1>
               <p className="mb-4 text-sm text-gray-700">
-                Enter your email below. We'll send a reset code if your
-                account exists.
+                Enter your email below. We'll send a reset code if your account exists.
               </p>
 
               <div className="mb-4">
