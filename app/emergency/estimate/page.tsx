@@ -1,6 +1,7 @@
 "use client";
 
 export const dynamic = "force-dynamic";
+
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import BreadCrumb from "@/components/ui/BreadCrumb";
@@ -11,13 +12,12 @@ import { ALL_SERVICES } from "@/constants/services";
 import ServiceTimePicker from "@/components/ui/ServiceTimePicker";
 import { useLocation } from "@/context/LocationContext";
 import { taxRatesUSA } from "@/constants/taxRatesUSA";
-
-// session utils
 import { getSessionItem, setSessionItem } from "@/utils/session";
-// format helpers
 import { formatWithSeparator } from "@/utils/format";
 
-/** Formats a number with no decimals for mobile. */
+/**
+ * Formats a number without decimals for mobile displays.
+ */
 function formatMobileNoDecimals(num: number): string {
   return new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 0,
@@ -26,8 +26,7 @@ function formatMobileNoDecimals(num: number): string {
 }
 
 /**
- * Returns a numeric tax rate for a given state.
- * If not found, fallback to 8.25
+ * Returns a state-specific tax rate, defaulting to 8.25 if not found.
  */
 function getTaxRateForState(stateName: string): number {
   if (!stateName.trim()) return 8.25;
@@ -38,7 +37,7 @@ function getTaxRateForState(stateName: string): number {
 }
 
 /**
- * Converts camelCase or PascalCase to a more readable format.
+ * Inserts spaces before uppercase letters and capitalizes the string.
  */
 function capitalizeAndTransform(text: string): string {
   return text
@@ -52,6 +51,7 @@ export default function EmergencyEstimate() {
   const { location } = useLocation();
   const userState = location?.state || "";
 
+  // Time selection
   const [selectedTime, setSelectedTime] = useState<string | null>(() =>
     getSessionItem("selectedTime", null)
   );
@@ -59,7 +59,7 @@ export default function EmergencyEstimate() {
     getSessionItem("timeCoefficient", 1)
   );
 
-  // 1) Load data from session
+  // Data from session
   const selectedActivities = getSessionItem<
     Record<string, Record<string, number>>
   >("selectedActivities", {});
@@ -71,7 +71,7 @@ export default function EmergencyEstimate() {
   const photos = getSessionItem<string[]>("photos", []);
   const description = getSessionItem<string>("description", "");
 
-  // If no data => redirect
+  // Redirect if missing data
   useEffect(() => {
     if (
       !selectedActivities ||
@@ -82,7 +82,7 @@ export default function EmergencyEstimate() {
     }
   }, [selectedActivities, fullAddress, router]);
 
-  // Keep time selection in session
+  // Persist time selection
   useEffect(() => {
     setSessionItem("selectedTime", selectedTime);
   }, [selectedTime]);
@@ -90,12 +90,16 @@ export default function EmergencyEstimate() {
     setSessionItem("timeCoefficient", timeCoefficient);
   }, [timeCoefficient]);
 
-  /** Returns cost breakdown for a given activityKey. */
+  /**
+   * Returns a calculation result for a given activity.
+   */
   function getCalcResult(activityKey: string) {
     return calculationResultsMap[activityKey] || null;
   }
 
-  /** Calculate total labor from selected activities. */
+  /**
+   * Sums labor costs for all selected activities.
+   */
   function calculateTotalLabor(): number {
     let total = 0;
     Object.values(selectedActivities).forEach((acts) => {
@@ -109,7 +113,9 @@ export default function EmergencyEstimate() {
     return total;
   }
 
-  /** Calculate total materials from selected activities. */
+  /**
+   * Sums material costs for all selected activities.
+   */
   function calculateTotalMaterials(): number {
     let total = 0;
     Object.values(selectedActivities).forEach((acts) => {
@@ -123,24 +129,21 @@ export default function EmergencyEstimate() {
     return total;
   }
 
-  // Summations
+  // Main calculations
   const laborSubtotal = calculateTotalLabor();
   const materialsSubtotal = calculateTotalMaterials();
-  // timeCoefficient -> apply to labor
   const finalLabor = laborSubtotal * timeCoefficient;
-
-  // 20% on labor, 10% on materials
-  const serviceFeeOnLabor = finalLabor * 0.2;
-  const serviceFeeOnMaterials = materialsSubtotal * 0.1;
+  const serviceFeeOnLabor = finalLabor * 0.2; // 20% on labor
+  const serviceFeeOnMaterials = materialsSubtotal * 0.1; // 10% on materials
   const sumBeforeTax =
     finalLabor + materialsSubtotal + serviceFeeOnLabor + serviceFeeOnMaterials;
 
-  // tax
+  // Tax logic
   const taxRatePercent = getTaxRateForState(userState);
   const taxAmount = sumBeforeTax * (taxRatePercent / 100);
   const grandTotal = sumBeforeTax + taxAmount;
 
-  // Build immediate steps if needed
+  // Steps from EMERGENCY_SERVICES
   const shownServices = new Set<string>();
   const stepsList = Object.entries(selectedActivities)
     .flatMap(([, activities]) => {
@@ -148,7 +151,7 @@ export default function EmergencyEstimate() {
         let matchedService = null;
         let matchedServiceKey = "";
 
-        // find service in EMERGENCY_SERVICES
+        // Find service in EMERGENCY_SERVICES
         for (const category of Object.keys(EMERGENCY_SERVICES)) {
           const catServices = EMERGENCY_SERVICES[category]?.services || {};
           for (const svcKey in catServices) {
@@ -172,7 +175,7 @@ export default function EmergencyEstimate() {
     })
     .filter(Boolean) as { serviceName: string; steps: any[] }[];
 
-  // Save steps in session if needed
+  // Persist steps if needed
   useEffect(() => {
     setSessionItem("filteredSteps", stepsList);
   }, [stepsList]);
@@ -185,7 +188,7 @@ export default function EmergencyEstimate() {
     router.push("/emergency/checkout");
   }
 
-  // Convert selected activities into a grouped structure
+  // Build a list of chosen activities
   function getAllChosenActivities() {
     const res: {
       activityKey: string;
@@ -209,7 +212,7 @@ export default function EmergencyEstimate() {
             (parseFloat(br.material_cost) || 0);
         }
 
-        // try match category from EMERGENCY_SERVICES
+        // Find category from EMERGENCY_SERVICES
         let matchedCategoryName = "Uncategorized";
         outerLoop: for (const catKey of Object.keys(EMERGENCY_SERVICES)) {
           const catObj = EMERGENCY_SERVICES[catKey];
@@ -249,7 +252,7 @@ export default function EmergencyEstimate() {
   });
   const categoriesInOrder = Object.keys(groupedByCategory).sort();
 
-  // store fees, tax in session if needed
+  // Persist fees/tax
   useEffect(() => {
     setSessionItem("serviceFeeOnLabor", serviceFeeOnLabor);
     setSessionItem("serviceFeeOnMaterials", serviceFeeOnMaterials);
@@ -265,9 +268,8 @@ export default function EmergencyEstimate() {
         <BreadCrumb items={EMERGENCY_STEPS} />
       </div>
 
-      {/* Wrapper => on mobile => flex-col, on xl => flex-row */}
       <div className="container mx-auto py-12 flex flex-col xl:flex-row gap-12">
-        {/* LEFT COLUMN => main estimate */}
+        {/* LEFT: Estimate summary */}
         <div className="w-full xl:max-w-[700px] bg-brand-light p-4 sm:p-6 rounded-xl border border-gray-300 overflow-hidden">
           <SectionBoxSubtitle>Estimate for Emergency Services</SectionBoxSubtitle>
 
@@ -308,7 +310,7 @@ export default function EmergencyEstimate() {
                           </span>
                         </div>
 
-                        {/* Cost Breakdown if present */}
+                        {/* Cost breakdown */}
                         {act.breakdown && (
                           <div className="mt-3 p-2 sm:p-4 bg-gray-50 border rounded">
                             <div className="flex justify-between mb-2">
@@ -361,18 +363,14 @@ export default function EmergencyEstimate() {
                                                 {m.name}
                                               </td>
                                               <td className="py-2 px-1">
-                                                {/* mobile => no decimals, desktop => decimals */}
+                                                {/* No decimals on mobile, decimals on desktop */}
                                                 <span className="block sm:hidden">
                                                   $
-                                                  {formatMobileNoDecimals(
-                                                    priceVal
-                                                  )}
+                                                  {formatMobileNoDecimals(priceVal)}
                                                 </span>
                                                 <span className="hidden sm:block">
                                                   $
-                                                  {formatWithSeparator(
-                                                    priceVal
-                                                  )}
+                                                  {formatWithSeparator(priceVal)}
                                                 </span>
                                               </td>
                                               <td className="py-2 px-3">
@@ -412,17 +410,12 @@ export default function EmergencyEstimate() {
 
           {/* Price summary */}
           <div className="pt-4 mt-4">
-            {/* Labor */}
             <div className="flex justify-between mb-2">
-              <span className="font-semibold text-lg text-gray-600">
-                Labor
-              </span>
+              <span className="font-semibold text-lg text-gray-600">Labor</span>
               <span className="font-semibold text-lg text-gray-600">
                 ${formatWithSeparator(finalLabor)}
               </span>
             </div>
-
-            {/* Materials */}
             <div className="flex justify-between mb-2">
               <span className="font-semibold text-lg text-gray-600">
                 Materials, tools &amp; equipment
@@ -431,7 +424,6 @@ export default function EmergencyEstimate() {
                 ${formatWithSeparator(materialsSubtotal)}
               </span>
             </div>
-
             {timeCoefficient !== 1 && (
               <div className="flex justify-between mb-2">
                 <span className="text-gray-600">
@@ -445,22 +437,16 @@ export default function EmergencyEstimate() {
                   }`}
                 >
                   {timeCoefficient > 1 ? "+" : "-"}$
-                  {formatWithSeparator(
-                    Math.abs(finalLabor - laborSubtotal)
-                  )}
+                  {formatWithSeparator(Math.abs(finalLabor - laborSubtotal))}
                 </span>
               </div>
             )}
-
-            {/* 20% on labor */}
             <div className="flex justify-between mb-2">
               <span className="text-gray-600">Service Fee (20% on labor)</span>
               <span className="font-semibold text-lg text-gray-600">
                 ${formatWithSeparator(serviceFeeOnLabor)}
               </span>
             </div>
-
-            {/* 10% on materials */}
             <div className="flex justify-between mb-2">
               <span className="text-gray-600">
                 Delivery &amp; Processing (10% on materials)
@@ -469,7 +455,6 @@ export default function EmergencyEstimate() {
                 ${formatWithSeparator(serviceFeeOnMaterials)}
               </span>
             </div>
-
             <div className="flex justify-between mb-2 mt-4">
               <span className="font-semibold text-xl text-gray-800">
                 Subtotal
@@ -478,7 +463,6 @@ export default function EmergencyEstimate() {
                 ${formatWithSeparator(sumBeforeTax)}
               </span>
             </div>
-
             <div className="flex justify-between mb-2">
               <span className="text-gray-600">
                 Sales tax
@@ -487,10 +471,9 @@ export default function EmergencyEstimate() {
               </span>
               <span>${formatWithSeparator(taxAmount)}</span>
             </div>
-
             <div className="flex justify-between text-2xl font-semibold mt-4">
               <span>Total</span>
-              <span>${formatWithSeparator(sumBeforeTax + taxAmount)}</span>
+              <span>${formatWithSeparator(grandTotal)}</span>
             </div>
           </div>
 
@@ -528,7 +511,7 @@ export default function EmergencyEstimate() {
             )}
           </div>
 
-          {/* Problem Description */}
+          {/* Description */}
           <div className="mt-6">
             <h3 className="font-semibold text-xl text-gray-800">
               Problem Description
@@ -538,26 +521,25 @@ export default function EmergencyEstimate() {
             </p>
           </div>
 
-          {/* Action buttons */}
+          {/* Actions */}
           <div className="mt-6 space-y-4">
             <button
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold sm:font-medium"
+              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold"
               onClick={handleProceedToCheckout}
             >
               Proceed to Checkout →
             </button>
             <button
               onClick={() => router.back()}
-              className="w-full text-brand border border-brand py-3 rounded-lg font-semibold sm:font-medium"
+              className="w-full text-brand border border-brand py-3 rounded-lg font-semibold"
             >
               Add more services →
             </button>
           </div>
         </div>
 
-        {/* RIGHT COLUMN => time picker + immediate steps */}
+        {/* RIGHT: time picker & immediate steps */}
         <div className="w-full xl:w-[500px] flex flex-col">
-          {/* Time picker */}
           <div className="mb-10">
             <ServiceTimePicker
               subtotal={laborSubtotal}
@@ -568,7 +550,6 @@ export default function EmergencyEstimate() {
             />
           </div>
 
-          {/* Immediate Steps block */}
           <div className="flex items-center justify-between mb-4">
             <SectionBoxSubtitle>Follow the Instructions</SectionBoxSubtitle>
           </div>
