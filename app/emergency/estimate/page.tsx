@@ -26,7 +26,7 @@ function formatMobileNoDecimals(num: number): string {
 }
 
 /**
- * Returns a numeric tax rate for a given state. 
+ * Returns a numeric tax rate for a given state.
  * If not found, fallback to 8.25
  */
 function getTaxRateForState(stateName: string): number {
@@ -49,7 +49,6 @@ function capitalizeAndTransform(text: string): string {
 
 export default function EmergencyEstimate() {
   const router = useRouter();
-
   const { location } = useLocation();
   const userState = location?.state || "";
 
@@ -205,7 +204,9 @@ export default function EmergencyEstimate() {
         const br = getCalcResult(activityKey);
         let sumCost = 0;
         if (br) {
-          sumCost = (parseFloat(br.work_cost) || 0) + (parseFloat(br.material_cost) || 0);
+          sumCost =
+            (parseFloat(br.work_cost) || 0) +
+            (parseFloat(br.material_cost) || 0);
         }
 
         // try match category from EMERGENCY_SERVICES
@@ -356,7 +357,9 @@ export default function EmergencyEstimate() {
                                               key={`${m.external_id}-${idx}`}
                                               className="align-top"
                                             >
-                                              <td className="py-2 px-1">{m.name}</td>
+                                              <td className="py-2 px-1">
+                                                {m.name}
+                                              </td>
                                               <td className="py-2 px-1">
                                                 {/* mobile => no decimals, desktop => decimals */}
                                                 <span className="block sm:hidden">
@@ -429,7 +432,6 @@ export default function EmergencyEstimate() {
               </span>
             </div>
 
-            {/* Surcharge/discount if timeCoefficient != 1 */}
             {timeCoefficient !== 1 && (
               <div className="flex justify-between mb-2">
                 <span className="text-gray-600">
@@ -452,9 +454,7 @@ export default function EmergencyEstimate() {
 
             {/* 20% on labor */}
             <div className="flex justify-between mb-2">
-              <span className="text-gray-600">
-                Service Fee (20% on labor)
-              </span>
+              <span className="text-gray-600">Service Fee (20% on labor)</span>
               <span className="font-semibold text-lg text-gray-600">
                 ${formatWithSeparator(serviceFeeOnLabor)}
               </span>
@@ -470,7 +470,6 @@ export default function EmergencyEstimate() {
               </span>
             </div>
 
-            {/* Subtotal */}
             <div className="flex justify-between mb-2 mt-4">
               <span className="font-semibold text-xl text-gray-800">
                 Subtotal
@@ -480,7 +479,6 @@ export default function EmergencyEstimate() {
               </span>
             </div>
 
-            {/* Tax */}
             <div className="flex justify-between mb-2">
               <span className="text-gray-600">
                 Sales tax
@@ -490,7 +488,6 @@ export default function EmergencyEstimate() {
               <span>${formatWithSeparator(taxAmount)}</span>
             </div>
 
-            {/* Grand total */}
             <div className="flex justify-between text-2xl font-semibold mt-4">
               <span>Total</span>
               <span>${formatWithSeparator(sumBeforeTax + taxAmount)}</span>
@@ -609,9 +606,7 @@ export default function EmergencyEstimate() {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-gray-600 mt-4">
-                        No steps available.
-                      </p>
+                      <p className="text-gray-600 mt-4">No steps available.</p>
                     )}
                   </div>
                 );
