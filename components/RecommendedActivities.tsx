@@ -97,20 +97,7 @@ function ServiceImage({ serviceId }: { serviceId: string }) {
   );
 }
 
-/**
- * RecommendedActivities:
- * - Gathers recommended items for each selected service
- * - Prevents duplicates
- * - Loads finishing materials, allows adjusting quantity, etc.
- *
- * On different screen widths:
- *   - < 768px: 1 card per page
- *   - 768px <= width < 1024px: 3 cards per page
- *   - 1024px <= width < 1280px: 4 cards per page
- *   - >= 1280px: 2 cards per page
- *
- * Also for desktop we keep max-w-[500px], for phone/tablet => w-full
- */
+
 export default function RecommendedActivities({
   selectedServicesState,
   onUpdateSelectedServicesState,
@@ -124,7 +111,6 @@ export default function RecommendedActivities({
 }) {
   const { location } = useLocation();
 
-  // origin -> recommended IDs
   const originToRecommendedIds = useMemo(() => {
     const out: Record<string, string[]> = {};
     for (const originDash of Object.keys(selectedServicesState)) {
@@ -142,7 +128,6 @@ export default function RecommendedActivities({
       const recs = actObj.recommendedActivities || {};
       let recIds = Object.keys(recs).map((k) => k.replaceAll(".", "-"));
 
-      // Exclude if user already selected them
       recIds = recIds.filter((rId) => selectedServicesState[rId] == null);
       out[originDash] = recIds;
     }
@@ -177,8 +162,6 @@ export default function RecommendedActivities({
 
         const minQ = recSvc.min_quantity ?? 1;
         let recommendedQty = minQ;
-
-        // If same unit => sync
         if (recSvc.unit_of_measurement === originUnit) {
           recommendedQty = Math.max(minQ, originQty);
         }
@@ -197,12 +180,10 @@ export default function RecommendedActivities({
     return arr;
   }, [originToRecommendedIds, selectedServicesState]);
 
-  // finishing materials for recommended => recId => { sections: ... }
   const [
     recommendedFinishingMaterialsMap,
     setRecommendedFinishingMaterialsMap,
   ] = useState<Record<string, { sections: Record<string, any[]> }>>({});
-  // finishingMaterialSelections => recId => string[]
   const [
     recommendedFinishingMaterialSelections,
     setRecommendedFinishingMaterialSelections,
@@ -219,7 +200,6 @@ export default function RecommendedActivities({
   >({});
   const [isFading, setIsFading] = useState(false);
 
-  // Initialize recommendedQuantities if missing
   useEffect(() => {
     const copy = { ...recommendedQuantities };
     let changed = false;
@@ -283,7 +263,6 @@ export default function RecommendedActivities({
     if (flatRecommended.length > 0) {
       loadAll();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [flatRecommended]);
 
   // Recompute recommendedCosts
@@ -399,27 +378,21 @@ export default function RecommendedActivities({
     }
   }
 
-  /**
-   * Items per page logic:
-   *   - phone (<768px): 1
-   *   - iPad mini range (768 <= width < 1024): 3
-   *   - bigger tablets (1024 <= width < 1280): 4
-   *   - desktop (>=1280px): 2
-   */
+
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [itemsPerPage, setItemsPerPage] = useState(1); // default phone = 1
+  const [itemsPerPage, setItemsPerPage] = useState(1);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       const screenWidth = window.innerWidth;
       if (screenWidth < 768) {
-        setItemsPerPage(1); // phone
+        setItemsPerPage(1);
       } else if (screenWidth < 1024) {
-        setItemsPerPage(3); // iPad Mini range
+        setItemsPerPage(3);
       } else if (screenWidth < 1280) {
-        setItemsPerPage(4); // bigger tablets
+        setItemsPerPage(4);
       } else {
-        setItemsPerPage(2); // desktop
+        setItemsPerPage(2);
       }
     }
   }, []);

@@ -4,32 +4,21 @@ import React, { useState, useEffect } from "react";
 
 /** Props for the SurfaceCalculatorModal. */
 interface SurfaceCalculatorModalProps {
-  /** Whether to show the modal. If false => return null. */
   show: boolean;
-  /** Callback to close the modal without saving. */
   onClose: () => void;
-  /** Current service ID, so we know where to apply the result. May be null if none selected. */
   serviceId: string | null;
-  /** Function to apply the chosen square footage into the "quantity" field for that service. */
   onApplySquareFeet: (serviceId: string, sqFeet: number) => void;
 }
 
-/**
- * A modal that helps the user calculate surface area in sq ft,
- * either from length x width or from an already known area in sq meters, etc.
- */
 export default function SurfaceCalculatorModal({
   show,
   onClose,
   serviceId,
   onApplySquareFeet,
 }: SurfaceCalculatorModalProps) {
-  // If show is false, do not render the modal
   if (!show) {
     return null;
   }
-
-  // We can skip checking serviceId in the return statement and instead do it right before calling onApplySquareFeet.
 
   // States for the units system, length, width, and known area (in m²)
   const [system, setSystem] = useState<"ft" | "m">("ft");
@@ -41,10 +30,8 @@ export default function SurfaceCalculatorModal({
     const lengthNum = parseFloat(lengthVal) || 0;
     const widthNum = parseFloat(widthVal) || 0;
     if (system === "m") {
-      // Convert area from m^2 to ft^2
       return lengthNum * widthNum * 10.7639;
     } else {
-      // system = "ft"
       return lengthNum * widthNum;
     }
   }
@@ -58,7 +45,6 @@ export default function SurfaceCalculatorModal({
   const altArea = computeSqFtFromSquareMeters();
 
   function handleApplyClick() {
-    // If serviceId is indeed null => simply close
     if (!serviceId) {
       onClose();
       return;
@@ -71,7 +57,6 @@ export default function SurfaceCalculatorModal({
     if (finalVal < 1) {
       finalVal = 1;
     }
-    // Now TypeScript knows serviceId is a string
     onApplySquareFeet(serviceId, Math.round(finalVal));
     onClose();
   }
