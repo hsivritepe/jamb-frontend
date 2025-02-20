@@ -1,6 +1,7 @@
 "use client";
 
 export const dynamic = "force-dynamic";
+
 import { useRouter } from "next/navigation";
 import BreadCrumb from "@/components/ui/BreadCrumb";
 import { EMERGENCY_STEPS } from "@/constants/navigation";
@@ -10,7 +11,7 @@ import { SectionBoxTitle } from "@/components/ui/SectionBoxTitle";
 export default function Emergency() {
   const router = useRouter();
 
-  // When user clicks "Next", go to /emergency/services
+  // Navigate to /emergency/services when "Next" is clicked
   const handleNext = () => {
     router.push("/emergency/services");
   };
@@ -18,44 +19,43 @@ export default function Emergency() {
   return (
     <main className="min-h-screen pt-24">
       <div className="container mx-auto xl:px-0 mb-16">
-        {/* Breadcrumb navigation for the Emergency steps */}
+        {/* Breadcrumb for Emergency steps */}
         <BreadCrumb items={EMERGENCY_STEPS} />
 
-        {/* Next Button positioned at the top-right */}
+        {/* "Next" button (top-right) */}
         <div className="text-right mb-8 mt-8">
           <Button onClick={handleNext}>Next →</Button>
         </div>
 
-        {/* Main content: 
-            single column for smaller screens,
-            two columns for >=1280px (xl) */}
+        {/* Main content: single-column on smaller screens, 2 columns on xl */}
         <div className="grid grid-cols-1 gap-8 xl:grid-cols-[45%,45%] xl:gap-[10%] xl:min-h-[500px]">
-          {/* Left Column: Text and Checklist */}
+          {/* Left column: Text and checklist */}
           <div className="space-y-8">
-            <SectionBoxTitle>Fast assistance for urgent home issues</SectionBoxTitle>
+            <SectionBoxTitle>
+              Fast assistance for urgent home issues
+            </SectionBoxTitle>
 
-            {/* Checklist of steps */}
             <div className="space-y-5">
               <div className="flex items-center gap-2">
                 <span className="text-green-500">✓</span>
-                <p className="text-lg">Start by selecting the category of work you need</p>
+                <p className="text-lg">Select the category of work you need</p>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-green-500">✓</span>
-                <p className="text-lg">Specify the type and quantity of work</p>
+                <p className="text-lg">Specify work type and quantity</p>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-green-500">✓</span>
-                <p className="text-lg">Receive a complete estimate instantly</p>
+                <p className="text-lg">Receive an instant estimate</p>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-green-500">✓</span>
-                <p className="text-lg">Sign up, finalize the details, and place your order</p>
+                <p className="text-lg">Sign up, finalize details, and place your order</p>
               </div>
             </div>
           </div>
 
-          {/* Right Column: Image */}
+          {/* Right column: Image */}
           <div className="flex items-start justify-center">
             <img
               src="/images/about-emergency.jpg"

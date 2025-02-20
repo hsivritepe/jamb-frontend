@@ -1,6 +1,7 @@
 "use client";
 
 export const dynamic = "force-dynamic";
+
 import { useState, ChangeEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import BreadCrumb from "@/components/ui/BreadCrumb";
@@ -11,19 +12,15 @@ import { SectionBoxTitle } from "@/components/ui/SectionBoxTitle";
 import { ChevronDown } from "lucide-react";
 import { useLocation } from "@/context/LocationContext";
 import { ALL_CATEGORIES } from "@/constants/categories";
-
-// Address and Photos components
 import AddressSection from "@/components/ui/AddressSection";
 import PhotosAndDescription from "@/components/ui/PhotosAndDescription";
-
-// Unified session utilities
 import { setSessionItem, getSessionItem } from "@/utils/session";
 
 export default function Services() {
   const router = useRouter();
   const { location } = useLocation();
 
-  // 1) Load chosen "sections" from session
+  // Selected sections from session; if none, redirect to /calculate
   const selectedSections: string[] = getSessionItem(
     "services_selectedSections",
     []
@@ -34,7 +31,7 @@ export default function Services() {
     }
   }, [selectedSections, router]);
 
-  // 2) Various states
+  // Form states
   const [searchQuery, setSearchQuery] = useState<string>(
     getSessionItem("services_searchQuery", "")
   );
@@ -49,9 +46,8 @@ export default function Services() {
   const [photos, setPhotos] = useState<string[]>(getSessionItem("photos", []));
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
 
-  // Build categories map
-  const categoriesBySection: Record<string, { id: string; title: string }[]> =
-    {};
+  // Categories map by section
+  const categoriesBySection: Record<string, { id: string; title: string }[]> = {};
   ALL_CATEGORIES.forEach((cat) => {
     if (!categoriesBySection[cat.section]) {
       categoriesBySection[cat.section] = [];
@@ -59,11 +55,8 @@ export default function Services() {
     categoriesBySection[cat.section].push({ id: cat.id, title: cat.title });
   });
 
-  // Restore selected categories
-  const storedSelectedCategories = getSessionItem(
-    "selectedCategoriesMap",
-    null
-  );
+  // Restore selected categories from session or init empty arrays
+  const storedSelectedCategories = getSessionItem("selectedCategoriesMap", null);
   const initialSelectedCategories: Record<string, string[]> =
     storedSelectedCategories ||
     (() => {
@@ -78,11 +71,8 @@ export default function Services() {
     Record<string, string[]>
   >(initialSelectedCategories);
 
-  // Persist states to session
-  useEffect(
-    () => setSessionItem("services_searchQuery", searchQuery),
-    [searchQuery]
-  );
+  // Sync form states to session
+  useEffect(() => setSessionItem("services_searchQuery", searchQuery), [searchQuery]);
   useEffect(() => setSessionItem("address", address), [address]);
   useEffect(() => setSessionItem("zip", zip), [zip]);
   useEffect(() => setSessionItem("stateName", stateName), [stateName]);
@@ -112,10 +102,8 @@ export default function Services() {
     })
   ) as Record<string, { id: string; title: string }[]>;
 
-  // Expand/collapse
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(
-    new Set()
-  );
+  // Expand/collapse sections
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
   const toggleSection = (section: string) => {
     setExpandedSections((prev) => {
       const next = new Set(prev);
@@ -124,7 +112,7 @@ export default function Services() {
     });
   };
 
-  // Category toggle
+  // Category selection
   const handleCategorySelect = (section: string, catId: string) => {
     setSelectedCategoriesMap((prev) => {
       const current = prev[section] || [];
@@ -139,7 +127,7 @@ export default function Services() {
     });
   };
 
-  // Clear all
+  // Clear all selections
   const handleClearSelection = () => {
     const userConfirmed = window.confirm(
       "Are you sure you want to clear all selections? This will also collapse all sections."
@@ -154,13 +142,11 @@ export default function Services() {
     setExpandedSections(new Set());
   };
 
-  // Next step
+  // Proceed to next step
   const handleNext = () => {
     const totalChosen = Object.values(selectedCategoriesMap).flat().length;
     if (totalChosen === 0) {
-      setWarningMessage(
-        "Please select at least one category before proceeding."
-      );
+      setWarningMessage("Please select at least one category before proceeding.");
       return;
     }
     if (!address.trim()) {
@@ -178,7 +164,6 @@ export default function Services() {
 
     const chosenCategoryIDs = Object.values(selectedCategoriesMap).flat();
     setSessionItem("services_selectedCategories", chosenCategoryIDs);
-
     router.push("/calculate/details");
   };
 
@@ -193,7 +178,7 @@ export default function Services() {
     setStateName(e.target.value);
   };
 
-  // "Use My Location"
+  // Use stored location
   const handleUseMyLocation = () => {
     if (location?.city && location?.zip && location?.state) {
       setAddress(location.city);
@@ -227,7 +212,7 @@ export default function Services() {
           </div>
         </div>
 
-        {/* Search bar => full width for phone/tablet */}
+        {/* Search bar */}
         <div className="flex flex-col gap-4 mt-8 w-full xl:w-[600px]">
           <SearchServices
             value={searchQuery}
@@ -255,24 +240,18 @@ export default function Services() {
           </div>
         </div>
 
-        {/* Warning messages */}
+        {/* Warning message */}
         <div className="h-6 mt-4 text-left">
           {warningMessage && <p className="text-red-500">{warningMessage}</p>}
         </div>
 
-        {/**
-         * 2) For tablets => right side at full width => "md:w-full"
-         *  For phones => also w-full
-         *  For desktops => keep old "lg or xl" logic if needed
-         */}
         <div className="container mx-auto flex flex-col xl:flex-row mt-8 gap-6">
-          {/* Left side: w-full for phone/tablet, side-by-side only on xl */}
+          {/* Left side: categories */}
           <div className="w-full xl:flex-1">
             <div className="flex flex-col gap-3">
               {selectedSections.map((section) => {
                 const allCats = filteredCategoriesBySection[section] || [];
-                const selectedCount = (selectedCategoriesMap[section] || [])
-                  .length;
+                const selectedCount = (selectedCategoriesMap[section] || []).length;
 
                 return (
                   <div
@@ -287,14 +266,15 @@ export default function Services() {
                     >
                       <h3
                         className={`font-semibold sm:font-medium text-xl sm:text-2xl ${
-                          selectedCount > 0 ? "text-blue-600" : "text-gray-800"
+                          selectedCount > 0
+                            ? "text-blue-600"
+                            : "text-gray-800"
                         }`}
                       >
                         {section}
                         {selectedCount > 0 && (
                           <span className="text-sm text-gray-500 ml-2">
-                            ({selectedCount}
-                            <span className="hidden sm:inline"> selected</span>)
+                            ({selectedCount} selected)
                           </span>
                         )}
                       </h3>
@@ -313,20 +293,15 @@ export default function Services() {
                           </p>
                         ) : (
                           allCats.map((cat) => {
-                            const isSelected =
-                              selectedCategoriesMap[section]?.includes(
-                                cat.id
-                              ) || false;
+                            const isSelected = selectedCategoriesMap[section]?.includes(cat.id) || false;
                             return (
                               <div
                                 key={cat.id}
                                 className="flex justify-between items-center"
                               >
                                 <span
-                                  className={`text-lg font-medium transition-colors duration-300 ${
-                                    isSelected
-                                      ? "text-blue-600"
-                                      : "text-gray-800"
+                                  className={`text-lg font-medium ${
+                                    isSelected ? "text-blue-600" : "text-gray-800"
                                   }`}
                                 >
                                   {cat.title}
@@ -355,9 +330,7 @@ export default function Services() {
             </div>
           </div>
 
-          {/* Right side: address, photos => phone & tablet => full width => "md:w-full" 
-             desktop => "xl:w-1/2" 
-          */}
+          {/* Right side: address & photos */}
           <div className="w-full md:w-full xl:w-1/2">
             <AddressSection
               address={address}

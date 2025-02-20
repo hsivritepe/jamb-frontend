@@ -1,19 +1,28 @@
 "use client";
 
+export const dynamic = "force-dynamic";
 import React from "react";
 import { formatWithSeparator } from "@/utils/format";
 
 interface PaymentOptionPanelProps {
-  /** The base labor cost (before any discount). */
+  /**
+   * The base labor cost (before any discount).
+   */
   subtotal: number;
 
-  /** The sum of materials + fees (not discounted). */
+  /**
+   * The sum of materials + fees (not discounted).
+   */
   materialsAndFees: number;
 
-  /** Currently selected payment label, e.g. "Quarterly". */
+  /**
+   * Currently selected payment label, e.g. "Quarterly".
+   */
   selectedOption: string | null;
 
-  /** Called when user picks a new payment method => parent adjusts coefficient. */
+  /**
+   * Called when user picks a new payment method => parent adjusts coefficient.
+   */
   onConfirm: (optionLabel: string, coefficient: number) => void;
 }
 
@@ -23,7 +32,6 @@ export default function PaymentOptionPanel({
   selectedOption,
   onConfirm,
 }: PaymentOptionPanelProps) {
-  // Payment methods => label, desc, discount coefficient (applied to labor).
   const options = [
     {
       label: "100% Prepayment",
@@ -44,7 +52,6 @@ export default function PaymentOptionPanel({
 
   return (
     <div className="w-full xl:w-[500px] bg-white border border-gray-300 rounded-lg p-4">
-      {/* Title */}
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold sm:font-semibold text-gray-800">
           Payment Option

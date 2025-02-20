@@ -1,6 +1,7 @@
 "use client";
 
 export const dynamic = "force-dynamic";
+
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { addDays, addMonths, format } from "date-fns";
@@ -8,6 +9,7 @@ import { addDays, addMonths, format } from "date-fns";
 import BreadCrumb from "@/components/ui/BreadCrumb";
 import Button from "@/components/ui/Button";
 import { SectionBoxSubtitle } from "@/components/ui/SectionBoxSubtitle";
+import PaymentOptionPanel from "@/components/ui/PaymentOptionPanel";
 
 import { PACKAGES_STEPS } from "@/constants/navigation";
 import { ALL_CATEGORIES } from "@/constants/categories";
@@ -15,10 +17,11 @@ import { ALL_SERVICES } from "@/constants/services";
 import { PACKAGES } from "@/constants/packages";
 import { taxRatesUSA } from "@/constants/taxRatesUSA";
 
-// Unified session utilities
 import { getSessionItem, setSessionItem } from "@/utils/session";
 
-/** Formats a number with commas and exactly two decimals. */
+/**
+ * Formats a number with commas and two decimals.
+ */
 function formatWithSeparator(value: number): string {
   return new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 2,
@@ -26,7 +29,9 @@ function formatWithSeparator(value: number): string {
   }).format(value);
 }
 
-/** Returns the combined (state + local) tax rate by two-letter state code, or 0 if not found. */
+/**
+ * Returns state+local tax rate (e.g. "8.25"), or 0 if not found.
+ */
 function getTaxRateForState(stateName: string): number {
   if (!stateName) return 0;
   const row = taxRatesUSA.taxRates.find(
@@ -35,7 +40,9 @@ function getTaxRateForState(stateName: string): number {
   return row ? row.combinedStateAndLocalTaxRate : 0;
 }
 
-/** Converts a houseType code into a user-friendly string. */
+/**
+ * Converts a houseType code to a readable string.
+ */
 function formatHouseType(value: string): string {
   switch (value) {
     case "single_family":
@@ -49,23 +56,20 @@ function formatHouseType(value: string): string {
   }
 }
 
-/** Right-side payment panel. */
-import PaymentOptionPanel from "@/components/ui/PaymentOptionPanel";
-
 export default function EstimatePage() {
   const router = useRouter();
 
-  // Identify which package was chosen
+  // Detect which package is selected
   const storedPackageId = getSessionItem<string | null>("packages_currentPackageId", null);
   const chosenPackage = PACKAGES.find((p) => p.id === storedPackageId) || null;
 
-  // Load user-chosen services from session
+  // Load user-selected services
   const selectedServicesData = getSessionItem("packages_selectedServices", {
     indoor: {},
     outdoor: {},
   } as Record<string, Record<string, number>>);
 
-  // Merge indoor + outdoor
+  // Merge into a single object
   const mergedSelected: Record<string, number> = {
     ...selectedServicesData.indoor,
     ...selectedServicesData.outdoor,
@@ -82,7 +86,7 @@ export default function EstimatePage() {
     }
   }, [mergedSelected, router, storedPackageId]);
 
-  // Calculation data from session => labor/material for each service
+  // Calculation data from session
   const calculationResultsMap = getSessionItem<Record<string, any>>(
     "packages_calculationResultsMap",
     {}
@@ -112,7 +116,7 @@ export default function EstimatePage() {
     airConditioners: 0,
   });
 
-  // Payment option: user picks in PaymentOptionPanel
+  // Payment option state
   const [selectedPaymentOption, setSelectedPaymentOption] = useState<string | null>(
     () => getSessionItem("packages_selectedTime", null)
   );
@@ -120,7 +124,6 @@ export default function EstimatePage() {
     getSessionItem("packages_timeCoefficient", 1)
   );
 
-  // Keep them in session
   useEffect(() => {
     setSessionItem("packages_selectedTime", selectedPaymentOption);
   }, [selectedPaymentOption]);
@@ -129,35 +132,33 @@ export default function EstimatePage() {
     setSessionItem("packages_timeCoefficient", paymentCoefficient);
   }, [paymentCoefficient]);
 
-  // Summation => discount/surcharge only for labor
+  // Summation
   let laborSubtotal = 0;
   let materialsSubtotal = 0;
   for (const svcId of Object.keys(mergedSelected)) {
-    const result = calculationResultsMap[svcId];
-    if (!result) continue;
-    laborSubtotal += parseFloat(result.work_cost) || 0;
-    materialsSubtotal += parseFloat(result.material_cost) || 0;
+    const res = calculationResultsMap[svcId];
+    if (!res) continue;
+    laborSubtotal += parseFloat(res.work_cost) || 0;
+    materialsSubtotal += parseFloat(res.material_cost) || 0;
   }
 
-  // final labor => apply paymentCoefficient
+  // Apply coefficient to labor
   const finalLabor = laborSubtotal * paymentCoefficient;
 
-  // 15% on finalLabor, 5% on materials
+  // Additional fees
   const serviceFeeOnLabor = finalLabor * 0.15;
   const serviceFeeOnMaterials = materialsSubtotal * 0.05;
 
-  // sumBeforeTax
+  // Subtotal before tax
   const sumBeforeTax = finalLabor + materialsSubtotal + serviceFeeOnLabor + serviceFeeOnMaterials;
 
-  // tax from state
+  // Tax
   const userState = houseInfo.state || "";
   const taxRatePercent = getTaxRateForState(userState);
   const taxAmount = sumBeforeTax * (taxRatePercent / 100);
-
-  // final
   const finalTotal = sumBeforeTax + taxAmount;
 
-  // Build cost breakdown => group by section -> category
+  // Build data structure for rendering
   type ServiceItem = {
     svcId: string;
     quantity: number;
@@ -168,7 +169,6 @@ export default function EstimatePage() {
     description?: string;
     unit: string;
   };
-
   const servicesArray: ServiceItem[] = Object.entries(mergedSelected)
     .map(([svcId, qty]) => {
       const found = ALL_SERVICES.find((s) => s.id === svcId);
@@ -189,7 +189,7 @@ export default function EstimatePage() {
     })
     .filter(Boolean) as ServiceItem[];
 
-  // summaryBySection => { [sectionName]: { [catId]: ServiceItem[] } }
+  // summaryBySection => { sectionName: { categoryId: [items] } }
   const summaryBySection: Record<string, Record<string, ServiceItem[]>> = {};
   for (const item of servicesArray) {
     const catId = item.svcId.split("-").slice(0, 2).join("-");
@@ -205,7 +205,7 @@ export default function EstimatePage() {
     summaryBySection[sectionName][catId].push(item);
   }
 
-  // Store final numbers in session so Checkout can read them
+  // Save final amounts to session for Checkout
   useEffect(() => {
     setSessionItem("packages_laborSubtotal", laborSubtotal);
     setSessionItem("packages_materialsSubtotal", materialsSubtotal);
@@ -226,7 +226,7 @@ export default function EstimatePage() {
     finalTotal,
   ]);
 
-  // Adjust breadcrumbs if we have a package ID
+  // Adjust breadcrumbs if package ID is known
   const modifiedCrumbs = PACKAGES_STEPS.map((step) => {
     if (!storedPackageId) return step;
     if (step.href.startsWith("/packages") && !step.href.includes("?")) {
@@ -235,7 +235,6 @@ export default function EstimatePage() {
     return step;
   });
 
-  /** Renders payment schedule (monthly, quarterly, or prepayment). */
   function renderPaymentSchedule() {
     if (!selectedPaymentOption) return null;
     const total = finalTotal;
@@ -245,6 +244,7 @@ export default function EstimatePage() {
       return format(d, "MM/dd/yyyy");
     }
 
+    // Single prepayment
     if (selectedPaymentOption === "100% Prepayment") {
       const payDate = addDays(now, 10);
       return (
@@ -261,12 +261,15 @@ export default function EstimatePage() {
       );
     }
 
+    // Quarterly
     if (selectedPaymentOption === "Quarterly") {
       const payAmount = total / 4;
       const schedule = [0, 3, 6, 9].map((m) => addMonths(now, m));
       return (
         <div className="mt-4">
-          <h4 className="text-xl font-semibold text-gray-800">Payment Schedule (Quarterly)</h4>
+          <h4 className="text-xl font-semibold text-gray-800">
+            Payment Schedule (Quarterly)
+          </h4>
           <p className="text-md text-gray-600 mt-2 mb-2">
             4 payments of{" "}
             <span className="font-medium text-blue-600">
@@ -286,12 +289,15 @@ export default function EstimatePage() {
       );
     }
 
+    // Monthly
     if (selectedPaymentOption === "Monthly") {
       const payAmount = total / 12;
       const schedule = Array.from({ length: 12 }).map((_, i) => addMonths(now, i));
       return (
         <div className="mt-4">
-          <h4 className="text-xl font-semibold text-gray-800">Payment Schedule (Monthly)</h4>
+          <h4 className="text-xl font-semibold text-gray-800">
+            Payment Schedule (Monthly)
+          </h4>
           <p className="text-md text-gray-600 mt-2 mb-2">
             12 monthly payments of{" "}
             <span className="font-medium text-blue-600">
@@ -314,7 +320,6 @@ export default function EstimatePage() {
   }
 
   function handleProceedToCheckout() {
-    // Go to Checkout page
     router.push("/packages/checkout");
   }
 
@@ -332,19 +337,14 @@ export default function EstimatePage() {
         <BreadCrumb items={modifiedCrumbs} />
       </div>
 
-      {/*
-        Main layout:
-        - Use flex-col on small screens, flex-row on lg+ screens
-        - gap-12 to space out the columns
-      */}
       <div className="container mx-auto py-12 flex flex-col xl:flex-row gap-12">
-        {/* LEFT column => estimate details */}
+        {/* LEFT: estimate details */}
         <div className="w-full xl:max-w-[700px] bg-brand-light p-4 sm:p-6 rounded-xl border border-gray-300 overflow-hidden lg:mr-auto">
           <SectionBoxSubtitle>
             Estimate for {chosenPackage ? chosenPackage.title : "No package found"}
           </SectionBoxSubtitle>
 
-          {/* Detailed breakdown */}
+          {/* Services summary */}
           <div className="mt-4 space-y-6">
             {Object.keys(summaryBySection).length === 0 ? (
               <p className="text-gray-500">No services selected</p>
@@ -390,7 +390,7 @@ export default function EstimatePage() {
                                   </div>
                                 </div>
 
-                                {/* Additional breakdown */}
+                                {/* Cost breakdown */}
                                 {svc.breakdown && (
                                   <div className="mt-2 p-2 sm:p-4 bg-gray-50 border rounded">
                                     <div className="flex justify-between mb-2">
@@ -428,15 +428,13 @@ export default function EstimatePage() {
                                                   <tr key={`${m.external_id}-${i2}`}>
                                                     <td className="py-2 px-1">{m.name}</td>
                                                     <td className="py-2 px-1">
-                                                      $
-                                                      {formatWithSeparator(
+                                                      ${formatWithSeparator(
                                                         parseFloat(m.cost_per_unit)
                                                       )}
                                                     </td>
                                                     <td className="py-2 px-3">{m.quantity}</td>
                                                     <td className="py-2 px-3">
-                                                      $
-                                                      {formatWithSeparator(parseFloat(m.cost))}
+                                                      ${formatWithSeparator(parseFloat(m.cost))}
                                                     </td>
                                                   </tr>
                                                 )
@@ -459,10 +457,12 @@ export default function EstimatePage() {
             )}
           </div>
 
-          {/* Subtotals + fees */}
+          {/* Subtotals */}
           <div className="pt-4 mt-4 border-t border-gray-200">
             <div className="flex justify-between mb-2">
-              <span className="font-semibold text-lg text-gray-600">Labor total:</span>
+              <span className="font-semibold text-lg text-gray-600">
+                Labor total:
+              </span>
               <span className="font-semibold text-lg text-gray-600">
                 ${formatWithSeparator(laborSubtotal)}
               </span>
@@ -493,24 +493,31 @@ export default function EstimatePage() {
             )}
 
             <div className="flex justify-between mb-2">
-              <span className="text-gray-600">Service Fee (15% on labor)</span>
+              <span className="text-gray-600">
+                Service Fee (15% on labor)
+              </span>
               <span className="font-semibold text-lg text-gray-800">
                 ${formatWithSeparator(serviceFeeOnLabor)}
               </span>
             </div>
             <div className="flex justify-between mb-2">
-              <span className="text-gray-600">Delivery &amp; Processing (5% on materials)</span>
+              <span className="text-gray-600">
+                Delivery &amp; Processing (5% on materials)
+              </span>
               <span className="font-semibold text-lg text-gray-800">
                 ${formatWithSeparator(serviceFeeOnMaterials)}
               </span>
             </div>
 
             <div className="flex justify-between mb-2">
-              <span className="font-semibold text-xl text-gray-800">Subtotal</span>
+              <span className="font-semibold text-xl text-gray-800">
+                Subtotal
+              </span>
               <span className="font-semibold text-xl text-gray-800">
                 ${formatWithSeparator(sumBeforeTax)}
               </span>
             </div>
+
             <div className="flex justify-between mb-2">
               <span className="text-gray-600">
                 Sales tax
@@ -534,7 +541,8 @@ export default function EstimatePage() {
             <h3 className="font-semibold text-xl text-gray-800">Home Details</h3>
             <div className="text-md text-gray-700 mt-4 space-y-1">
               <p>
-                <strong>Address:</strong> {houseInfo.addressLine || "—"}
+                <strong>Address:</strong>{" "}
+                {houseInfo.addressLine || "—"}
                 {houseInfo.state ? `, ${houseInfo.state}` : ""}
               </p>
               <p>
@@ -618,7 +626,7 @@ export default function EstimatePage() {
           </div>
         </div>
 
-        {/* RIGHT column => PaymentOptionPanel */}
+        {/* RIGHT: PaymentOptionPanel */}
         <div className="w-full xl:w-[500px]">
           <PaymentOptionPanel
             subtotal={laborSubtotal}

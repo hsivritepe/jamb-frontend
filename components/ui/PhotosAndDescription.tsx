@@ -2,14 +2,6 @@
 
 import React, { ChangeEvent } from "react";
 
-/**
- * PhotosAndDescriptionProps:
- * - photos: array of strings that will store base64-encoded images
- * - description: user-provided text
- * - onSetPhotos: state updater function for the photos array
- * - onSetDescription: state updater for the description text
- * - className (optional): additional CSS classes
- */
 interface PhotosAndDescriptionProps {
   photos: string[];
   description: string;
@@ -18,15 +10,6 @@ interface PhotosAndDescriptionProps {
   className?: string;
 }
 
-/**
- * PhotosAndDescription:
- * This component allows users to pick image files, which are then read as
- * base64-encoded strings using FileReader.readAsDataURL. The resulting base64
- * strings (e.g. "data:image/jpeg;base64,...") are added to `photos`.
- *
- * The `PlaceOrderButton` checks for `p.startsWith("data:")` to identify
- * base64 images and upload them to Google Cloud Storage.
- */
 export default function PhotosAndDescription({
   photos,
   description,
@@ -35,52 +18,45 @@ export default function PhotosAndDescription({
   className,
 }: PhotosAndDescriptionProps) {
   /**
-   * handleFileChange:
-   * When the user selects files, we convert each file into a base64 string
-   * and update the `photos` array. We do not use blob: URLs here to ensure
-   * that our `PlaceOrderButton` can detect base64 images for compression/upload.
+   * Converts selected files into base64 strings and adds them to `photos`.
+   * Resets input to allow re-selecting the same file if needed.
+   * Limits total photos to 12.
    */
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    // Limit to 12 total images
     if (files.length > 12 || photos.length + files.length > 12) {
       alert("You can upload up to 12 photos total.");
       e.target.value = "";
       return;
     }
 
-    // Convert each selected file to a base64 data URL
-    const readers = files.map((file) => {
+    const fileReaders = files.map((file) => {
       return new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
-        reader.onload = (ev) => {
-          if (!ev.target?.result) {
-            return reject("No result from FileReader");
+        reader.onload = (evt) => {
+          if (!evt.target?.result) {
+            return reject("No FileReader result.");
           }
-          // result is something like "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEA..."
-          resolve(ev.target.result as string);
+          resolve(evt.target.result as string);
         };
         reader.onerror = (err) => reject(err);
         reader.readAsDataURL(file);
       });
     });
 
-    // Wait until all files have been read, then add them to our photos array
-    Promise.all(readers)
-      .then((base64Strings) => {
-        onSetPhotos((prev) => [...prev, ...base64Strings]);
+    Promise.all(fileReaders)
+      .then((base64Array) => {
+        onSetPhotos((prev) => [...prev, ...base64Array]);
       })
       .catch((err) => {
         console.error("Error reading files:", err);
       });
 
-    // Clear the file input, so the user can select the same file again if needed
     e.target.value = "";
   };
 
   /**
-   * handleRemovePhoto:
-   * Removes a photo (by index) from the array of photos.
+   * Removes a photo by index from the `photos` array.
    */
   const handleRemovePhoto = (index: number) => {
     onSetPhotos((prev) => prev.filter((_, i) => i !== index));
@@ -89,8 +65,7 @@ export default function PhotosAndDescription({
   return (
     <div
       className={`
-        w-full
-        xl:max-w-[500px] xl:ml-auto
+        w-full xl:max-w-[500px] xl:ml-auto
         bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden
         ${className || ""}
       `}
@@ -117,21 +92,20 @@ export default function PhotosAndDescription({
             onChange={handleFileChange}
             className="hidden"
           />
-
           <p className="text-sm text-gray-500 mt-1">
             Maximum 12 images. Supported formats: JPG, PNG.
           </p>
 
           <div className="mt-4 grid grid-cols-3 gap-4">
-            {photos.map((photo, index) => (
-              <div key={index} className="relative group">
+            {photos.map((photo, idx) => (
+              <div key={idx} className="relative group">
                 <img
                   src={photo}
-                  alt={`Uploaded preview ${index + 1}`}
+                  alt={`Uploaded preview ${idx + 1}`}
                   className="w-full h-24 object-cover rounded-md border border-gray-300"
                 />
                 <button
-                  onClick={() => handleRemovePhoto(index)}
+                  onClick={() => handleRemovePhoto(idx)}
                   className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white 
                              rounded-full w-6 h-6 flex items-center justify-center 
                              opacity-0 group-hover:opacity-100 transition-opacity"
@@ -144,13 +118,13 @@ export default function PhotosAndDescription({
           </div>
         </div>
 
-        {/* Description textarea */}
+        {/* Description field */}
         <div>
           <textarea
             rows={5}
             value={description}
             onChange={(e) => onSetDescription(e.target.value)}
-            placeholder="Please provide more details about your issue (optional)..."
+            placeholder="Please provide details about your issue (optional)..."
             className="w-full px-4 py-2 border border-gray-300 rounded-md 
                        focus:outline-none focus:ring-2 focus:ring-blue-500"
           />

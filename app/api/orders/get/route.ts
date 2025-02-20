@@ -29,7 +29,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(order, { status: 200 });
   } catch (error: any) {
     console.error("Error in /api/orders/get:", error);
-    // You could handle different error messages or statuses if needed
     return NextResponse.json(
       { error: error.message || "Internal Server Error" },
       { status: 500 }

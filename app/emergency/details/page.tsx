@@ -12,12 +12,9 @@ import { EMERGENCY_SERVICES } from "@/constants/emergency";
 import { ALL_SERVICES } from "@/constants/services";
 import { ChevronDown } from "lucide-react";
 
-// Session utilities
 import { setSessionItem, getSessionItem } from "@/utils/session";
-// Number formatting utility
 import { formatWithSeparator } from "@/utils/format";
 
-// Modal components
 import FinishingMaterialsModal from "@/components/FinishingMaterialsModal";
 import SurfaceCalculatorModal from "@/components/SurfaceCalculatorModal";
 
@@ -30,17 +27,23 @@ interface FinishingMaterial {
   cost: string;
 }
 
-/** Converts "1-1-1" to "1.1.1". */
+/**
+ * Converts a service ID (e.g. "1-1-1") into API format (e.g. "1.1.1").
+ */
 function convertServiceIdToApiFormat(serviceId: string) {
   return serviceId.replaceAll("-", ".");
 }
 
-/** Returns the base API URL. */
+/**
+ * Returns the base API URL or a default dev URL.
+ */
 function getApiBaseUrl(): string {
   return process.env.NEXT_PUBLIC_API_BASE_URL || "https://dev.thejamb.com";
 }
 
-/** Sends a POST /calculate request to the server. */
+/**
+ * Sends a POST to /calculate to get labor/materials costs.
+ */
 async function calculatePrice(params: {
   work_code: string;
   zipcode: string;
@@ -53,50 +56,43 @@ async function calculatePrice(params: {
 
   const res = await fetch(url, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
     body: JSON.stringify(params),
   });
   if (!res.ok) {
-    throw new Error(
-      `Failed to calculate price (work_code=${params.work_code}).`
-    );
+    throw new Error(`Failed to calculate price (work_code=${params.work_code}).`);
   }
   return res.json();
 }
 
-/** Sends a POST /work/finishing_materials request to the server. */
+/**
+ * Fetches finishing materials for a given work code.
+ */
 async function fetchFinishingMaterials(workCode: string) {
   const baseUrl = getApiBaseUrl();
   const url = `${baseUrl}/work/finishing_materials`;
 
   const res = await fetch(url, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
     body: JSON.stringify({ work_code: workCode }),
   });
   if (!res.ok) {
-    throw new Error(
-      `Failed to fetch finishing materials (work_code=${workCode}).`
-    );
+    throw new Error(`Failed to fetch finishing materials (work_code=${workCode}).`);
   }
   return res.json();
 }
 
-/** Renders an image for a given activityKey. */
+/**
+ * Displays a service image based on activityKey.
+ */
 function ServiceImage({ activityKey }: { activityKey: string }) {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
 
   useEffect(() => {
     const firstSegment = activityKey.split("-")[0];
     const code = convertServiceIdToApiFormat(activityKey);
-    const url = `https://dev.thejamb.com/images/${firstSegment}/${code}.jpg`;
-    setImageSrc(url);
+    setImageSrc(`https://dev.thejamb.com/images/${firstSegment}/${code}.jpg`);
   }, [activityKey]);
 
   if (!imageSrc) return null;
@@ -114,7 +110,9 @@ function ServiceImage({ activityKey }: { activityKey: string }) {
   );
 }
 
-/** Capitalizes and inserts spaces before uppercase letters. */
+/**
+ * Capitalizes and inserts spaces before uppercase letters.
+ */
 function capitalizeAndTransform(text: string): string {
   return text
     .replace(/([A-Z])/g, " $1")
@@ -125,7 +123,7 @@ function capitalizeAndTransform(text: string): string {
 export default function EmergencyDetails() {
   const router = useRouter();
 
-  // Session data
+  // Retrieve session data
   const selectedServices = getSessionItem<Record<string, string[]>>(
     "selectedServices",
     {}
@@ -135,89 +133,75 @@ export default function EmergencyDetails() {
   const photos = getSessionItem<string[]>("photos", []);
   const description = getSessionItem<string>("description", "");
 
-  // selectedActivities => { [serviceKey]: { [activityKey]: number } }
+  // Activity selection and quantities
   const [selectedActivities, setSelectedActivities] = useState<
     Record<string, Record<string, number>>
   >(() => getSessionItem("selectedActivities", {}));
-
-  // Manual input for quantity
   const [manualInputValue, setManualInputValue] = useState<
     Record<string, Record<string, string | null>>
   >({});
-
-  // Which service panels are expanded
-  const [expandedServices, setExpandedServices] = useState<Set<string>>(
-    new Set()
-  );
-
-  // Warnings
+  const [expandedServices, setExpandedServices] = useState<Set<string>>(new Set());
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
 
-  // Calculated costs
+  // Cost calculations and results
   const [serviceCosts, setServiceCosts] = useState<Record<string, number>>({});
   const [calculationResultsMap, setCalculationResultsMap] = useState<
     Record<string, any>
   >({});
 
-  // Finishing materials data
+  // Finishing materials
   const [finishingMaterialsMapAll, setFinishingMaterialsMapAll] = useState<
     Record<string, { sections: Record<string, FinishingMaterial[]> }>
   >({});
-
   // finishingMaterialSelections[activityKey] = { [sectionName]: externalId }
   const [finishingMaterialSelections, setFinishingMaterialSelections] =
     useState<Record<string, Record<string, string>>>({});
 
-  // Tracks client-owned materials
+  // Materials owned by the client
   const [clientOwnedMaterials, setClientOwnedMaterials] = useState<
     Record<string, Set<string>>
   >({});
 
-  // Modal state (finishing materials)
-  const [showModalServiceId, setShowModalServiceId] = useState<string | null>(
+  // Modals: finishing materials, surface calculator
+  const [showModalServiceId, setShowModalServiceId] = useState<string | null>(null);
+  const [showModalSectionName, setShowModalSectionName] = useState<string | null>(
     null
   );
-  const [showModalSectionName, setShowModalSectionName] = useState<
-    string | null
-  >(null);
+  const [expandedServiceDetails, setExpandedServiceDetails] = useState<Set<string>>(
+    new Set()
+  );
 
-  // Expanded cost breakdown per activity
-  const [expandedServiceDetails, setExpandedServiceDetails] = useState<
-    Set<string>
-  >(new Set());
-
-  // Persist selectedActivities to session
-  useEffect(() => {
-    setSessionItem("selectedActivities", selectedActivities);
-  }, [selectedActivities]);
-
-  // Persist calculationResultsMap if needed
-  useEffect(() => {
-    setSessionItem("calculationResultsMap", calculationResultsMap);
-  }, [calculationResultsMap]);
-
-  // ----------------------------------------------------------------------------
-  // SURFACE CALCULATOR logic
-  // ----------------------------------------------------------------------------
+  // Surface calculator
   const [surfaceCalcOpen, setSurfaceCalcOpen] = useState(false);
-  const [surfaceCalcServiceKey, setSurfaceCalcServiceKey] = useState<
-    string | null
-  >(null);
+  const [surfaceCalcServiceKey, setSurfaceCalcServiceKey] = useState<string | null>(
+    null
+  );
   const [surfaceCalcActivityKey, setSurfaceCalcActivityKey] = useState<
     string | null
   >(null);
 
-  // open calculator
+  // Persist data to session
+  useEffect(() => {
+    setSessionItem("selectedActivities", selectedActivities);
+  }, [selectedActivities]);
+  useEffect(() => {
+    setSessionItem("calculationResultsMap", calculationResultsMap);
+  }, [calculationResultsMap]);
+
+  /**
+   * Opens the surface calculator for a specific service/activity.
+   */
   function openSurfaceCalc(serviceKey: string, activityKey: string) {
     setSurfaceCalcServiceKey(serviceKey);
     setSurfaceCalcActivityKey(activityKey);
     setSurfaceCalcOpen(true);
   }
 
-  // use calculated area
+  /**
+   * Applies the calculated area from surface calculator.
+   */
   function handleApplySquareFeet(serviceId: string, sqFeet: number) {
     if (!surfaceCalcServiceKey || !surfaceCalcActivityKey) return;
-
     const found = ALL_SERVICES.find((x) => x.id === surfaceCalcActivityKey);
     if (!found) return;
 
@@ -230,7 +214,6 @@ export default function EmergencyDetails() {
       setWarningMessage(`Maximum quantity for "${found.title}" is ${maxQ}.`);
     }
 
-    // Обновляем selectedActivities
     setSelectedActivities((prev) => {
       const copy = { ...prev };
       if (!copy[surfaceCalcServiceKey]) {
@@ -239,15 +222,12 @@ export default function EmergencyDetails() {
       copy[surfaceCalcServiceKey][surfaceCalcActivityKey] = finalVal;
       return copy;
     });
-
-    // Close modal
     setSurfaceCalcOpen(false);
   }
-  // ----------------------------------------------------------------------------
 
-  // ----------------------------------------------------------------------------
-  // Recalculate costs whenever selected activities or ZIP changes
-  // ----------------------------------------------------------------------------
+  /**
+   * Updates calculations when selected activities change or ZIP changes.
+   */
   useEffect(() => {
     const allActivityKeys: string[] = [];
     Object.values(selectedActivities).forEach((serviceObj) => {
@@ -259,13 +239,11 @@ export default function EmergencyDetails() {
       setCalculationResultsMap({});
       return;
     }
-
     if (!zip) {
       setWarningMessage("Please enter your ZIP code before proceeding.");
       return;
     }
 
-    // Fetch cost for each activity
     allActivityKeys.forEach(async (activityKey) => {
       const found = ALL_SERVICES.find((x) => x.id === activityKey);
       if (!found) return;
@@ -275,7 +253,6 @@ export default function EmergencyDetails() {
 
       await ensureFinishingMaterialsLoaded(activityKey);
 
-      // Collect finishing materials for this activity from finishingMaterialSelections
       const fmSelections = finishingMaterialSelections[activityKey] || {};
       const fmExtIds = Object.values(fmSelections);
 
@@ -290,10 +267,7 @@ export default function EmergencyDetails() {
 
         const laborCost = parseFloat(resp.work_cost) || 0;
         const matCost = parseFloat(resp.material_cost) || 0;
-        setServiceCosts((old) => ({
-          ...old,
-          [activityKey]: laborCost + matCost,
-        }));
+        setServiceCosts((old) => ({ ...old, [activityKey]: laborCost + matCost }));
         setCalculationResultsMap((old) => ({ ...old, [activityKey]: resp }));
       } catch (err) {
         console.error("Error in calculatePrice:", err);
@@ -301,7 +275,9 @@ export default function EmergencyDetails() {
     });
   }, [selectedActivities, zip, finishingMaterialSelections]);
 
-  /** Gets quantity for a single activityKey. */
+  /**
+   * Returns the user-selected quantity for a specific activity.
+   */
   function getQuantityForActivity(activityKey: string): number {
     for (const srvKey in selectedActivities) {
       if (selectedActivities[srvKey][activityKey] != null) {
@@ -311,7 +287,9 @@ export default function EmergencyDetails() {
     return 1;
   }
 
-  /** Ensures finishing materials for a specific activityKey are loaded. */
+  /**
+   * Ensures finishing materials are loaded for a given activityKey.
+   */
   async function ensureFinishingMaterialsLoaded(activityKey: string) {
     if (finishingMaterialsMapAll[activityKey]) return;
 
@@ -320,7 +298,6 @@ export default function EmergencyDetails() {
       const data = await fetchFinishingMaterials(dot);
       finishingMaterialsMapAll[activityKey] = data;
 
-      // If finishingMaterialSelections[activityKey] is not set, pick the first from each section
       if (!finishingMaterialSelections[activityKey]) {
         const picks: Record<string, string> = {};
         for (const [sectionName, arr] of Object.entries(data.sections || {})) {
@@ -338,45 +315,44 @@ export default function EmergencyDetails() {
     }
   }
 
-  /** Toggles expansion of a service block. */
+  /**
+   * Expands or collapses a service block.
+   */
   function handleToggleExpand(serviceKey: string) {
     setExpandedServices((old) => {
       const next = new Set(old);
-      if (next.has(serviceKey)) next.delete(serviceKey);
-      else next.add(serviceKey);
+      next.has(serviceKey) ? next.delete(serviceKey) : next.add(serviceKey);
       return next;
     });
   }
 
-  /** Toggles a single activity in a service. */
+  /**
+   * Toggles a specific activity within a service.
+   */
   function handleActivityToggle(serviceKey: string, activityKey: string) {
     const foundActivity = ALL_SERVICES.find((x) => x.id === activityKey);
     const minQ = foundActivity?.min_quantity ?? 1;
 
     setSelectedActivities((prev) => {
       const current = prev[serviceKey] || {};
-
       if (current[activityKey] != null) {
-        // Unselect activity
         const copy = { ...current };
         delete copy[activityKey];
         return { ...prev, [serviceKey]: copy };
       }
-
-      // Select activity
       return { ...prev, [serviceKey]: { ...current, [activityKey]: minQ } };
     });
 
-    // Reset manual input
     setManualInputValue((old) => ({
       ...old,
       [serviceKey]: { ...old[serviceKey], [activityKey]: null },
     }));
-
     setWarningMessage(null);
   }
 
-  /** Increments or decrements activity quantity. */
+  /**
+   * Increments or decrements the quantity of an activity.
+   */
   function handleQuantityChange(
     serviceKey: string,
     activityKey: string,
@@ -391,13 +367,11 @@ export default function EmergencyDetails() {
     setSelectedActivities((prev) => {
       const currentVal = prev[serviceKey]?.[activityKey] ?? minQ;
       let newVal = increment ? currentVal + 1 : currentVal - 1;
-
       if (newVal < minQ) newVal = minQ;
       if (newVal > maxQ) {
         newVal = maxQ;
         setWarningMessage(`Maximum quantity for "${found.title}" is ${maxQ}.`);
       }
-
       return {
         ...prev,
         [serviceKey]: { ...prev[serviceKey], [activityKey]: newVal },
@@ -410,7 +384,9 @@ export default function EmergencyDetails() {
     }));
   }
 
-  /** Handles manual input for quantity. */
+  /**
+   * Updates activity quantity based on manual input.
+   */
   function handleManualQuantityChange(
     serviceKey: string,
     activityKey: string,
@@ -441,11 +417,12 @@ export default function EmergencyDetails() {
         [activityKey]: Math.round(parsedVal),
       },
     }));
-
     setWarningMessage(null);
   }
 
-  /** If user leaves input empty, revert to stored quantity. */
+  /**
+   * Restores input if user clears field completely.
+   */
   function handleBlurInput(serviceKey: string, activityKey: string) {
     const val = manualInputValue[serviceKey]?.[activityKey];
     if (!val) {
@@ -456,11 +433,12 @@ export default function EmergencyDetails() {
     }
   }
 
-  /** Clears all selections. */
+  /**
+   * Clears all selected activities.
+   */
   function handleClearSelection() {
     const c = window.confirm("Are you sure you want to clear all selections?");
     if (!c) return;
-
     setSelectedActivities({});
     setManualInputValue({});
     setServiceCosts({});
@@ -474,20 +452,22 @@ export default function EmergencyDetails() {
     setSessionItem("selectedActivities", {});
   }
 
-  /** Returns the total of serviceCosts. */
+  /**
+   * Calculates subtotal from all selected activities.
+   */
   function calculateTotal() {
     return Object.values(serviceCosts).reduce((acc, v) => acc + v, 0);
   }
 
-  /** Navigates to the next step. */
+  /**
+   * Moves to the next step after validation.
+   */
   function handleNext() {
     const hasAny = Object.values(selectedActivities).some(
       (obj) => Object.keys(obj).length > 0
     );
     if (!hasAny) {
-      setWarningMessage(
-        "Please select at least one service before proceeding."
-      );
+      setWarningMessage("Please select at least one service before proceeding.");
       return;
     }
     if (!fullAddress.trim()) {
@@ -497,7 +477,9 @@ export default function EmergencyDetails() {
     router.push("/emergency/estimate");
   }
 
-  /** Builds a list of services from the first step. */
+  /**
+   * Builds a list of user-selected services from the first step.
+   */
   const servicesList = Object.entries(selectedServices).flatMap(
     ([category, arr]) => {
       return arr.map((srvKey) => {
@@ -508,20 +490,20 @@ export default function EmergencyDetails() {
     }
   );
 
-  /** Toggles cost breakdown details for a single activity. */
+  /**
+   * Toggles the cost breakdown for a single activity.
+   */
   function toggleActivityDetails(activityKey: string) {
     setExpandedServiceDetails((old) => {
       const next = new Set(old);
-      if (next.has(activityKey)) {
-        next.delete(activityKey);
-      } else {
-        next.add(activityKey);
-      }
+      next.has(activityKey) ? next.delete(activityKey) : next.add(activityKey);
       return next;
     });
   }
 
-  /** Finds a finishing material object by external_id. */
+  /**
+   * Finds a finishing material by external_id.
+   */
   function findFinishingMaterialObj(activityKey: string, externalId: string) {
     const data = finishingMaterialsMapAll[activityKey];
     if (!data) return null;
@@ -534,7 +516,9 @@ export default function EmergencyDetails() {
     return null;
   }
 
-  /** User picks a finishing material for a given section. */
+  /**
+   * Picks a finishing material for a given section.
+   */
   function pickMaterial(
     activityKey: string,
     sectionName: string,
@@ -547,7 +531,9 @@ export default function EmergencyDetails() {
     setFinishingMaterialSelections({ ...finishingMaterialSelections });
   }
 
-  /** User marks a material as client-owned. */
+  /**
+   * Marks a material as owned by the client.
+   */
   function userHasOwnMaterial(activityKey: string, externalId: string) {
     if (!clientOwnedMaterials[activityKey]) {
       clientOwnedMaterials[activityKey] = new Set();
@@ -556,7 +542,9 @@ export default function EmergencyDetails() {
     setClientOwnedMaterials({ ...clientOwnedMaterials });
   }
 
-  /** Closes finishing materials modal. */
+  /**
+   * Closes the finishing materials modal.
+   */
   function closeModal() {
     setShowModalServiceId(null);
     setShowModalSectionName(null);
@@ -567,7 +555,7 @@ export default function EmergencyDetails() {
       <div className="container mx-auto relative">
         <BreadCrumb items={EMERGENCY_STEPS} />
 
-        {/* Top header: title + Next button */}
+        {/* Top header: Title + Next button */}
         <div className="flex flex-col xl:flex-row justify-between items-start mt-8">
           <div>
             <SectionBoxTitle>Emergency Details</SectionBoxTitle>
@@ -581,10 +569,7 @@ export default function EmergencyDetails() {
         <div className="flex justify-between items-center text-sm text-gray-500 mt-8 w-full xl:max-w-[600px]">
           <span>
             No service?{" "}
-            <a
-              href="#"
-              className="text-blue-600 hover:underline focus:outline-none"
-            >
+            <a href="#" className="text-blue-600 hover:underline focus:outline-none">
               Contact emergency support
             </a>
           </span>
@@ -602,17 +587,15 @@ export default function EmergencyDetails() {
         </div>
       </div>
 
-      {/* Main content: two columns on xl, one column on mobile */}
+      {/* Main content */}
       <div className="container mx-auto relative flex flex-col xl:flex-row mt-4">
-        {/* LEFT column */}
+        {/* LEFT: Services list */}
         <div className="w-full xl:flex-1">
           <div className="flex flex-col gap-4 mt-4 w-full xl:max-w-[600px]">
             {servicesList.map(({ service, category, activities }) => {
               const serviceLabel = capitalizeAndTransform(service);
               const isExpanded = expandedServices.has(service);
-              const chosenCount = Object.keys(
-                selectedActivities[service] || {}
-              ).length;
+              const chosenCount = Object.keys(selectedActivities[service] || {}).length;
 
               return (
                 <div
@@ -631,8 +614,7 @@ export default function EmergencyDetails() {
                       {serviceLabel}
                       {chosenCount > 0 && (
                         <span className="text-sm text-gray-500 ml-2">
-                          ({chosenCount} 
-                            <span className="hidden sm:inline"> selected</span>)
+                          ({chosenCount} selected)
                         </span>
                       )}
                     </span>
@@ -645,346 +627,291 @@ export default function EmergencyDetails() {
 
                   {isExpanded && (
                     <div className="mt-4 flex flex-col gap-4">
-                      {Object.entries(activities).map(
-                        ([activityKey, activityData]) => {
-                          const isSelected =
-                            selectedActivities[service]?.[activityKey] != null;
-                          const activityLabel = capitalizeAndTransform(
-                            activityData.activity
-                          );
-                          const foundActivity = ALL_SERVICES.find(
-                            (x) => x.id === activityKey
-                          );
-                          const finalCost = serviceCosts[activityKey] || 0;
-                          const calcResult = calculationResultsMap[activityKey];
-                          const detailsExpanded =
-                            expandedServiceDetails.has(activityKey);
+                      {Object.entries(activities).map(([activityKey, activityData]) => {
+                        const isSelected =
+                          selectedActivities[service]?.[activityKey] != null;
+                        const foundActivity = ALL_SERVICES.find(
+                          (x) => x.id === activityKey
+                        );
+                        const activityLabel = capitalizeAndTransform(activityData.activity);
+                        const finalCost = serviceCosts[activityKey] || 0;
+                        const calcResult = calculationResultsMap[activityKey];
+                        const detailsExpanded = expandedServiceDetails.has(activityKey);
+                        const showSurfaceCalcButton = foundActivity
+                          ? ["sq ft", "K sq ft"].includes(
+                              foundActivity.unit_of_measurement
+                            )
+                          : false;
 
-                          // Показываем кнопку Surface Calc, если единицы измерения "sq ft" / "K sq ft"
-                          const showSurfaceCalcButton = foundActivity
-                            ? ["sq ft", "K sq ft"].includes(
-                                foundActivity.unit_of_measurement
-                              )
-                            : false;
+                        return (
+                          <div key={activityKey} className="space-y-2">
+                            {/* Toggle */}
+                            <div className="flex justify-between items-center">
+                              <span
+                                className={`text-lg ${
+                                  isSelected ? "text-blue-600" : "text-gray-800"
+                                }`}
+                              >
+                                {activityLabel}
+                              </span>
+                              <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() =>
+                                    handleActivityToggle(service, activityKey)
+                                  }
+                                  className="sr-only peer"
+                                />
+                                <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300" />
+                                <div className="absolute top-[2px] left-[2px] w-[22px] h-[22px] bg-white rounded-full shadow-md peer-checked:translate-x-[24px] transform transition-transform duration-300" />
+                              </label>
+                            </div>
 
-                          return (
-                            <div key={activityKey} className="space-y-2">
-                              {/* Activity toggle */}
-                              <div className="flex justify-between items-center">
-                                <span
-                                  className={`text-lg transition-colors duration-300 ${
-                                    isSelected
-                                      ? "text-blue-600"
-                                      : "text-gray-800"
-                                  }`}
-                                >
-                                  {activityLabel}
-                                </span>
-                                <label className="relative inline-flex items-center cursor-pointer">
-                                  <input
-                                    type="checkbox"
-                                    checked={isSelected}
-                                    onChange={() =>
-                                      handleActivityToggle(service, activityKey)
-                                    }
-                                    className="sr-only peer"
-                                  />
-                                  <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
-                                  <div className="absolute top-[2px] left-[2px] w-[22px] h-[22px] bg-white rounded-full shadow-md peer-checked:translate-x-[24px] transform transition-transform duration-300"></div>
-                                </label>
-                              </div>
+                            {isSelected && foundActivity && (
+                              <>
+                                <ServiceImage activityKey={activityKey} />
 
-                              {isSelected && foundActivity && (
-                                <>
-                                  <ServiceImage activityKey={activityKey} />
+                                {foundActivity.description && (
+                                  <p className="text-sm text-gray-500">
+                                    {foundActivity.description}
+                                  </p>
+                                )}
 
-                                  {foundActivity.description && (
-                                    <p className="text-sm text-gray-500">
-                                      {foundActivity.description}
-                                    </p>
-                                  )}
-
-                                  {/* Quantity row */}
-                                  <div className="flex justify-between items-center">
-                                    <div className="flex items-center gap-1">
-                                      <button
-                                        onClick={() =>
-                                          handleQuantityChange(
-                                            service,
-                                            activityKey,
-                                            false
-                                          )
-                                        }
-                                        className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
-                                      >
-                                        −
-                                      </button>
-                                      <input
-                                        type="text"
-                                        value={
-                                          manualInputValue[service]?.[
-                                            activityKey
-                                          ] != null
-                                            ? manualInputValue[service][
-                                                activityKey
-                                              ]!
-                                            : (
-                                                selectedActivities[service]?.[
-                                                  activityKey
-                                                ] || 1
-                                              ).toString()
-                                        }
-                                        onClick={() =>
-                                          setManualInputValue((old) => ({
-                                            ...old,
-                                            [service]: {
-                                              ...old[service],
-                                              [activityKey]: "",
-                                            },
-                                          }))
-                                        }
-                                        onBlur={() =>
-                                          handleBlurInput(service, activityKey)
-                                        }
-                                        onChange={(e) =>
-                                          handleManualQuantityChange(
-                                            service,
-                                            activityKey,
-                                            e.target.value
-                                          )
-                                        }
-                                        className="w-20 text-center px-2 py-1 border rounded"
-                                      />
-                                      <button
-                                        onClick={() =>
-                                          handleQuantityChange(
-                                            service,
-                                            activityKey,
-                                            true
-                                          )
-                                        }
-                                        className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
-                                      >
-                                        +
-                                      </button>
-                                      <span className="text-sm text-gray-600">
-                                        {foundActivity.unit_of_measurement}
-                                      </span>
-                                    </div>
-
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-lg text-blue-600 font-semibold text-right">
-                                        ${formatWithSeparator(finalCost)}
-                                      </span>
-                                    </div>
+                                {/* Quantity */}
+                                <div className="flex justify-between items-center">
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      onClick={() =>
+                                        handleQuantityChange(service, activityKey, false)
+                                      }
+                                      className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
+                                    >
+                                      −
+                                    </button>
+                                    <input
+                                      type="text"
+                                      value={
+                                        manualInputValue[service]?.[activityKey] != null
+                                          ? manualInputValue[service][activityKey]!
+                                          : (
+                                              selectedActivities[service]?.[activityKey] || 1
+                                            ).toString()
+                                      }
+                                      onClick={() =>
+                                        setManualInputValue((old) => ({
+                                          ...old,
+                                          [service]: {
+                                            ...old[service],
+                                            [activityKey]: "",
+                                          },
+                                        }))
+                                      }
+                                      onBlur={() => handleBlurInput(service, activityKey)}
+                                      onChange={(e) =>
+                                        handleManualQuantityChange(
+                                          service,
+                                          activityKey,
+                                          e.target.value
+                                        )
+                                      }
+                                      className="w-20 text-center px-2 py-1 border rounded"
+                                    />
+                                    <button
+                                      onClick={() =>
+                                        handleQuantityChange(service, activityKey, true)
+                                      }
+                                      className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
+                                    >
+                                      +
+                                    </button>
+                                    <span className="text-sm text-gray-600">
+                                      {foundActivity.unit_of_measurement}
+                                    </span>
                                   </div>
 
-                                  {/* Buttons row: optional "Surface Calc" + "Cost Breakdown" */}
-                                  <div className="mt-2 mb-3 flex items-center">
-                                    {showSurfaceCalcButton ? (
-                                      <>
-                                        <button
-                                          onClick={() =>
-                                            openSurfaceCalc(
-                                              service,
-                                              activityKey
-                                            )
-                                          }
-                                          className="text-blue-600 text-sm font-medium hover:underline mr-auto"
-                                        >
-                                          Surface Calc
-                                        </button>
-                                        <button
-                                          onClick={() =>
-                                            toggleActivityDetails(activityKey)
-                                          }
-                                          className={`text-blue-600 text-sm font-medium mb-0 ${
-                                            detailsExpanded ? "" : "underline"
-                                          }`}
-                                        >
-                                          Cost Breakdown
-                                        </button>
-                                      </>
-                                    ) : (
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-lg text-blue-600 font-semibold">
+                                      ${formatWithSeparator(finalCost)}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {/* Surface calc / breakdown */}
+                                <div className="mt-2 mb-3 flex items-center">
+                                  {showSurfaceCalcButton ? (
+                                    <>
                                       <button
                                         onClick={() =>
-                                          toggleActivityDetails(activityKey)
+                                          openSurfaceCalc(service, activityKey)
                                         }
-                                        className={`ml-auto text-blue-600 text-sm font-medium mb-0 ${
+                                        className="text-blue-600 text-sm font-medium hover:underline mr-auto"
+                                      >
+                                        Surface Calc
+                                      </button>
+                                      <button
+                                        onClick={() => toggleActivityDetails(activityKey)}
+                                        className={`text-blue-600 text-sm font-medium ${
                                           detailsExpanded ? "" : "underline"
                                         }`}
                                       >
                                         Cost Breakdown
                                       </button>
-                                    )}
-                                  </div>
+                                    </>
+                                  ) : (
+                                    <button
+                                      onClick={() => toggleActivityDetails(activityKey)}
+                                      className={`ml-auto text-blue-600 text-sm font-medium ${
+                                        detailsExpanded ? "" : "underline"
+                                      }`}
+                                    >
+                                      Cost Breakdown
+                                    </button>
+                                  )}
+                                </div>
 
-                                  {/* Cost breakdown */}
-                                  {calcResult && detailsExpanded && (
-                                    <div className="mt-4 p-2 sm:p-4 bg-gray-50 border rounded">
-                                      <div className="flex flex-col gap-2 mb-4">
-                                        <div className="flex justify-between">
-                                          <span className="text-md font-semibold sm:font-medium text-gray-700">
-                                            Labor
-                                          </span>
-                                          <span className="text-md font-semibold text-gray-700">
-                                            {calcResult.work_cost
-                                              ? `$${calcResult.work_cost}`
-                                              : "—"}
-                                          </span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                          <span className="text-md font-semibold sm:font-medium text-gray-700">
-                                            Materials, tools & equipment
-                                          </span>
-                                          <span className="text-md font-semibold text-gray-700">
-                                            {calcResult.material_cost
-                                              ? `$${calcResult.material_cost}`
-                                              : "—"}
-                                          </span>
-                                        </div>
+                                {/* Cost breakdown info */}
+                                {calcResult && detailsExpanded && (
+                                  <div className="mt-4 p-2 sm:p-4 bg-gray-50 border rounded">
+                                    <div className="flex flex-col gap-2 mb-4">
+                                      <div className="flex justify-between">
+                                        <span className="text-md font-semibold text-gray-700">
+                                          Labor
+                                        </span>
+                                        <span className="text-md font-semibold text-gray-700">
+                                          {calcResult.work_cost
+                                            ? `$${calcResult.work_cost}`
+                                            : "—"}
+                                        </span>
                                       </div>
+                                      <div className="flex justify-between">
+                                        <span className="text-md font-semibold text-gray-700">
+                                          Materials, tools & equipment
+                                        </span>
+                                        <span className="text-md font-semibold text-gray-700">
+                                          {calcResult.material_cost
+                                            ? `$${calcResult.material_cost}`
+                                            : "—"}
+                                        </span>
+                                      </div>
+                                    </div>
 
-                                      {Array.isArray(calcResult.materials) &&
-                                        calcResult.materials.length > 0 && (
-                                          <div className="mt-2">
-                                            <table className="table-auto w-full text-sm text-left text-gray-700">
-                                              <thead>
-                                                <tr className="border-b">
-                                                  <th className="py-2 px-1">
-                                                    Name
-                                                  </th>
-                                                  <th className="py-2 px-1">
-                                                    Price
-                                                  </th>
-                                                  <th className="py-2 px-1">
-                                                    Qty
-                                                  </th>
-                                                  <th className="py-2 px-1">
-                                                    Subtotal
-                                                  </th>
-                                                </tr>
-                                              </thead>
-                                              <tbody className="divide-y divide-gray-200">
-                                                {calcResult.materials.map(
-                                                  (m: any, i: number) => {
-                                                    const fmObj =
-                                                      findFinishingMaterialObj(
-                                                        activityKey,
-                                                        m.external_id
-                                                      );
-                                                    const hasImage = fmObj
-                                                      ?.image?.length
-                                                      ? true
-                                                      : false;
-                                                    const isClientOwned =
-                                                      clientOwnedMaterials[
-                                                        activityKey
-                                                      ]?.has(m.external_id);
+                                    {Array.isArray(calcResult.materials) &&
+                                      calcResult.materials.length > 0 && (
+                                        <div className="mt-2">
+                                          <table className="table-auto w-full text-sm text-left text-gray-700">
+                                            <thead>
+                                              <tr className="border-b">
+                                                <th className="py-2 px-1">Name</th>
+                                                <th className="py-2 px-1">Price</th>
+                                                <th className="py-2 px-1">Qty</th>
+                                                <th className="py-2 px-1">Subtotal</th>
+                                              </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-gray-200">
+                                              {calcResult.materials.map(
+                                                (m: any, i: number) => {
+                                                  const fmObj =
+                                                    findFinishingMaterialObj(
+                                                      activityKey,
+                                                      m.external_id
+                                                    );
+                                                  const hasImage = fmObj?.image?.length
+                                                    ? true
+                                                    : false;
+                                                  const isClientOwned =
+                                                    clientOwnedMaterials[activityKey]?.has(
+                                                      m.external_id
+                                                    );
 
-                                                    let rowClass = "";
-                                                    if (isClientOwned) {
-                                                      rowClass =
-                                                        "border border-red-500 bg-red-50";
-                                                    } else if (hasImage) {
-                                                      rowClass =
-                                                        "border border-blue-300 bg-white cursor-pointer";
-                                                    }
+                                                  let rowClass = "";
+                                                  if (isClientOwned) {
+                                                    rowClass =
+                                                      "border border-red-500 bg-red-50";
+                                                  } else if (hasImage) {
+                                                    rowClass =
+                                                      "border border-blue-300 bg-white cursor-pointer";
+                                                  }
 
-                                                    return (
-                                                      <tr
-                                                        key={`${m.external_id}-${i}`}
-                                                        className={`last:border-0 ${rowClass}`}
-                                                        onClick={() => {
+                                                  return (
+                                                    <tr
+                                                      key={`${m.external_id}-${i}`}
+                                                      className={`last:border-0 ${rowClass}`}
+                                                      onClick={() => {
+                                                        if (hasImage && !isClientOwned) {
+                                                          let foundSection: string | null = null;
+                                                          const fmData =
+                                                            finishingMaterialsMapAll[
+                                                              activityKey
+                                                            ];
                                                           if (
-                                                            hasImage &&
-                                                            !isClientOwned
+                                                            fmData &&
+                                                            fmData.sections
                                                           ) {
-                                                            let foundSection:
-                                                              | string
-                                                              | null = null;
-                                                            const fmData =
-                                                              finishingMaterialsMapAll[
-                                                                activityKey
-                                                              ];
-                                                            if (
-                                                              fmData &&
+                                                            for (const [
+                                                              secName,
+                                                              list,
+                                                            ] of Object.entries(
                                                               fmData.sections
-                                                            ) {
-                                                              for (const [
-                                                                secName,
-                                                                list,
-                                                              ] of Object.entries(
-                                                                fmData.sections
-                                                              )) {
-                                                                if (
-                                                                  Array.isArray(
-                                                                    list
-                                                                  ) &&
-                                                                  list.some(
-                                                                    (xx) =>
-                                                                      xx.external_id ===
-                                                                      m.external_id
-                                                                  )
-                                                                ) {
-                                                                  foundSection =
-                                                                    secName;
-                                                                  break;
-                                                                }
+                                                            )) {
+                                                              if (
+                                                                Array.isArray(list) &&
+                                                                list.some(
+                                                                  (xx) =>
+                                                                    xx.external_id ===
+                                                                    m.external_id
+                                                                )
+                                                              ) {
+                                                                foundSection = secName;
+                                                                break;
                                                               }
                                                             }
-                                                            setShowModalServiceId(
-                                                              activityKey
-                                                            );
-                                                            setShowModalSectionName(
-                                                              foundSection
-                                                            );
                                                           }
-                                                        }}
-                                                      >
-                                                        <td className="py-3 px-1">
-                                                          {hasImage ? (
-                                                            <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
-                                                              <img
-                                                                src={
-                                                                  fmObj?.image
-                                                                }
-                                                                alt={m.name}
-                                                                className="w-24 h-24 object-cover rounded"
-                                                              />
-                                                              <span className="break-words">
-                                                                {m.name}
-                                                              </span>
-                                                            </div>
-                                                          ) : (
-                                                            m.name
-                                                          )}
-                                                        </td>
-                                                        <td className="py-3 px-1">
-                                                          ${m.cost_per_unit}
-                                                        </td>
-                                                        <td className="py-3 px-3">
-                                                          {m.quantity}
-                                                        </td>
-                                                        <td className="py-3 px-3">
-                                                          ${m.cost}
-                                                        </td>
-                                                      </tr>
-                                                    );
-                                                  }
-                                                )}
-                                              </tbody>
-                                            </table>
-                                          </div>
-                                        )}
-                                    </div>
-                                  )}
-                                </>
-                              )}
-                            </div>
-                          );
-                        }
-                      )}
+                                                          setShowModalServiceId(activityKey);
+                                                          setShowModalSectionName(foundSection);
+                                                        }
+                                                      }}
+                                                    >
+                                                      <td className="py-3 px-1">
+                                                        {hasImage ? (
+                                                          <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+                                                            <img
+                                                              src={fmObj?.image}
+                                                              alt={m.name}
+                                                              className="w-24 h-24 object-cover rounded"
+                                                            />
+                                                            <span className="break-words">
+                                                              {m.name}
+                                                            </span>
+                                                          </div>
+                                                        ) : (
+                                                          m.name
+                                                        )}
+                                                      </td>
+                                                      <td className="py-3 px-1">
+                                                        ${m.cost_per_unit}
+                                                      </td>
+                                                      <td className="py-3 px-3">
+                                                        {m.quantity}
+                                                      </td>
+                                                      <td className="py-3 px-3">
+                                                        ${m.cost}
+                                                      </td>
+                                                    </tr>
+                                                  );
+                                                }
+                                              )}
+                                            </tbody>
+                                          </table>
+                                        </div>
+                                      )}
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -993,7 +920,7 @@ export default function EmergencyDetails() {
           </div>
         </div>
 
-        {/* RIGHT column: summary, address, photos, description */}
+        {/* RIGHT: summary, address, photos, description */}
         <div className="w-full xl:w-1/2 xl:ml-auto mt-8 xl:mt-0 pt-1">
           {/* Summary */}
           <div className="w-full xl:max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden">
@@ -1005,35 +932,32 @@ export default function EmergencyDetails() {
             ) : (
               <>
                 <ul className="mt-4 space-y-2 pb-4">
-                  {Object.entries(selectedActivities).flatMap(
-                    ([srvKey, acts]) =>
-                      Object.entries(acts).map(([activityKey, quantity]) => {
-                        const foundAct = ALL_SERVICES.find(
-                          (x) => x.id === activityKey
-                        );
-                        if (!foundAct) return null;
-                        const finalCost = serviceCosts[activityKey] || 0;
-                        return (
-                          <li
-                            key={activityKey}
-                            className="grid grid-cols-3 gap-2 text-sm text-gray-600"
-                            style={{
-                              gridTemplateColumns: "46% 25% 25%",
-                              width: "100%",
-                            }}
-                          >
-                            <span className="truncate overflow-hidden">
-                              {foundAct.title}
-                            </span>
-                            <span className="text-right">
-                              {quantity} {foundAct.unit_of_measurement}
-                            </span>
-                            <span className="text-right">
-                              ${formatWithSeparator(finalCost)}
-                            </span>
-                          </li>
-                        );
-                      })
+                  {Object.entries(selectedActivities).flatMap(([srvKey, acts]) =>
+                    Object.entries(acts).map(([activityKey, quantity]) => {
+                      const foundAct = ALL_SERVICES.find((x) => x.id === activityKey);
+                      if (!foundAct) return null;
+                      const finalCost = serviceCosts[activityKey] || 0;
+                      return (
+                        <li
+                          key={activityKey}
+                          className="grid grid-cols-3 gap-2 text-sm text-gray-600"
+                          style={{
+                            gridTemplateColumns: "46% 25% 25%",
+                            width: "100%",
+                          }}
+                        >
+                          <span className="truncate overflow-hidden">
+                            {foundAct.title}
+                          </span>
+                          <span className="text-right">
+                            {quantity} {foundAct.unit_of_measurement}
+                          </span>
+                          <span className="text-right">
+                            ${formatWithSeparator(finalCost)}
+                          </span>
+                        </li>
+                      );
+                    })
                   )}
                 </ul>
                 <div className="flex justify-between items-center mb-2">
@@ -1050,7 +974,7 @@ export default function EmergencyDetails() {
 
           {/* Address */}
           <div className="hidden sm:block w-full xl:max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
-            <h2 className="text-2xl font-semibold sm:font-medium text-gray-800 mb-4">Address</h2>
+            <h2 className="text-2xl font-semibold text-gray-800 mb-4">Address</h2>
             <p className="text-gray-500 text-medium">
               {fullAddress || "No address provided"}
             </p>
@@ -1058,7 +982,7 @@ export default function EmergencyDetails() {
 
           {/* Photos */}
           <div className="hidden sm:block w-full xl:max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
-            <h2 className="text-2xl font-semibold sm:font-medium text-gray-800 mb-4">
+            <h2 className="text-2xl font-semibold text-gray-800 mb-4">
               Uploaded Photos
             </h2>
             <div className="grid grid-cols-2 gap-4">
@@ -1073,15 +997,13 @@ export default function EmergencyDetails() {
               ))}
             </div>
             {photos.length === 0 && (
-              <p className="text-medium text-gray-500 mt-2">
-                No photos uploaded
-              </p>
+              <p className="text-medium text-gray-500 mt-2">No photos uploaded</p>
             )}
           </div>
 
           {/* Description */}
           <div className="hidden sm:block w-full xl:max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
-            <h2 className="text-2xl font-semibold sm:font-medium text-gray-800 mb-4">
+            <h2 className="text-2xl font-semibold text-gray-800 mb-4">
               Problem Description
             </h2>
             <p className="text-gray-500 text-medium whitespace-pre-wrap">
@@ -1091,7 +1013,7 @@ export default function EmergencyDetails() {
         </div>
       </div>
 
-      {/* Finishing materials modal */}
+      {/* Finishing Materials Modal */}
       <FinishingMaterialsModal
         showModalServiceId={showModalServiceId}
         showModalSectionName={showModalSectionName}
@@ -1103,7 +1025,7 @@ export default function EmergencyDetails() {
         formatWithSeparator={formatWithSeparator}
       />
 
-      {/* Surface Calculator modal */}
+      {/* Surface Calculator Modal */}
       <SurfaceCalculatorModal
         show={surfaceCalcOpen}
         onClose={() => setSurfaceCalcOpen(false)}

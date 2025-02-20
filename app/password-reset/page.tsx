@@ -8,15 +8,16 @@ export default function PasswordResetPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // We'll try to read ?email=... from the URL
+  // Email, code, and new password
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
 
+  // Error and loading states
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // On mount, if there's an ?email= param => setEmail
+  // On mount, read the "?email" param if present
   useEffect(() => {
     const paramEmail = searchParams.get("email") || "";
     if (paramEmail) {
@@ -24,7 +25,9 @@ export default function PasswordResetPage() {
     }
   }, [searchParams]);
 
-  // ------------- RESEND CODE -------------
+  /**
+   * Resend code to the user's email.
+   */
   const handleResendCode = async () => {
     if (!email.trim()) {
       alert("Please enter your email before resending code.");
@@ -34,7 +37,6 @@ export default function PasswordResetPage() {
     setErrorMsg("");
 
     try {
-      // We call /api/user/resend-activation
       const res = await fetch("https://dev.thejamb.com/user/resend-activation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -57,13 +59,15 @@ export default function PasswordResetPage() {
       }
     } catch (error) {
       console.error("Resend code error:", error);
-      setErrorMsg("Failed to resend code. Check console.");
+      setErrorMsg("Failed to resend code. See console for details.");
     } finally {
       setLoading(false);
     }
   };
 
-  // ------------- CHANGE PASSWORD -------------
+  /**
+   * Change the user's password using the provided code.
+   */
   const handleChangePassword = async () => {
     if (!email.trim() || !code.trim() || !newPassword.trim()) {
       alert("Please fill in email, code, and new password.");
@@ -73,7 +77,6 @@ export default function PasswordResetPage() {
     setErrorMsg("");
 
     try {
-      // POST /user/change-password
       const res = await fetch("https://dev.thejamb.com/user/change-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -81,10 +84,7 @@ export default function PasswordResetPage() {
       });
 
       if (res.ok) {
-        // 200 => { "success": "ok" }
         alert("Password changed successfully!");
-
-        // Optionally auto-login:
         await autoLogin();
       } else if (res.status === 400) {
         const errData = await res.json();
@@ -97,13 +97,15 @@ export default function PasswordResetPage() {
       }
     } catch (error) {
       console.error("Change Password error:", error);
-      setErrorMsg("Error changing password. Check console.");
+      setErrorMsg("Error changing password. See console for details.");
     } finally {
       setLoading(false);
     }
   };
 
-  // After success, we optionally call /user/auth/credentials to auto login
+  /**
+   * Optionally attempt auto-login after password change.
+   */
   const autoLogin = async () => {
     try {
       const res = await fetch("https://dev.thejamb.com/user/auth/credentials", {
@@ -117,7 +119,6 @@ export default function PasswordResetPage() {
         localStorage.setItem("authToken", data.token);
         router.push("/profile");
       } else {
-        // If auto-login fails, fallback => just redirect them to login
         router.push("/login");
       }
     } catch (error) {
@@ -137,7 +138,7 @@ export default function PasswordResetPage() {
           </div>
         )}
 
-        {/* Email Field */}
+        {/* Email */}
         <div className="mb-4">
           <label className="block text-sm text-gray-700 mb-1">Email</label>
           <input
@@ -148,9 +149,11 @@ export default function PasswordResetPage() {
           />
         </div>
 
-        {/* 6-digit Code Field */}
+        {/* Code */}
         <div className="mb-4">
-          <label className="block text-sm text-gray-700 mb-1">Verification Code (6 digits)</label>
+          <label className="block text-sm text-gray-700 mb-1">
+            Verification Code (6 digits)
+          </label>
           <input
             type="text"
             placeholder="123456"
@@ -161,7 +164,7 @@ export default function PasswordResetPage() {
           />
         </div>
 
-        {/* New Password Field */}
+        {/* New Password */}
         <div className="mb-6">
           <label className="block text-sm text-gray-700 mb-1">New Password</label>
           <input

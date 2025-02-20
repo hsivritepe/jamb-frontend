@@ -17,7 +17,6 @@ import { PACKAGES } from "@/constants/packages";
  * ServicePackages component
  */
 export default function ServicePackages() {
-  // Grab 4 packages from PACKAGES array
   const basicPkg = PACKAGES.find((p) => p.id === "basic_package");
   const enhancedPkg = PACKAGES.find((p) => p.id === "enhanced_package");
   const allInclusivePkg = PACKAGES.find((p) => p.id === "all_inclusive_package");
@@ -40,14 +39,8 @@ export default function ServicePackages() {
       </SectionBoxTitle>
 
       <BoxGrid>
-        {/**
-         * First row of packages:
-         * For desktops: 3 columns (lg:3)
-         * For tablets: 1 column (md:1)
-         * For phones: 1 column (base:1)
-         */}
         <BoxGridRow
-          className="grid-cols-1 md:grid-cols-1 lg:grid-cols-3" // override default "md:grid-cols-3"
+          className="grid-cols-1 md:grid-cols-1 lg:grid-cols-3"
         >
           {/* Basic Package */}
           {basicPkg && (
@@ -61,8 +54,6 @@ export default function ServicePackages() {
 
                 {/* Display featured services as tags */}
                 <BoxTags tags={basicPkg.featuredServices} variant="default" />
-
-                {/* leftover services */}
                 {(() => {
                   const leftover = getLeftoverServicesCount(basicPkg);
                   if (leftover > 0) {
@@ -164,10 +155,6 @@ export default function ServicePackages() {
         {/* Configure your own package (full-width) */}
         {customPkg && (
           <Box variant="full-width">
-            {/**
-             * For phones (<768px), we use flex-col,
-             * for tablets/desktops (≥768px), flex-row.
-             */}
             <div className="flex flex-col md:flex-row justify-between items-start">
               <div>
                 <BoxTitle>{customPkg.title}</BoxTitle>

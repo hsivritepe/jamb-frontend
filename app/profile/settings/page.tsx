@@ -4,7 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-// 1) Helper function for greeting
+/**
+ * Returns a greeting based on the current hour.
+ */
 function getGreeting(): string {
   const hour = new Date().getHours();
   if (hour < 12) return "Good morning";
@@ -21,14 +23,15 @@ export default function SettingsPage() {
   const [measurement, setMeasurement] = useState("Feet");
   const [currency, setCurrency] = useState("US $");
 
+  // Modal state
   const [showEditModal, setShowEditModal] = useState(false);
   const editModalRef = useRef<HTMLDivElement>(null);
 
-  // 2) State to hold user’s name (if any) from session
+  // User name from session
   const [userName, setUserName] = useState("");
   const [hasName, setHasName] = useState(false);
 
-  // Fetch token (and optionally preferences) on mount
+  // Load token and user name on mount
   useEffect(() => {
     const storedToken = sessionStorage.getItem("authToken");
     if (!storedToken) {
@@ -37,7 +40,6 @@ export default function SettingsPage() {
     }
     setToken(storedToken);
 
-    // Attempt to read user’s name from "profileData"
     const storedProfile = sessionStorage.getItem("profileData");
     if (storedProfile) {
       try {
@@ -53,15 +55,15 @@ export default function SettingsPage() {
     }
   }, [router]);
 
-  // For logout
+  // Logout handler
   function handleLogout() {
     sessionStorage.removeItem("authToken");
-    sessionStorage.removeItem("profileData"); // also remove cached profile
+    sessionStorage.removeItem("profileData");
     window.dispatchEvent(new Event("authChange"));
     router.push("/login");
   }
 
-  // Close modal on outside click
+  // Close modal if clicking outside
   useEffect(() => {
     function handleOutsideClick(e: MouseEvent) {
       if (showEditModal && editModalRef.current) {
@@ -70,6 +72,7 @@ export default function SettingsPage() {
         }
       }
     }
+
     if (showEditModal) {
       document.addEventListener("mousedown", handleOutsideClick);
     } else {
@@ -80,18 +83,16 @@ export default function SettingsPage() {
     };
   }, [showEditModal]);
 
-  // Example "save" handler
+  // Example save preferences
   const handleSave = () => {
     alert("Preferences saved!");
     setShowEditModal(false);
   };
 
-  // ========== Delete account ==========
+  // Delete account
   async function handleDeleteAccount() {
     const confirmMsg = "Are you sure you want to delete your account? This cannot be undone.";
-    if (!window.confirm(confirmMsg)) {
-      return; // user canceled
-    }
+    if (!window.confirm(confirmMsg)) return;
 
     if (!token) {
       alert("No token found. Please log in first.");
@@ -111,10 +112,7 @@ export default function SettingsPage() {
         sessionStorage.removeItem("profileData");
         window.dispatchEvent(new Event("authChange"));
         router.push("/login");
-      } else if (response.status === 400) {
-        const data = await response.json();
-        alert("Delete error: " + data.error);
-      } else if (response.status === 404) {
+      } else if (response.status === 400 || response.status === 404) {
         const data = await response.json();
         alert("Delete error: " + data.error);
       } else {
@@ -126,7 +124,6 @@ export default function SettingsPage() {
     }
   }
 
-  // 3) Build greeting
   const greetingText = getGreeting();
 
   return (
@@ -137,7 +134,7 @@ export default function SettingsPage() {
           {greetingText}, {hasName ? userName : "Guest"}!
         </h1>
 
-        {/* Nav row => includes "Messages" */}
+        {/* Navigation row */}
         <div className="flex items-center justify-between mb-10">
           <div className="flex items-center gap-8">
             <Link href="/profile" className="text-gray-600 hover:text-blue-600">
@@ -149,7 +146,6 @@ export default function SettingsPage() {
             <Link href="/profile/messages" className="text-gray-600 hover:text-blue-600">
               Messages
             </Link>
-            {/* Active => Settings */}
             <Link
               href="/profile/settings"
               className="text-blue-600 border-b-2 border-blue-600"
@@ -159,25 +155,11 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Preferences block */}
+        {/* Preferences */}
         <h2 className="text-xl font-semibold mb-3">Details</h2>
 
-        <div
-          className="
-            bg-white p-4 rounded-md shadow-sm
-            flex flex-col sm:flex-row
-            items-start sm:items-center
-            justify-between
-            mb-4
-          "
-        >
-          <div
-            className="
-              flex flex-col sm:flex-row
-              gap-4 sm:gap-12
-              text-sm text-gray-700
-            "
-          >
+        <div className="bg-white p-4 rounded-md shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4">
+          <div className="flex flex-col sm:flex-row gap-4 sm:gap-12 text-sm text-gray-700">
             <div>
               <p className="font-medium text-gray-500">Language</p>
               <p>{language}</p>
@@ -191,7 +173,6 @@ export default function SettingsPage() {
               <p>{currency}</p>
             </div>
           </div>
-
           <button
             onClick={() => setShowEditModal(true)}
             className="text-blue-600 hover:underline text-sm mt-3 sm:mt-0"
@@ -200,7 +181,7 @@ export default function SettingsPage() {
           </button>
         </div>
 
-        {/* Logout button */}
+        {/* Logout */}
         <div className="bg-white p-4 rounded-md shadow-sm mb-4">
           <button
             onClick={handleLogout}
@@ -210,7 +191,7 @@ export default function SettingsPage() {
           </button>
         </div>
 
-        {/* Delete Account button */}
+        {/* Delete account */}
         <div className="bg-white p-4 rounded-md shadow-sm">
           <button
             onClick={handleDeleteAccount}
@@ -221,6 +202,7 @@ export default function SettingsPage() {
         </div>
       </div>
 
+      {/* Edit modal */}
       {showEditModal && (
         <div className="fixed inset-0 bg-black/30 z-50 flex justify-end">
           <div
@@ -237,7 +219,7 @@ export default function SettingsPage() {
               </button>
             </div>
 
-            {/* Form fields: Language, Measurement, Currency */}
+            {/* Form fields */}
             <div className="flex flex-col gap-4 flex-1 overflow-y-auto">
               <div>
                 <label className="block text-sm mb-1 text-gray-600">Language</label>

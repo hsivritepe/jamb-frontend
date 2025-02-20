@@ -1,9 +1,10 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { Step } from "@/types/services";
 import { SectionBoxTitle } from "../ui/SectionBoxTitle";
 
-// Updated steps array remains the same as your snippet
 const steps: Step[] = [
   {
     id: 1,
@@ -47,16 +48,10 @@ const steps: Step[] = [
   },
 ];
 
-/**
- * HowItWorks component:
- * - Phones & tablets (<1024px) => show steps vertically in a simple list.
- * - Desktops (≥1024px) => keep the original grid layout, and shift steps #2 and #4 slightly to the left.
- */
 export default function HowItWorks() {
   return (
     <section className="p-8 bg-brand-light rounded-2xl">
       <div className="container mx-auto">
-        {/* Title and "Learn more" link */}
         <div className="flex items-center justify-between mb-8">
           <SectionBoxTitle>How It Works?</SectionBoxTitle>
           <a
@@ -67,22 +62,17 @@ export default function HowItWorks() {
           </a>
         </div>
 
-        {/**
-         * Phones & tablets (<1024px): show a vertical list (steps 1..4).
-         */}
+        {/* Phone & Tablet Layout (<1024px): Vertical List */}
         <div className="lg:hidden flex flex-col gap-8 mt-12">
           {steps.map((step) => (
             <StepBox step={step} key={step.id} />
           ))}
         </div>
 
-        {/**
-         * Desktop (≥1024px): original grid layout + shift steps #2 and #4 left.
-         */}
+        {/* Desktop Layout (≥1024px): Grid with shifted steps #2 and #4 */}
         <div className="hidden lg:block relative mt-12">
           <div className="grid grid-cols-8 gap-y-16 gap-x-4">
             {steps.map((step) => {
-              // Shift steps 2 & 4 to the left, for example ~20px
               const shiftStyle =
                 step.id === 2 || step.id === 4
                   ? { transform: "translateX(-80px)" }
@@ -108,21 +98,15 @@ export default function HowItWorks() {
   );
 }
 
-/**
- * Separate component for each step box
- */
 function StepBox({ step }: { step: Step }) {
   return (
     <div className="relative">
       <div className="flex items-start mb-4">
-        {/* Circle with step number */}
         <div className="flex items-center justify-center w-12 h-12 bg-white text-gray-300 font-bold rounded text-2xl">
           {step.number}
         </div>
-        {/* Title */}
         <h3 className="text-xl font-semibold ml-4 pt-2">{step.title}</h3>
       </div>
-      {/* Description */}
       <p className="text-gray-600 text-medium">{step.description}</p>
     </div>
   );

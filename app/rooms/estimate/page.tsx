@@ -11,11 +11,12 @@ import { ROOMS } from "@/constants/rooms";
 import { ALL_CATEGORIES } from "@/constants/categories";
 import { ALL_SERVICES } from "@/constants/services";
 import { taxRatesUSA } from "@/constants/taxRatesUSA";
-
-// Session utilities
 import { getSessionItem, setSessionItem } from "@/utils/session";
 
-/** Formats a number with commas and two decimals. */
+/**
+ * formatWithSeparator:
+ * Formats a numeric value with commas and exactly two decimals (e.g., 1234.56).
+ */
 function formatWithSeparator(value: number): string {
   return new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 2,
@@ -23,7 +24,10 @@ function formatWithSeparator(value: number): string {
   }).format(value);
 }
 
-/** Formats a number with no decimals (for mobile). */
+/**
+ * formatMobileNoDecimals:
+ * Formats a number with no decimals for mobile displays.
+ */
 function formatMobileNoDecimals(value: number): string {
   return new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 0,
@@ -31,7 +35,11 @@ function formatMobileNoDecimals(value: number): string {
   }).format(value);
 }
 
-/** Returns a combined state+local tax rate (percentage) or 0 if not found. */
+/**
+ * getTaxRateForState:
+ * Returns a combined (state + local) tax rate for a given state (e.g., "CA").
+ * If not found, returns 0.
+ */
 function getTaxRateForState(stateName: string): number {
   if (!stateName) return 0;
   const row = taxRatesUSA.taxRates.find(
@@ -43,21 +51,19 @@ function getTaxRateForState(stateName: string): number {
 export default function RoomsEstimate() {
   const router = useRouter();
 
-  // Load selected rooms from session
+  // Load from session
   const selectedRooms: string[] = getSessionItem("rooms_selectedSections", []);
   const allRooms = [...ROOMS.indoor, ...ROOMS.outdoor];
   const chosenRooms = selectedRooms
     .map((id) => allRooms.find((r) => r.id === id))
     .filter((r): r is Exclude<typeof r, undefined> => r !== undefined);
 
-  // If mismatch or none => redirect
   useEffect(() => {
     if (selectedRooms.length === 0 || chosenRooms.length !== selectedRooms.length) {
       router.push("/rooms");
     }
   }, [selectedRooms, chosenRooms, router]);
 
-  // Basic user data from session
   const address: string = getSessionItem("address", "");
   const photos: string[] = getSessionItem("photos", []);
   const description: string = getSessionItem("description", "");
@@ -66,19 +72,18 @@ export default function RoomsEstimate() {
   const city: string = getSessionItem("city", "");
   const country: string = getSessionItem("country", "");
 
-  // Selected services: { roomId: { serviceId: quantity } }
+  // Services chosen: { roomId: { serviceId: quantity } }
   const selectedServicesState: Record<string, Record<string, number>> =
     getSessionItem("rooms_selectedServicesWithQuantity", {});
 
-  // Calculation results
-  const calculationResultsMap: Record<string, any> =
-    getSessionItem("calculationResultsMap", {});
+  // Detailed cost breakdown for each service
+  const calculationResultsMap: Record<string, any> = getSessionItem("calculationResultsMap", {});
 
-  // Possibly user-owned finishing materials
+  // Possibly user-owned finishing materials (if used)
   const clientOwnedMaterials: Record<string, string[]> =
     getSessionItem("clientOwnedMaterials", {});
 
-  // If no services or no address => redirect
+  // Check if any service is selected and address is provided
   useEffect(() => {
     const anySelected = chosenRooms.some((room) => {
       const roomServices = selectedServicesState[room.id] || {};
@@ -89,7 +94,7 @@ export default function RoomsEstimate() {
     }
   }, [chosenRooms, selectedServicesState, address, router]);
 
-  // Time/delivery selection
+  // Service time selection (date, timeCoefficient)
   const [selectedTime, setSelectedTime] = useState<string | null>(
     () => getSessionItem("selectedTime", null)
   );
@@ -104,15 +109,13 @@ export default function RoomsEstimate() {
     setSessionItem("timeCoefficient", timeCoefficient);
   }, [timeCoefficient]);
 
-  // If user wants to override some calculations
+  // Allows manual override of material cost if needed
   const [overrideCalcResults, setOverrideCalcResults] = useState<Record<string, any>>({});
 
-  // Helper for overridden or original
   function getCalcResultFor(serviceId: string) {
     return overrideCalcResults[serviceId] || calculationResultsMap[serviceId];
   }
 
-  // Remove finishing materials => zero out
   function removeFinishingMaterials(serviceId: string) {
     const original = getCalcResultFor(serviceId);
     if (!original) return;
@@ -125,14 +128,13 @@ export default function RoomsEstimate() {
     setOverrideCalcResults((prev) => ({ ...prev, [serviceId]: newObj }));
   }
 
-  // Summation => labor
   function calculateLaborSubtotal(): number {
     let total = 0;
     chosenRooms.forEach((room) => {
       const roomServices = selectedServicesState[room.id] || {};
       Object.keys(roomServices).forEach((svcId) => {
         const cr = getCalcResultFor(svcId);
-        if (cr && cr.work_cost) {
+        if (cr?.work_cost) {
           total += parseFloat(cr.work_cost) || 0;
         }
       });
@@ -140,14 +142,13 @@ export default function RoomsEstimate() {
     return total;
   }
 
-  // Summation => materials
   function calculateMaterialsSubtotal(): number {
     let total = 0;
     chosenRooms.forEach((room) => {
       const roomServices = selectedServicesState[room.id] || {};
       Object.keys(roomServices).forEach((svcId) => {
         const cr = getCalcResultFor(svcId);
-        if (cr && cr.material_cost) {
+        if (cr?.material_cost) {
           total += parseFloat(cr.material_cost) || 0;
         }
       });
@@ -157,27 +158,22 @@ export default function RoomsEstimate() {
 
   const laborSubtotal = calculateLaborSubtotal();
   const materialsSubtotal = calculateMaterialsSubtotal();
-
-  // timeCoefficient applies only to labor
   const finalLabor = laborSubtotal * timeCoefficient;
 
-  // fees: 15% on labor, 5% on materials
+  // Fees
   const serviceFeeOnLabor = finalLabor * 0.15;
   const serviceFeeOnMaterials = materialsSubtotal * 0.05;
 
-  // store fees
   useEffect(() => {
     setSessionItem("serviceFeeOnLabor", serviceFeeOnLabor);
     setSessionItem("serviceFeeOnMaterials", serviceFeeOnMaterials);
   }, [serviceFeeOnLabor, serviceFeeOnMaterials]);
 
-  // sum => tax => final
   const sumBeforeTax = finalLabor + materialsSubtotal + serviceFeeOnLabor + serviceFeeOnMaterials;
   const taxRatePercent = getTaxRateForState(stateName);
   const taxAmount = sumBeforeTax * (taxRatePercent / 100);
   const finalTotal = sumBeforeTax + taxAmount;
 
-  // store final for next step
   useEffect(() => {
     setSessionItem("rooms_laborSubtotal", laborSubtotal);
     setSessionItem("rooms_materialsSubtotal", materialsSubtotal);
@@ -185,14 +181,20 @@ export default function RoomsEstimate() {
     setSessionItem("rooms_taxRatePercent", taxRatePercent);
     setSessionItem("rooms_taxAmount", taxAmount);
     setSessionItem("rooms_estimateFinalTotal", finalTotal);
-  }, [laborSubtotal, materialsSubtotal, sumBeforeTax, taxRatePercent, taxAmount, finalTotal]);
+  }, [
+    laborSubtotal,
+    materialsSubtotal,
+    sumBeforeTax,
+    taxRatePercent,
+    taxAmount,
+    finalTotal,
+  ]);
 
-  // Checkout
   function handleProceedToCheckout() {
     router.push("/rooms/checkout");
   }
 
-  // Build data structures for the room categories
+  // Build structured data for categories
   type RoomData = {
     categoriesBySection: Record<string, string[]>;
     categoryServicesMap: Record<string, (typeof ALL_SERVICES)[number][]>;
@@ -200,10 +202,8 @@ export default function RoomsEstimate() {
   const roomsData: Record<string, RoomData> = {};
 
   for (const room of chosenRooms) {
-    // the services declared in room.services
     const chosenRoomServiceIDs = room.services.map((s) => s.id);
 
-    // Build categories
     const categoriesWithSection = room.services
       .map((svc) => {
         const catId = svc.id.split("-").slice(0, 2).join("-");
@@ -221,7 +221,6 @@ export default function RoomsEstimate() {
       }
     });
 
-    // Build services map: { catId => array of matching services }
     const categoryServicesMap: Record<string, (typeof ALL_SERVICES)[number][]> = {};
     chosenRoomServiceIDs.forEach((serviceId) => {
       const catId = serviceId.split("-").slice(0, 2).join("-");
@@ -237,7 +236,6 @@ export default function RoomsEstimate() {
     roomsData[room.id] = { categoriesBySection, categoryServicesMap };
   }
 
-  // Construct address
   let constructedAddress = "";
   if (city) constructedAddress += city;
   if (stateName) {
@@ -264,9 +262,8 @@ export default function RoomsEstimate() {
         <BreadCrumb items={ROOMS_STEPS} />
       </div>
 
-      {/* Outer container => flex-col on mobile, row on xl+ */}
       <div className="container mx-auto py-12 flex flex-col xl:flex-row gap-12">
-        {/* LEFT column => main estimate */}
+        {/* Main estimate section */}
         <div className="w-full xl:max-w-[700px] bg-brand-light p-4 sm:p-6 rounded-xl border border-gray-300 overflow-hidden">
           <SectionBoxSubtitle>Estimate for Selected Rooms</SectionBoxSubtitle>
 
@@ -276,16 +273,16 @@ export default function RoomsEstimate() {
             if (!hasServices) return null;
 
             const { categoriesBySection, categoryServicesMap } = roomsData[room.id];
-
-            // Summation for this room
             let roomLabor = 0;
             let roomMaterials = 0;
+
             Object.keys(roomServices).forEach((svcId) => {
               const cr = getCalcResultFor(svcId);
               if (!cr) return;
               roomLabor += parseFloat(cr.work_cost) || 0;
               roomMaterials += parseFloat(cr.material_cost) || 0;
             });
+
             const roomSubtotal = roomLabor + roomMaterials;
 
             return (
@@ -312,10 +309,10 @@ export default function RoomsEstimate() {
                         const catNumber = `${sectionNumber}.${catIdx + 1}`;
                         const catName = getCategoryNameById(catId);
                         const servicesArr = categoryServicesMap[catId] || [];
-                        const chosenServices = servicesArr.filter(
+                        const chosenSvcs = servicesArr.filter(
                           (svc) => roomServices[svc.id] != null
                         );
-                        if (chosenServices.length === 0) return null;
+                        if (chosenSvcs.length === 0) return null;
 
                         return (
                           <div key={catId} className="mb-4 ml-0 sm:ml-4">
@@ -323,7 +320,7 @@ export default function RoomsEstimate() {
                               {catNumber}. {catName}
                             </h5>
 
-                            {chosenServices.map((svc, svcIdx) => {
+                            {chosenSvcs.map((svc, svcIdx) => {
                               const svcNumber = `${catNumber}.${svcIdx + 1}`;
                               const cr = getCalcResultFor(svc.id);
                               const qty = roomServices[svc.id] || 1;
@@ -332,10 +329,7 @@ export default function RoomsEstimate() {
                               const totalCost = laborVal + matVal;
 
                               return (
-                                <div
-                                  key={svc.id}
-                                  className="mb-6 ml-0 sm:ml-4 space-y-2"
-                                >
+                                <div key={svc.id} className="mb-6 ml-0 sm:ml-4 space-y-2">
                                   <h6 className="font-medium text-md text-gray-700">
                                     {svcNumber}. {svc.title}
                                   </h6>
@@ -392,10 +386,10 @@ export default function RoomsEstimate() {
                                           <table className="table-auto w-full text-sm text-gray-700">
                                             <thead>
                                               <tr className="border-b">
-                                                <th className="py-2 px-1">Name</th>
-                                                <th className="py-2 px-1">Price</th>
-                                                <th className="py-2 px-1">Qty</th>
-                                                <th className="py-2 px-1">Subtotal</th>
+                                                <th className="py-2 px-1 text-left">Name</th>
+                                                <th className="py-2 px-1 text-left">Price</th>
+                                                <th className="py-2 px-1 text-left">Qty</th>
+                                                <th className="py-2 px-1 text-left">Subtotal</th>
                                               </tr>
                                             </thead>
                                             <tbody className="divide-y divide-gray-200">
@@ -405,8 +399,6 @@ export default function RoomsEstimate() {
                                                 return (
                                                   <tr key={`${m.external_id}-${i}`}>
                                                     <td className="py-3 px-1">{m.name}</td>
-
-                                                    {/* Price: mobile => no decimals, desktop => two decimals */}
                                                     <td className="py-3 px-1">
                                                       <span className="block sm:hidden">
                                                         ${formatMobileNoDecimals(priceVal)}
@@ -415,10 +407,7 @@ export default function RoomsEstimate() {
                                                         ${formatWithSeparator(priceVal)}
                                                       </span>
                                                     </td>
-
                                                     <td className="py-3 px-3">{m.quantity}</td>
-
-                                                    {/* Subtotal: same approach */}
                                                     <td className="py-3 px-3">
                                                       <span className="block sm:hidden">
                                                         ${formatMobileNoDecimals(subVal)}
@@ -446,7 +435,6 @@ export default function RoomsEstimate() {
                   );
                 })}
 
-                {/* Room total */}
                 <div className="flex justify-between items-center mb-2 mt-2">
                   <span className="font-semibold text-lg text-gray-700">
                     {room.title} total:
@@ -467,7 +455,6 @@ export default function RoomsEstimate() {
                 ${formatWithSeparator(laborSubtotal)}
               </span>
             </div>
-
             <div className="flex justify-between mb-2">
               <span className="font-semibold text-lg text-gray-600">
                 Materials, tools and equipment:
@@ -476,7 +463,6 @@ export default function RoomsEstimate() {
                 ${formatWithSeparator(materialsSubtotal)}
               </span>
             </div>
-
             {timeCoefficient !== 1 && (
               <div className="flex justify-between mb-2">
                 <span className="text-gray-600">
@@ -494,7 +480,6 @@ export default function RoomsEstimate() {
                 </span>
               </div>
             )}
-
             <div className="flex justify-between mb-2">
               <span className="text-gray-600">Service Fee (15% on labor)</span>
               <span className="font-semibold text-lg text-gray-800">
@@ -502,19 +487,19 @@ export default function RoomsEstimate() {
               </span>
             </div>
             <div className="flex justify-between mb-2">
-              <span className="text-gray-600">Delivery &amp; Processing (5% on materials)</span>
+              <span className="text-gray-600">
+                Delivery &amp; Processing (5% on materials)
+              </span>
               <span className="font-semibold text-lg text-gray-800">
                 ${formatWithSeparator(serviceFeeOnMaterials)}
               </span>
             </div>
-
             <div className="flex justify-between mb-2">
               <span className="font-semibold text-xl text-gray-800">Subtotal</span>
               <span className="font-semibold text-xl text-gray-800">
                 ${formatWithSeparator(sumBeforeTax)}
               </span>
             </div>
-
             <div className="flex justify-between mb-2">
               <span className="text-gray-600">
                 Sales tax
@@ -523,7 +508,6 @@ export default function RoomsEstimate() {
               </span>
               <span>${formatWithSeparator(taxAmount)}</span>
             </div>
-
             <div className="flex justify-between text-2xl font-semibold mt-4">
               <span>Total</span>
               <span>${formatWithSeparator(finalTotal)}</span>
@@ -532,9 +516,7 @@ export default function RoomsEstimate() {
 
           {/* Address */}
           <div className="mt-6">
-            <h3 className="font-semibold text-xl text-gray-800">
-              Address
-            </h3>
+            <h3 className="font-semibold text-xl text-gray-800">Address</h3>
             <p className="text-gray-500 mt-2">
               {constructedAddress.trim() || "No address provided"}
             </p>
@@ -595,7 +577,7 @@ export default function RoomsEstimate() {
           </div>
         </div>
 
-        {/* RIGHT column => ServiceTimePicker */}
+        {/* Time picker column */}
         <div className="w-full xl:w-[500px]">
           <ServiceTimePicker
             subtotal={laborSubtotal}

@@ -3,14 +3,14 @@
 import React, { FC } from "react";
 import { Printer, Share2, Save } from "lucide-react";
 
-/**
- * Single button showing three icons (Printer, Share, Save),
- * darkening the background on hover.
- */
 interface SingleActionButtonProps {
-  onPrint?: () => void; // Only calls this one function on click
+  onPrint?: () => void;
 }
 
+/**
+ * A single button showing three icons (Printer, Share, Save),
+ * with a hover effect and optional print action.
+ */
 const SingleActionButton: FC<SingleActionButtonProps> = ({ onPrint }) => {
   return (
     <button
@@ -27,8 +27,6 @@ const SingleActionButton: FC<SingleActionButtonProps> = ({ onPrint }) => {
       <Printer size={20} />
       <Share2 size={20} />
       <Save size={20} />
-
-      {/* Hidden text label on small screens */}
       <span className="hidden sm:inline text-sm">Print</span>
     </button>
   );

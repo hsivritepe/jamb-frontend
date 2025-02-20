@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import BreadCrumb from "@/components/ui/BreadCrumb";
 import { SectionBoxTitle } from "@/components/ui/SectionBoxTitle";
 import { SectionBoxSubtitle } from "@/components/ui/SectionBoxSubtitle";
-import PlaceOrderButton from "@/components/ui/PlaceOrderButton"; // Important component for posting the order
+import PlaceOrderButton from "@/components/ui/PlaceOrderButton";
 import { EMERGENCY_STEPS } from "@/constants/navigation";
 import { EMERGENCY_SERVICES } from "@/constants/emergency";
 import { ALL_SERVICES } from "@/constants/services";
@@ -16,33 +16,18 @@ import { formatWithSeparator } from "@/utils/format";
 import { Printer, Share2, Save } from "lucide-react";
 
 /**
- * ActionIconsBarProps defines props for the "print/share/save" button bar.
+ * Inserts spaces before uppercase letters and capitalizes the string.
+ * e.g. "burstPipesRepair" => "Burst Pipes Repair"
  */
-interface ActionIconsBarProps {
-  onPrint?: () => void;
+function capitalizeAndTransform(text: string): string {
+  return text
+    .replace(/([A-Z])/g, " $1")
+    .trim()
+    .replace(/^./, (char) => char.toUpperCase());
 }
 
 /**
- * ActionIconsBar is a single button that includes three icons (Printer, Share, Save).
- * Clicking it calls onPrint() if provided.
- */
-function ActionIconsBar({ onPrint }: ActionIconsBarProps) {
-  return (
-    <button
-      onClick={onPrint}
-      className="flex items-center gap-2 border border-gray-300 rounded-lg px-4 py-2 text-gray-700 hover:text-gray-900"
-    >
-      <Printer size={20} />
-      <Share2 size={20} />
-      <Save size={20} />
-      <span className="hidden sm:inline text-sm">Print</span>
-    </button>
-  );
-}
-
-/**
- * buildEstimateNumber constructs a temporary reference code like "NY-10001-20250123-1430".
- * If the stateCode/zip are invalid, it uses ??-00000 as placeholder.
+ * Builds a temporary reference code, e.g. "NY-10006-20250219-1405".
  */
 function buildEstimateNumber(stateCode: string, zip: string): string {
   let stateZipBlock = "??-00000";
@@ -60,8 +45,7 @@ function buildEstimateNumber(stateCode: string, zip: string): string {
 }
 
 /**
- * Converts a numeric amount to approximate English words,
- * e.g. 123.45 => "one hundred twenty-three and 45/100 dollars".
+ * Converts a numeric dollar amount into spelled-out English text (simplified).
  */
 function numberToWordsUSD(amount: number): string {
   const integerPart = Math.floor(amount);
@@ -112,12 +96,12 @@ function numberToWordsUSD(amount: number): string {
     const hundredPart = hundreds ? wordsMap[hundreds] + " hundred" : "";
     const remainderPart = remainder ? twoDigits(remainder) : "";
     if (hundreds && remainder) {
-      return hundredPart + " " + remainderPart;
+      return `${hundredPart} ${remainderPart}`.trim();
     }
     return hundredPart || remainderPart || "";
   }
 
-  let parts: string[] = [];
+  const parts: string[] = [];
   const scaleUnits = ["", " thousand", " million"];
   let tmp = integerPart;
   let i = 0;
@@ -128,7 +112,8 @@ function numberToWordsUSD(amount: number): string {
     const chunk = tmp % 1000;
     tmp = Math.floor(tmp / 1000);
     if (chunk > 0) {
-      parts.unshift(threeDigits(chunk).trim() + scaleUnits[i]);
+      const chunkStr = threeDigits(chunk).trim();
+      parts.unshift(`${chunkStr}${scaleUnits[i]}`);
     }
     i++;
   }
@@ -139,18 +124,33 @@ function numberToWordsUSD(amount: number): string {
 }
 
 /**
- * EmergencyCheckoutPage is the final checkout page for the "Emergency" section.
- * It shows the user's selected activities, fees, totals, and posts the order via PlaceOrderButton.
+ * Button row with printer/share/save icons (optional).
  */
+interface ActionIconsBarProps {
+  onPrint?: () => void;
+}
+
+function ActionIconsBar({ onPrint }: ActionIconsBarProps) {
+  return (
+    <button
+      onClick={onPrint}
+      className="flex items-center gap-2 border border-gray-300 rounded-lg px-4 py-2 text-gray-700 hover:text-gray-900"
+    >
+      <Printer size={20} />
+      <Share2 size={20} />
+      <Save size={20} />
+      <span className="hidden sm:inline text-sm">Print</span>
+    </button>
+  );
+}
+
 export default function EmergencyCheckoutPage() {
   const router = useRouter();
 
-  // Load from session
-  type SelectedActivities = Record<string, Record<string, number>>;
-  const selectedActivities = getSessionItem<SelectedActivities>(
-    "selectedActivities",
-    {}
-  );
+  // Load data from session
+  const selectedActivities = getSessionItem<
+    Record<string, Record<string, number>>
+  >("selectedActivities", {});
   const calculationResultsMap = getSessionItem<Record<string, any>>(
     "calculationResultsMap",
     {}
@@ -160,21 +160,15 @@ export default function EmergencyCheckoutPage() {
   const description = getSessionItem<string>("description", "");
   const selectedTime = getSessionItem<string>("selectedTime", "No date selected");
 
-  // Additional data from session
   const timeCoefficient = getSessionItem<number>("timeCoefficient", 1);
   const serviceFeeOnLabor = getSessionItem<number>("serviceFeeOnLabor", 0);
   const serviceFeeOnMaterials = getSessionItem<number>("serviceFeeOnMaterials", 0);
   const userTaxRate = getSessionItem<number>("userTaxRate", 0);
 
-  // Possibly parse location_state, location_zip
-  let userState = getSessionItem<string>("stateName", "");
-  let userZip = getSessionItem<string>("zip", "");
-  if (!userState && !userZip && fullAddress) {
-    // Fallback logic to parse from address if needed
-    // (not strictly implemented here - user can fill location in earlier steps)
-  }
+  const userState = getSessionItem<string>("stateName", "");
+  const userZip = getSessionItem<string>("zip", "");
 
-  // Redirect if no data
+  // Redirect if missing data
   useEffect(() => {
     if (
       !selectedActivities ||
@@ -185,9 +179,7 @@ export default function EmergencyCheckoutPage() {
     }
   }, [selectedActivities, fullAddress, router]);
 
-  /**
-   * Computes labor subtotal from all selected activities.
-   */
+  // Calculate labor/materials
   function getLaborSubtotal(): number {
     let total = 0;
     for (const catObj of Object.values(selectedActivities)) {
@@ -201,9 +193,6 @@ export default function EmergencyCheckoutPage() {
     return total;
   }
 
-  /**
-   * Computes materials subtotal from all selected activities.
-   */
   function getMaterialsSubtotal(): number {
     let total = 0;
     for (const catObj of Object.values(selectedActivities)) {
@@ -219,20 +208,15 @@ export default function EmergencyCheckoutPage() {
 
   const laborSubtotal = getLaborSubtotal();
   const materialsSubtotal = getMaterialsSubtotal();
-  // Final labor after applying time coefficient
   const finalLabor = laborSubtotal * timeCoefficient;
-
-  // Combine everything for the sum
   const sumBeforeTax =
     finalLabor + materialsSubtotal + serviceFeeOnLabor + serviceFeeOnMaterials;
   const taxAmount = sumBeforeTax * (userTaxRate / 100);
   const finalTotal = sumBeforeTax + taxAmount;
 
-  /**
-   * Builds the "works" array for PlaceOrderButton.
-   */
+  // Build data for the PlaceOrderButton
   function buildWorksData() {
-    type WorkItem = {
+    const result: Array<{
       type: string;
       code: string;
       unitOfMeasurement: string;
@@ -250,9 +234,7 @@ export default function EmergencyCheckoutPage() {
         costPerUnit: number;
         total: number;
       }>;
-    };
-
-    const result: WorkItem[] = [];
+    }> = [];
 
     for (const catKey of Object.keys(selectedActivities)) {
       const acts = selectedActivities[catKey];
@@ -264,7 +246,6 @@ export default function EmergencyCheckoutPage() {
         const laborVal = parseFloat(calcRes.work_cost || "0");
         const matVal = parseFloat(calcRes.material_cost || "0");
 
-        // Convert materials
         let mats: Array<{
           external_id: string;
           quantity: number;
@@ -297,7 +278,6 @@ export default function EmergencyCheckoutPage() {
 
   const worksData = buildWorksData();
 
-  // Final order data object for PlaceOrderButton
   const orderData = {
     zipcode: userZip || "",
     address: fullAddress.trim(),
@@ -316,11 +296,22 @@ export default function EmergencyCheckoutPage() {
     paymentCoefficient: 1,
   };
 
-  // Generate a temp reference code (estimateNumber) and total in words
+  // Temporary code + spelled-out total
   const estimateNumber = buildEstimateNumber(userState, userZip);
   const totalInWords = numberToWordsUSD(finalTotal);
 
-  // For grouping items by category when rendering
+  // Handlers
+  function handleOrderSuccess() {
+    router.push("/thank-you");
+  }
+  function handlePrint() {
+    router.push("/emergency/checkout/print");
+  }
+  function handleBack() {
+    router.back();
+  }
+
+  // Render items grouped by category
   interface RenderItem {
     category: string;
     activityKey: string;
@@ -340,18 +331,18 @@ export default function EmergencyCheckoutPage() {
         if (!calcRes) continue;
 
         const foundSvc = ALL_SERVICES.find((x) => x.id === actKey);
-        // Summation of labor + materials
+        // Sum labor + materials
         const combined =
           (parseFloat(calcRes.work_cost || "0") || 0) +
           (parseFloat(calcRes.material_cost || "0") || 0);
 
-        let catDisplay = catKey;
-        if (EMERGENCY_SERVICES[catKey]) {
-          // e.g. "electricalProblems" => "Electrical Problems"
-          catDisplay = catKey
-            .replace(/([A-Z])/g, " $1")
-            .replace(/^./, (m) => m.toUpperCase());
-        }
+        // Always transform the category name
+        let catDisplay = capitalizeAndTransform(catKey);
+
+        // (Optional) If you only want to transform if category exists in EMERGENCY_SERVICES:
+        // if (EMERGENCY_SERVICES[catKey]) {
+        //   catDisplay = capitalizeAndTransform(catKey);
+        // }
 
         arr.push({
           category: catDisplay,
@@ -377,21 +368,6 @@ export default function EmergencyCheckoutPage() {
   });
   const sortedCatNames = Object.keys(groupedByCategory).sort();
 
-  // onOrderSuccess => navigate to /thank-you
-  function handleOrderSuccess() {
-    router.push("/thank-you");
-  }
-
-  // Print => route to /emergency/checkout/print
-  function handlePrint() {
-    router.push("/emergency/checkout/print");
-  }
-
-  // Go back => router.back()
-  function handleBack() {
-    router.back();
-  }
-
   return (
     <main className="min-h-screen py-24">
       <div className="container mx-auto">
@@ -399,7 +375,7 @@ export default function EmergencyCheckoutPage() {
       </div>
 
       <div className="container mx-auto">
-        {/* Top row: Back link + PlaceOrderButton */}
+        {/* Top row */}
         <div className="flex justify-between items-center mt-8">
           <span className="text-blue-600 cursor-pointer" onClick={handleBack}>
             ← Back
@@ -412,13 +388,13 @@ export default function EmergencyCheckoutPage() {
           />
         </div>
 
-        {/* Title + Print bar */}
+        {/* Title + Print */}
         <div className="flex items-center justify-between mt-8">
           <SectionBoxTitle>Checkout</SectionBoxTitle>
           <ActionIconsBar onPrint={handlePrint} />
         </div>
 
-        {/* Container with summary */}
+        {/* Summary container */}
         <div className="bg-white border border-gray-300 mt-4 p-4 sm:p-6 rounded-lg space-y-6">
           {/* Estimate info */}
           <div>
@@ -431,7 +407,7 @@ export default function EmergencyCheckoutPage() {
               order number after confirmation.
             </p>
 
-            {/* Categories & items */}
+            {/* Categories */}
             <div className="mt-4 space-y-4">
               {sortedCatNames.map((catName, i) => {
                 const catIndex = i + 1;
@@ -513,7 +489,9 @@ export default function EmergencyCheckoutPage() {
                                             key={`${m.external_id}-${idx2}`}
                                             className="align-top"
                                           >
-                                            <td className="py-2 px-1">{m.name}</td>
+                                            <td className="py-2 px-1">
+                                              {m.name}
+                                            </td>
                                             <td className="py-2 px-1">
                                               $
                                               {formatWithSeparator(
@@ -607,7 +585,9 @@ export default function EmergencyCheckoutPage() {
               </div>
 
               <div className="flex justify-between mb-2">
-                <span className="text-gray-600">Sales tax ({userTaxRate}%)</span>
+                <span className="text-gray-600">
+                  Sales tax ({userTaxRate}%)
+                </span>
                 <span>${formatWithSeparator(taxAmount)}</span>
               </div>
 
@@ -626,7 +606,9 @@ export default function EmergencyCheckoutPage() {
           {/* Date of Service */}
           <div>
             <SectionBoxSubtitle>Date of Service</SectionBoxSubtitle>
-            <p className="text-gray-800">{selectedTime || "No date selected"}</p>
+            <p className="text-gray-800">
+              {selectedTime || "No date selected"}
+            </p>
           </div>
 
           <hr className="my-6 border-gray-200" />
@@ -634,7 +616,9 @@ export default function EmergencyCheckoutPage() {
           {/* Problem Description */}
           <div>
             <SectionBoxSubtitle>Problem Description</SectionBoxSubtitle>
-            <p className="text-gray-700">{description || "No details provided"}</p>
+            <p className="text-gray-700">
+              {description || "No details provided"}
+            </p>
           </div>
 
           <hr className="my-6 border-gray-200" />

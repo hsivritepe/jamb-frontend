@@ -38,9 +38,7 @@ function getTaxRateForState(stateName: string): number {
   return row ? row.combinedStateAndLocalTaxRate : 0;
 }
 
-/**
- * The main "Estimate" page:
- */
+/** The main "Estimate" page */
 export default function Estimate() {
   const router = useRouter();
   const { location } = useLocation();

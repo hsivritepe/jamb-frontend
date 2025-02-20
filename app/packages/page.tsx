@@ -1,6 +1,7 @@
 "use client";
 
 export const dynamic = "force-dynamic";
+
 import { useState, useEffect, ChangeEvent } from "react";
 import BreadCrumb from "@/components/ui/BreadCrumb";
 import SearchServices from "@/components/SearchServices";
@@ -9,12 +10,12 @@ import { PACKAGES_STEPS } from "@/constants/navigation";
 import { getSessionItem, setSessionItem } from "@/utils/session";
 
 export default function PackagesPage() {
-  // Load searchQuery from session, so it persists after refresh
+  // Restore search query from session
   const [searchQuery, setSearchQuery] = useState<string>(() =>
     getSessionItem("packages_searchQuery", "")
   );
 
-  // On mount, clear out any old session keys from other flows
+  // Clear old session keys from other flows on mount
   useEffect(() => {
     if (typeof window !== "undefined") {
       sessionStorage.removeItem("selectedTime");
@@ -26,7 +27,7 @@ export default function PackagesPage() {
     }
   }, []);
 
-  // Whenever searchQuery changes, save it to session
+  // Persist search query to session
   useEffect(() => {
     setSessionItem("packages_searchQuery", searchQuery);
   }, [searchQuery]);
