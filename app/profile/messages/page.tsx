@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 /**
- * Helper for time-based greeting
+ * Returns a greeting based on the current hour.
  */
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -17,11 +17,10 @@ function getGreeting(): string {
 export default function MessagesPage() {
   const router = useRouter();
   const [token, setToken] = useState("");
-
   const [userName, setUserName] = useState("");
   const [hasName, setHasName] = useState(false);
 
-  // Tab state: "inbox" or "outbox"
+  // "inbox" or "outbox"
   const [tab, setTab] = useState<"inbox" | "outbox">("inbox");
 
   useEffect(() => {
@@ -32,7 +31,7 @@ export default function MessagesPage() {
     }
     setToken(storedToken);
 
-    // Attempt to read user's name from "profileData"
+    // Attempt to read user's name from profileData
     const storedProfile = sessionStorage.getItem("profileData");
     if (storedProfile) {
       try {
@@ -53,7 +52,7 @@ export default function MessagesPage() {
   return (
     <div className="pt-24 min-h-screen w-full bg-gray-50 pb-10">
       <div className="max-w-7xl mx-auto px-0 sm:px-4">
-        {/* Greeting heading */}
+        {/* Greeting */}
         <h1 className="text-2xl sm:text-3xl font-bold mt-6 mb-2">
           {greetingText}, {hasName ? userName : "Guest"}!
         </h1>
@@ -77,7 +76,7 @@ export default function MessagesPage() {
           </div>
         </div>
 
-        {/* Tabs row: Inbox, Outbox */}
+        {/* Tabs */}
         <div className="flex items-center gap-4 mb-6 text-sm font-medium">
           <button
             onClick={() => setTab("inbox")}
@@ -95,7 +94,7 @@ export default function MessagesPage() {
           </button>
         </div>
 
-        {/* Content per tab */}
+        {/* Content */}
         {tab === "inbox" && (
           <div>
             <p className="text-gray-700">No inbox messages yet.</p>
