@@ -8,6 +8,7 @@ import BreadCrumb from "@/components/ui/BreadCrumb";
 import { SectionBoxTitle } from "@/components/ui/SectionBoxTitle";
 import { SectionBoxSubtitle } from "@/components/ui/SectionBoxSubtitle";
 import { Printer, Share2, Save } from "lucide-react";
+
 import { PACKAGES_STEPS } from "@/constants/navigation";
 import { PACKAGES } from "@/constants/packages";
 import { ALL_SERVICES } from "@/constants/services";
@@ -16,15 +17,14 @@ import { getSessionItem } from "@/utils/session";
 import PlaceOrderButton from "@/components/ui/PlaceOrderButton";
 
 /**
- * ActionIconsBarProps defines the props for the print/share/save button bar.
+ * Props for the print/share/save button bar.
  */
 interface ActionIconsBarProps {
   onPrint?: () => void;
 }
 
 /**
- * ActionIconsBar is a small button that shows three icons (Printer, Share, Save).
- * On click, it calls the onPrint handler if provided.
+ * A small button with three icons (Printer, Share, Save).
  */
 function ActionIconsBar({ onPrint }: ActionIconsBarProps) {
   return (
@@ -41,7 +41,7 @@ function ActionIconsBar({ onPrint }: ActionIconsBarProps) {
 }
 
 /**
- * formatWithSeparator formats a number with commas and exactly two decimals.
+ * Formats a number with commas and two decimals.
  */
 function formatWithSeparator(n: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -51,8 +51,8 @@ function formatWithSeparator(n: number): string {
 }
 
 /**
- * Convert numeric USD to a simplified English words version
- * (e.g. 123.45 => "one hundred twenty-three and 45/100 dollars").
+ * Converts a numeric value into a simplified English phrase,
+ * e.g. 123.45 => "one hundred twenty-three and 45/100 dollars".
  */
 function numberToWordsUSD(amount: number): string {
   const integerPart = Math.floor(amount);
@@ -89,7 +89,7 @@ function numberToWordsUSD(amount: number): string {
     90: "ninety",
   };
 
-  function twoDigitWords(n: number): string {
+  function twoDigits(n: number): string {
     if (n <= 20) return wordsMap[n] || "";
     const tens = Math.floor(n / 10) * 10;
     const ones = n % 10;
@@ -97,58 +97,60 @@ function numberToWordsUSD(amount: number): string {
     return wordsMap[tens] + "-" + (wordsMap[ones] || "");
   }
 
-  function threeDigitWords(n: number): string {
+  function threeDigits(n: number): string {
     const hundreds = Math.floor(n / 100);
     const remainder = n % 100;
-    const hundredPart = hundreds > 0 ? wordsMap[hundreds] + " hundred" : "";
-    const remainderPart = remainder > 0 ? twoDigitWords(remainder) : "";
-    if (hundreds > 0 && remainder > 0) {
-      return hundredPart + " " + remainderPart;
+    const hundredStr = hundreds ? wordsMap[hundreds] + " hundred" : "";
+    const remainderStr = remainder ? twoDigits(remainder) : "";
+    if (hundreds && remainder) {
+      return `${hundredStr} ${remainderStr}`.trim();
     }
-    return hundredPart || remainderPart || "";
+    return hundredStr || remainderStr || "";
   }
 
-  let result: string[] = [];
+  const parts: string[] = [];
   const thousandUnits = ["", " thousand", " million", " billion"];
   let tmp = integerPart;
   let i = 0;
 
   if (tmp === 0) {
-    result.push("zero");
+    parts.push("zero");
   }
 
   while (tmp > 0 && i < thousandUnits.length) {
     const chunk = tmp % 1000;
     if (chunk > 0) {
-      result.unshift(threeDigitWords(chunk).trim() + thousandUnits[i]);
+      parts.unshift(`${threeDigits(chunk).trim()}${thousandUnits[i]}`);
     }
     tmp = Math.floor(tmp / 1000);
     i++;
   }
 
-  const mainPart = result.join(" ").trim() || "zero";
-  const decimalsStr = decimalPart < 10 ? `0${decimalPart}` : String(decimalPart);
+  const mainStr = parts.join(" ").trim() || "zero";
+  const decimalStr = decimalPart < 10 ? `0${decimalPart}` : String(decimalPart);
 
-  return `${mainPart} and ${decimalsStr}/100 dollars`.trim();
+  return `${mainStr} and ${decimalStr}/100 dollars`;
 }
 
 /**
- * buildOrderReference constructs a temporary reference code like "NY-10001-20250123-1450".
+ * Builds a temporary reference code like "NY-10001-20250123-1450".
  */
 function buildOrderReference(stateCode: string, zip: string): string {
-  const sc = stateCode ? stateCode.trim().slice(0, 2).toUpperCase() : "??";
+  const sc = stateCode.trim().slice(0, 2).toUpperCase() || "??";
   const z = zip || "00000";
+
   const now = new Date();
   const yyyy = now.getFullYear();
   const mm = String(now.getMonth() + 1).padStart(2, "0");
   const dd = String(now.getDate()).padStart(2, "0");
   const hh = String(now.getHours()).padStart(2, "0");
   const mi = String(now.getMinutes()).padStart(2, "0");
+
   return `${sc}-${z}-${yyyy}${mm}${dd}-${hh}${mi}`;
 }
 
 /**
- * formatHouseType translates internal houseType codes to user-friendly strings.
+ * Converts houseType codes to human-readable labels.
  */
 function formatHouseType(value: string): string {
   switch (value) {
@@ -163,15 +165,14 @@ function formatHouseType(value: string): string {
   }
 }
 
-
 export default function CheckoutPage() {
   const router = useRouter();
 
-  // Retrieve the selected package ID
+  // Package ID
   const storedPackageId = getSessionItem<string | null>("packages_currentPackageId", null);
   const chosenPackage = PACKAGES.find((p) => p.id === storedPackageId) || null;
 
-  // Retrieve Payment Option and Coefficient
+  // Payment option
   const paymentCoefficient = getSessionItem<number>("packages_timeCoefficient", 1);
   const selectedPaymentOption = getSessionItem<string | null>("packages_selectedTime", null);
 
@@ -199,7 +200,7 @@ export default function CheckoutPage() {
     airConditioners: 0,
   });
 
-  // Summaries from estimate
+  // Summaries from the estimate
   const laborSubtotal = getSessionItem<number>("packages_laborSubtotal", 0);
   const materialsSubtotal = getSessionItem<number>("packages_materialsSubtotal", 0);
   const serviceFeeOnLabor = getSessionItem<number>("serviceFeeOnLabor", 0);
@@ -209,13 +210,13 @@ export default function CheckoutPage() {
   const taxAmount = getSessionItem<number>("packages_taxAmount", 0);
   const finalTotal = getSessionItem<number>("packages_estimateFinalTotal", 0);
 
-  // Selected services data
+  // Selected services
   const selectedServicesData = getSessionItem("packages_selectedServices", {
     indoor: {},
     outdoor: {},
   } as Record<string, Record<string, number>>);
 
-  // Merge indoor+outdoor to simplify listing
+  // Merge indoor + outdoor
   const mergedServices: Record<string, number> = {
     ...selectedServicesData.indoor,
     ...selectedServicesData.outdoor,
@@ -227,7 +228,7 @@ export default function CheckoutPage() {
     {}
   );
 
-  // If no services or no address => redirect back to estimate
+  // Redirect if no services or address
   useEffect(() => {
     const anyServices = Object.keys(mergedServices).length > 0;
     if (!anyServices || !houseInfo.addressLine) {
@@ -239,7 +240,7 @@ export default function CheckoutPage() {
     }
   }, [mergedServices, houseInfo, storedPackageId, router]);
 
-  // Construct full address string
+  // Build full address
   let constructedAddress = "";
   if (houseInfo.city) constructedAddress += houseInfo.city;
   if (houseInfo.state) {
@@ -255,16 +256,14 @@ export default function CheckoutPage() {
     constructedAddress += houseInfo.country;
   }
 
-  // Build a reference number
-  const referenceNumber = buildOrderReference(
-    houseInfo.state || "",
-    houseInfo.zip || ""
-  );
+  // Generate a reference code
+  const referenceNumber = buildOrderReference(houseInfo.state || "", houseInfo.zip || "");
 
+  // Possibly stored user photos
   const photos: string[] = getSessionItem<string[]>("photos", []);
 
   /**
-   * The final array of "works" that will be posted to the server.
+   * Builds the "works" array that will be posted to the server.
    */
   function buildWorksData() {
     const worksArray: Array<{
@@ -294,17 +293,19 @@ export default function CheckoutPage() {
 
       const laborVal = parseFloat(breakdown.work_cost || "0");
       const matVal = parseFloat(breakdown.material_cost || "0");
+
       const foundSvc = ALL_SERVICES.find((s) => s.id === svcId);
       const unit = foundSvc?.unit_of_measurement || "units";
 
-      let matDetails: Array<{
+      let materialsDetail: Array<{
         external_id: string;
         quantity: number;
         costPerUnit: number;
         total: number;
       }> = [];
+
       if (Array.isArray(breakdown.materials)) {
-        matDetails = breakdown.materials.map((m: any) => ({
+        materialsDetail = breakdown.materials.map((m: any) => ({
           external_id: m.external_id,
           quantity: m.quantity,
           costPerUnit: parseFloat(m.cost_per_unit),
@@ -321,16 +322,16 @@ export default function CheckoutPage() {
         materialsCost: matVal,
         total: laborVal + matVal,
         paymentType: "",
-        paymentCoefficient: 1, 
-        materials: matDetails,
+        paymentCoefficient: 1,
+        materials: materialsDetail,
       });
     }
     return worksArray;
   }
 
   /**
-   * onOrderSuccess is called after the order has been successfully saved to the server.
-   * We remove all "packages" session keys and then redirect to /thank-you.
+   * Called after the order is successfully saved.
+   * Clears session keys and redirects to /thank-you.
    */
   function onOrderSuccess() {
     sessionStorage.removeItem("packages_currentPackageId");
@@ -346,18 +347,16 @@ export default function CheckoutPage() {
     sessionStorage.removeItem("packages_taxAmount");
     sessionStorage.removeItem("packages_estimateFinalTotal");
 
-    // Go to thank-you page
     router.push("/thank-you");
   }
 
   /**
-   * Final orderData object, which is passed to <PlaceOrderButton />.
-   * This object will be converted to JSON and sent to /api/orders/create
+   * The final data structure for posting the order.
    */
   const orderData = {
     zipcode: houseInfo.zip || "",
     address: constructedAddress.trim() || "",
-    description: `${chosenPackage ? chosenPackage.title : "N/A"}`,
+    description: chosenPackage ? chosenPackage.title : "N/A",
     selectedTime: chosenPackage ? chosenPackage.title : "",
     timeCoefficient: paymentCoefficient,
     laborSubtotal,
@@ -372,7 +371,7 @@ export default function CheckoutPage() {
     paymentCoefficient,
   };
 
-  // Prepare dynamic breadcrumb with ?packageId
+  // Modify breadcrumb if packageId is known
   const modifiedCrumbs = PACKAGES_STEPS.map((step) => {
     if (!storedPackageId) return step;
     if (step.href.startsWith("/packages") && !step.href.includes("?")) {
@@ -381,15 +380,15 @@ export default function CheckoutPage() {
     return step;
   });
 
-  // Format finalTotal in words
+  // Format final total in words
   const finalTotalWords = numberToWordsUSD(finalTotal);
 
-  // Function to handle "print" route
+  // Print handler
   function handlePrint() {
     router.push("/packages/checkout/print");
   }
 
-  // Go back to package estimate
+  // Go back
   function handleGoBack() {
     if (storedPackageId) {
       router.push(`/packages/estimate?packageId=${storedPackageId}`);
@@ -398,7 +397,7 @@ export default function CheckoutPage() {
     }
   }
 
-  // Render payment schedule example (monthly, quarterly, etc.) if needed
+  // Optional payment schedule
   function renderPaymentSchedule() {
     if (!selectedPaymentOption) return null;
 
@@ -416,7 +415,6 @@ export default function CheckoutPage() {
         </div>
       );
     }
-
     if (selectedPaymentOption === "Monthly") {
       const monthlyPay = finalTotal / 12;
       return (
@@ -434,7 +432,6 @@ export default function CheckoutPage() {
         </div>
       );
     }
-
     if (selectedPaymentOption === "Quarterly") {
       const quarterlyPay = finalTotal / 4;
       return (
@@ -455,14 +452,11 @@ export default function CheckoutPage() {
     return null;
   }
 
-  /**
-   * Build a structure for grouped services by section -> category -> items.
-   */
+  // Build a grouped summary for display
   const itemsArr = Object.keys(mergedServices).map((svcId) => ({
     svcId,
     breakdown: calculationResultsMap[svcId] || null,
   }));
-
   const summaryBySection: Record<string, Record<string, typeof itemsArr>> = {};
 
   itemsArr.forEach((item) => {
@@ -487,18 +481,13 @@ export default function CheckoutPage() {
       </div>
 
       <div className="container mx-auto">
-        {/* Top row: Back + PlaceOrderButton */}
+        {/* Top row */}
         <div className="flex justify-between items-center mt-8">
           <button className="text-blue-600 hover:underline" onClick={handleGoBack}>
             ← Back to Estimate
           </button>
 
-          {/* PlaceOrderButton reuses the unified order-saving logic */}
-          <PlaceOrderButton
-            photos={photos}
-            orderData={orderData}
-            onOrderSuccess={onOrderSuccess}
-          />
+          <PlaceOrderButton photos={photos} orderData={orderData} onOrderSuccess={onOrderSuccess} />
         </div>
 
         <div className="flex items-center justify-between mt-8">
@@ -607,9 +596,7 @@ export default function CheckoutPage() {
                                             <tbody className="divide-y divide-gray-200">
                                               {breakdown.materials.map(
                                                 (m: any, i2: number) => (
-                                                  <tr
-                                                    key={`${m.external_id}-${i2}`}
-                                                  >
+                                                  <tr key={`${m.external_id}-${i2}`}>
                                                     <td className="py-3 px-1">
                                                       {m.name}
                                                     </td>
@@ -687,9 +674,7 @@ export default function CheckoutPage() {
             )}
 
             <div className="flex justify-between mb-2">
-              <span className="text-gray-600">
-                Service Fee (15% on labor)
-              </span>
+              <span className="text-gray-600">Service Fee (15% on labor)</span>
               <span className="font-semibold text-lg text-gray-800">
                 ${formatWithSeparator(serviceFeeOnLabor)}
               </span>
@@ -728,7 +713,7 @@ export default function CheckoutPage() {
             </span>
           </div>
 
-          {/* Optional payment schedule info (monthly, quarterly, etc.) */}
+          {/* Optional payment schedule */}
           {renderPaymentSchedule()}
 
           {/* House details */}

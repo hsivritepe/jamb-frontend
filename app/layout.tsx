@@ -13,6 +13,7 @@ const manrope = Manrope({
 });
 
 export const metadata = {
+  metadataBase: new URL("https://thejamb.com"),
   title: "JAMB – Home Services",
   description: "We help with improvements & maintenance",
   icons: {
@@ -31,7 +32,7 @@ export const metadata = {
         url: "/images/about-emergency.jpg",
       },
     ],
-  }
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps) {

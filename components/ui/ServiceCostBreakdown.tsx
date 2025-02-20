@@ -1,4 +1,3 @@
-// components/ui/ServiceCostBreakdown.tsx
 import { formatWithSeparator } from '@/utils/format';
 
 interface ServiceCostBreakdownProps {

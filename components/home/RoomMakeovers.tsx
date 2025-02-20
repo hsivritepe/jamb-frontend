@@ -8,7 +8,6 @@ import { ImageBoxGrid } from "../ui/ImageBoxGrid";
 import Button from "@/components/ui/Button";
 import { ROOMS } from "@/constants/rooms";
 
-// shuffleArray: Randomly shuffle an array
 function shuffleArray<T>(array: T[]): T[] {
   const shuffled = [...array];
   for (let i = shuffled.length - 1; i > 0; i--) {
@@ -18,27 +17,23 @@ function shuffleArray<T>(array: T[]): T[] {
   return shuffled;
 }
 
-// Session helpers
-const saveToSession = (key: string, value: any) => {
+const saveToSession = (key: string, value: unknown) => {
   if (typeof window !== "undefined") {
     sessionStorage.setItem(key, JSON.stringify(value));
   }
 };
 
 const loadFromSession = (key: string, defaultValue: any) => {
-  if (typeof window === "undefined") {
-    return defaultValue;
-  }
+  if (typeof window === "undefined") return defaultValue;
   const savedValue = sessionStorage.getItem(key);
   try {
     return savedValue ? JSON.parse(savedValue) : defaultValue;
   } catch (error) {
-    console.error(`Error parsing sessionStorage for key "${key}"`, error);
+    console.error(`Error parsing sessionStorage for key "${key}":`, error);
     return defaultValue;
   }
 };
 
-// Prepare indoor and outdoor room data
 const indoorRooms = ROOMS.indoor.map((room) => ({
   id: room.id,
   title: room.title,
@@ -59,11 +54,6 @@ interface RoomsGridProps {
   searchQuery?: string;
 }
 
-/**
- * RoomsGrid component:
- * - Only reduce the subtitle font size for phones (<768px).
- * - Everything else remains unchanged.
- */
 export default function RoomsGrid({
   title = "Whole-Room Makeovers, Done Right",
   subtitle = "Complete Home Renovations for Any Room or Space",
@@ -71,7 +61,6 @@ export default function RoomsGrid({
 }: RoomsGridProps) {
   const router = useRouter();
 
-  // Load previously saved type and selected rooms
   const [selectedType, setSelectedType] = useState<"indoor" | "outdoor">(
     loadFromSession("rooms_selectedType", "indoor")
   );
@@ -79,12 +68,10 @@ export default function RoomsGrid({
     loadFromSession("rooms_selectedSections", [])
   );
 
-  // Initialize rooms based on selectedType
   const [rooms, setRooms] = useState(
     selectedType === "indoor" ? indoorRooms : outdoorRooms
   );
 
-  // Save changes to session
   useEffect(() => {
     saveToSession("rooms_selectedType", selectedType);
   }, [selectedType]);
@@ -93,9 +80,8 @@ export default function RoomsGrid({
     saveToSession("rooms_selectedSections", selectedSections);
   }, [selectedSections]);
 
-  // Recompute rooms when selectedType changes (shuffle subcategories for variety)
   useEffect(() => {
-    const shuffledRooms =
+    const updatedRooms =
       selectedType === "indoor"
         ? indoorRooms.map((room) => ({
             ...room,
@@ -105,10 +91,9 @@ export default function RoomsGrid({
             ...room,
             subcategories: shuffleArray(room.subcategories),
           }));
-    setRooms(shuffledRooms);
+    setRooms(updatedRooms);
   }, [selectedType]);
 
-  // Filter rooms by searchQuery
   const filteredRooms = rooms.filter(
     (room) =>
       room.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -117,7 +102,6 @@ export default function RoomsGrid({
       )
   );
 
-  // Toggle room selection
   const handleSectionClick = (sectionId: string) => {
     setSelectedSections((prev) =>
       prev.includes(sectionId)
@@ -126,7 +110,6 @@ export default function RoomsGrid({
     );
   };
 
-  // Proceed to next page after selecting rooms
   const handleNext = () => {
     if (selectedSections.length === 0) {
       alert("Please select at least one room before proceeding.");
@@ -140,24 +123,17 @@ export default function RoomsGrid({
       <div className="container mx-auto">
         <SectionBoxTitle>
           <div dangerouslySetInnerHTML={{ __html: title }} />
-
-          {/**
-           * Subtitle:
-           * For phones (<768px), use smaller font (text-[20px], leading-[28px]).
-           * For md: and above, keep original (text-[30px], leading-[41px]).
-           */}
           <p
             className={`
               font-semibold sm:font-normal text-gray-500
-              text-[20px] leading-[28px]  /* phones */
-              md:text-[30px] md:leading-[41px] /* tablets/desktops */
+              text-[20px] leading-[28px]
+              md:text-[30px] md:leading-[41px]
             `}
           >
             {subtitle}
           </p>
         </SectionBoxTitle>
 
-        {/* Indoor/Outdoor toggle */}
         <div className="flex justify-between items-center mb-8">
           <div className="inline-flex rounded-lg border border-gray-200 p-1">
             <button
@@ -182,11 +158,9 @@ export default function RoomsGrid({
             </button>
           </div>
 
-          {/* Next button */}
           <Button onClick={handleNext}>Next →</Button>
         </div>
 
-        {/* Rooms grid display */}
         <ImageBoxGrid
           items={filteredRooms.map((room) => ({
             id: room.id,

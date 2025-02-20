@@ -9,7 +9,6 @@ interface QuantitySelectorProps {
   }
   
   export default function QuantitySelector({ serviceId, value, onChange, unit = 'each', className }: QuantitySelectorProps) {
-    // handle +/- + clamp
   
     const handleIncrement = () => {
       const next = clampQuantity(serviceId, value + 1);

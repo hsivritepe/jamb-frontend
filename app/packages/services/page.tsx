@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import React, { useState, useEffect, ChangeEvent } from "react";
@@ -22,9 +24,11 @@ import { ChevronDown } from "lucide-react";
 import { getSessionItem, setSessionItem } from "@/utils/session";
 
 import FinishingMaterialsModal from "@/components/FinishingMaterialsModal";
-import SurfaceCalculatorModal from "@/components/SurfaceCalculatorModal"; // <--- import the surface calc modal
+import SurfaceCalculatorModal from "@/components/SurfaceCalculatorModal";
 
-/** Format a numeric value with commas and two decimals. */
+/**
+ * Formats a numeric value with commas and two decimals.
+ */
 function formatWithSeparator(num: number): string {
   return new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 2,
@@ -32,14 +36,18 @@ function formatWithSeparator(num: number): string {
   }).format(num);
 }
 
-/** Safely parse user input to a positive number (defaulting to 1). */
+/**
+ * Parses user input into a positive number, defaulting to 1 if invalid.
+ */
 function parsePositiveNumber(value: string): number {
   const parsed = parseFloat(value);
   if (isNaN(parsed) || parsed <= 0) return 1;
   return parsed;
 }
 
-/** Convert a houseType code into a friendlier label. */
+/**
+ * Converts a houseType code (e.g., "single_family") into a human-friendly label.
+ */
 function formatHouseType(ht: string): string {
   switch (ht) {
     case "single_family":
@@ -53,21 +61,27 @@ function formatHouseType(ht: string): string {
   }
 }
 
-/** Check if a section is indoor. */
+/**
+ * Checks if a section is indoor.
+ */
 function isIndoorSection(sectionValue: string): boolean {
   return (Object.values(INDOOR_SERVICE_SECTIONS) as string[]).includes(
     sectionValue
   );
 }
 
-/** Check if a section is outdoor. */
+/**
+ * Checks if a section is outdoor.
+ */
 function isOutdoorSection(sectionValue: string): boolean {
   return (Object.values(OUTDOOR_SERVICE_SECTIONS) as string[]).includes(
     sectionValue
   );
 }
 
-/** Return a shorter label for each package ID. */
+/**
+ * Short display title for each package ID.
+ */
 function getShortTitle(pkgId: string): string {
   switch (pkgId) {
     case "basic_package":
@@ -83,17 +97,23 @@ function getShortTitle(pkgId: string): string {
   }
 }
 
-/** Convert "1-1-2" => "1.1.2" for the backend. */
+/**
+ * Converts "1-1-2" => "1.1.2".
+ */
 function convertServiceIdToApiFormat(serviceId: string) {
   return serviceId.replaceAll("-", ".");
 }
 
-/** Provide a fallback base URL if not set. */
+/**
+ * Returns a fallback dev API URL if not set.
+ */
 function getApiBaseUrl(): string {
   return process.env.NEXT_PUBLIC_API_BASE_URL || "https://dev.thejamb.com";
 }
 
-/** POST /work/finishing_materials => fetch finishing materials for a given work_code. */
+/**
+ * Fetches finishing materials for a service by POST /work/finishing_materials.
+ */
 async function fetchFinishingMaterials(workCode: string) {
   const baseUrl = getApiBaseUrl();
   const url = `${baseUrl}/work/finishing_materials`;
@@ -103,14 +123,14 @@ async function fetchFinishingMaterials(workCode: string) {
     body: JSON.stringify({ work_code: workCode }),
   });
   if (!res.ok) {
-    throw new Error(
-      `Failed to fetch finishing materials (work_code=${workCode}).`
-    );
+    throw new Error(`Failed to fetch finishing materials (work_code=${workCode}).`);
   }
   return res.json();
 }
 
-/** POST /calculate => get labor + materials cost. */
+/**
+ * Calculates cost by calling POST /calculate.
+ */
 async function calculatePrice(params: {
   work_code: string;
   zipcode: string;
@@ -127,14 +147,14 @@ async function calculatePrice(params: {
     body: JSON.stringify(params),
   });
   if (!res.ok) {
-    throw new Error(
-      `Failed to calculate price (work_code=${params.work_code}).`
-    );
+    throw new Error(`Failed to calculate price (work_code=${params.work_code}).`);
   }
   return res.json();
 }
 
-/** Simple image component for a service (width=full on mobile). */
+/**
+ * Displays an image for a given service ID.
+ */
 function ServiceImage({ serviceId }: { serviceId: string }) {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
 
@@ -161,15 +181,13 @@ function ServiceImage({ serviceId }: { serviceId: string }) {
 }
 
 /**
- * Ensure finishing materials for a single service (serviceId) are loaded.
- * If we have no finishingMaterialSelections for that service => pick defaults.
+ * Ensures finishing materials for a specific service are loaded
+ * and picks default selections if none exist.
  */
 async function ensureFinishingMaterialsLoaded(
   serviceId: string,
   finishingMaterialsMap: Record<string, any>,
-  setFinishingMaterialsMap: React.Dispatch<
-    React.SetStateAction<Record<string, any>>
-  >,
+  setFinishingMaterialsMap: React.Dispatch<React.SetStateAction<Record<string, any>>>,
   finishingMaterialSelections: Record<string, Record<string, string>>,
   setFinishingMaterialSelections: React.Dispatch<
     React.SetStateAction<Record<string, Record<string, string>>>
@@ -182,17 +200,17 @@ async function ensureFinishingMaterialsLoaded(
       finishingMaterialsMap[serviceId] = data;
       setFinishingMaterialsMap({ ...finishingMaterialsMap });
     }
-    // If no selection object for this service => pick the first item in each section
+    // If no default selection, pick the first item in each section
     if (!finishingMaterialSelections[serviceId]) {
       const fmData = finishingMaterialsMap[serviceId];
       if (!fmData) return;
-      const newObj: Record<string, string> = {};
+      const picks: Record<string, string> = {};
       for (const [secName, arr] of Object.entries(fmData.sections || {})) {
         if (Array.isArray(arr) && arr.length > 0) {
-          newObj[secName] = arr[0].external_id;
+          picks[secName] = arr[0].external_id;
         }
       }
-      finishingMaterialSelections[serviceId] = newObj;
+      finishingMaterialSelections[serviceId] = picks;
       setFinishingMaterialSelections({ ...finishingMaterialSelections });
     }
   } catch (err) {
@@ -204,17 +222,17 @@ export default function PackageServicesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Identify which package is selected
+  // Identify the chosen package
   const packageId = searchParams.get("packageId");
   const chosenPackageRaw = PACKAGES.find((pkg) => pkg.id === packageId) || null;
 
-  // If invalid or missing packageId => fallback
+  // If invalid package => fallback
   if (!packageId || !chosenPackageRaw) {
     return <p>Loading package...</p>;
   }
   const chosenPackage = chosenPackageRaw;
 
-  // selectedServices => { indoor: { serviceId: qty }, outdoor: { serviceId: qty } }
+  // selectedServices => { indoor: { id: qty }, outdoor: { id: qty } }
   const [selectedServices, setSelectedServices] = useState<{
     indoor: Record<string, number>;
     outdoor: Record<string, number>;
@@ -226,7 +244,7 @@ export default function PackageServicesPage() {
     setSessionItem("packages_selectedServices", selectedServices);
   }, [selectedServices]);
 
-  // House info (like address, zip, etc.)
+  // House info
   const [houseInfo] = useState(() =>
     getSessionItem("packages_houseInfo", {
       country: "",
@@ -271,11 +289,10 @@ export default function PackageServicesPage() {
     });
   }
 
-  // finishingMaterialsMap => { [serviceId]: { sections: {...} } }
+  // Finishing materials
   const [finishingMaterialsMap, setFinishingMaterialsMap] = useState<
     Record<string, any>
   >({});
-  // finishingMaterialSelections => { [serviceId]: { [sectionName]: externalId } }
   const [finishingMaterialSelections, setFinishingMaterialSelections] =
     useState<Record<string, Record<string, string>>>({});
 
@@ -283,13 +300,12 @@ export default function PackageServicesPage() {
   const [calculationResultsMap, setCalculationResultsMap] = useState<
     Record<string, any>
   >({});
-  // Summed cost => serviceId => number
   const [serviceCosts, setServiceCosts] = useState<Record<string, number>>({});
 
-  // For toggling cost breakdown
-  const [expandedCostBreakdown, setExpandedCostBreakdown] = useState<
-    Set<string>
-  >(new Set());
+  // Cost breakdown expansion
+  const [expandedCostBreakdown, setExpandedCostBreakdown] = useState<Set<string>>(
+    new Set()
+  );
   function toggleCostBreakdown(svcId: string) {
     setExpandedCostBreakdown((old) => {
       const copy = new Set(old);
@@ -300,9 +316,9 @@ export default function PackageServicesPage() {
   }
 
   // manual input => serviceId => string
-  const [manualInputValue, setManualInputValue] = useState<
-    Record<string, string>
-  >({});
+  const [manualInputValue, setManualInputValue] = useState<Record<string, string>>(
+    {}
+  );
 
   // finishing-material modal
   const [showModalServiceId, setShowModalServiceId] = useState<string | null>(
@@ -311,28 +327,27 @@ export default function PackageServicesPage() {
   const [showModalSectionName, setShowModalSectionName] = useState<
     string | null
   >(null);
+  function closeModal() {
+    setShowModalServiceId(null);
+    setShowModalSectionName(null);
+  }
 
   // client-owned materials => serviceId => Set of externalIds
   const [clientOwnedMaterials, setClientOwnedMaterials] = useState<
     Record<string, Set<string>>
   >({});
 
-  // Simple close for finishing materials modal
-  function closeModal() {
-    setShowModalServiceId(null);
-    setShowModalSectionName(null);
-  }
-
-  // Keep the current package ID in session, if needed
+  // Keep packageId in session
   useEffect(() => {
     setSessionItem("packages_currentPackageId", packageId);
   }, [packageId]);
 
-  /** Clear all user selections. */
+  /**
+   * Clear all selected services.
+   */
   function handleClearAll() {
     const sure = window.confirm("Are you sure you want to clear all selections?");
     if (!sure) return;
-
     setSelectedServices({ indoor: {}, outdoor: {} });
     setExpandedCategories(new Set());
     setFinishingMaterialsMap({});
@@ -343,32 +358,23 @@ export default function PackageServicesPage() {
     setClientOwnedMaterials({});
   }
 
-  /** Select all services from the chosen package. */
+  /**
+   * Select all services from the chosen package.
+   */
   async function handleSelectAll() {
     const sure = window.confirm("Select all services from this package?");
     if (!sure) return;
 
     const allCatIds = new Set<string>();
-    chosenPackage.services.indoor.forEach((x) => {
-      const catId = x.id.split("-").slice(0, 2).join("-");
-      allCatIds.add(catId);
-    });
-    chosenPackage.services.outdoor.forEach((x) => {
-      const catId = x.id.split("-").slice(0, 2).join("-");
-      allCatIds.add(catId);
-    });
-
     const nextIndoor: Record<string, number> = {};
     const nextOutdoor: Record<string, number> = {};
 
     async function selectService(serviceId: string, isIndoor: boolean) {
-      const found = ALL_SERVICES.find((s) => s.id === serviceId);
-      const minQ = found?.min_quantity || 1;
-      if (isIndoor) {
-        nextIndoor[serviceId] = minQ;
-      } else {
-        nextOutdoor[serviceId] = minQ;
-      }
+      const svcObj = ALL_SERVICES.find((s) => s.id === serviceId);
+      const minQ = svcObj?.min_quantity || 1;
+      if (isIndoor) nextIndoor[serviceId] = minQ;
+      else nextOutdoor[serviceId] = minQ;
+
       await ensureFinishingMaterialsLoaded(
         serviceId,
         finishingMaterialsMap,
@@ -382,27 +388,31 @@ export default function PackageServicesPage() {
     // Indoor
     for (const it of chosenPackage.services.indoor) {
       await selectService(it.id, true);
+      const catId = it.id.split("-").slice(0, 2).join("-");
+      allCatIds.add(catId);
     }
     // Outdoor
     for (const it of chosenPackage.services.outdoor) {
       await selectService(it.id, false);
+      const catId = it.id.split("-").slice(0, 2).join("-");
+      allCatIds.add(catId);
     }
 
     setSelectedServices({ indoor: nextIndoor, outdoor: nextOutdoor });
     setExpandedCategories((old) => {
-      const copy = new Set(old);
-      for (const c of Array.from(allCatIds)) {
-        copy.add(c);
+      const c = new Set(old);
+      for (const ci of Array.from(allCatIds)) {
+        c.add(ci);
       }
-      return copy;
+      return c;
     });
   }
 
-  /** Toggle a single service on/off. */
+  /**
+   * Toggle a single service on/off.
+   */
   async function toggleService(serviceId: string) {
-    const isIndoor = !!chosenPackage.services.indoor.find(
-      (x) => x.id === serviceId
-    );
+    const isIndoor = !!chosenPackage.services.indoor.find((x) => x.id === serviceId);
     const sideKey = isIndoor ? "indoor" : "outdoor";
 
     const copy = { ...selectedServices[sideKey] };
@@ -453,19 +463,18 @@ export default function PackageServicesPage() {
     setSelectedServices((old) => ({ ...old, [sideKey]: copy }));
   }
 
-  /** + or - quantity. */
+  /**
+   * Increment or decrement service quantity.
+   */
   function handleQuantityChange(
     serviceId: string,
     increment: boolean,
     unit: string
   ) {
-    const isIndoor = !!chosenPackage.services.indoor.find(
-      (x) => x.id === serviceId
-    );
+    const isIndoor = !!chosenPackage.services.indoor.find((x) => x.id === serviceId);
     const sideKey = isIndoor ? "indoor" : "outdoor";
     const copy = { ...selectedServices[sideKey] };
     const oldVal = copy[serviceId] || 1;
-
     const svcObj = ALL_SERVICES.find((s) => s.id === serviceId);
     const minQ = svcObj?.min_quantity || 1;
     const maxQ = svcObj?.max_quantity || 999999;
@@ -476,26 +485,21 @@ export default function PackageServicesPage() {
 
     copy[serviceId] = unit === "each" ? Math.round(newVal) : newVal;
     setSelectedServices((old) => ({ ...old, [sideKey]: copy }));
-    setManualInputValue((old) => ({
-      ...old,
-      [serviceId]: String(copy[serviceId]),
-    }));
+    setManualInputValue((old) => ({ ...old, [serviceId]: String(copy[serviceId]) }));
   }
 
-  /** On typed quantity => just store the string temporarily. */
-  function handleManualQuantityChange(
-    serviceId: string,
-    value: string,
-    unit: string
-  ) {
+  /**
+   * Handle typed quantity input.
+   */
+  function handleManualQuantityChange(serviceId: string, value: string, unit: string) {
     setManualInputValue((old) => ({ ...old, [serviceId]: value }));
   }
 
-  /** On blur => parse and clamp. */
+  /**
+   * On blur => parse, clamp, store.
+   */
   function handleBlurInput(serviceId: string, unit: string) {
-    const isIndoor = !!chosenPackage.services.indoor.find(
-      (x) => x.id === serviceId
-    );
+    const isIndoor = !!chosenPackage.services.indoor.find((x) => x.id === serviceId);
     const sideKey = isIndoor ? "indoor" : "outdoor";
 
     const copy = { ...selectedServices[sideKey] };
@@ -510,13 +514,10 @@ export default function PackageServicesPage() {
 
     copy[serviceId] = unit === "each" ? Math.round(parsed) : parsed;
     setSelectedServices((old) => ({ ...old, [sideKey]: copy }));
-    setManualInputValue((old) => ({
-      ...old,
-      [serviceId]: String(copy[serviceId]),
-    }));
+    setManualInputValue((old) => ({ ...old, [serviceId]: String(copy[serviceId]) }));
   }
 
-  // Build a combined list of services from chosenPackage, apply search filter
+  // Build combined service list from chosenPackage
   const combinedServices: (typeof ALL_SERVICES)[number][] = [];
   function processSide(isIndoor: boolean) {
     const sideKey = isIndoor ? "indoor" : "outdoor";
@@ -538,7 +539,7 @@ export default function PackageServicesPage() {
   processSide(true);
   processSide(false);
 
-  // Group them by indoor/outdoor sections
+  // Group by indoor vs. outdoor sections
   const homeSectionsMap: Record<string, Set<string>> = {};
   const gardenSectionsMap: Record<string, Set<string>> = {};
 
@@ -547,15 +548,12 @@ export default function PackageServicesPage() {
     const catObj = ALL_CATEGORIES.find((c) => c.id === catId);
     if (!catObj) continue;
     const sectionName = catObj.section;
+
     if (isIndoorSection(sectionName)) {
-      if (!homeSectionsMap[sectionName]) {
-        homeSectionsMap[sectionName] = new Set();
-      }
+      if (!homeSectionsMap[sectionName]) homeSectionsMap[sectionName] = new Set();
       homeSectionsMap[sectionName].add(catId);
     } else if (isOutdoorSection(sectionName)) {
-      if (!gardenSectionsMap[sectionName]) {
-        gardenSectionsMap[sectionName] = new Set();
-      }
+      if (!gardenSectionsMap[sectionName]) gardenSectionsMap[sectionName] = new Set();
       gardenSectionsMap[sectionName].add(catId);
     }
   }
@@ -564,24 +562,18 @@ export default function PackageServicesPage() {
   const catServicesMap: Record<string, (typeof ALL_SERVICES)[number][]> = {};
   for (const svc of combinedServices) {
     const catId = svc.id.split("-").slice(0, 2).join("-");
-    if (!catServicesMap[catId]) {
-      catServicesMap[catId] = [];
-    }
+    if (!catServicesMap[catId]) catServicesMap[catId] = [];
     catServicesMap[catId].push(svc);
   }
 
-  // Recalc cost whenever user changes selected services or finishing materials
+  // Recalculate cost whenever selected services or finishing materials change
   useEffect(() => {
     async function recalcAll() {
-      const merged = {
-        ...selectedServices.indoor,
-        ...selectedServices.outdoor,
-      };
+      const merged = { ...selectedServices.indoor, ...selectedServices.outdoor };
       const userZip = houseInfo?.zip || "";
-      if (!userZip || userZip.length < 5) return; // skip if no valid ZIP
+      if (!userZip || userZip.length < 5) return;
 
       for (const [svcId, qty] of Object.entries(merged)) {
-        // Ensure finishing materials loaded
         await ensureFinishingMaterialsLoaded(
           svcId,
           finishingMaterialsMap,
@@ -622,13 +614,13 @@ export default function PackageServicesPage() {
     houseInfo,
   ]);
 
-  // Save cost data in session
+  // Persist cost data in session
   useEffect(() => {
     setSessionItem("packages_calculationResultsMap", calculationResultsMap);
     setSessionItem("packages_serviceCosts", serviceCosts);
   }, [calculationResultsMap, serviceCosts]);
 
-  // Next => go to /packages/estimate
+  // On "Next" => go to /packages/estimate
   function handleNext() {
     const anyIndoor = Object.keys(selectedServices.indoor).length > 0;
     const anyOutdoor = Object.keys(selectedServices.outdoor).length > 0;
@@ -639,7 +631,7 @@ export default function PackageServicesPage() {
     router.push("/packages/estimate");
   }
 
-  // Calculate total
+  // Summed cost of all selected services
   function calculateAnnualPrice(): number {
     let sum = 0;
     for (const cost of Object.values(serviceCosts)) {
@@ -649,13 +641,13 @@ export default function PackageServicesPage() {
   }
   const annualPrice = calculateAnnualPrice();
 
-  // Combine indoor + outdoor => summary
+  // Merge indoor + outdoor => summary
   const mergedSelected: Record<string, number> = {
     ...selectedServices.indoor,
     ...selectedServices.outdoor,
   };
 
-  // Build structure => section => cat => items
+  // summaryStructure => section => cat => array of { svcObj, qty }
   interface ServiceItem {
     svcObj: (typeof ALL_SERVICES)[number];
     qty: number;
@@ -682,7 +674,7 @@ export default function PackageServicesPage() {
     router.push(`/packages/services?packageId=${newPkgId}`);
   }
 
-  // Mark user-owned material
+  // Mark material as user-owned
   function userHasOwnMaterial(serviceId: string, extId: string) {
     if (!clientOwnedMaterials[serviceId]) {
       clientOwnedMaterials[serviceId] = new Set();
@@ -691,11 +683,11 @@ export default function PackageServicesPage() {
     setClientOwnedMaterials({ ...clientOwnedMaterials });
   }
 
-  // pick a finishing material => finishingMaterialSelections[serviceId][sectionName] = extId
+  // Finishing material selection
   function pickMaterial(serviceId: string, sectionName: string, extId: string) {
-    const existing = finishingMaterialSelections[serviceId] || {};
-    existing[sectionName] = extId;
-    finishingMaterialSelections[serviceId] = existing;
+    const old = finishingMaterialSelections[serviceId] || {};
+    old[sectionName] = extId;
+    finishingMaterialSelections[serviceId] = old;
     setFinishingMaterialSelections({ ...finishingMaterialSelections });
   }
 
@@ -719,7 +711,7 @@ export default function PackageServicesPage() {
     return null;
   }
 
-  // ======= SURFACE CALCULATOR MODAL LOGIC =======
+  // Surface Calculator
   const [showCalcModal, setShowCalcModal] = useState(false);
   const [calcModalServiceId, setCalcModalServiceId] = useState<string | null>(
     null
@@ -731,7 +723,6 @@ export default function PackageServicesPage() {
   }
 
   function handleApplySquareFeet(serviceId: string, sqFeet: number) {
-    // We want to update the quantity for that service in selectedServices
     let sideKey: "indoor" | "outdoor" | null = null;
     if (selectedServices.indoor[serviceId] != null) {
       sideKey = "indoor";
@@ -742,16 +733,13 @@ export default function PackageServicesPage() {
       console.warn("Service not found in indoor or outdoor:", serviceId);
       return;
     }
-    // Update the quantity
     const copy = { ...selectedServices[sideKey] };
     copy[serviceId] = sqFeet;
     setSelectedServices((old) => ({ ...old, [sideKey!]: copy }));
-
-    // Also set manualInputValue
     setManualInputValue((old) => ({ ...old, [serviceId]: String(sqFeet) }));
   }
 
-  // The possible packages "tabs"
+  // Order of package "tabs"
   const packageIdsInOrder = [
     "basic_package",
     "enhanced_package",
@@ -762,14 +750,13 @@ export default function PackageServicesPage() {
   return (
     <main className="min-h-screen pt-24 pb-16">
       <div className="container mx-auto">
-        {/* BreadCrumb with the PACKAGES_STEPS */}
         <BreadCrumb items={PACKAGES_STEPS} />
       </div>
 
       <div className="container mx-auto">
-        {/* Toggler + Next */}
+        {/* Top row => package switcher + Next button */}
         <div className="flex flex-col xl:flex-row justify-between items-start gap-4 mt-11">
-          {/* Package switcher: row of buttons */}
+          {/* Package switcher */}
           <div
             className="
               inline-flex flex-nowrap items-center justify-start
@@ -783,7 +770,6 @@ export default function PackageServicesPage() {
               if (!pkgObj) return null;
               const displayTitle = getShortTitle(pkgId);
               const isActive = pkgId === packageId;
-
               return (
                 <button
                   key={pkgId}
@@ -805,7 +791,7 @@ export default function PackageServicesPage() {
             })}
           </div>
 
-          {/* Next button on the right */}
+          {/* Next button */}
           <div className="w-full xl:w-auto flex justify-end">
             <Button onClick={handleNext} variant="primary">
               Next →
@@ -824,14 +810,11 @@ export default function PackageServicesPage() {
           />
         </div>
 
-        {/* "Select all" / "Clear" */}
+        {/* Select all / Clear */}
         <div className="flex justify-between items-center text-sm text-gray-500 mt-6 w-full xl:max-w-[600px]">
           <span>
             No service?{" "}
-            <a
-              href="#"
-              className="text-blue-600 hover:underline focus:outline-none"
-            >
+            <a href="#" className="text-blue-600 hover:underline focus:outline-none">
               Contact support.
             </a>
           </span>
@@ -851,11 +834,11 @@ export default function PackageServicesPage() {
           </div>
         </div>
 
-        {/* Main layout => stacked on mobile, side by side on xl */}
+        {/* Main layout => "For Home" + "For Garden" */}
         <div className="container mx-auto relative flex flex-col xl:flex-row mt-8 gap-8">
-          {/* LEFT column => "For Home" and "For Garden" blocks */}
+          {/* LEFT => services */}
           <div className="w-full xl:flex-1 space-y-12">
-            {/* ---------- "For Home"  ---------- */}
+            {/* For Home */}
             {Object.keys(homeSectionsMap).length > 0 && (
               <div className="w-full">
                 <div className="w-full mx-auto">
@@ -908,7 +891,6 @@ export default function PackageServicesPage() {
                                   : "border-gray-300"
                               }`}
                             >
-                              {/* category toggler */}
                               <button
                                 onClick={() => toggleCategory(catId)}
                                 className="flex justify-between items-center w-full"
@@ -923,8 +905,7 @@ export default function PackageServicesPage() {
                                   {catName}
                                   {selectedInCat > 0 && (
                                     <span className="text-sm text-gray-500 ml-2">
-                                      ({selectedInCat} 
-                                      <span className="hidden sm:inline"> selected</span>)
+                                      ({selectedInCat} selected)
                                     </span>
                                   )}
                                 </h3>
@@ -946,25 +927,19 @@ export default function PackageServicesPage() {
                                       selectedServices.outdoor[svc.id] != null;
                                     const isSelected =
                                       isIndoorSelected || isOutdoorSelected;
-
                                     const quantity = isIndoorSelected
                                       ? selectedServices.indoor[svc.id]
                                       : isOutdoorSelected
                                       ? selectedServices.outdoor[svc.id]
                                       : 1;
-
                                     const inputValue =
                                       manualInputValue[svc.id] !== undefined
                                         ? manualInputValue[svc.id]
                                         : String(quantity);
-
-                                    const calcResult =
-                                      calculationResultsMap[svc.id];
+                                    const calcResult = calculationResultsMap[svc.id];
                                     const finalCost = serviceCosts[svc.id] || 0;
                                     const isBreakdownOpen =
                                       expandedCostBreakdown.has(svc.id);
-
-                                    // We only show "Surface Calc" if unit_of_measurement is "sq ft"
                                     const showSurfaceCalcButton =
                                       svc.unit_of_measurement === "sq ft";
 
@@ -973,7 +948,7 @@ export default function PackageServicesPage() {
                                         {/* Title + checkbox */}
                                         <div className="flex justify-between items-center">
                                           <span
-                                            className={`text-lg transition-colors duration-300 ${
+                                            className={`text-lg ${
                                               isSelected
                                                 ? "text-blue-600"
                                                 : "text-gray-800"
@@ -985,13 +960,11 @@ export default function PackageServicesPage() {
                                             <input
                                               type="checkbox"
                                               checked={isSelected}
-                                              onChange={() =>
-                                                toggleService(svc.id)
-                                              }
+                                              onChange={() => toggleService(svc.id)}
                                               className="sr-only peer"
                                             />
-                                            <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
-                                            <div className="absolute top-[2px] left-[2px] w-[22px] h-[22px] bg-white rounded-full shadow-md peer-checked:translate-x-[24px] transform transition-transform duration-300"></div>
+                                            <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300" />
+                                            <div className="absolute top-[2px] left-[2px] w-[22px] h-[22px] bg-white rounded-full shadow-md peer-checked:translate-x-[24px] transform transition-transform duration-300" />
                                           </label>
                                         </div>
 
@@ -1004,7 +977,7 @@ export default function PackageServicesPage() {
                                               </p>
                                             )}
 
-                                            {/* quantity row */}
+                                            {/* Quantity row */}
                                             <div className="flex justify-between items-center">
                                               <div className="flex items-center gap-1">
                                                 <button
@@ -1023,12 +996,10 @@ export default function PackageServicesPage() {
                                                   type="text"
                                                   value={inputValue}
                                                   onClick={() =>
-                                                    setManualInputValue(
-                                                      (old) => ({
-                                                        ...old,
-                                                        [svc.id]: "",
-                                                      })
-                                                    )
+                                                    setManualInputValue((old) => ({
+                                                      ...old,
+                                                      [svc.id]: "",
+                                                    }))
                                                   }
                                                   onBlur={() =>
                                                     handleBlurInput(
@@ -1068,7 +1039,7 @@ export default function PackageServicesPage() {
                                               </div>
                                             </div>
 
-                                            {/* Buttons row: "Surface Calc" + "Cost Breakdown" */}
+                                            {/* Buttons: "Surface Calc" + "Cost Breakdown" */}
                                             <div className="mt-2 mb-3 flex items-center">
                                               {showSurfaceCalcButton ? (
                                                 <>
@@ -1099,461 +1070,7 @@ export default function PackageServicesPage() {
                                                     toggleCostBreakdown(svc.id)
                                                   }
                                                   className={`ml-auto text-blue-600 text-sm font-medium mb-0 ${
-                                                    isBreakdownOpen
-                                                      ? ""
-                                                      : "underline"
-                                                  }`}
-                                                >
-                                                  Cost Breakdown
-                                                </button>
-                                              )}
-                                            </div>
-
-                                            {/* cost breakdown panel */}
-                                            {isBreakdownOpen && calcResult && (
-                                              <div className="mt-4 p-2 sm:p-4 bg-gray-50 border rounded">
-                                                <div className="flex flex-col gap-2 mb-2">
-                                                  <div className="flex justify-between">
-                                                    <span className="text-md font-semibold sm:font-medium text-gray-700">
-                                                      Labor
-                                                    </span>
-                                                    <span className="text-md font-semibold text-gray-700">
-                                                      {calcResult.work_cost
-                                                        ? `$${calcResult.work_cost}`
-                                                        : "—"}
-                                                    </span>
-                                                  </div>
-                                                  <div className="flex justify-between">
-                                                    <span className="text-md font-semibold sm:font-medium text-gray-700">
-                                                      Materials, tools &amp;
-                                                      equipment
-                                                    </span>
-                                                    <span className="text-md font-semibold text-gray-700">
-                                                      {calcResult.material_cost
-                                                        ? `$${calcResult.material_cost}`
-                                                        : "—"}
-                                                    </span>
-                                                  </div>
-                                                </div>
-
-                                                {Array.isArray(
-                                                  calcResult.materials
-                                                ) &&
-                                                  calcResult.materials.length >
-                                                    0 && (
-                                                    <div className="mt-2">
-                                                      <table className="table-auto w-full text-sm text-left text-gray-700">
-                                                        <thead>
-                                                          <tr className="border-b">
-                                                            <th className="py-2 px-1">
-                                                              Name
-                                                            </th>
-                                                            <th className="py-2 px-1">
-                                                              Price
-                                                            </th>
-                                                            <th className="py-2 px-1">
-                                                              Qty
-                                                            </th>
-                                                            <th className="py-2 px-1">
-                                                              Subtotal
-                                                            </th>
-                                                          </tr>
-                                                        </thead>
-                                                        <tbody className="divide-y divide-gray-200">
-                                                          {calcResult.materials.map(
-                                                            (
-                                                              m: any,
-                                                              idx2: number
-                                                            ) => {
-                                                              const fmObj =
-                                                                findFinishingMaterialObj(
-                                                                  svc.id,
-                                                                  m.external_id
-                                                                );
-                                                              const hasImage =
-                                                                fmObj?.image
-                                                                  ?.length
-                                                                  ? true
-                                                                  : false;
-                                                              const isClientOwned =
-                                                                clientOwnedMaterials[
-                                                                  svc.id
-                                                                ]?.has(
-                                                                  m.external_id
-                                                                );
-                                                              let rowClass = "";
-                                                              if (
-                                                                isClientOwned
-                                                              ) {
-                                                                rowClass =
-                                                                  "border border-red-500 bg-red-50";
-                                                              } else if (
-                                                                hasImage
-                                                              ) {
-                                                                rowClass =
-                                                                  "border bg-white cursor-pointer";
-                                                              }
-                                                              return (
-                                                                <tr
-                                                                  key={`${m.external_id}-${idx2}`}
-                                                                  className={`last:border-0 ${rowClass}`}
-                                                                  onClick={() => {
-                                                                    if (
-                                                                      !isClientOwned &&
-                                                                      hasImage
-                                                                    ) {
-                                                                      let foundSection:
-                                                                        | string
-                                                                        | null =
-                                                                        null;
-                                                                      const fmData =
-                                                                        finishingMaterialsMap[
-                                                                          svc.id
-                                                                        ];
-                                                                      if (
-                                                                        fmData?.sections
-                                                                      ) {
-                                                                        for (const [
-                                                                          sName,
-                                                                          arr,
-                                                                        ] of Object.entries(
-                                                                          fmData.sections
-                                                                        )) {
-                                                                          if (
-                                                                            Array.isArray(
-                                                                              arr
-                                                                            ) &&
-                                                                            arr.some(
-                                                                              (
-                                                                                xx
-                                                                              ) =>
-                                                                                xx.external_id ===
-                                                                                m.external_id
-                                                                            )
-                                                                          ) {
-                                                                            foundSection =
-                                                                              sName;
-                                                                            break;
-                                                                          }
-                                                                        }
-                                                                      }
-                                                                      setShowModalServiceId(
-                                                                        svc.id
-                                                                      );
-                                                                      setShowModalSectionName(
-                                                                        foundSection
-                                                                      );
-                                                                    }
-                                                                  }}
-                                                                >
-                                                                  <td className="py-3 px-1">
-                                                                    {hasImage ? (
-                                                                      <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
-                                                                        <img
-                                                                          src={
-                                                                            fmObj?.image
-                                                                          }
-                                                                          alt={
-                                                                            m.name
-                                                                          }
-                                                                          className="w-24 h-24 object-cover rounded"
-                                                                        />
-                                                                        <span>
-                                                                          {
-                                                                            m.name
-                                                                          }
-                                                                        </span>
-                                                                      </div>
-                                                                    ) : (
-                                                                      m.name
-                                                                    )}
-                                                                  </td>
-                                                                  <td className="py-3 px-1">
-                                                                    $
-                                                                    {
-                                                                      m.cost_per_unit
-                                                                    }
-                                                                  </td>
-                                                                  <td className="py-3 px-1">
-                                                                    {m.quantity}
-                                                                  </td>
-                                                                  <td className="py-3 px-1">
-                                                                    ${m.cost}
-                                                                  </td>
-                                                                </tr>
-                                                              );
-                                                            }
-                                                          )}
-                                                        </tbody>
-                                                      </table>
-                                                    </div>
-                                                  )}
-                                              </div>
-                                            )}
-                                          </>
-                                        )}
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* ---------- "For Garden" ---------- */}
-            {Object.keys(gardenSectionsMap).length > 0 && (
-              <div className="w-full">
-                <div className="w-full mx-auto">
-                  <div
-                    className="relative overflow-hidden rounded-xl border border-gray-300 h-32 bg-center bg-cover"
-                    style={{
-                      backgroundImage: `url(/images/rooms/landscape.jpg)`,
-                    }}
-                  >
-                    <div className="absolute inset-0 bg-black bg-opacity-30"></div>
-                    <div className="relative z-10 flex items-center justify-center h-full">
-                      <SectionBoxTitle className="text-white">
-                        For Garden
-                      </SectionBoxTitle>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-6 space-y-6 w-full">
-                  {Object.keys(gardenSectionsMap).map((sectionName) => {
-                    const catIdsSet = gardenSectionsMap[sectionName];
-                    if (!catIdsSet?.size) return null;
-                    const catIdsArr = Array.from(catIdsSet);
-
-                    return (
-                      <div key={sectionName} className="mt-4 w-full">
-                        <SectionBoxSubtitle>{sectionName}</SectionBoxSubtitle>
-
-                        {catIdsArr.map((catId) => {
-                          const servicesForCat = catServicesMap[catId] || [];
-                          let selectedInCat = 0;
-                          servicesForCat.forEach((svc) => {
-                            if (
-                              selectedServices.indoor[svc.id] ||
-                              selectedServices.outdoor[svc.id]
-                            ) {
-                              selectedInCat++;
-                            }
-                          });
-
-                          const catObj = ALL_CATEGORIES.find(
-                            (c) => c.id === catId
-                          );
-                          const catName = catObj ? catObj.title : catId;
-
-                          return (
-                            <div
-                              key={catId}
-                              className={`p-4 border rounded-xl bg-white mt-4 ${
-                                selectedInCat > 0
-                                  ? "border-blue-500"
-                                  : "border-gray-300"
-                              }`}
-                            >
-                              <button
-                                onClick={() => toggleCategory(catId)}
-                                className="flex justify-between items-center w-full"
-                              >
-                                <h3
-                                  className={`font-semibold sm:font-medium text-xl sm:text-2xl ${
-                                    selectedInCat > 0
-                                      ? "text-blue-600"
-                                      : "text-black"
-                                  }`}
-                                >
-                                  {catName}
-                                  {selectedInCat > 0 && (
-                                    <span className="text-sm text-gray-500 ml-2">
-                                      ({selectedInCat} 
-                                      <span className="hidden sm:inline"> selected</span>)
-                                    </span>
-                                  )}
-                                </h3>
-                                <ChevronDown
-                                  className={`h-5 w-5 transform transition-transform ${
-                                    expandedCategories.has(catId)
-                                      ? "rotate-180"
-                                      : ""
-                                  }`}
-                                />
-                              </button>
-
-                              {expandedCategories.has(catId) && (
-                                <div className="mt-4 flex flex-col gap-3">
-                                  {servicesForCat.map((svc) => {
-                                    const isIndoorSelected =
-                                      selectedServices.indoor[svc.id] != null;
-                                    const isOutdoorSelected =
-                                      selectedServices.outdoor[svc.id] != null;
-                                    const isSelected =
-                                      isIndoorSelected || isOutdoorSelected;
-
-                                    const quantity = isIndoorSelected
-                                      ? selectedServices.indoor[svc.id]
-                                      : isOutdoorSelected
-                                      ? selectedServices.outdoor[svc.id]
-                                      : 1;
-
-                                    const inputValue =
-                                      manualInputValue[svc.id] !== undefined
-                                        ? manualInputValue[svc.id]
-                                        : String(quantity);
-
-                                    const calcResult =
-                                      calculationResultsMap[svc.id];
-                                    const finalCost = serviceCosts[svc.id] || 0;
-                                    const isBreakdownOpen =
-                                      expandedCostBreakdown.has(svc.id);
-
-                                    const showSurfaceCalcButton =
-                                      svc.unit_of_measurement === "sq ft";
-
-                                    return (
-                                      <div key={svc.id} className="space-y-2">
-                                        {/* Title + checkbox */}
-                                        <div className="flex justify-between items-center">
-                                          <span
-                                            className={`text-lg transition-colors duration-300 ${
-                                              isSelected
-                                                ? "text-blue-600"
-                                                : "text-gray-800"
-                                            }`}
-                                          >
-                                            {svc.title}
-                                          </span>
-                                          <label className="relative inline-flex items-center cursor-pointer">
-                                            <input
-                                              type="checkbox"
-                                              checked={isSelected}
-                                              onChange={() =>
-                                                toggleService(svc.id)
-                                              }
-                                              className="sr-only peer"
-                                            />
-                                            <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
-                                            <div className="absolute top-[2px] left-[2px] w-[22px] h-[22px] bg-white rounded-full shadow-md peer-checked:translate-x-[24px] transform transition-transform duration-300"></div>
-                                          </label>
-                                        </div>
-
-                                        {isSelected && (
-                                          <>
-                                            <ServiceImage serviceId={svc.id} />
-                                            {svc.description && (
-                                              <p className="text-sm text-gray-500">
-                                                {svc.description}
-                                              </p>
-                                            )}
-
-                                            {/* quantity row */}
-                                            <div className="flex justify-between items-center">
-                                              <div className="flex items-center gap-1">
-                                                <button
-                                                  onClick={() =>
-                                                    handleQuantityChange(
-                                                      svc.id,
-                                                      false,
-                                                      svc.unit_of_measurement
-                                                    )
-                                                  }
-                                                  className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
-                                                >
-                                                  −
-                                                </button>
-                                                <input
-                                                  type="text"
-                                                  value={inputValue}
-                                                  onClick={() =>
-                                                    setManualInputValue(
-                                                      (old) => ({
-                                                        ...old,
-                                                        [svc.id]: "",
-                                                      })
-                                                    )
-                                                  }
-                                                  onBlur={() =>
-                                                    handleBlurInput(
-                                                      svc.id,
-                                                      svc.unit_of_measurement
-                                                    )
-                                                  }
-                                                  onChange={(e) =>
-                                                    handleManualQuantityChange(
-                                                      svc.id,
-                                                      e.target.value,
-                                                      svc.unit_of_measurement
-                                                    )
-                                                  }
-                                                  className="w-20 text-center px-2 py-1 border rounded"
-                                                />
-                                                <button
-                                                  onClick={() =>
-                                                    handleQuantityChange(
-                                                      svc.id,
-                                                      true,
-                                                      svc.unit_of_measurement
-                                                    )
-                                                  }
-                                                  className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
-                                                >
-                                                  +
-                                                </button>
-                                                <span className="text-sm text-gray-600">
-                                                  {svc.unit_of_measurement}
-                                                </span>
-                                              </div>
-                                              <div className="flex items-center gap-2">
-                                                <span className="text-lg text-blue-600 font-semibold text-right">
-                                                  ${formatWithSeparator(finalCost)}
-                                                </span>
-                                              </div>
-                                            </div>
-
-                                            {/* Buttons row: "Surface Calc" + "Cost Breakdown" */}
-                                            <div className="mt-2 mb-3 flex items-center">
-                                              {showSurfaceCalcButton ? (
-                                                <>
-                                                  <button
-                                                    onClick={() =>
-                                                      openSurfaceCalc(svc.id)
-                                                    }
-                                                    className="text-blue-600 text-sm font-medium hover:underline mr-auto"
-                                                  >
-                                                    Surface Calc
-                                                  </button>
-                                                  <button
-                                                    onClick={() =>
-                                                      toggleCostBreakdown(svc.id)
-                                                    }
-                                                    className={`text-blue-600 text-sm font-medium mb-0 ${
-                                                      isBreakdownOpen
-                                                        ? ""
-                                                        : "underline"
-                                                    }`}
-                                                  >
-                                                    Cost Breakdown
-                                                  </button>
-                                                </>
-                                              ) : (
-                                                <button
-                                                  onClick={() =>
-                                                    toggleCostBreakdown(svc.id)
-                                                  }
-                                                  className={`ml-auto text-blue-600 text-sm font-medium mb-0 ${
-                                                    isBreakdownOpen
-                                                      ? ""
-                                                      : "underline"
+                                                    isBreakdownOpen ? "" : "underline"
                                                   }`}
                                                 >
                                                   Cost Breakdown
@@ -1566,7 +1083,7 @@ export default function PackageServicesPage() {
                                               <div className="mt-4 p-2 sm:p-4 bg-gray-50 border rounded">
                                                 <div className="flex flex-col gap-2 mb-2">
                                                   <div className="flex justify-between">
-                                                    <span className="text-md font-semibold sm:font-medium text-gray-700">
+                                                    <span className="text-md font-semibold text-gray-700">
                                                       Labor
                                                     </span>
                                                     <span className="text-md font-semibold text-gray-700">
@@ -1576,9 +1093,8 @@ export default function PackageServicesPage() {
                                                     </span>
                                                   </div>
                                                   <div className="flex justify-between">
-                                                    <span className="text-md font-semibold sm:font-medium text-gray-700">
-                                                      Materials, tools &amp;
-                                                      equipment
+                                                    <span className="text-md font-semibold text-gray-700">
+                                                      Materials, tools & equipment
                                                     </span>
                                                     <span className="text-md font-semibold text-gray-700">
                                                       {calcResult.material_cost
@@ -1588,24 +1104,15 @@ export default function PackageServicesPage() {
                                                   </div>
                                                 </div>
 
-                                                {Array.isArray(
-                                                  calcResult.materials
-                                                ) &&
-                                                  calcResult.materials.length >
-                                                    0 && (
+                                                {Array.isArray(calcResult.materials) &&
+                                                  calcResult.materials.length > 0 && (
                                                     <div className="mt-2">
                                                       <table className="table-auto w-full text-sm text-left text-gray-700">
                                                         <thead>
                                                           <tr className="border-b">
-                                                            <th className="py-2 px-1">
-                                                              Name
-                                                            </th>
-                                                            <th className="py-2 px-1">
-                                                              Price
-                                                            </th>
-                                                            <th className="py-2 px-1">
-                                                              Qty
-                                                            </th>
+                                                            <th className="py-2 px-1">Name</th>
+                                                            <th className="py-2 px-1">Price</th>
+                                                            <th className="py-2 px-1">Qty</th>
                                                             <th className="py-2 px-1">
                                                               Subtotal
                                                             </th>
@@ -1613,20 +1120,11 @@ export default function PackageServicesPage() {
                                                         </thead>
                                                         <tbody className="divide-y divide-gray-200">
                                                           {calcResult.materials.map(
-                                                            (
-                                                              m: any,
-                                                              idx2: number
-                                                            ) => {
-                                                              const fmObj =
-                                                                findFinishingMaterialObj(
-                                                                  svc.id,
-                                                                  m.external_id
-                                                                );
-                                                              const hasImage =
-                                                                fmObj?.image
-                                                                  ?.length
-                                                                  ? true
-                                                                  : false;
+                                                            (m: any, idx2: number) => {
+                                                              const hasImage = !!findFinishingMaterialObj(
+                                                                svc.id,
+                                                                m.external_id
+                                                              )?.image;
                                                               const isClientOwned =
                                                                 clientOwnedMaterials[
                                                                   svc.id
@@ -1634,14 +1132,10 @@ export default function PackageServicesPage() {
                                                                   m.external_id
                                                                 );
                                                               let rowClass = "";
-                                                              if (
-                                                                isClientOwned
-                                                              ) {
+                                                              if (isClientOwned) {
                                                                 rowClass =
                                                                   "border border-red-500 bg-red-50";
-                                                              } else if (
-                                                                hasImage
-                                                              ) {
+                                                              } else if (hasImage) {
                                                                 rowClass =
                                                                   "border bg-white cursor-pointer";
                                                               }
@@ -1650,14 +1144,8 @@ export default function PackageServicesPage() {
                                                                   key={`${m.external_id}-${idx2}`}
                                                                   className={`last:border-0 ${rowClass}`}
                                                                   onClick={() => {
-                                                                    if (
-                                                                      !isClientOwned &&
-                                                                      hasImage
-                                                                    ) {
-                                                                      let foundSection:
-                                                                        | string
-                                                                        | null =
-                                                                        null;
+                                                                    if (!isClientOwned && hasImage) {
+                                                                      let foundSection: string | null = null;
                                                                       const fmData =
                                                                         finishingMaterialsMap[
                                                                           svc.id
@@ -1699,26 +1187,397 @@ export default function PackageServicesPage() {
                                                                   }}
                                                                 >
                                                                   <td className="py-3 px-1 align-top">
-                                                                    {hasImage ? (
-                                                                      <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center break-words">
-                                                                        <img
-                                                                          src={
-                                                                            fmObj?.image
+                                                                    {m.name}
+                                                                  </td>
+                                                                  <td className="py-3 px-1">
+                                                                    $
+                                                                    {m.cost_per_unit}
+                                                                  </td>
+                                                                  <td className="py-3 px-1">
+                                                                    {m.quantity}
+                                                                  </td>
+                                                                  <td className="py-3 px-1">
+                                                                    ${m.cost}
+                                                                  </td>
+                                                                </tr>
+                                                              );
+                                                            }
+                                                          )}
+                                                        </tbody>
+                                                      </table>
+                                                    </div>
+                                                  )}
+                                              </div>
+                                            )}
+                                          </>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* For Garden */}
+            {Object.keys(gardenSectionsMap).length > 0 && (
+              <div className="w-full">
+                <div className="w-full mx-auto">
+                  <div
+                    className="relative overflow-hidden rounded-xl border border-gray-300 h-32 bg-center bg-cover"
+                    style={{ backgroundImage: `url(/images/rooms/landscape.jpg)` }}
+                  >
+                    <div className="absolute inset-0 bg-black bg-opacity-30"></div>
+                    <div className="relative z-10 flex items-center justify-center h-full">
+                      <SectionBoxTitle className="text-white">
+                        For Garden
+                      </SectionBoxTitle>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-6 space-y-6 w-full">
+                  {Object.keys(gardenSectionsMap).map((sectionName) => {
+                    const catIdsSet = gardenSectionsMap[sectionName];
+                    if (!catIdsSet?.size) return null;
+                    const catIdsArray = Array.from(catIdsSet);
+
+                    return (
+                      <div key={sectionName} className="mt-4 w-full">
+                        <SectionBoxSubtitle>{sectionName}</SectionBoxSubtitle>
+
+                        {catIdsArray.map((catId) => {
+                          const servicesForCat = catServicesMap[catId] || [];
+                          let selectedInCat = 0;
+                          servicesForCat.forEach((svc) => {
+                            if (
+                              selectedServices.indoor[svc.id] ||
+                              selectedServices.outdoor[svc.id]
+                            ) {
+                              selectedInCat++;
+                            }
+                          });
+
+                          const catObj = ALL_CATEGORIES.find(
+                            (c) => c.id === catId
+                          );
+                          const catName = catObj ? catObj.title : catId;
+
+                          return (
+                            <div
+                              key={catId}
+                              className={`p-4 border rounded-xl bg-white mt-4 ${
+                                selectedInCat > 0 ? "border-blue-500" : "border-gray-300"
+                              }`}
+                            >
+                              <button
+                                onClick={() => toggleCategory(catId)}
+                                className="flex justify-between items-center w-full"
+                              >
+                                <h3
+                                  className={`font-semibold sm:font-medium text-xl sm:text-2xl ${
+                                    selectedInCat > 0
+                                      ? "text-blue-600"
+                                      : "text-black"
+                                  }`}
+                                >
+                                  {catName}
+                                  {selectedInCat > 0 && (
+                                    <span className="text-sm text-gray-500 ml-2">
+                                      ({selectedInCat} selected)
+                                    </span>
+                                  )}
+                                </h3>
+                                <ChevronDown
+                                  className={`h-5 w-5 transform transition-transform ${
+                                    expandedCategories.has(catId) ? "rotate-180" : ""
+                                  }`}
+                                />
+                              </button>
+
+                              {expandedCategories.has(catId) && (
+                                <div className="mt-4 flex flex-col gap-3">
+                                  {servicesForCat.map((svc) => {
+                                    const isIndoorSelected =
+                                      selectedServices.indoor[svc.id] != null;
+                                    const isOutdoorSelected =
+                                      selectedServices.outdoor[svc.id] != null;
+                                    const isSelected =
+                                      isIndoorSelected || isOutdoorSelected;
+                                    const quantity = isIndoorSelected
+                                      ? selectedServices.indoor[svc.id]
+                                      : isOutdoorSelected
+                                      ? selectedServices.outdoor[svc.id]
+                                      : 1;
+                                    const inputValue =
+                                      manualInputValue[svc.id] !== undefined
+                                        ? manualInputValue[svc.id]
+                                        : String(quantity);
+                                    const calcResult = calculationResultsMap[svc.id];
+                                    const finalCost = serviceCosts[svc.id] || 0;
+                                    const isBreakdownOpen =
+                                      expandedCostBreakdown.has(svc.id);
+                                    const showSurfaceCalcButton =
+                                      svc.unit_of_measurement === "sq ft";
+
+                                    return (
+                                      <div key={svc.id} className="space-y-2">
+                                        {/* Title + checkbox */}
+                                        <div className="flex justify-between items-center">
+                                          <span
+                                            className={`text-lg ${
+                                              isSelected
+                                                ? "text-blue-600"
+                                                : "text-gray-800"
+                                            }`}
+                                          >
+                                            {svc.title}
+                                          </span>
+                                          <label className="relative inline-flex items-center cursor-pointer">
+                                            <input
+                                              type="checkbox"
+                                              checked={isSelected}
+                                              onChange={() => toggleService(svc.id)}
+                                              className="sr-only peer"
+                                            />
+                                            <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300" />
+                                            <div className="absolute top-[2px] left-[2px] w-[22px] h-[22px] bg-white rounded-full shadow-md peer-checked:translate-x-[24px] transform transition-transform duration-300" />
+                                          </label>
+                                        </div>
+
+                                        {isSelected && (
+                                          <>
+                                            <ServiceImage serviceId={svc.id} />
+                                            {svc.description && (
+                                              <p className="text-sm text-gray-500">
+                                                {svc.description}
+                                              </p>
+                                            )}
+
+                                            {/* Quantity row */}
+                                            <div className="flex justify-between items-center">
+                                              <div className="flex items-center gap-1">
+                                                <button
+                                                  onClick={() =>
+                                                    handleQuantityChange(
+                                                      svc.id,
+                                                      false,
+                                                      svc.unit_of_measurement
+                                                    )
+                                                  }
+                                                  className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
+                                                >
+                                                  −
+                                                </button>
+                                                <input
+                                                  type="text"
+                                                  value={inputValue}
+                                                  onClick={() =>
+                                                    setManualInputValue((old) => ({
+                                                      ...old,
+                                                      [svc.id]: "",
+                                                    }))
+                                                  }
+                                                  onBlur={() =>
+                                                    handleBlurInput(
+                                                      svc.id,
+                                                      svc.unit_of_measurement
+                                                    )
+                                                  }
+                                                  onChange={(e) =>
+                                                    handleManualQuantityChange(
+                                                      svc.id,
+                                                      e.target.value,
+                                                      svc.unit_of_measurement
+                                                    )
+                                                  }
+                                                  className="w-20 text-center px-2 py-1 border rounded"
+                                                />
+                                                <button
+                                                  onClick={() =>
+                                                    handleQuantityChange(
+                                                      svc.id,
+                                                      true,
+                                                      svc.unit_of_measurement
+                                                    )
+                                                  }
+                                                  className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
+                                                >
+                                                  +
+                                                </button>
+                                                <span className="text-sm text-gray-600">
+                                                  {svc.unit_of_measurement}
+                                                </span>
+                                              </div>
+                                              <div className="flex items-center gap-2">
+                                                <span className="text-lg text-blue-600 font-semibold text-right">
+                                                  ${formatWithSeparator(finalCost)}
+                                                </span>
+                                              </div>
+                                            </div>
+
+                                            {/* Buttons: "Surface Calc" + "Cost Breakdown" */}
+                                            <div className="mt-2 mb-3 flex items-center">
+                                              {showSurfaceCalcButton ? (
+                                                <>
+                                                  <button
+                                                    onClick={() => openSurfaceCalc(svc.id)}
+                                                    className="text-blue-600 text-sm font-medium hover:underline mr-auto"
+                                                  >
+                                                    Surface Calc
+                                                  </button>
+                                                  <button
+                                                    onClick={() =>
+                                                      toggleCostBreakdown(svc.id)
+                                                    }
+                                                    className={`text-blue-600 text-sm font-medium mb-0 ${
+                                                      isBreakdownOpen
+                                                        ? ""
+                                                        : "underline"
+                                                    }`}
+                                                  >
+                                                    Cost Breakdown
+                                                  </button>
+                                                </>
+                                              ) : (
+                                                <button
+                                                  onClick={() =>
+                                                    toggleCostBreakdown(svc.id)
+                                                  }
+                                                  className={`ml-auto text-blue-600 text-sm font-medium mb-0 ${
+                                                    isBreakdownOpen
+                                                      ? ""
+                                                      : "underline"
+                                                  }`}
+                                                >
+                                                  Cost Breakdown
+                                                </button>
+                                              )}
+                                            </div>
+
+                                            {/* Cost breakdown panel */}
+                                            {isBreakdownOpen && calcResult && (
+                                              <div className="mt-4 p-2 sm:p-4 bg-gray-50 border rounded">
+                                                <div className="flex flex-col gap-2 mb-2">
+                                                  <div className="flex justify-between">
+                                                    <span className="text-md font-semibold text-gray-700">
+                                                      Labor
+                                                    </span>
+                                                    <span className="text-md font-semibold text-gray-700">
+                                                      {calcResult.work_cost
+                                                        ? `$${calcResult.work_cost}`
+                                                        : "—"}
+                                                    </span>
+                                                  </div>
+                                                  <div className="flex justify-between">
+                                                    <span className="text-md font-semibold text-gray-700">
+                                                      Materials, tools & equipment
+                                                    </span>
+                                                    <span className="text-md font-semibold text-gray-700">
+                                                      {calcResult.material_cost
+                                                        ? `$${calcResult.material_cost}`
+                                                        : "—"}
+                                                    </span>
+                                                  </div>
+                                                </div>
+
+                                                {Array.isArray(calcResult.materials) &&
+                                                  calcResult.materials.length > 0 && (
+                                                    <div className="mt-2">
+                                                      <table className="table-auto w-full text-sm text-left text-gray-700">
+                                                        <thead>
+                                                          <tr className="border-b">
+                                                            <th className="py-2 px-1">
+                                                              Name
+                                                            </th>
+                                                            <th className="py-2 px-1">
+                                                              Price
+                                                            </th>
+                                                            <th className="py-2 px-1">
+                                                              Qty
+                                                            </th>
+                                                            <th className="py-2 px-1">
+                                                              Subtotal
+                                                            </th>
+                                                          </tr>
+                                                        </thead>
+                                                        <tbody className="divide-y divide-gray-200">
+                                                          {calcResult.materials.map(
+                                                            (m: any, idx2: number) => {
+                                                              const hasImage = !!findFinishingMaterialObj(
+                                                                svc.id,
+                                                                m.external_id
+                                                              )?.image;
+                                                              const isClientOwned =
+                                                                clientOwnedMaterials[
+                                                                  svc.id
+                                                                ]?.has(
+                                                                  m.external_id
+                                                                );
+                                                              let rowClass = "";
+                                                              if (isClientOwned) {
+                                                                rowClass =
+                                                                  "border border-red-500 bg-red-50";
+                                                              } else if (hasImage) {
+                                                                rowClass =
+                                                                  "border bg-white cursor-pointer";
+                                                              }
+                                                              return (
+                                                                <tr
+                                                                  key={`${m.external_id}-${idx2}`}
+                                                                  className={`last:border-0 ${rowClass}`}
+                                                                  onClick={() => {
+                                                                    if (!isClientOwned && hasImage) {
+                                                                      let foundSection: string | null = null;
+                                                                      const fmData =
+                                                                        finishingMaterialsMap[
+                                                                          svc.id
+                                                                        ];
+                                                                      if (
+                                                                        fmData?.sections
+                                                                      ) {
+                                                                        for (const [
+                                                                          sName,
+                                                                          arr,
+                                                                        ] of Object.entries(
+                                                                          fmData.sections
+                                                                        )) {
+                                                                          if (
+                                                                            Array.isArray(
+                                                                              arr
+                                                                            ) &&
+                                                                            arr.some(
+                                                                              (
+                                                                                xx
+                                                                              ) =>
+                                                                                xx.external_id ===
+                                                                                m.external_id
+                                                                            )
+                                                                          ) {
+                                                                            foundSection =
+                                                                              sName;
+                                                                            break;
                                                                           }
-                                                                          alt={
-                                                                            m.name
-                                                                          }
-                                                                          className="w-24 h-24 object-cover rounded"
-                                                                        />
-                                                                        <span className="break-words">
-                                                                          {
-                                                                            m.name
-                                                                          }
-                                                                        </span>
-                                                                      </div>
-                                                                    ) : (
-                                                                      m.name
-                                                                    )}
+                                                                        }
+                                                                      }
+                                                                      setShowModalServiceId(
+                                                                        svc.id
+                                                                      );
+                                                                      setShowModalSectionName(
+                                                                        foundSection
+                                                                      );
+                                                                    }
+                                                                  }}
+                                                                >
+                                                                  <td className="py-3 px-1 align-top">
+                                                                    {m.name}
                                                                   </td>
                                                                   <td className="py-3 px-1">
                                                                     $
@@ -1760,13 +1619,11 @@ export default function PackageServicesPage() {
             )}
           </div>
 
-          {/* RIGHT column => summary + house info */}
+          {/* RIGHT => summary + home info */}
           <div className="w-full xl:w-1/2 xl:ml-auto pt-0 space-y-6 mt-8 xl:mt-0">
             {/* Summary card */}
             <div className="w-full xl:max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden">
-              <SectionBoxSubtitle>
-                Your {chosenPackage.title}
-              </SectionBoxSubtitle>
+              <SectionBoxSubtitle>Your {chosenPackage.title}</SectionBoxSubtitle>
               {Object.keys(mergedSelected).length === 0 ? (
                 <div className="text-left text-gray-500 text-medium mt-4">
                   No services selected.
@@ -1774,60 +1631,53 @@ export default function PackageServicesPage() {
               ) : (
                 <>
                   <p className="text-gray-700 mb-4">
-                    These are the services you selected, grouped by section
-                    &amp; category:
+                    Here are your selected services, grouped by section &amp; category:
                   </p>
-
                   <div className="space-y-6">
-                    {Object.entries(summaryStructure).map(
-                      ([sectionName, cats]) => {
-                        if (!Object.keys(cats).length) return null;
-                        return (
-                          <div key={sectionName}>
-                            <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                              {sectionName}
-                            </h3>
-                            {Object.entries(cats).map(([catId, arr]) => {
-                              const catObj = ALL_CATEGORIES.find(
-                                (c) => c.id === catId
-                              );
-                              const catName = catObj ? catObj.title : catId;
-                              if (!arr.length) return null;
+                    {Object.entries(summaryStructure).map(([sectionName, cats]) => {
+                      if (!Object.keys(cats).length) return null;
+                      return (
+                        <div key={sectionName}>
+                          <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                            {sectionName}
+                          </h3>
+                          {Object.entries(cats).map(([catId, arr]) => {
+                            const catObj = ALL_CATEGORIES.find((c) => c.id === catId);
+                            const catName = catObj ? catObj.title : catId;
+                            if (!arr.length) return null;
 
-                              return (
-                                <div key={catId} className="ml-4 mb-4">
-                                  <h4 className="text-lg font-medium text-gray-700 mb-2">
-                                    {catName}
-                                  </h4>
-                                  <ul className="space-y-1">
-                                    {arr.map(({ svcObj, qty }) => {
-                                      const cost =
-                                        serviceCosts[svcObj.id] || 0;
-                                      return (
-                                        <li
-                                          key={svcObj.id}
-                                          className="flex justify-between items-center text-sm text-gray-600"
-                                        >
-                                          <span className="truncate w-1/2 pr-2">
-                                            {svcObj.title}
-                                          </span>
-                                          <span>
-                                            {qty} {svcObj.unit_of_measurement}
-                                          </span>
-                                          <span className="text-right w-1/4">
-                                            ${formatWithSeparator(cost)}
-                                          </span>
-                                        </li>
-                                      );
-                                    })}
-                                  </ul>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        );
-                      }
-                    )}
+                            return (
+                              <div key={catId} className="ml-4 mb-4">
+                                <h4 className="text-lg font-medium text-gray-700 mb-2">
+                                  {catName}
+                                </h4>
+                                <ul className="space-y-1">
+                                  {arr.map(({ svcObj, qty }) => {
+                                    const cost = serviceCosts[svcObj.id] || 0;
+                                    return (
+                                      <li
+                                        key={svcObj.id}
+                                        className="flex justify-between items-center text-sm text-gray-600"
+                                      >
+                                        <span className="truncate w-1/2 pr-2">
+                                          {svcObj.title}
+                                        </span>
+                                        <span>
+                                          {qty} {svcObj.unit_of_measurement}
+                                        </span>
+                                        <span className="text-right w-1/4">
+                                          ${formatWithSeparator(cost)}
+                                        </span>
+                                      </li>
+                                    );
+                                  })}
+                                </ul>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })}
                   </div>
 
                   <div className="flex flex-col gap-2 items-end mt-6">
@@ -1858,7 +1708,7 @@ export default function PackageServicesPage() {
               <div className="mt-2 space-y-1 text-sm text-gray-700">
                 <p>
                   <strong>Address:</strong>{" "}
-                  {houseInfo.addressLine ? `${houseInfo.addressLine}.` : "N/A."}
+                  {houseInfo.addressLine ? houseInfo.addressLine : "N/A"}
                 </p>
                 <p>
                   <strong>City / Zip:</strong>{" "}
@@ -1868,56 +1718,51 @@ export default function PackageServicesPage() {
                 </p>
                 <p>
                   <strong>Country:</strong>{" "}
-                  {houseInfo.country ? `${houseInfo.country}.` : "?."}
+                  {houseInfo.country ? houseInfo.country : "?"}
                 </p>
                 <hr className="my-2" />
                 <p>
-                  <strong>House Type:</strong>{" "}
-                  {formatHouseType(houseInfo.houseType)}.
+                  <strong>House Type:</strong> {formatHouseType(houseInfo.houseType)}
                 </p>
                 <p>
-                  <strong>Floors:</strong> {houseInfo.floors}.
+                  <strong>Floors:</strong> {houseInfo.floors}
                 </p>
                 <p>
                   <strong>Square ft:</strong>{" "}
-                  {houseInfo.squareFootage > 0
-                    ? `${houseInfo.squareFootage}.`
-                    : "?."}
+                  {houseInfo.squareFootage > 0 ? houseInfo.squareFootage : "?"}
                 </p>
                 <p>
-                  <strong>Bedrooms:</strong> {houseInfo.bedrooms}.
+                  <strong>Bedrooms:</strong> {houseInfo.bedrooms}
                 </p>
                 <p>
-                  <strong>Bathrooms:</strong> {houseInfo.bathrooms}.
+                  <strong>Bathrooms:</strong> {houseInfo.bathrooms}
                 </p>
                 <p>
-                  <strong>Appliances:</strong> {houseInfo.applianceCount}.
+                  <strong>Appliances:</strong> {houseInfo.applianceCount}
                 </p>
                 <p>
-                  <strong>AC Units:</strong> {houseInfo.airConditioners}.
+                  <strong>AC Units:</strong> {houseInfo.airConditioners}
                 </p>
                 <p>
                   <strong>Boiler/Heater:</strong>{" "}
-                  {houseInfo.hasBoiler
-                    ? `${houseInfo.boilerType || "Yes"}.`
-                    : "No / None."}
+                  {houseInfo.hasBoiler ? houseInfo.boilerType || "Yes" : "No"}
                 </p>
                 <hr className="my-2" />
                 <p>
                   <strong>Garage:</strong>{" "}
-                  {houseInfo.hasGarage ? `${houseInfo.garageCount}.` : "No."}
+                  {houseInfo.hasGarage ? houseInfo.garageCount : "No"}
                 </p>
                 <p>
                   <strong>Yard:</strong>{" "}
                   {houseInfo.hasYard
-                    ? `${houseInfo.yardArea} sq ft.`
-                    : "No yard/garden."}
+                    ? `${houseInfo.yardArea} sq ft`
+                    : "No yard/garden"}
                 </p>
                 <p>
                   <strong>Pool:</strong>{" "}
                   {houseInfo.hasPool
-                    ? `${houseInfo.poolArea} sq ft.`
-                    : "No pool."}
+                    ? `${houseInfo.poolArea} sq ft`
+                    : "No pool"}
                 </p>
               </div>
             </div>
@@ -1925,7 +1770,7 @@ export default function PackageServicesPage() {
         </div>
       </div>
 
-      {/* FinishingMaterialsModal to pick finishing materials */}
+      {/* Finishing Materials Modal */}
       <FinishingMaterialsModal
         showModalServiceId={showModalServiceId}
         showModalSectionName={showModalSectionName}
@@ -1937,7 +1782,7 @@ export default function PackageServicesPage() {
         formatWithSeparator={formatWithSeparator}
       />
 
-      {/* SurfaceCalculatorModal to compute sq ft */}
+      {/* Surface Calculator Modal */}
       <SurfaceCalculatorModal
         show={showCalcModal}
         onClose={() => setShowCalcModal(false)}

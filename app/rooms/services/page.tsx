@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, ChangeEvent } from "react";
+export const dynamic = "force-dynamic";
+import { useState, ChangeEvent, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import BreadCrumb from "@/components/ui/BreadCrumb";
@@ -16,14 +17,10 @@ import { useLocation } from "@/context/LocationContext";
 import { ChevronDown } from "lucide-react";
 import AddressSection from "@/components/ui/AddressSection";
 import PhotosAndDescription from "@/components/ui/PhotosAndDescription";
-
 import { setSessionItem, getSessionItem } from "@/utils/session";
 import FinishingMaterialsModal from "@/components/FinishingMaterialsModal";
-import SurfaceCalculatorModal from "@/components/SurfaceCalculatorModal"; // <-- NEW IMPORT
+import SurfaceCalculatorModal from "@/components/SurfaceCalculatorModal";
 
-/**
- * Describes the shape of a finishing material as returned by /work/finishing_materials.
- */
 interface FinishingMaterial {
   id: number;
   image?: string;
@@ -33,24 +30,22 @@ interface FinishingMaterial {
   cost: string;
 }
 
-/** Formats a numeric value with two decimals + comma separators. */
+/** Formats a numeric value with commas and two decimals. */
 function formatWithSeparator(value: number): string {
-  return new Intl.NumberFormat("en-US", { minimumFractionDigits: 2 }).format(
-    value
-  );
+  return new Intl.NumberFormat("en-US", { minimumFractionDigits: 2 }).format(value);
 }
 
-/** Convert "1-1-1" to "1.1.1" so the backend recognizes it. */
+/** Converts a service ID from "1-1-1" to "1.1.1" for the API. */
 function convertServiceIdToApiFormat(serviceId: string) {
   return serviceId.replaceAll("-", ".");
 }
 
-/** Returns base API URL or fallback. */
+/** Returns the base API URL or a fallback. */
 function getApiBaseUrl(): string {
   return process.env.NEXT_PUBLIC_API_BASE_URL || "https://dev.thejamb.com";
 }
 
-/** Fetch finishing materials for a single work_code. */
+/** Fetch finishing materials for a specific work_code. */
 async function fetchFinishingMaterials(workCode: string) {
   const baseUrl = getApiBaseUrl();
   const url = `${baseUrl}/work/finishing_materials`;
@@ -60,14 +55,12 @@ async function fetchFinishingMaterials(workCode: string) {
     body: JSON.stringify({ work_code: workCode }),
   });
   if (!res.ok) {
-    throw new Error(
-      `Failed to fetch finishing materials (work_code=${workCode}).`
-    );
+    throw new Error(`Failed to fetch finishing materials (work_code=${workCode}).`);
   }
   return res.json();
 }
 
-/** Calculate price => returns labor + materials cost. */
+/** Sends a request to calculate labor and materials cost. */
 async function calculatePrice(params: {
   work_code: string;
   zipcode: string;
@@ -77,24 +70,18 @@ async function calculatePrice(params: {
 }) {
   const baseUrl = getApiBaseUrl();
   const url = `${baseUrl}/calculate`;
-
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "application/json" },
     body: JSON.stringify(params),
   });
   if (!res.ok) {
-    throw new Error(
-      `Failed to calculate price (work_code=${params.work_code}).`
-    );
+    throw new Error(`Failed to calculate price (work_code=${params.work_code}).`);
   }
   return res.json();
 }
 
-/**
- * A sample image component for a service,
- * using Next.js <Image> with a ratio container.
- */
+/** Displays a service image using Next.js <Image>. */
 function ServiceImage({ serviceId }: { serviceId: string }) {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
 
@@ -116,7 +103,6 @@ function ServiceImage({ serviceId }: { serviceId: string }) {
         src={imageSrc}
         alt="Service"
         fill
-        //unoptimized
         style={{ objectFit: "cover" }}
         sizes="(max-width: 768px) 100vw,
                (max-width: 1024px) 100vw,
@@ -130,13 +116,11 @@ export default function RoomDetails() {
   const router = useRouter();
   const { location } = useLocation();
 
-  // Basic states
+  // Core states
   const [searchQuery, setSearchQuery] = useState<string>(
     getSessionItem("rooms_searchQuery", "")
   );
-  const [photos, setPhotos] = useState<string[]>(() =>
-    getSessionItem("photos", [])
-  );
+  const [photos, setPhotos] = useState<string[]>(() => getSessionItem("photos", []));
   const [description, setDescription] = useState<string>(
     getSessionItem("description", "")
   );
@@ -148,38 +132,34 @@ export default function RoomDetails() {
   const [stateName, setStateName] = useState<string>(
     getSessionItem("stateName", "")
   );
-
-  // Additional city/country
   const [city, setCity] = useState<string>(getSessionItem("city", ""));
   const [country, setCountry] = useState<string>(getSessionItem("country", ""));
 
-  // Keep these address fields in session
-  useEffect(() => setSessionItem("city", city), [city]);
-  useEffect(() => setSessionItem("country", country), [country]);
+  // Persist states to session
   useEffect(() => setSessionItem("rooms_searchQuery", searchQuery), [searchQuery]);
   useEffect(() => setSessionItem("photos", photos), [photos]);
   useEffect(() => setSessionItem("description", description), [description]);
   useEffect(() => setSessionItem("address", address), [address]);
   useEffect(() => setSessionItem("zip", zip), [zip]);
   useEffect(() => setSessionItem("stateName", stateName), [stateName]);
+  useEffect(() => setSessionItem("city", city), [city]);
+  useEffect(() => setSessionItem("country", country), [country]);
 
-  // The user-selected room IDs
+  // Check selected rooms in session
   const selectedRooms: string[] = getSessionItem("rooms_selectedSections", []);
   useEffect(() => {
-    // If no rooms => redirect
     if (selectedRooms.length === 0) {
       router.push("/rooms");
     }
   }, [selectedRooms, router]);
 
-  // Merge indoor/outdoor from ROOMS
+  // Merge all indoor + outdoor rooms
   const allRooms = [...ROOMS.indoor, ...ROOMS.outdoor];
   const chosenRooms = selectedRooms
     .map((roomId) => allRooms.find((r) => r.id === roomId))
     .filter((r): r is Exclude<typeof r, undefined> => r !== undefined);
 
   useEffect(() => {
-    // If any mismatch => redirect
     if (chosenRooms.length !== selectedRooms.length) {
       router.push("/rooms");
     }
@@ -189,18 +169,17 @@ export default function RoomDetails() {
     return <p>Loading...</p>;
   }
 
-  // Build data => categoriesBySection, categoryServicesMap
+  // Build structures for each chosen room => categoriesBySection, categoryServicesMap
   type RoomData = {
     categoriesBySection: Record<string, string[]>;
     categoryServicesMap: Record<string, (typeof ALL_SERVICES)[number][]>;
   };
   const roomsData: Record<string, RoomData> = {};
 
-  // For each chosen room
+  // Populate roomsData
   for (const room of chosenRooms) {
     const chosenRoomServiceIDs = room.services.map((s) => s.id);
 
-    // 1) build categories => section => catIds
     const categoriesWithSection = room.services
       .map((s) => {
         const catId = s.id.split("-").slice(0, 2).join("-");
@@ -218,9 +197,7 @@ export default function RoomDetails() {
       }
     });
 
-    // 2) cat->services
-    const categoryServicesMap: Record<string, (typeof ALL_SERVICES)[number][]> =
-      {};
+    const categoryServicesMap: Record<string, (typeof ALL_SERVICES)[number][]> = {};
     chosenRoomServiceIDs.forEach((serviceId) => {
       const catId = serviceId.split("-").slice(0, 2).join("-");
       if (!categoryServicesMap[catId]) {
@@ -230,7 +207,7 @@ export default function RoomDetails() {
       if (svc) categoryServicesMap[catId].push(svc);
     });
 
-    // 3) filter by searchQuery
+    // Filter services by search query
     if (searchQuery) {
       for (const catId in categoryServicesMap) {
         categoryServicesMap[catId] = categoryServicesMap[catId].filter(
@@ -244,7 +221,7 @@ export default function RoomDetails() {
     roomsData[room.id] = { categoriesBySection, categoryServicesMap };
   }
 
-  // selectedServicesState => { roomId: { serviceId: quantity } }
+  // Selected services => { roomId: { serviceId: quantity } }
   const [selectedServicesState, setSelectedServicesState] = useState<
     Record<string, Record<string, number>>
   >(getSessionItem("rooms_selectedServicesWithQuantity", {}));
@@ -253,32 +230,31 @@ export default function RoomDetails() {
     setSessionItem("rooms_selectedServicesWithQuantity", selectedServicesState);
   }, [selectedServicesState]);
 
-  // For typed quantity => serviceId => string
-  const [manualInputValue, setManualInputValue] = useState<
-    Record<string, string | null>
-  >({});
+  // Manual input for typed quantity => serviceId => string or null
+  const [manualInputValue, setManualInputValue] = useState<Record<string, string | null>>(
+    {}
+  );
 
-  // finishingMaterialsMapAll => { [serviceId]: { sections: {...} } }
+  // Finishing materials map => { serviceId => { sections: {...} } }
   const [finishingMaterialsMapAll, setFinishingMaterialsMapAll] = useState<
     Record<string, { sections: Record<string, FinishingMaterial[]> }>
   >({});
 
-  // finishingMaterialSelections => { [serviceId]: { [sectionName]: externalId } }
+  // finishingMaterialSelections => { serviceId => { sectionName => externalId } }
   const [finishingMaterialSelections, setFinishingMaterialSelections] =
     useState<Record<string, Record<string, string>>>(
       getSessionItem("finishingMaterialSelections", {})
     );
-
   useEffect(() => {
     setSessionItem("finishingMaterialSelections", finishingMaterialSelections);
   }, [finishingMaterialSelections]);
 
-  // user-owned materials => serviceId -> set of externalIds
+  // user-owned materials => serviceId => set of externalIds
   const [clientOwnedMaterials, setClientOwnedMaterials] = useState<
     Record<string, Set<string>>
   >({});
 
-  // For each service => final cost
+  // Calculated cost => serviceId => number
   const [serviceCosts, setServiceCosts] = useState<Record<string, number>>({});
   // Detailed cost breakdown => serviceId => object
   const [calculationResultsMap, setCalculationResultsMap] = useState<
@@ -289,18 +265,18 @@ export default function RoomDetails() {
     setSessionItem("calculationResultsMap", calculationResultsMap);
   }, [calculationResultsMap]);
 
-  // For toggling categories => { roomId => setOfCatIds }
+  // Category expansion => { roomId => setOfCategoryIds }
   const [expandedCategoriesByRoom, setExpandedCategoriesByRoom] = useState<
     Record<string, Set<string>>
   >({});
 
-  // For toggling "Cost Breakdown" => set of serviceIds
-  const [expandedServiceDetails, setExpandedServiceDetails] = useState<
-    Set<string>
-  >(new Set());
+  // For cost breakdown toggles => set of serviceIds
+  const [expandedServiceDetails, setExpandedServiceDetails] = useState<Set<string>>(
+    new Set()
+  );
 
   /**
-   * Ensure finishing materials are loaded for a single service.
+   * Loads finishing materials for a single service, then picks defaults if needed.
    */
   async function ensureFinishingMaterialsLoaded(serviceId: string) {
     if (!finishingMaterialsMapAll[serviceId]) {
@@ -314,7 +290,6 @@ export default function RoomDetails() {
         return;
       }
     }
-    // If no finishingMaterialSelections => pick defaults
     if (!finishingMaterialSelections[serviceId]) {
       const data = finishingMaterialsMapAll[serviceId];
       if (!data) return;
@@ -324,69 +299,27 @@ export default function RoomDetails() {
           newObj[secName] = arr[0].external_id;
         }
       }
-      setFinishingMaterialSelections((old) => ({
-        ...old,
-        [serviceId]: newObj,
-      }));
+      setFinishingMaterialSelections((old) => ({ ...old, [serviceId]: newObj }));
     }
   }
 
-  /**
-   * Load finishing materials for all services in a category if needed.
-   */
-  async function fetchFinishingMaterialsForCategory(
-    services: (typeof ALL_SERVICES)[number][]
-  ) {
-    try {
-      await Promise.all(
-        services.map(async (svc) => {
-          if (!finishingMaterialsMapAll[svc.id]) {
-            const dot = convertServiceIdToApiFormat(svc.id);
-            const data = await fetchFinishingMaterials(dot);
-            finishingMaterialsMapAll[svc.id] = data;
-            // pick default finishing materials
-            if (!finishingMaterialSelections[svc.id]) {
-              const newObj: Record<string, string> = {};
-              for (const [secName, arr] of Object.entries(data.sections || {})) {
-                if (Array.isArray(arr) && arr.length > 0) {
-                  newObj[secName] = arr[0].external_id;
-                }
-              }
-              finishingMaterialSelections[svc.id] = newObj;
-            }
-          }
-        })
-      );
-      setFinishingMaterialsMapAll({ ...finishingMaterialsMapAll });
-      setFinishingMaterialSelections({ ...finishingMaterialSelections });
-    } catch (err) {
-      console.error("Error fetchFinishingMaterialsForCategory:", err);
-    }
-  }
-
-  /**
-   * Recompute costs whenever user toggles services or modifies finishing materials or location changes.
-   */
+  /** Recompute costs whenever selected services or finishing materials change. */
   useEffect(() => {
     const { zip: userZip, country } = location;
     if (country !== "United States" || !/^\d{5}$/.test(userZip)) {
-      setWarningMessage(
-        "Currently, our service is only available for US ZIP codes (5 digits)."
-      );
+      setWarningMessage("This service is only available in US ZIP codes (5 digits).");
       return;
     }
 
-    // Recompute for each service in each room
     for (const roomId of Object.keys(selectedServicesState)) {
       const roomServices = selectedServicesState[roomId];
       for (const serviceId of Object.keys(roomServices)) {
         (async () => {
           try {
             const quantity = roomServices[serviceId];
-            const found = ALL_SERVICES.find((s) => s.id === serviceId);
-            if (!found) return;
+            const svcObj = ALL_SERVICES.find((s) => s.id === serviceId);
+            if (!svcObj) return;
 
-            // Ensure finishing materials are loaded
             await ensureFinishingMaterialsLoaded(serviceId);
 
             const picksObj = finishingMaterialSelections[serviceId] || {};
@@ -396,17 +329,14 @@ export default function RoomDetails() {
             const resp = await calculatePrice({
               work_code: dot,
               zipcode: userZip,
-              unit_of_measurement: found.unit_of_measurement || "each",
+              unit_of_measurement: svcObj.unit_of_measurement || "each",
               square: quantity,
               finishing_materials: finishingIds,
             });
 
             const laborCost = parseFloat(resp.work_cost) || 0;
             const matCost = parseFloat(resp.material_cost) || 0;
-            setServiceCosts((old) => ({
-              ...old,
-              [serviceId]: laborCost + matCost,
-            }));
+            setServiceCosts((old) => ({ ...old, [serviceId]: laborCost + matCost }));
             setCalculationResultsMap((old) => ({ ...old, [serviceId]: resp }));
           } catch (err) {
             console.error("Error calculating price:", err);
@@ -421,32 +351,28 @@ export default function RoomDetails() {
     finishingMaterialsMapAll,
   ]);
 
-  /** Toggle expansion of a category block (room-based). */
+  /** Toggle category expansion for a specific room. */
   function toggleCategory(roomId: string, catId: string) {
     setExpandedCategoriesByRoom((prev) => {
       const copy = { ...prev };
       const expansions = copy[roomId] ? new Set(copy[roomId]) : new Set<string>();
-      if (expansions.has(catId)) expansions.delete(catId);
-      else expansions.add(catId);
+      expansions.has(catId) ? expansions.delete(catId) : expansions.add(catId);
       copy[roomId] = expansions;
       return copy;
     });
   }
 
-  /** Toggle a service on/off. */
+  /** Toggle a service on/off in a given room. */
   async function handleServiceToggle(roomId: string, serviceId: string) {
     const roomServices = { ...(selectedServicesState[roomId] || {}) };
-    const isOn = !!roomServices[serviceId];
+    const isCurrentlyOn = !!roomServices[serviceId];
 
-    if (isOn) {
-      // remove
+    if (isCurrentlyOn) {
       delete roomServices[serviceId];
-      // also remove finishing material picks
       const fmCopy = { ...finishingMaterialSelections };
       delete fmCopy[serviceId];
       setFinishingMaterialSelections(fmCopy);
 
-      // remove from manualInputValue, cost map, etc.
       setManualInputValue((old) => {
         const cpy = { ...old };
         delete cpy[serviceId];
@@ -468,22 +394,17 @@ export default function RoomDetails() {
         return cpy;
       });
     } else {
-      // add => default quantity = minQ
-      const foundSvc = ALL_SERVICES.find((s) => s.id === serviceId);
-      const minQ = foundSvc?.min_quantity ?? 1;
+      const found = ALL_SERVICES.find((s) => s.id === serviceId);
+      const minQ = found?.min_quantity ?? 1;
       roomServices[serviceId] = minQ;
-
       await ensureFinishingMaterialsLoaded(serviceId);
-
-      // initialize manual input
       setManualInputValue((old) => ({ ...old, [serviceId]: String(minQ) }));
     }
-
     setSelectedServicesState((old) => ({ ...old, [roomId]: roomServices }));
     setWarningMessage(null);
   }
 
-  /** +/- quantity. */
+  /** Increment or decrement quantity. */
   function handleQuantityChange(
     roomId: string,
     serviceId: string,
@@ -511,7 +432,7 @@ export default function RoomDetails() {
     setManualInputValue((old) => ({ ...old, [serviceId]: null }));
   }
 
-  /** typed quantity => store in state, clamp on blur. */
+  /** Handle manual input changes for quantity. */
   function handleManualQuantityChange(
     roomId: string,
     serviceId: string,
@@ -534,19 +455,18 @@ export default function RoomDetails() {
     }
 
     const roomServices = { ...(selectedServicesState[roomId] || {}) };
-    roomServices[serviceId] =
-      unit === "each" ? Math.round(parsedVal) : parsedVal;
+    roomServices[serviceId] = unit === "each" ? Math.round(parsedVal) : parsedVal;
     setSelectedServicesState((old) => ({ ...old, [roomId]: roomServices }));
   }
 
-  /** if user leaves input empty => revert. */
+  /** If user leaves input empty => revert to stored. */
   function handleBlurInput(serviceId: string) {
     if (!manualInputValue[serviceId]) {
       setManualInputValue((old) => ({ ...old, [serviceId]: null }));
     }
   }
 
-  /** Clear all services from all chosen rooms. */
+  /** Clear all selected services in all chosen rooms. */
   function handleClearAll() {
     const ok = window.confirm("Are you sure you want to clear all selections?");
     if (!ok) return;
@@ -565,16 +485,12 @@ export default function RoomDetails() {
     setClientOwnedMaterials({});
   }
 
-  /** Sum up all serviceCosts. */
+  /** Sum all service costs. */
   function calculateTotalAllRooms(): number {
-    let sum = 0;
-    for (const cost of Object.values(serviceCosts)) {
-      sum += cost;
-    }
-    return sum;
+    return Object.values(serviceCosts).reduce((acc, val) => acc + val, 0);
   }
 
-  /** Proceed to next => validate. */
+  /** Proceed to next step => validate address & selections. */
   function handleNext() {
     let anySelected = false;
     for (const roomId of Object.keys(selectedServicesState)) {
@@ -600,32 +516,27 @@ export default function RoomDetails() {
       return;
     }
 
-    // optionally store all service IDs
-    const allSelected: string[] = [];
+    const allSelectedServices: string[] = [];
     for (const rId of Object.keys(selectedServicesState)) {
-      allSelected.push(...Object.keys(selectedServicesState[rId]));
+      allSelectedServices.push(...Object.keys(selectedServicesState[rId]));
     }
-    setSessionItem("rooms_selectedServices", allSelected);
+    setSessionItem("rooms_selectedServices", allSelectedServices);
     setSessionItem("city", city);
     setSessionItem("country", country);
 
     router.push("/rooms/estimate");
   }
 
-  /** Toggle cost breakdown for a single service. */
+  /** Toggle detailed cost breakdown for a single service. */
   function toggleServiceDetails(serviceId: string) {
     setExpandedServiceDetails((old) => {
       const copy = new Set(old);
-      if (copy.has(serviceId)) {
-        copy.delete(serviceId);
-      } else {
-        copy.add(serviceId);
-      }
+      copy.has(serviceId) ? copy.delete(serviceId) : copy.add(serviceId);
       return copy;
     });
   }
 
-  /** Return a finishing material object by externalId. */
+  /** Find a finishing material object by externalId. */
   function findFinishingMaterialObj(
     serviceId: string,
     externalId: string
@@ -641,21 +552,14 @@ export default function RoomDetails() {
     return null;
   }
 
-  /** pickMaterial => finishingMaterialSelections[serviceId][sectionName] = externalId */
-  function pickMaterial(
-    serviceId: string,
-    sectionName: string,
-    externalId: string
-  ) {
+  /** Pick a finishing material => finishingMaterialSelections[serviceId][sectionName] = externalId. */
+  function pickMaterial(serviceId: string, sectionName: string, externalId: string) {
     const existing = finishingMaterialSelections[serviceId] || {};
     const updated = { ...existing, [sectionName]: externalId };
-    setFinishingMaterialSelections((old) => ({
-      ...old,
-      [serviceId]: updated,
-    }));
+    setFinishingMaterialSelections((old) => ({ ...old, [serviceId]: updated }));
   }
 
-  /** userHasOwnMaterial => highlight item in red. */
+  /** Mark a material as user-owned. */
   function userHasOwnMaterial(serviceId: string, externalId: string) {
     if (!clientOwnedMaterials[serviceId]) {
       clientOwnedMaterials[serviceId] = new Set();
@@ -664,54 +568,34 @@ export default function RoomDetails() {
     setClientOwnedMaterials((old) => ({ ...old }));
   }
 
-  // Finishing-materials modal states
-  const [showModalServiceId, setShowModalServiceId] = useState<string | null>(
+  // Modal states for finishing materials
+  const [showModalServiceId, setShowModalServiceId] = useState<string | null>(null);
+  const [showModalSectionName, setShowModalSectionName] = useState<string | null>(
     null
   );
-  const [showModalSectionName, setShowModalSectionName] = useState<
-    string | null
-  >(null);
-
   function closeModal() {
     setShowModalServiceId(null);
     setShowModalSectionName(null);
   }
 
-  // =============== SURFACE CALCULATOR LOGIC ===============
+  // Surface Calculator logic
   const [showCalcModal, setShowCalcModal] = useState(false);
   const [calcModalRoomId, setCalcModalRoomId] = useState<string | null>(null);
-  const [calcModalServiceId, setCalcModalServiceId] = useState<string | null>(
-    null
-  );
+  const [calcModalServiceId, setCalcModalServiceId] = useState<string | null>(null);
 
-  /**
-   * Opens the surface calculator for a specific (roomId, serviceId).
-   */
+  /** Open surface calc modal for a (roomId, serviceId). */
   function openSurfaceCalc(roomId: string, serviceId: string) {
     setCalcModalRoomId(roomId);
     setCalcModalServiceId(serviceId);
     setShowCalcModal(true);
   }
 
-  /**
-   * Called when user clicks "Apply" in the calculator modal => set the new sq ft.
-   */
+  /** Apply the surface area result => update quantity. */
   function handleApplySquareFeet(roomId: string, serviceId: string, sqFeet: number) {
-    // Update selectedServicesState
     const roomServices = { ...(selectedServicesState[roomId] || {}) };
     roomServices[serviceId] = sqFeet;
     setSelectedServicesState((old) => ({ ...old, [roomId]: roomServices }));
-
-    // Also update manualInputValue
     setManualInputValue((old) => ({ ...old, [serviceId]: String(sqFeet) }));
-  }
-
-  /**
-   * Utility to get category name by ID.
-   */
-  function getCategoryNameById(catId: string) {
-    const found = ALL_CATEGORIES.find((x) => x.id === catId);
-    return found ? found.title : catId;
   }
 
   return (
@@ -719,7 +603,7 @@ export default function RoomDetails() {
       <div className="container mx-auto">
         <BreadCrumb items={ROOMS_STEPS} />
 
-        {/* Top row */}
+        {/* Top row => Title + Next button */}
         <div className="flex flex-col xl:flex-row justify-between items-start mt-8">
           <div className="w-full xl:w-auto">
             {chosenRooms.length > 1 ? (
@@ -735,14 +619,11 @@ export default function RoomDetails() {
           </div>
         </div>
 
-        {/* Clear / No service */}
+        {/* Clear all / no service link */}
         <div className="flex justify-between items-center text-sm text-gray-500 mt-8 w-full xl:max-w-[600px]">
           <span>
             No service?{" "}
-            <a
-              href="#"
-              className="text-blue-600 hover:underline focus:outline-none"
-            >
+            <a href="#" className="text-blue-600 hover:underline focus:outline-none">
               Contact support
             </a>
           </span>
@@ -754,7 +635,7 @@ export default function RoomDetails() {
           </button>
         </div>
 
-        {/* Warnings */}
+        {/* Warning messages */}
         <div className="h-6 mt-4 text-left">
           {warningMessage && <p className="text-red-500">{warningMessage}</p>}
         </div>
@@ -770,18 +651,18 @@ export default function RoomDetails() {
           />
         </div>
 
+        {/* Main content => left (rooms) + right (summary & address) */}
         <div className="container mx-auto relative flex flex-col xl:flex-row mt-8">
-          {/* LEFT column => show each chosen room */}
+          {/* LEFT: chosen rooms */}
           <div className="w-full xl:flex-1 space-y-8">
             {chosenRooms.map((room) => {
-              const { categoriesBySection, categoryServicesMap } =
-                roomsData[room.id];
+              const { categoriesBySection, categoryServicesMap } = roomsData[room.id];
               const roomServices = selectedServicesState[room.id] || {};
 
               return (
                 <div key={room.id}>
-                  {/* Banner */}
-                  <div className="md:max-w-full max-w-[600px] mx-0">
+                  {/* Room banner */}
+                  <div className="md:max-w-full max-w-[600px]">
                     <div
                       className="relative overflow-hidden rounded-xl border border-gray-300 h-32 bg-center bg-cover"
                       style={{
@@ -796,236 +677,194 @@ export default function RoomDetails() {
                       </div>
                     </div>
 
-                    {Object.entries(categoriesBySection).map(
-                      ([sectionName, catIds]) => (
-                        <div key={sectionName} className="mb-8 mt-4">
-                          <SectionBoxSubtitle>{sectionName}</SectionBoxSubtitle>
-                          <div className="flex flex-col gap-4 mt-4">
-                            {catIds.map((catId) => {
-                              const servicesForCategory =
-                                categoryServicesMap[catId] || [];
-                              if (servicesForCategory.length === 0) return null;
+                    {Object.entries(categoriesBySection).map(([sectionName, catIds]) => (
+                      <div key={sectionName} className="mb-8 mt-4">
+                        <SectionBoxSubtitle>{sectionName}</SectionBoxSubtitle>
+                        <div className="flex flex-col gap-4 mt-4">
+                          {catIds.map((catId) => {
+                            const servicesForCategory = categoryServicesMap[catId] || [];
+                            if (servicesForCategory.length === 0) return null;
 
-                              // how many are selected in this cat
-                              const selectedCount = servicesForCategory.filter(
-                                (svc) => Object.keys(roomServices).includes(svc.id)
-                              ).length;
+                            const selectedCount = servicesForCategory.filter((svc) =>
+                              Object.keys(roomServices).includes(svc.id)
+                            ).length;
 
-                              const catName = getCategoryNameById(catId);
-                              const expansions =
-                                expandedCategoriesByRoom[room.id] || new Set();
-                              const isExpanded = expansions.has(catId);
+                            const expansions = expandedCategoriesByRoom[room.id] || new Set();
+                            const isExpanded = expansions.has(catId);
 
-                              return (
-                                <div
-                                  key={catId}
-                                  className={`p-4 border rounded-xl bg-white ${
-                                    selectedCount > 0
-                                      ? "border-blue-500"
-                                      : "border-gray-300"
-                                  }`}
+                            // Find category name
+                            const catObj = ALL_CATEGORIES.find((x) => x.id === catId);
+                            const catName = catObj ? catObj.title : catId;
+
+                            return (
+                              <div
+                                key={catId}
+                                className={`p-4 border rounded-xl bg-white ${
+                                  selectedCount > 0 ? "border-blue-500" : "border-gray-300"
+                                }`}
+                              >
+                                <button
+                                  onClick={() => toggleCategory(room.id, catId)}
+                                  className="flex justify-between items-center w-full"
                                 >
-                                  {/* Toggle category */}
-                                  <button
-                                    onClick={() => toggleCategory(room.id, catId)}
-                                    className="flex justify-between items-center w-full"
+                                  <h3
+                                    className={`font-semibold sm:font-medium text-xl sm:text-2xl ${
+                                      selectedCount > 0 ? "text-blue-600" : "text-gray-800"
+                                    }`}
                                   >
-                                    <h3
-                                      className={`font-semibold sm:font-medium text-xl sm:text-2xl ${
-                                        selectedCount > 0
-                                          ? "text-blue-600"
-                                          : "text-gray-800"
-                                      }`}
-                                    >
-                                      {catName}
-                                      {selectedCount > 0 && (
-                                        <span className="text-sm text-gray-500 ml-2">
-                                          ({selectedCount} 
-                                            <span className="hidden sm:inline"> selected</span>)
+                                    {catName}
+                                    {selectedCount > 0 && (
+                                      <span className="text-sm text-gray-500 ml-2">
+                                        ({selectedCount}
+                                        <span className="hidden sm:inline">
+                                          {" "}
+                                          selected
                                         </span>
-                                      )}
-                                    </h3>
-                                    <ChevronDown
-                                      className={`h-5 w-5 transform transition-transform ${
-                                        isExpanded ? "rotate-180" : ""
-                                      }`}
-                                    />
-                                  </button>
+                                        )
+                                      </span>
+                                    )}
+                                  </h3>
+                                  <ChevronDown
+                                    className={`h-5 w-5 transform transition-transform ${
+                                      isExpanded ? "rotate-180" : ""
+                                    }`}
+                                  />
+                                </button>
 
-                                  {isExpanded && (
-                                    <div className="mt-4 flex flex-col gap-3">
-                                      {servicesForCategory.map((svc) => {
-                                        const isSelected =
-                                          roomServices[svc.id] != null;
-                                        const quantity =
-                                          roomServices[svc.id] || 1;
-                                        const rawVal = manualInputValue[svc.id];
-                                        const manualVal =
-                                          rawVal !== null
-                                            ? rawVal || ""
-                                            : String(quantity);
+                                {isExpanded && (
+                                  <div className="mt-4 flex flex-col gap-3">
+                                    {servicesForCategory.map((svc) => {
+                                      const isSelected = roomServices[svc.id] != null;
+                                      const quantity = roomServices[svc.id] || 1;
+                                      const rawVal = manualInputValue[svc.id];
+                                      const manualVal =
+                                        rawVal !== null ? rawVal || "" : String(quantity);
 
-                                        const finalCost =
-                                          serviceCosts[svc.id] || 0;
-                                        const calcResult =
-                                          calculationResultsMap[svc.id];
-                                        const detailsExpanded =
-                                          expandedServiceDetails.has(svc.id);
+                                      const finalCost = serviceCosts[svc.id] || 0;
+                                      const calcResult = calculationResultsMap[svc.id];
+                                      const detailsExpanded = expandedServiceDetails.has(svc.id);
 
-                                        // Show "Surface Calc" only if unit = "sq ft"
-                                        const showSurfaceCalcButton =
-                                          svc.unit_of_measurement === "sq ft";
+                                      const showSurfaceCalcButton =
+                                        svc.unit_of_measurement === "sq ft";
 
-                                        return (
-                                          <div
-                                            key={svc.id}
-                                            className="space-y-2"
-                                          >
-                                            <div className="flex justify-between items-center">
-                                              <span
-                                                className={`text-lg transition-colors duration-300 ${
-                                                  isSelected
-                                                    ? "text-blue-600"
-                                                    : "text-gray-800"
-                                                }`}
-                                              >
-                                                {svc.title}
-                                              </span>
-                                              <label className="relative inline-flex items-center cursor-pointer">
-                                                <input
-                                                  type="checkbox"
-                                                  checked={isSelected}
-                                                  onChange={() =>
-                                                    handleServiceToggle(
-                                                      room.id,
-                                                      svc.id
-                                                    )
-                                                  }
-                                                  className="sr-only peer"
-                                                />
-                                                <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
-                                                <div className="absolute top-[2px] left-[2px] w-[22px] h-[22px] bg-white rounded-full shadow-md peer-checked:translate-x-[24px] transform transition-transform duration-300"></div>
-                                              </label>
-                                            </div>
+                                      return (
+                                        <div key={svc.id} className="space-y-2">
+                                          <div className="flex justify-between items-center">
+                                            <span
+                                              className={`text-lg transition-colors duration-300 ${
+                                                isSelected
+                                                  ? "text-blue-600"
+                                                  : "text-gray-800"
+                                              }`}
+                                            >
+                                              {svc.title}
+                                            </span>
+                                            <label className="relative inline-flex items-center cursor-pointer">
+                                              <input
+                                                type="checkbox"
+                                                checked={isSelected}
+                                                onChange={() =>
+                                                  handleServiceToggle(room.id, svc.id)
+                                                }
+                                                className="sr-only peer"
+                                              />
+                                              <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
+                                              <div className="absolute top-[2px] left-[2px] w-[22px] h-[22px] bg-white rounded-full shadow-md peer-checked:translate-x-[24px] transform transition-transform duration-300"></div>
+                                            </label>
+                                          </div>
 
-                                            {isSelected && (
-                                              <>
-                                                <ServiceImage
-                                                  serviceId={svc.id}
-                                                />
-                                                {svc.description && (
-                                                  <p className="text-sm text-gray-500">
-                                                    {svc.description}
-                                                  </p>
-                                                )}
+                                          {isSelected && (
+                                            <>
+                                              <ServiceImage serviceId={svc.id} />
 
-                                                {/* Quantity row */}
-                                                <div className="flex justify-between items-center">
-                                                  <div className="flex items-center gap-1">
-                                                    <button
-                                                      onClick={() =>
-                                                        handleQuantityChange(
-                                                          room.id,
-                                                          svc.id,
-                                                          false,
-                                                          svc.unit_of_measurement
-                                                        )
-                                                      }
-                                                      className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
-                                                    >
-                                                      −
-                                                    </button>
-                                                    <input
-                                                      type="text"
-                                                      value={manualVal}
-                                                      placeholder={
-                                                        svc.min_quantity
-                                                          ? String(svc.min_quantity)
-                                                          : "1"
-                                                      }
-                                                      onClick={() =>
-                                                        setManualInputValue(
-                                                          (old) => ({
-                                                            ...old,
-                                                            [svc.id]: "",
-                                                          })
-                                                        )
-                                                      }
-                                                      onBlur={() =>
-                                                        handleBlurInput(svc.id)
-                                                      }
-                                                      onChange={(e) =>
-                                                        handleManualQuantityChange(
-                                                          room.id,
-                                                          svc.id,
-                                                          e.target.value,
-                                                          svc.unit_of_measurement
-                                                        )
-                                                      }
-                                                      className="w-20 text-center px-2 py-1 border rounded"
-                                                    />
-                                                    <button
-                                                      onClick={() =>
-                                                        handleQuantityChange(
-                                                          room.id,
-                                                          svc.id,
-                                                          true,
-                                                          svc.unit_of_measurement
-                                                        )
-                                                      }
-                                                      className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
-                                                    >
-                                                      +
-                                                    </button>
-                                                    <span className="text-sm text-gray-600">
-                                                      {svc.unit_of_measurement}
-                                                    </span>
-                                                  </div>
-                                                  <div className="flex items-center gap-2">
-                                                    <span className="text-lg text-blue-600 font-semibold text-right">
-                                                      ${formatWithSeparator(finalCost)}
-                                                    </span>
-                                                  </div>
+                                              {svc.description && (
+                                                <p className="text-sm text-gray-500">
+                                                  {svc.description}
+                                                </p>
+                                              )}
+
+                                              {/* Quantity row */}
+                                              <div className="flex justify-between items-center">
+                                                <div className="flex items-center gap-1">
+                                                  <button
+                                                    onClick={() =>
+                                                      handleQuantityChange(
+                                                        room.id,
+                                                        svc.id,
+                                                        false,
+                                                        svc.unit_of_measurement
+                                                      )
+                                                    }
+                                                    className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
+                                                  >
+                                                    −
+                                                  </button>
+                                                  <input
+                                                    type="text"
+                                                    value={manualVal}
+                                                    placeholder={
+                                                      svc.min_quantity
+                                                        ? String(svc.min_quantity)
+                                                        : "1"
+                                                    }
+                                                    onClick={() =>
+                                                      setManualInputValue((old) => ({
+                                                        ...old,
+                                                        [svc.id]: "",
+                                                      }))
+                                                    }
+                                                    onBlur={() => handleBlurInput(svc.id)}
+                                                    onChange={(e) =>
+                                                      handleManualQuantityChange(
+                                                        room.id,
+                                                        svc.id,
+                                                        e.target.value,
+                                                        svc.unit_of_measurement
+                                                      )
+                                                    }
+                                                    className="w-20 text-center px-2 py-1 border rounded"
+                                                  />
+                                                  <button
+                                                    onClick={() =>
+                                                      handleQuantityChange(
+                                                        room.id,
+                                                        svc.id,
+                                                        true,
+                                                        svc.unit_of_measurement
+                                                      )
+                                                    }
+                                                    className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
+                                                  >
+                                                    +
+                                                  </button>
+                                                  <span className="text-sm text-gray-600">
+                                                    {svc.unit_of_measurement}
+                                                  </span>
                                                 </div>
+                                                <div className="flex items-center gap-2">
+                                                  <span className="text-lg text-blue-600 font-semibold text-right">
+                                                    ${formatWithSeparator(finalCost)}
+                                                  </span>
+                                                </div>
+                                              </div>
 
-                                                {/* Buttons row: optional "Surface Calc" + "Cost Breakdown" */}
-                                                <div className="mt-2 mb-3 flex items-center">
-                                                  {showSurfaceCalcButton ? (
-                                                    <>
-                                                      <button
-                                                        onClick={() =>
-                                                          openSurfaceCalc(
-                                                            room.id,
-                                                            svc.id
-                                                          )
-                                                        }
-                                                        className="text-blue-600 text-sm font-medium hover:underline mr-auto"
-                                                      >
-                                                        Surface Calc
-                                                      </button>
-
-                                                      <button
-                                                        onClick={() =>
-                                                          toggleServiceDetails(
-                                                            svc.id
-                                                          )
-                                                        }
-                                                        className={`text-blue-600 text-sm font-medium mb-0 ${
-                                                          detailsExpanded
-                                                            ? ""
-                                                            : "underline"
-                                                        }`}
-                                                      >
-                                                        Cost Breakdown
-                                                      </button>
-                                                    </>
-                                                  ) : (
-                                                    // If no surface calc => keep cost breakdown on right
+                                              {/* Buttons row => optional Surface Calc + Cost Breakdown */}
+                                              <div className="mt-2 mb-3 flex items-center">
+                                                {showSurfaceCalcButton ? (
+                                                  <>
+                                                    <button
+                                                      onClick={() =>
+                                                        openSurfaceCalc(room.id, svc.id)
+                                                      }
+                                                      className="text-blue-600 text-sm font-medium hover:underline mr-auto"
+                                                    >
+                                                      Surface Calc
+                                                    </button>
                                                     <button
                                                       onClick={() =>
                                                         toggleServiceDetails(svc.id)
                                                       }
-                                                      className={`ml-auto text-blue-600 text-sm font-medium mb-0 ${
+                                                      className={`text-blue-600 text-sm font-medium mb-0 ${
                                                         detailsExpanded
                                                           ? ""
                                                           : "underline"
@@ -1033,218 +872,194 @@ export default function RoomDetails() {
                                                     >
                                                       Cost Breakdown
                                                     </button>
-                                                  )}
-                                                </div>
+                                                  </>
+                                                ) : (
+                                                  <button
+                                                    onClick={() =>
+                                                      toggleServiceDetails(svc.id)
+                                                    }
+                                                    className={`ml-auto text-blue-600 text-sm font-medium mb-0 ${
+                                                      detailsExpanded ? "" : "underline"
+                                                    }`}
+                                                  >
+                                                    Cost Breakdown
+                                                  </button>
+                                                )}
+                                              </div>
 
-                                                {/* Cost breakdown */}
-                                                {calcResult && detailsExpanded && (
-                                                  <div className="mt-4 p-2 sm:p-4 bg-gray-50 border rounded">
-                                                    <div className="flex flex-col gap-2 mb-4">
-                                                      <div className="flex justify-between">
-                                                        <span className="text-md font-semibold sm:font-medium text-gray-700">
-                                                          Labor
-                                                        </span>
-                                                        <span className="text-md font-semibold text-gray-700">
-                                                          {calcResult.work_cost
-                                                            ? `$${calcResult.work_cost}`
-                                                            : "—"}
-                                                        </span>
-                                                      </div>
-                                                      <div className="flex justify-between">
-                                                        <span className="text-md font-semibold sm:font-medium text-gray-700">
-                                                          Materials, tools, equipment
-                                                        </span>
-                                                        <span className="text-md font-semibold text-gray-700">
-                                                          {calcResult.material_cost
-                                                            ? `$${calcResult.material_cost}`
-                                                            : "—"}
-                                                        </span>
-                                                      </div>
+                                              {/* Cost breakdown details */}
+                                              {calcResult && detailsExpanded && (
+                                                <div className="mt-4 p-2 sm:p-4 bg-gray-50 border rounded">
+                                                  <div className="flex flex-col gap-2 mb-4">
+                                                    <div className="flex justify-between">
+                                                      <span className="text-md font-semibold sm:font-medium text-gray-700">
+                                                        Labor
+                                                      </span>
+                                                      <span className="text-md font-semibold text-gray-700">
+                                                        {calcResult.work_cost
+                                                          ? `$${calcResult.work_cost}`
+                                                          : "—"}
+                                                      </span>
                                                     </div>
+                                                    <div className="flex justify-between">
+                                                      <span className="text-md font-semibold sm:font-medium text-gray-700">
+                                                        Materials, tools, equipment
+                                                      </span>
+                                                      <span className="text-md font-semibold text-gray-700">
+                                                        {calcResult.material_cost
+                                                          ? `$${calcResult.material_cost}`
+                                                          : "—"}
+                                                      </span>
+                                                    </div>
+                                                  </div>
 
-                                                    {Array.isArray(
-                                                      calcResult.materials
-                                                    ) &&
-                                                      calcResult.materials.length >
-                                                        0 && (
-                                                        <div className="mt-2">
-                                                          <table className="table-auto w-full text-sm text-left text-gray-700">
-                                                            <thead>
-                                                              <tr className="border-b">
-                                                                <th className="py-2 px-1">
-                                                                  Name
-                                                                </th>
-                                                                <th className="py-2 px-1">
-                                                                  Price
-                                                                </th>
-                                                                <th className="py-2 px-1">
-                                                                  Qty
-                                                                </th>
-                                                                <th className="py-2 px-1">
-                                                                  Subtotal
-                                                                </th>
-                                                              </tr>
-                                                            </thead>
-                                                            <tbody className="divide-y divide-gray-200">
-                                                              {calcResult.materials.map(
-                                                                (
-                                                                  m: any,
-                                                                  i: number
-                                                                ) => {
-                                                                  const fmObj =
-                                                                    findFinishingMaterialObj(
-                                                                      svc.id,
-                                                                      m.external_id
-                                                                    );
-                                                                  const hasImage =
-                                                                    fmObj?.image
-                                                                      ?.length
-                                                                      ? true
-                                                                      : false;
-                                                                  const isClientOwned =
-                                                                    clientOwnedMaterials[
-                                                                      svc.id
-                                                                    ]?.has(
-                                                                      m.external_id
-                                                                    );
+                                                  {Array.isArray(calcResult.materials) &&
+                                                    calcResult.materials.length > 0 && (
+                                                      <div className="mt-2">
+                                                        <table className="table-auto w-full text-sm text-left text-gray-700">
+                                                          <thead>
+                                                            <tr className="border-b">
+                                                              <th className="py-2 px-1">
+                                                                Name
+                                                              </th>
+                                                              <th className="py-2 px-1">
+                                                                Price
+                                                              </th>
+                                                              <th className="py-2 px-1">
+                                                                Qty
+                                                              </th>
+                                                              <th className="py-2 px-1">
+                                                                Subtotal
+                                                              </th>
+                                                            </tr>
+                                                          </thead>
+                                                          <tbody className="divide-y divide-gray-200">
+                                                            {calcResult.materials.map(
+                                                              (m: any, i: number) => {
+                                                                const fmObj = findFinishingMaterialObj(
+                                                                  svc.id,
+                                                                  m.external_id
+                                                                );
+                                                                const hasImage = fmObj?.image?.length
+                                                                  ? true
+                                                                  : false;
+                                                                const isClientOwned =
+                                                                  clientOwnedMaterials[
+                                                                    svc.id
+                                                                  ]?.has(m.external_id);
 
-                                                                  let rowClass =
-                                                                    "";
-                                                                  if (isClientOwned) {
-                                                                    rowClass =
-                                                                      "border border-red-500 bg-red-50";
-                                                                  } else if (
-                                                                    hasImage
-                                                                  ) {
-                                                                    rowClass =
-                                                                      "border bg-white cursor-pointer";
-                                                                  }
+                                                                let rowClass = "";
+                                                                if (isClientOwned) {
+                                                                  rowClass =
+                                                                    "border border-red-500 bg-red-50";
+                                                                } else if (hasImage) {
+                                                                  rowClass =
+                                                                    "border bg-white cursor-pointer";
+                                                                }
 
-                                                                  return (
-                                                                    <tr
-                                                                      key={`${m.external_id}-${i}`}
-                                                                      className={`last:border-0 ${rowClass}`}
-                                                                      onClick={() => {
-                                                                        // open finishing materials modal
-                                                                        if (
-                                                                          !isClientOwned &&
-                                                                          hasImage
-                                                                        ) {
-                                                                          let foundSection:
-                                                                            | string
-                                                                            | null =
-                                                                            null;
-                                                                          const fmData =
-                                                                            finishingMaterialsMapAll[
-                                                                              svc.id
-                                                                            ];
-                                                                          if (
-                                                                            fmData?.sections
-                                                                          ) {
-                                                                            for (const [
-                                                                              secName,
-                                                                              list,
-                                                                            ] of Object.entries(
-                                                                              fmData.sections
-                                                                            )) {
-                                                                              if (
-                                                                                Array.isArray(
-                                                                                  list
-                                                                                ) &&
-                                                                                list.some(
-                                                                                  (
-                                                                                    xx
-                                                                                  ) =>
-                                                                                    xx.external_id ===
-                                                                                    m.external_id
-                                                                                )
-                                                                              ) {
-                                                                                foundSection =
-                                                                                  secName;
-                                                                                break;
-                                                                              }
+                                                                return (
+                                                                  <tr
+                                                                    key={`${m.external_id}-${i}`}
+                                                                    className={`last:border-0 ${rowClass}`}
+                                                                    onClick={() => {
+                                                                      if (!isClientOwned && hasImage) {
+                                                                        let foundSection:
+                                                                          | string
+                                                                          | null = null;
+                                                                        const fmData =
+                                                                          finishingMaterialsMapAll[
+                                                                            svc.id
+                                                                          ];
+                                                                        if (fmData?.sections) {
+                                                                          for (const [
+                                                                            secName,
+                                                                            list,
+                                                                          ] of Object.entries(
+                                                                            fmData.sections
+                                                                          )) {
+                                                                            if (
+                                                                              Array.isArray(list) &&
+                                                                              list.some(
+                                                                                (xx) =>
+                                                                                  xx.external_id ===
+                                                                                  m.external_id
+                                                                              )
+                                                                            ) {
+                                                                              foundSection = secName;
+                                                                              break;
                                                                             }
                                                                           }
-                                                                          setShowModalServiceId(
-                                                                            svc.id
-                                                                          );
-                                                                          setShowModalSectionName(
-                                                                            foundSection
-                                                                          );
                                                                         }
-                                                                      }}
-                                                                    >
-                                                                      <td className="py-3 px-1">
-                                                                        {hasImage ? (
-                                                                          <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
-                                                                            <img
-                                                                              src={
-                                                                                fmObj?.image
-                                                                              }
-                                                                              alt={
-                                                                                m.name
-                                                                              }
-                                                                              className="w-24 h-24 object-cover rounded"
-                                                                            />
-                                                                            <span className="break-words">
-                                                                              {
-                                                                                m.name
-                                                                              }
-                                                                            </span>
-                                                                          </div>
-                                                                        ) : (
-                                                                          m.name
-                                                                        )}
-                                                                      </td>
-                                                                      <td className="py-3 px-1">
-                                                                        $
-                                                                        {
-                                                                          m.cost_per_unit
-                                                                        }
-                                                                      </td>
-                                                                      <td className="py-3 px-3">
-                                                                        {m.quantity}
-                                                                      </td>
-                                                                      <td className="py-3 px-3">
-                                                                        ${m.cost}
-                                                                      </td>
-                                                                    </tr>
-                                                                  );
-                                                                }
-                                                              )}
-                                                            </tbody>
-                                                          </table>
-                                                        </div>
-                                                      )}
-                                                  </div>
-                                                )}
-                                              </>
-                                            )}
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
+                                                                        setShowModalServiceId(
+                                                                          svc.id
+                                                                        );
+                                                                        setShowModalSectionName(
+                                                                          foundSection
+                                                                        );
+                                                                      }
+                                                                    }}
+                                                                  >
+                                                                    <td className="py-3 px-1">
+                                                                      {hasImage ? (
+                                                                        <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+                                                                          <img
+                                                                            src={fmObj?.image}
+                                                                            alt={m.name}
+                                                                            className="w-24 h-24 object-cover rounded"
+                                                                          />
+                                                                          <span className="break-words">
+                                                                            {m.name}
+                                                                          </span>
+                                                                        </div>
+                                                                      ) : (
+                                                                        m.name
+                                                                      )}
+                                                                    </td>
+                                                                    <td className="py-3 px-1">
+                                                                      ${m.cost_per_unit}
+                                                                    </td>
+                                                                    <td className="py-3 px-3">
+                                                                      {m.quantity}
+                                                                    </td>
+                                                                    <td className="py-3 px-3">
+                                                                      ${m.cost}
+                                                                    </td>
+                                                                  </tr>
+                                                                );
+                                                              }
+                                                            )}
+                                                          </tbody>
+                                                        </table>
+                                                      </div>
+                                                    )}
+                                                </div>
+                                              )}
+                                            </>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
-                      )
-                    )}
+                      </div>
+                    ))}
                   </div>
                 </div>
               );
             })}
           </div>
 
-          {/* RIGHT column => summary + address + photos */}
+          {/* RIGHT: summary + address + photos/description */}
           <div className="w-full xl:w-1/2 xl:ml-auto pt-0 space-y-6 mt-8 xl:mt-0">
             {/* Summary */}
             <div className="w-full xl:max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden">
               <SectionBoxSubtitle>Summary</SectionBoxSubtitle>
               {(() => {
-                // check if anything is selected
+                // Check if anything is selected at all
                 let anythingSelected = false;
                 for (const roomId of Object.keys(selectedServicesState)) {
                   if (Object.keys(selectedServicesState[roomId]).length > 0) {
@@ -1259,13 +1074,11 @@ export default function RoomDetails() {
                     </div>
                   );
                 }
-
                 let totalAll = 0;
                 return (
                   <>
                     {chosenRooms.map((room) => {
-                      const { categoriesBySection, categoryServicesMap } =
-                        roomsData[room.id];
+                      const { categoriesBySection, categoryServicesMap } = roomsData[room.id];
                       const roomServices = selectedServicesState[room.id] || {};
                       const hasAny = Object.keys(roomServices).length > 0;
                       if (!hasAny) return null;
@@ -1281,71 +1094,59 @@ export default function RoomDetails() {
                           <h3 className="text-xl font-semibold text-gray-800 mb-2">
                             {room.title}
                           </h3>
-                          {Object.entries(categoriesBySection).map(
-                            ([secName, catIds]) => {
-                              // filter catIds => only ones with selected services
-                              const relevantCats = catIds.filter((catId) => {
-                                const arr = categoryServicesMap[catId] || [];
-                                return arr.some((svc) => roomServices[svc.id]);
-                              });
-                              if (relevantCats.length === 0) return null;
+                          {Object.entries(categoriesBySection).map(([secName, catIds]) => {
+                            const relevantCats = catIds.filter((catId) => {
+                              const arr = categoryServicesMap[catId] || [];
+                              return arr.some((svc) => roomServices[svc.id]);
+                            });
+                            if (relevantCats.length === 0) return null;
 
-                              return (
-                                <div key={secName} className="mb-4 ml-0 sm:ml-2">
-                                  <h4 className="text-lg font-medium text-gray-700 mb-2">
-                                    {secName}
-                                  </h4>
-                                  {relevantCats.map((catId) => {
-                                    const catObj = ALL_CATEGORIES.find(
-                                      (x) => x.id === catId
-                                    );
-                                    const catName = catObj
-                                      ? catObj.title
-                                      : catId;
-                                    const arr =
-                                      categoryServicesMap[catId] || [];
-                                    const chosenServices = arr.filter(
-                                      (svc) => roomServices[svc.id]
-                                    );
-                                    if (chosenServices.length === 0) return null;
+                            return (
+                              <div key={secName} className="mb-4 ml-0 sm:ml-2">
+                                <h4 className="text-lg font-medium text-gray-700 mb-2">
+                                  {secName}
+                                </h4>
+                                {relevantCats.map((catId) => {
+                                  const catObj = ALL_CATEGORIES.find((x) => x.id === catId);
+                                  const catName = catObj ? catObj.title : catId;
+                                  const arr = categoryServicesMap[catId] || [];
+                                  const chosenSvcs = arr.filter((svc) => roomServices[svc.id]);
+                                  if (chosenSvcs.length === 0) return null;
 
-                                    return (
-                                      <div key={catId} className="mb-4 ml-0 sm:ml-4">
-                                        <h5 className="text-md font-medium text-gray-700 mb-2">
-                                          {catName}
-                                        </h5>
-                                        <ul className="space-y-2 pb-4">
-                                          {chosenServices.map((svc) => {
-                                            const cost =
-                                              serviceCosts[svc.id] || 0;
-                                            const qty = roomServices[svc.id];
-                                            return (
-                                              <li
-                                                key={svc.id}
-                                                className="grid grid-cols-3 gap-2 text-sm text-gray-600"
-                                                style={{
-                                                  gridTemplateColumns:
-                                                    "40% 30% 25%",
-                                                }}
-                                              >
-                                                <span>{svc.title}</span>
-                                                <span className="text-right">
-                                                  {qty} {svc.unit_of_measurement}
-                                                </span>
-                                                <span className="text-right">
-                                                  ${formatWithSeparator(cost)}
-                                                </span>
-                                              </li>
-                                            );
-                                          })}
-                                        </ul>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              );
-                            }
-                          )}
+                                  return (
+                                    <div key={catId} className="mb-4 ml-0 sm:ml-4">
+                                      <h5 className="text-md font-medium text-gray-700 mb-2">
+                                        {catName}
+                                      </h5>
+                                      <ul className="space-y-2 pb-4">
+                                        {chosenSvcs.map((svc) => {
+                                          const cost = serviceCosts[svc.id] || 0;
+                                          const qty = roomServices[svc.id];
+                                          return (
+                                            <li
+                                              key={svc.id}
+                                              className="grid grid-cols-3 gap-2 text-sm text-gray-600"
+                                              style={{
+                                                gridTemplateColumns: "40% 30% 25%",
+                                              }}
+                                            >
+                                              <span>{svc.title}</span>
+                                              <span className="text-right">
+                                                {qty} {svc.unit_of_measurement}
+                                              </span>
+                                              <span className="text-right">
+                                                ${formatWithSeparator(cost)}
+                                              </span>
+                                            </li>
+                                          );
+                                        })}
+                                      </ul>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            );
+                          })}
                           <div className="flex justify-between items-center mb-2 ml-0 sm:ml-2">
                             <span className="font-medium text-gray-800">
                               {room.title} Total:
@@ -1386,14 +1187,12 @@ export default function RoomDetails() {
                   setCountry(location.country || "");
                   setZip(location.zip);
                 } else {
-                  setWarningMessage(
-                    "Location data is unavailable. Please enter manually."
-                  );
+                  setWarningMessage("Location data is unavailable. Please enter manually.");
                 }
               }}
             />
 
-            {/* Photos & description */}
+            {/* Photos and description */}
             <PhotosAndDescription
               photos={photos}
               description={description}
@@ -1404,7 +1203,7 @@ export default function RoomDetails() {
         </div>
       </div>
 
-      {/* FinishingMaterialsModal => for choosing finishing materials */}
+      {/* Finishing Materials Modal */}
       <FinishingMaterialsModal
         showModalServiceId={showModalServiceId}
         showModalSectionName={showModalSectionName}
@@ -1416,13 +1215,12 @@ export default function RoomDetails() {
         formatWithSeparator={formatWithSeparator}
       />
 
-      {/* SurfaceCalculatorModal => for computing sq ft */}
+      {/* Surface Calculator Modal */}
       <SurfaceCalculatorModal
         show={showCalcModal}
         onClose={() => setShowCalcModal(false)}
         serviceId={calcModalServiceId}
         onApplySquareFeet={(svcId, sqFeet) => {
-          // we need roomId to set the quantity
           if (!calcModalRoomId || !svcId) return;
           handleApplySquareFeet(calcModalRoomId, svcId, sqFeet);
           setShowCalcModal(false);
