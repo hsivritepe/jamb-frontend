@@ -13,11 +13,6 @@ interface AddressSectionProps {
   className?: string;
 }
 
-/**
- * A reusable AddressSection:
- * - On phones/tablets (<1280px): `w-full`.
- * - On desktops (≥1280px, xl:): restored old "max-w-[500px] ml-auto".
- */
 export default function AddressSection({
   address,
   onAddressChange,

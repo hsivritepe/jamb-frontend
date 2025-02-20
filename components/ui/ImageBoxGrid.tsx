@@ -21,9 +21,9 @@ interface ImageBoxGridProps {
 
 /**
  * ImageBoxGrid:
- * - phone (<768px): 2 columns, no margins
- * - tablet (≥768px): 3 columns
- * - desktop (≥1024px): 4 columns
+ * - 2 columns on phones (<768px)
+ * - 3 columns on tablets (≥768px)
+ * - 4 columns on desktops (≥1024px)
  */
 export function ImageBoxGrid({
   items,
@@ -32,10 +32,14 @@ export function ImageBoxGrid({
   moreText = "categories",
 }: ImageBoxGridProps) {
   return (
-    <div className="
-      grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 
-      gap-5
-    ">
+    <div
+      className="
+        grid grid-cols-2
+        md:grid-cols-3
+        lg:grid-cols-4
+        gap-5
+      "
+    >
       {items.map((item) => (
         <div
           key={item.id}
@@ -56,7 +60,9 @@ export function ImageBoxGrid({
               src={item.image}
               alt={item.title}
               fill
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              sizes="(max-width: 768px) 100vw,
+                     (max-width: 1200px) 50vw,
+                     33vw"
               className={`
                 object-cover transition-transform
                 ${
@@ -66,8 +72,6 @@ export function ImageBoxGrid({
                 }
               `}
             />
-
-            {/* Title overlay */}
             <div className="absolute inset-x-0 top-0 p-2 md:p-4 bg-gradient-to-b from-black/50 to-transparent">
               <h3
                 className="
@@ -77,18 +81,12 @@ export function ImageBoxGrid({
                 style={{ textShadow: "1px 1px 3px rgba(0, 0, 0, 0.8)" }}
               >
                 {item.title}
-                {showCount &&
-                  item.subcategories.length > 0 && (
-                    /* Only show subcategories count on md+ screens or md:inline*/
-                    <span className="hidden">
-                      {" "}
-                      ({item.subcategories.length})
-                    </span>
-                  )}
+                {showCount && item.subcategories.length > 0 && (
+                  <span className="hidden"> ({item.subcategories.length})</span>
+                )}
               </h3>
             </div>
 
-            {/* Subcategories on hover */}
             {item.subcategories && (
               <div
                 className={`
@@ -104,9 +102,7 @@ export function ImageBoxGrid({
                   className="
                     text-white space-y-2 overflow-hidden
                   "
-                  style={{
-                    textShadow: "1px 1px 3px rgba(0, 0, 0, 0.8)",
-                  }}
+                  style={{ textShadow: "1px 1px 3px rgba(0, 0, 0, 0.8)" }}
                 >
                   {item.subcategories.slice(0, 6).map((sub, idx) => (
                     <div key={idx} className="text-xs md:text-sm line-clamp-1">

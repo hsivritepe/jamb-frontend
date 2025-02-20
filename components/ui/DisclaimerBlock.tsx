@@ -1,5 +1,3 @@
-// DisclaimerBlock.tsx
-
 "use client";
 
 export function DisclaimerBlock() {
