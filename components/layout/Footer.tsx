@@ -149,12 +149,12 @@ export default function Footer() {
         >
           {/* Left side => email CTA */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2">
-            <span className="text-sm sm:text-base text-gray-500">
+            <span className="text-xs sm:text-sm text-gray-500">
               We're Here to Help
             </span>
             <a
               href="mailto:info@thejamb.com"
-              className="text-base sm:text-base font-light text-blue-600 underline"
+              className="text-xs sm:text-sm text-blue-600 underline"
             >
               info@thejamb.com
             </a>
