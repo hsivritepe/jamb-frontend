@@ -89,6 +89,15 @@ export default function Services() {
     setSessionItem("fullAddress", combined);
   }, [address, stateName, zip]);
 
+  // Attempt to auto-fill address, state, and zip from location context on page load (only if they're empty).
+  useEffect(() => {
+    if (!address && !stateName && !zip && location?.city && location?.zip && location?.state) {
+      setAddress(location.city);
+      setStateName(location.state);
+      setZip(location.zip);
+    }
+  }, [location, address, stateName, zip]);
+
   // Filter categories by search query
   const filteredCategoriesBySection = Object.fromEntries(
     selectedSections.map((section) => {
@@ -293,7 +302,9 @@ export default function Services() {
                           </p>
                         ) : (
                           allCats.map((cat) => {
-                            const isSelected = selectedCategoriesMap[section]?.includes(cat.id) || false;
+                            const isSelected =
+                              selectedCategoriesMap[section]?.includes(cat.id) ||
+                              false;
                             return (
                               <div
                                 key={cat.id}

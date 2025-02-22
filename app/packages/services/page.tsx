@@ -26,6 +26,9 @@ import { getSessionItem, setSessionItem } from "@/utils/session";
 import FinishingMaterialsModal from "@/components/FinishingMaterialsModal";
 import SurfaceCalculatorModal from "@/components/SurfaceCalculatorModal";
 
+// Import the location context
+import { useLocation } from "@/context/LocationContext";
+
 /**
  * Formats a numeric value with commas and two decimals.
  */
@@ -221,6 +224,7 @@ async function ensureFinishingMaterialsLoaded(
 export default function PackageServicesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { location } = useLocation(); // Added for location-based auto-fill
 
   // Identify the chosen package
   const packageId = searchParams.get("packageId");
@@ -244,8 +248,8 @@ export default function PackageServicesPage() {
     setSessionItem("packages_selectedServices", selectedServices);
   }, [selectedServices]);
 
-  // House info
-  const [houseInfo] = useState(() =>
+  // House info => use state so we can update it from the location context if empty
+  const [houseInfo, setHouseInfo] = useState(() =>
     getSessionItem("packages_houseInfo", {
       country: "",
       city: "",
@@ -268,6 +272,31 @@ export default function PackageServicesPage() {
       airConditioners: 0,
     })
   );
+
+  // Attempt to auto-fill address if houseInfo is empty and location context is available
+  useEffect(() => {
+    // Fill city, zip, addressLine, country if they are empty in houseInfo
+    if (
+      !houseInfo.addressLine &&
+      !houseInfo.city &&
+      !houseInfo.zip &&
+      location?.city &&
+      location?.zip
+    ) {
+      setHouseInfo((prev: any) => ({
+        ...prev,
+        addressLine: prev.addressLine || location.city,
+        city: prev.city || location.city,
+        zip: prev.zip || location.zip,
+        country: prev.country || location.country || "",
+      }));
+    }
+  }, [houseInfo, location]);
+
+  // Persist houseInfo changes if set
+  useEffect(() => {
+    setSessionItem("packages_houseInfo", houseInfo);
+  }, [houseInfo]);
 
   // Search logic
   const [searchQuery, setSearchQuery] = useState(() =>
