@@ -49,12 +49,14 @@ export default function EmergencyServices() {
   );
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
 
-  // Address/Contact info
+  // Address/Contact info (split into separate states)
   const [address, setAddress] = useState<string>(getSessionItem("address", ""));
+  const [city, setCity] = useState<string>(getSessionItem("city", ""));
   const [zip, setZip] = useState<string>(getSessionItem("zip", ""));
   const [stateName, setStateName] = useState<string>(
     getSessionItem("stateName", "")
   );
+  const [country, setCountry] = useState<string>(getSessionItem("country", ""));
 
   // Additional fields
   const [description, setDescription] = useState<string>(
@@ -66,10 +68,30 @@ export default function EmergencyServices() {
   useEffect(() => setSessionItem("selectedServices", selectedServices), [selectedServices]);
   useEffect(() => setSessionItem("searchQuery", searchQuery), [searchQuery]);
   useEffect(() => setSessionItem("address", address), [address]);
+  useEffect(() => setSessionItem("city", city), [city]);
   useEffect(() => setSessionItem("zip", zip), [zip]);
   useEffect(() => setSessionItem("stateName", stateName), [stateName]);
+  useEffect(() => setSessionItem("country", country), [country]);
   useEffect(() => setSessionItem("description", description), [description]);
   useEffect(() => setSessionItem("photos", photos), [photos]);
+
+  // Auto-fill address fields from location context if they're all empty
+  useEffect(() => {
+    if (
+      !address &&
+      !city &&
+      !zip &&
+      !country &&
+      location?.city &&
+      location?.zip
+    ) {
+      setAddress(location.city);
+      setCity(location.city);
+      setZip(location.zip);
+      setStateName(location.state || "");
+      setCountry(location.country || "");
+    }
+  }, [address, city, zip, country, location, stateName]);
 
   // Combine address for convenience
   useEffect(() => {
@@ -117,7 +139,9 @@ export default function EmergencyServices() {
 
   // Validate and go next
   function handleNextClick() {
-    const anyServiceSelected = Object.values(selectedServices).some((list) => list.length > 0);
+    const anyServiceSelected = Object.values(selectedServices).some(
+      (list) => list.length > 0
+    );
     if (!anyServiceSelected) {
       setWarningMessage("Please select at least one service before proceeding.");
       return;
@@ -142,8 +166,10 @@ export default function EmergencyServices() {
   function handleUseMyLocation() {
     if (location?.city && location?.state && location?.zip) {
       setAddress(location.city);
+      setCity(location.city);
       setStateName(location.state);
       setZip(location.zip);
+      setCountry(location.country || "");
     } else {
       setWarningMessage("Location data is unavailable. Please enter manually.");
     }
@@ -258,7 +284,8 @@ export default function EmergencyServices() {
                           .replace(/([A-Z])/g, " $1")
                           .replace(/^./, (char) => char.toUpperCase())
                           .trim();
-                        const isSelected = selectedServices[category]?.includes(serviceKey) || false;
+                        const isSelected =
+                          selectedServices[category]?.includes(serviceKey) || false;
 
                         return (
                           <div
