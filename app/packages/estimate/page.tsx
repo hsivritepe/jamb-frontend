@@ -142,7 +142,7 @@ export default function EstimatePage() {
     materialsSubtotal += parseFloat(res.material_cost) || 0;
   }
 
-  // Apply coefficient to labor
+  // Apply coefficient to labor (for final calculation)
   const finalLabor = laborSubtotal * paymentCoefficient;
 
   // Additional fees
@@ -476,6 +476,7 @@ export default function EstimatePage() {
               </span>
             </div>
 
+            {/* If there's a discount or surcharge on labor */}
             {paymentCoefficient !== 1 && (
               <div className="flex justify-between mb-2">
                 <span className="text-gray-600">
@@ -629,8 +630,8 @@ export default function EstimatePage() {
         {/* RIGHT: PaymentOptionPanel */}
         <div className="w-full xl:w-[500px]">
           <PaymentOptionPanel
-            subtotal={laborSubtotal}
-            materialsAndFees={materialsSubtotal + serviceFeeOnLabor + serviceFeeOnMaterials}
+            laborSubtotal={laborSubtotal}
+            materialsSubtotal={materialsSubtotal}
             selectedOption={selectedPaymentOption}
             onConfirm={(label, coeff) => {
               setSelectedPaymentOption(label);
