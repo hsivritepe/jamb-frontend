@@ -74,60 +74,71 @@ export default function ExpandedOrderRow({
   const router = useRouter();
   const [currentOrder, setCurrentOrder] = useState<CompositeOrder>(order);
   const [showServiceTimePicker, setShowServiceTimePicker] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
 
-  // Helper to extract base labor/materials fees
   function getBaseValues() {
-    const totalWorks = currentOrder.works.reduce((acc, w) => acc + parseFloat(w.total), 0);
-    const totalMats = currentOrder.works.reduce((acc, w) => {
-      const sumMats = w.materials.reduce((mAcc, mat) => mAcc + parseFloat(mat.cost), 0);
-      return acc + sumMats;
+    const sumWorksTotals = currentOrder.works.reduce(
+      (acc, w) => acc + parseFloat(w.total),
+      0
+    );
+    const sumMaterials = currentOrder.works.reduce((acc, w) => {
+      const matsCost = w.materials.reduce(
+        (mAcc, mat) => mAcc + parseFloat(mat.cost),
+        0
+      );
+      return acc + matsCost;
     }, 0);
-    const laborBase = totalWorks - totalMats;
-    const dateSurchargeNum = parseFloat(currentOrder.date_surcharge || "0");
-    const feeLabor = parseFloat(currentOrder.service_fee_on_labor || "0");
-    const feeMats = parseFloat(currentOrder.service_fee_on_materials || "0");
-    return { laborBase, dateSurchargeNum, feeLabor, totalMats, feeMats };
+
+    const laborBase = sumWorksTotals - sumMaterials;
+    const oldSurcharge = parseFloat(currentOrder.date_surcharge || "0");
+    const oldFeeLabor = parseFloat(currentOrder.service_fee_on_labor || "0");
+    const feeMaterials = parseFloat(currentOrder.service_fee_on_materials || "0");
+    return {
+      laborBase,
+      oldSurcharge,
+      oldFeeLabor,
+      sumMaterials,
+      feeMaterials,
+    };
   }
 
-  // For displaying date warnings
-  function getDateLabel(): string {
+  function getDateDiffLabel(): { label: string; isWarning: boolean } {
     const dateStr = currentOrder.common.selected_date;
-    if (!dateStr) return "";
+    if (!dateStr) {
+      return { label: "No date", isWarning: false };
+    }
     const orderDate = parse(dateStr, "EEE, d MMM yyyy", new Date());
     const now = new Date();
     const diff = differenceInCalendarDays(orderDate, now);
-    if (diff < 0) return "Date expired. Update";
-    if (diff === 0) return "Expires today. Update";
-    if (diff === 1) return "Expires in 1 day. Update";
-    if (diff === 2) return "Expires in 2 days. Update";
-    return "";
+
+    if (diff < 0) return { label: "Date expired. Update", isWarning: true };
+    if (diff === 0) return { label: "Expires today. Update", isWarning: true };
+    if (diff === 1) return { label: "Expires in 1 day. Update", isWarning: true };
+    if (diff === 2) return { label: "Expires in 2 days. Update", isWarning: true };
+
+    // normal date
+    return { label: currentOrder.common.selected_date, isWarning: false };
   }
 
-  const dateLabel = getDateLabel();
-  const isSpecialDate = dateLabel !== "";
+  const { label: dateLabel, isWarning: dateIsRed } = getDateDiffLabel();
 
-  // Apply new date-coefficient changes locally only
   function handleConfirmNewDateLocal(newDate: string, newCoef: number) {
-    const oldCoef = parseFloat(currentOrder.common.date_coefficient || "1");
-    const ratio = newCoef / (oldCoef || 1);
+    setHasChanges(true);
 
-    const { laborBase, dateSurchargeNum, feeLabor, totalMats, feeMats } = getBaseValues();
+    const { laborBase, oldSurcharge, oldFeeLabor, sumMaterials, feeMaterials } =
+      getBaseValues();
 
-    const oldLaborSum = laborBase + dateSurchargeNum + feeLabor;
-    const newLaborSum = oldLaborSum * ratio;
+    const oldLabor = laborBase + oldSurcharge;
+    const newSurcharge = laborBase * (newCoef - 1);
+    const newLabor = laborBase + newSurcharge;
 
-    const shareLaborBase = laborBase / oldLaborSum || 0;
-    const shareSurcharge = dateSurchargeNum / oldLaborSum || 0;
-    const shareFeeLabor = feeLabor / oldLaborSum || 0;
+    let newFeeLabor = oldFeeLabor;
+    if (oldLabor > 0) {
+      const ratio = newLabor / oldLabor;
+      newFeeLabor = oldFeeLabor * ratio;
+    }
 
-    const newLaborBase = newLaborSum * shareLaborBase;
-    const newDateSurcharge = newLaborSum * shareSurcharge;
-    const newFeeLabor = newLaborSum * shareFeeLabor;
-
-    const partialMaterials = totalMats + feeMats;
-    const newLaborPart = newLaborBase + newDateSurcharge + newFeeLabor;
-    const newSubtotal = newLaborPart + partialMaterials;
-
+    const newSubtotal = newLabor + newFeeLabor + (sumMaterials + feeMaterials);
     const taxRateNum = parseFloat(currentOrder.tax_rate || "0");
     const newTaxAmount = (newSubtotal * taxRateNum) / 100;
     const newTotal = newSubtotal + newTaxAmount;
@@ -135,8 +146,9 @@ export default function ExpandedOrderRow({
     const localCopy = structuredClone(currentOrder);
     localCopy.common.selected_date = newDate;
     localCopy.common.date_coefficient = newCoef.toFixed(2);
+
+    localCopy.date_surcharge = newSurcharge.toFixed(2);
     localCopy.service_fee_on_labor = newFeeLabor.toFixed(2);
-    localCopy.date_surcharge = newDateSurcharge.toFixed(2);
     localCopy.subtotal = newSubtotal.toFixed(2);
     localCopy.tax_amount = newTaxAmount.toFixed(2);
     localCopy.total = newTotal.toFixed(2);
@@ -147,11 +159,11 @@ export default function ExpandedOrderRow({
     } catch {
       localCopy.daysDiff = null;
     }
+
     setCurrentOrder(localCopy);
     setShowServiceTimePicker(false);
   }
 
-  // Send final update to server
   async function handleSubmitUpdate() {
     try {
       const payload = {
@@ -203,8 +215,8 @@ export default function ExpandedOrderRow({
     0
   );
   const sumMaterialsCost = currentOrder.works.reduce((acc, w) => {
-    const sumMats = w.materials.reduce((mAcc, mat) => mAcc + parseFloat(mat.cost), 0);
-    return acc + sumMats;
+    const matSum = w.materials.reduce((mAcc, mat) => mAcc + parseFloat(mat.cost), 0);
+    return acc + matSum;
   }, 0);
 
   const laborTotal = sumWorksTotals - sumMaterialsCost;
@@ -215,34 +227,47 @@ export default function ExpandedOrderRow({
   const taxAmountNum = parseFloat(currentOrder.tax_amount || "0");
   const totalNum = parseFloat(currentOrder.total || "0");
 
+  const updateDesktopClasses = hasChanges
+    ? "inline-flex items-center gap-2 px-4 py-2 border border-gray-400 text-gray-700 rounded hover:bg-gray-50"
+    : "inline-flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-400 rounded cursor-not-allowed";
+
+  const updateMobileClasses = hasChanges
+    ? "inline-flex items-center gap-2 px-3 py-2 border border-gray-400 text-gray-700 text-sm rounded hover:bg-gray-50"
+    : "inline-flex items-center gap-2 px-3 py-2 border border-gray-300 text-gray-400 text-sm rounded cursor-not-allowed";
+
   return (
     <tr className="bg-gray-100">
       <td colSpan={4} className="px-2 sm:px-3 py-3 text-sm text-gray-700">
         <h2 className="text-xl sm:text-2xl font-bold mb-2">
           Order for{" "}
-          {currentOrder.works.length > 0 ? currentOrder.works[0].type : "N/A"} №
+          {currentOrder.works.length > 0
+            ? currentOrder.works[0].type
+            : "N/A"}{" "}
+          №
           {currentOrder.code}
         </h2>
 
         <p className="mb-1">
           <strong>Address:</strong> {currentOrder.common.address}
         </p>
+
         <p className="mb-4">
           <strong>Start Date:</strong>{" "}
-          {isSpecialDate ? (
-            <span
-              onClick={() => setShowServiceTimePicker(true)}
-              className="text-red-600 font-semibold cursor-pointer underline"
-            >
-              {dateLabel}
-            </span>
-          ) : (
-            currentOrder.common.selected_date
-          )}
+          {/* If the date is "warning" label => red text, otherwise blue */}
+          <span
+            onClick={() => setShowServiceTimePicker(true)}
+            className={
+              dateIsRed
+                ? "text-red-600 font-semibold cursor-pointer underline"
+                : "text-blue-600 font-semibold cursor-pointer underline"
+            }
+          >
+            {dateLabel}
+          </span>
         </p>
 
         {showServiceTimePicker && (
-          <div className="mt-6">
+          <div className="my-6">
             <ServiceTimePicker
               subtotal={laborTotal}
               onClose={() => setShowServiceTimePicker(false)}
@@ -265,7 +290,6 @@ export default function ExpandedOrderRow({
               <p className="text-lg sm:xl font-bold mb-2">
                 {idx + 1}. {work.name}
               </p>
-
               <div className="sm:flex sm:items-start sm:gap-4">
                 {work.photo && (
                   <div className="mb-2 sm:mb-0 sm:w-64">
@@ -287,7 +311,9 @@ export default function ExpandedOrderRow({
                   </p>
                   <p className="mb-2">
                     <strong>Labor:</strong>{" "}
-                    {singleLabor.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                    {singleLabor.toLocaleString("en-US", {
+                      minimumFractionDigits: 2,
+                    })}
                   </p>
                   <p className="mb-2">
                     <strong>Materials, tools & equipment:</strong>{" "}
@@ -295,6 +321,7 @@ export default function ExpandedOrderRow({
                   </p>
                 </div>
               </div>
+
               {work.materials.length > 0 && (
                 <div className="overflow-auto border rounded my-3">
                   <table className="min-w-full text-left text-sm bg-white">
@@ -307,37 +334,41 @@ export default function ExpandedOrderRow({
                       </tr>
                     </thead>
                     <tbody>
-                      {work.materials.map((mat) => (
-                        <tr key={mat.id} className="border-b">
-                          <td className="px-2 py-1 align-top">
-                            {mat.name}
-                            {mat.photo && (
-                              <div className="my-1">
-                                <img
-                                  src={mat.photo}
-                                  alt={mat.name}
-                                  className="w-32 h-32 object-cover rounded"
-                                />
-                              </div>
-                            )}
-                          </td>
-                          <td className="px-2 py-1 align-top">
-                            {mat.quantity.toLocaleString("en-US", {
-                              minimumFractionDigits: 0,
-                            })}
-                          </td>
-                          <td className="px-2 py-1 align-top">
-                            {parseFloat(mat.cost_per_unit).toLocaleString("en-US", {
-                              minimumFractionDigits: 2,
-                            })}
-                          </td>
-                          <td className="px-2 py-1 align-top">
-                            {parseFloat(mat.cost).toLocaleString("en-US", {
-                              minimumFractionDigits: 2,
-                            })}
-                          </td>
-                        </tr>
-                      ))}
+                      {work.materials.map((mat) => {
+                        const priceVal = parseFloat(mat.cost_per_unit);
+                        const subtotalVal = parseFloat(mat.cost);
+                        return (
+                          <tr key={mat.id} className="border-b">
+                            <td className="px-2 py-1 align-top">
+                              {mat.name}
+                              {mat.photo && (
+                                <div className="my-1">
+                                  <img
+                                    src={mat.photo}
+                                    alt={mat.name}
+                                    className="w-32 h-32 object-cover rounded"
+                                  />
+                                </div>
+                              )}
+                            </td>
+                            <td className="px-2 py-1 align-top">
+                              {mat.quantity.toLocaleString("en-US", {
+                                minimumFractionDigits: 0,
+                              })}
+                            </td>
+                            <td className="px-2 py-1 align-top">
+                              {priceVal.toLocaleString("en-US", {
+                                minimumFractionDigits: 2,
+                              })}
+                            </td>
+                            <td className="px-2 py-1 align-top">
+                              {subtotalVal.toLocaleString("en-US", {
+                                minimumFractionDigits: 2,
+                              })}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -353,19 +384,27 @@ export default function ExpandedOrderRow({
           </p>
           <p>
             <strong>Materials, tools & equipment:</strong>{" "}
-            {sumMaterialsCost.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+            {sumMaterialsCost.toLocaleString("en-US", {
+              minimumFractionDigits: 2,
+            })}
           </p>
           <p>
             <strong>{surchargeOrDiscountLabel}:</strong>{" "}
-            {dateSurchargeNum.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+            {dateSurchargeNum.toLocaleString("en-US", {
+              minimumFractionDigits: 2,
+            })}
           </p>
           <p>
             <strong>Service Fee on Labor:</strong>{" "}
-            {serviceFeeOnLaborNum.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+            {serviceFeeOnLaborNum.toLocaleString("en-US", {
+              minimumFractionDigits: 2,
+            })}
           </p>
           <p>
-            <strong>Delivery & Processing Fee:</strong>{" "}
-            {serviceFeeOnMaterialsNum.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+            <strong>Delivery &amp; Processing Fee:</strong>{" "}
+            {serviceFeeOnMaterialsNum.toLocaleString("en-US", {
+              minimumFractionDigits: 2,
+            })}
           </p>
         </div>
 
@@ -381,7 +420,8 @@ export default function ExpandedOrderRow({
             {taxAmountNum.toLocaleString("en-US", { minimumFractionDigits: 2 })}
           </p>
           <p className="mt-2 font-bold text-lg sm:text-xl">
-            <strong>Total:</strong> ${totalNum.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+            <strong>Total:</strong> $
+            {totalNum.toLocaleString("en-US", { minimumFractionDigits: 2 })}
           </p>
         </div>
 
@@ -390,6 +430,7 @@ export default function ExpandedOrderRow({
             Description: {currentOrder.common.description}
           </p>
         )}
+
         {currentOrder.common.photos && currentOrder.common.photos.length > 0 && (
           <div>
             <p className="font-semibold">Attached Photos:</p>
@@ -411,7 +452,8 @@ export default function ExpandedOrderRow({
         <div className="mt-6 hidden sm:flex items-center gap-3 justify-end">
           <button
             onClick={handleSubmitUpdate}
-            className="inline-flex items-center gap-2 px-4 py-2 border border-gray-400 text-gray-700 rounded hover:bg-gray-50"
+            disabled={!hasChanges}
+            className={updateDesktopClasses}
             title="Update order on server"
           >
             Update
@@ -429,13 +471,18 @@ export default function ExpandedOrderRow({
           {isPendingDelete ? (
             <div className="text-red-600 flex items-center gap-2">
               <span>Deleting...</span>
-              <button onClick={undoDelete} className="underline text-blue-600 text-xs">
+              <button
+                onClick={undoDelete}
+                className="underline text-blue-600 text-xs"
+              >
                 Undo
               </button>
             </div>
           ) : (
             <button
-              onClick={() => onDeleteOrder(currentOrder.id, currentOrder.code)}
+              onClick={() =>
+                onDeleteOrder(currentOrder.id, currentOrder.code)
+              }
               className="inline-flex items-center gap-2 px-4 py-2 border border-red-500 text-red-600 rounded hover:bg-red-50"
               title="Delete order"
             >
@@ -449,7 +496,8 @@ export default function ExpandedOrderRow({
         <div className="mt-6 flex sm:hidden items-center gap-3">
           <button
             onClick={handleSubmitUpdate}
-            className="inline-flex items-center gap-2 px-3 py-2 border border-gray-400 text-gray-700 text-sm rounded hover:bg-gray-50"
+            disabled={!hasChanges}
+            className={updateMobileClasses}
           >
             Update
           </button>
@@ -466,13 +514,18 @@ export default function ExpandedOrderRow({
           {isPendingDelete ? (
             <div className="text-red-600 flex items-center gap-2">
               <span>Deleting...</span>
-              <button onClick={undoDelete} className="underline text-blue-600 text-xs">
+              <button
+                onClick={undoDelete}
+                className="underline text-blue-600 text-xs"
+              >
                 Undo
               </button>
             </div>
           ) : (
             <button
-              onClick={() => onDeleteOrder(currentOrder.id, currentOrder.code)}
+              onClick={() =>
+                onDeleteOrder(currentOrder.id, currentOrder.code)
+              }
               className="inline-flex items-center gap-2 px-3 py-2 border border-red-500 text-red-600 text-sm rounded hover:bg-red-50"
               title="Delete order"
             >
