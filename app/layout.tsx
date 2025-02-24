@@ -42,7 +42,7 @@ export default function RootLayout({ children }: LayoutProps) {
         <LocationProvider>
           <Header />
           <Suspense fallback={<div>Loading page...</div>}>
-            <div className="max-w-7xl mx-auto px-4">{children}</div>
+            <div className="max-w-7xl mx-auto px-2 sm:px-4">{children}</div>
           </Suspense>
           <Footer />
         </LocationProvider>

@@ -12,7 +12,7 @@ import { SectionBoxTitle } from "@/components/ui/SectionBoxTitle";
  */
 export default function AppPromotion() {
   return (
-    <section className="pt-8 px-8 bg-brand-light rounded-2xl">
+    <section className="sm:my-2 pt-8 px-8 bg-brand-light rounded-2xl">
       {/**
        * The parent container uses flex-col by default, 
        * switching to lg:flex-row at ≥1024px for desktop.
