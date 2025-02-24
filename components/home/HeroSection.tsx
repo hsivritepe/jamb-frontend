@@ -73,7 +73,7 @@ export default function HeroSection() {
   const hasResults = results.length > 0;
 
   return (
-    <section className="pt-4">
+    <section className="py-4">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
         <div className="bg-white rounded-2xl p-4 sm:p-8 flex flex-col justify-between text-base">
           <div>

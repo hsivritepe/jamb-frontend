@@ -108,16 +108,17 @@ export default function ServicesGrid({
   };
 
   return (
-    <section className="py-8">
+    <section className="pt-2 pb-8">
       <div className="container mx-auto">
         <SectionBoxTitle>
           <div dangerouslySetInnerHTML={{ __html: title }} />
           {subtitle && (
             <p
               className={`
-      font-semibold sm:font-normal text-gray-500
+      font-normal text-gray-500
       text-[20px] leading-[28px]
       md:text-[30px] md:leading-[41px]
+      my-2
     `}
             >
               {subtitle}
