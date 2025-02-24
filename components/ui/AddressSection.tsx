@@ -37,7 +37,7 @@ export default function AddressSection({
       </h2>
 
       <div className="flex flex-col gap-4">
-        {/* Address */}
+        {/* Address input */}
         <input
           type="text"
           value={address}
@@ -47,7 +47,7 @@ export default function AddressSection({
                      focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
 
-        {/* State */}
+        {/* State input */}
         <input
           type="text"
           value={stateName}
@@ -57,7 +57,7 @@ export default function AddressSection({
                      focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
 
-        {/* ZIP */}
+        {/* ZIP input */}
         <input
           type="text"
           value={zip}
@@ -67,7 +67,10 @@ export default function AddressSection({
                      focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
 
-        <button onClick={onUseMyLocation} className="text-blue-600 text-left mt-2 font-semibold sm:font-medium">
+        <button
+          onClick={onUseMyLocation}
+          className="text-blue-600 text-left mt-2 font-semibold sm:font-medium"
+        >
           Use my location
         </button>
       </div>

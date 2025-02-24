@@ -9,7 +9,7 @@ export default function Home() {
   return (
     <main className="min-h-screen pt-20">
       <HeroSection />
-      <ServicesGrid title="Comprehensive Home Services<br />at Your Fingertips" />
+      <ServicesGrid title="Comprehensive Home Services<br />at Your Fingertips" subtitle=""/>
       <HowItWorks />
       <RoomMakeovers />
       <AppPromotion />

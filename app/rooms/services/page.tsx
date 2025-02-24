@@ -145,6 +145,26 @@ export default function RoomDetails() {
   useEffect(() => setSessionItem("city", city), [city]);
   useEffect(() => setSessionItem("country", country), [country]);
 
+  // Attempt to auto-fill address fields from location context if they're empty
+  useEffect(() => {
+    if (
+      !address &&
+      !city &&
+      !stateName &&
+      !zip &&
+      !country &&
+      location?.city &&
+      location?.state &&
+      location?.zip
+    ) {
+      setAddress(location.city);
+      setCity(location.city);
+      setStateName(location.state);
+      setZip(location.zip);
+      setCountry(location.country || "");
+    }
+  }, [location, address, city, stateName, zip, country]);
+
   // Check selected rooms in session
   const selectedRooms: string[] = getSessionItem("rooms_selectedSections", []);
   useEffect(() => {
@@ -709,7 +729,9 @@ export default function RoomDetails() {
                                 >
                                   <h3
                                     className={`font-semibold sm:font-medium text-xl sm:text-2xl ${
-                                      selectedCount > 0 ? "text-blue-600" : "text-gray-800"
+                                      selectedCount > 0
+                                        ? "text-blue-600"
+                                        : "text-gray-800"
                                     }`}
                                   >
                                     {catName}

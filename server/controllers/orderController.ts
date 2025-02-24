@@ -1,7 +1,3 @@
-/**
- * This interface represents the shape of a "composite order"
- * as returned by the external services (e.g., /composite-order/list, /composite-order/get).
- */
 export interface CompositeOrder {
   id: number;
   code: string;
@@ -9,18 +5,18 @@ export interface CompositeOrder {
   user_token: string;
   zipcode: string;
   subtotal: string;
-  service_fee_on_labor: string;      // newly added
-  service_fee_on_materials: string;  // newly added
-  payment_type: string;             // newly added
-  payment_coefficient: string;      // newly added
+  service_fee_on_labor: string;
+  service_fee_on_materials: string;
+  payment_type: string;
+  payment_coefficient: string;
   tax_rate: string;
   tax_amount: string;
-  date_surcharge: string;           // newly added
-  total: string;                    // newly added
+  date_surcharge: string;
+  total: string;
   common: {
     id: number;
     address: string;
-    photos: string[];               // newly added
+    photos: string[];
     description: string;
     selected_date: string;
     date_coefficient: string;
@@ -29,17 +25,17 @@ export interface CompositeOrder {
     id: number;
     type: string;
     code: string;
-    name: string;                   // newly added
-    photo: string;                  // newly added
-    description: string;            // newly added
+    name: string;
+    photo: string;                  
+    description: string;            
     unit_of_measurement: string;
     work_count: string;
     total: string;
     materials: Array<{
       id: number;
       external_id: string;
-      name: string;                 // newly added
-      photo: string;                // newly added
+      name: string;                 
+      photo: string;                
       quantity: number;
       cost_per_unit: string;
       cost: string;

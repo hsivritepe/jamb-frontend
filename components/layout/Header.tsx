@@ -290,10 +290,10 @@ export default function Header() {
 
   const handleManualLocationSave = () => {
     const newLoc = {
-      city: manualLocation.city || "City",
-      zip: manualLocation.zip.trim() || "00000",
+      city: manualLocation.city || "New York",
+      zip: manualLocation.zip.trim() || "10001",
       country: "United States",
-      state: manualLocation.state || "",
+      state: manualLocation.state || "NY",
     };
     setLocation(newLoc);
     localStorage.setItem("userLocation", JSON.stringify(newLoc));

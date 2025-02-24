@@ -53,8 +53,8 @@ export default function Rooms() {
 
         {/* RoomsGrid displays room categories/options */}
         <RoomsGrid
-          title="Select a Room or Space"
-          subtitle="Specify Which Services You Need on the Next Page"
+          title="Select Rooms or Spaces"
+          subtitle="Pick the areas you need serviced, then click “Next” to continue"
           searchQuery={searchQuery}
         />
       </div>

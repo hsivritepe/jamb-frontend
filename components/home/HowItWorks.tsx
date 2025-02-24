@@ -50,7 +50,7 @@ const steps: Step[] = [
 
 export default function HowItWorks() {
   return (
-    <section className="p-8 bg-brand-light rounded-2xl">
+    <section className="p-8 my-4 bg-brand-light rounded-2xl">
       <div className="container mx-auto">
         <div className="flex items-center justify-between mb-8">
           <SectionBoxTitle>How It Works?</SectionBoxTitle>

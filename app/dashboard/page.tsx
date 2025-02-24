@@ -7,10 +7,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ExpandedOrderRow from "./ExpandedOrderRow";
 import { Printer, Trash2 } from "lucide-react";
+import { parse, differenceInCalendarDays } from "date-fns";
 
-/**
- * Returns a greeting based on the current hour.
- */
 function getGreeting(): string {
   const hour = new Date().getHours();
   if (hour < 12) return "Good morning";
@@ -18,9 +16,6 @@ function getGreeting(): string {
   return "Good evening";
 }
 
-/**
- * Represents a composite order object.
- */
 interface CompositeOrder {
   id: number;
   code: string;
@@ -64,45 +59,39 @@ interface CompositeOrder {
       cost: string;
     }>;
   }>;
+  daysDiff?: number | null;
 }
 
 export default function OrdersPage() {
   const router = useRouter();
 
-  // Greeting text
   const [greetingText, setGreetingText] = useState("");
-
-  // Auth token, user info
   const [token, setToken] = useState("");
   const [userName, setUserName] = useState("");
   const [hasName, setHasName] = useState(false);
 
-  // Active tab: "saved", "active", or "past"
   const [tab, setTab] = useState<"saved" | "active" | "past">("saved");
-
-  // Saved orders data
   const [savedOrders, setSavedOrders] = useState<CompositeOrder[] | null>(null);
   const [savedLoading, setSavedLoading] = useState(false);
   const [savedError, setSavedError] = useState<string | null>(null);
 
-  // Sorting controls
-  const [sortColumn, setSortColumn] = useState<"code" | "cost" | "date" | null>(null);
+  const [sortColumn, setSortColumn] = useState<"code" | "cost" | "date" | null>(
+    null
+  );
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
-
-  // Soft-delete logic
   const [pendingDelete, setPendingDelete] = useState<number | null>(null);
   const deleteTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const [expandedOrderCode, setExpandedOrderCode] = useState<string | null>(null);
-  const [expandedOrderDetails, setExpandedOrderDetails] = useState<CompositeOrder | null>(null);
+  const [expandedOrderCode, setExpandedOrderCode] = useState<string | null>(
+    null
+  );
+  const [expandedOrderDetails, setExpandedOrderDetails] =
+    useState<CompositeOrder | null>(null);
 
-  // Initialize greeting once
   useEffect(() => {
     setGreetingText(getGreeting());
   }, []);
 
-  // Check for auth token, redirect to /login if missing
-  // Also extract userName if available
   useEffect(() => {
     const storedToken = sessionStorage.getItem("authToken");
     if (!storedToken) {
@@ -120,31 +109,40 @@ export default function OrdersPage() {
           setUserName(name);
           setHasName(true);
         }
-      } catch (err) {
-        console.warn("Failed to parse profileData:", err);
-      }
+      } catch {}
     }
   }, [router]);
 
-  // If tab is "saved" and token is valid => load cached orders, then fetch fresh data
   useEffect(() => {
     if (tab === "saved" && token) {
       const cached = sessionStorage.getItem("savedOrders");
       if (cached) {
         try {
           const parsed = JSON.parse(cached) as CompositeOrder[];
-          setSavedOrders(parsed);
-        } catch (err) {
-          console.warn("Failed to parse savedOrders:", err);
-        }
+          const withDiffs = attachDaysDiff(parsed);
+          setSavedOrders(withDiffs);
+        } catch {}
       }
       fetchSavedOrders(token);
     }
   }, [tab, token]);
 
-  /**
-   * Fetch saved orders from /api/orders/list.
-   */
+  function attachDaysDiff(orders: CompositeOrder[]): CompositeOrder[] {
+    const now = new Date();
+    return orders.map((o) => {
+      if (!o.common.selected_date) {
+        return { ...o, daysDiff: null };
+      }
+      try {
+        const parsedDate = parse(o.common.selected_date, "EEE, d MMM yyyy", now);
+        const diff = differenceInCalendarDays(parsedDate, now);
+        return { ...o, daysDiff: diff };
+      } catch {
+        return { ...o, daysDiff: null };
+      }
+    });
+  }
+
   async function fetchSavedOrders(userToken: string) {
     try {
       setSavedLoading(true);
@@ -161,19 +159,27 @@ export default function OrdersPage() {
         throw new Error(errData.error || "Failed to fetch saved orders");
       }
       const data = await resp.json();
-      setSavedOrders(data);
+      const withDiffs = attachDaysDiff(data);
+      setSavedOrders(withDiffs);
       sessionStorage.setItem("savedOrders", JSON.stringify(data));
     } catch (error: any) {
-      console.error("Error fetching saved orders:", error);
       setSavedError(error.message);
     } finally {
       setSavedLoading(false);
     }
   }
 
-  /**
-   * Fetch expanded order details or collapse if already expanded.
-   */
+  /** Allows child to refresh the list. */
+  function handleRefreshOrders() {
+    if (token) fetchSavedOrders(token);
+  }
+
+  /** Allows child to close the expanded row. */
+  function handleCloseExpanded() {
+    setExpandedOrderCode(null);
+    setExpandedOrderDetails(null);
+  }
+
   async function handleGetOrderDetails(orderCode: string) {
     if (expandedOrderCode === orderCode) {
       setExpandedOrderCode(null);
@@ -190,24 +196,30 @@ export default function OrdersPage() {
         const errData = await resp.json();
         throw new Error(errData.error || "Failed to fetch order details");
       }
-      const orderDetails = await resp.json();
+      const orderDetails: CompositeOrder = await resp.json();
+      if (orderDetails.common.selected_date) {
+        try {
+          const parsedDate = parse(
+            orderDetails.common.selected_date,
+            "EEE, d MMM yyyy",
+            new Date()
+          );
+          orderDetails.daysDiff = differenceInCalendarDays(parsedDate, new Date());
+        } catch {
+          orderDetails.daysDiff = null;
+        }
+      }
       setExpandedOrderCode(orderCode);
       setExpandedOrderDetails(orderDetails);
     } catch (error: any) {
-      console.error("Error getting order details:", error);
       alert("Error getting details: " + error.message);
     }
   }
 
-  /**
-   * Begin a soft-delete process with a 5-second undo window.
-   */
   function initiateDeleteOrder(orderId: number, orderCode: string) {
     if (pendingDelete === orderId) return;
-
     const confirmMsg = `Are you sure you want to delete order ${orderCode}? You will have 5 seconds to undo.`;
     if (!window.confirm(confirmMsg)) return;
-
     setPendingDelete(orderId);
     if (deleteTimeoutRef.current) {
       clearTimeout(deleteTimeoutRef.current);
@@ -218,9 +230,6 @@ export default function OrdersPage() {
     }, 5000);
   }
 
-  /**
-   * Undo the soft-delete if called within 5 seconds.
-   */
   function undoDelete() {
     if (deleteTimeoutRef.current) {
       clearTimeout(deleteTimeoutRef.current);
@@ -228,9 +237,6 @@ export default function OrdersPage() {
     setPendingDelete(null);
   }
 
-  /**
-   * Permanently delete the order via /api/orders/delete, then refresh.
-   */
   async function handleDeleteOrder(orderCode: string) {
     try {
       const resp = await fetch("/api/orders/delete", {
@@ -246,14 +252,10 @@ export default function OrdersPage() {
       alert(`Order ${orderCode} deleted!`);
       await fetchSavedOrders(token);
     } catch (error: any) {
-      console.error("Error deleting order:", error);
       alert("Error deleting order: " + error.message);
     }
   }
 
-  /**
-   * Sorting logic for columns: "code", "cost", or "date".
-   */
   function handleSort(column: "code" | "cost" | "date") {
     if (sortColumn === column) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
@@ -263,9 +265,6 @@ export default function OrdersPage() {
     }
   }
 
-  /**
-   * Returns a sorted list of saved orders.
-   */
   function getSortedOrders(): CompositeOrder[] {
     if (!savedOrders) return [];
     if (!sortColumn) return savedOrders;
@@ -292,6 +291,25 @@ export default function OrdersPage() {
     return arr;
   }
 
+  function renderDateCell(order: CompositeOrder) {
+    if (!order.common.selected_date) return "No date";
+    if (order.daysDiff == null) return order.common.selected_date;
+
+    if (order.daysDiff < 0) {
+      return <span className="text-red-600">Date expired</span>;
+    }
+    if (order.daysDiff === 0) {
+      return <span className="text-red-600">Expires today</span>;
+    }
+    if (order.daysDiff === 1) {
+      return <span className="text-red-600">Expires in 1 day</span>;
+    }
+    if (order.daysDiff === 2) {
+      return <span className="text-red-600">Expires in 2 days</span>;
+    }
+    return order.common.selected_date;
+  }
+
   const sortedSavedOrders = getSortedOrders();
   const savedCount = savedOrders ? savedOrders.length : 0;
 
@@ -302,25 +320,32 @@ export default function OrdersPage() {
           {greetingText}, {hasName ? userName : "Guest"}!
         </h1>
 
-        {/* Top navigation row */}
         <div className="flex items-center justify-between mb-10">
           <div className="flex items-center gap-8">
             <Link href="/profile" className="text-gray-600 hover:text-blue-600">
               Profile
             </Link>
-            <Link href="/dashboard" className="text-blue-600 border-b-2 border-blue-600">
+            <Link
+              href="/dashboard"
+              className="text-blue-600 border-b-2 border-blue-600"
+            >
               Orders
             </Link>
-            <Link href="/profile/messages" className="text-gray-600 hover:text-blue-600">
+            <Link
+              href="/profile/messages"
+              className="text-gray-600 hover:text-blue-600"
+            >
               Messages
             </Link>
-            <Link href="/profile/settings" className="text-gray-600 hover:text-blue-600">
+            <Link
+              href="/profile/settings"
+              className="text-gray-600 hover:text-blue-600"
+            >
               Settings
             </Link>
           </div>
         </div>
 
-        {/* Tabs: Saved, Active, Past */}
         <div className="flex items-center gap-4 mb-6 text-sm font-medium">
           <button
             onClick={() => setTab("saved")}
@@ -359,13 +384,9 @@ export default function OrdersPage() {
           </button>
         </div>
 
-        {/* ACTIVE tab */}
         {tab === "active" && <p className="text-gray-700">No active orders yet.</p>}
-
-        {/* PAST tab */}
         {tab === "past" && <p className="text-gray-700">No past orders yet.</p>}
 
-        {/* SAVED tab */}
         {tab === "saved" && (
           <div>
             {savedLoading && <p>Loading saved orders...</p>}
@@ -445,10 +466,9 @@ export default function OrdersPage() {
                               {totalFormatted}
                             </td>
                             <td className="w-1/3 py-2 px-0 sm:w-1/4 sm:px-3">
-                              {order.common.selected_date}
+                              {renderDateCell(order)}
                             </td>
                             <td className="hidden sm:table-cell w-1/4 py-2 px-3 text-right">
-                              {/* Print */}
                               <button
                                 onClick={() => router.push(`/dashboard/print/${order.code}`)}
                                 className="text-gray-500 hover:text-blue-600 mr-3"
@@ -456,8 +476,6 @@ export default function OrdersPage() {
                               >
                                 <Printer size={16} />
                               </button>
-
-                              {/* Delete */}
                               {isPendingDelete ? (
                                 <div className="text-red-600 flex items-center gap-2 justify-end">
                                   <span>Deleting...</span>
@@ -470,9 +488,7 @@ export default function OrdersPage() {
                                 </div>
                               ) : (
                                 <button
-                                  onClick={() =>
-                                    initiateDeleteOrder(order.id, order.code)
-                                  }
+                                  onClick={() => initiateDeleteOrder(order.id, order.code)}
                                   className="text-gray-500 hover:text-red-600"
                                   title="Delete order"
                                 >
@@ -482,7 +498,6 @@ export default function OrdersPage() {
                             </td>
                           </tr>
 
-                          {/* Expanded row */}
                           {isExpanded && expandedOrderDetails && (
                             <ExpandedOrderRow
                               order={expandedOrderDetails}
@@ -491,6 +506,10 @@ export default function OrdersPage() {
                               onDeleteOrder={(id, code) =>
                                 initiateDeleteOrder(id, code)
                               }
+                              token={token}
+                              onRefreshOrders={handleRefreshOrders}
+                              // callback to close
+                              onCloseExpanded={handleCloseExpanded}
                             />
                           )}
                         </React.Fragment>

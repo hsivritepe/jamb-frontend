@@ -8,12 +8,12 @@ interface PaymentOptionPanelProps {
   /**
    * The base labor cost (before any discount).
    */
-  subtotal: number;
+  laborSubtotal: number;
 
   /**
-   * The sum of materials + fees (not discounted).
+   * The total materials (and equipment) cost.
    */
-  materialsAndFees: number;
+  materialsSubtotal: number;
 
   /**
    * Currently selected payment label, e.g. "Quarterly".
@@ -27,8 +27,8 @@ interface PaymentOptionPanelProps {
 }
 
 export default function PaymentOptionPanel({
-  subtotal,
-  materialsAndFees,
+  laborSubtotal,
+  materialsSubtotal,
   selectedOption,
   onConfirm,
 }: PaymentOptionPanelProps) {
@@ -67,8 +67,13 @@ export default function PaymentOptionPanel({
       <div className="space-y-4">
         {options.map((opt) => {
           const isSelected = selectedOption === opt.label;
-          const discountedLabor = subtotal * opt.coefficient;
-          const newTotal = discountedLabor + materialsAndFees;
+
+          // Calculate final labor cost, fees, and new subtotal for this option:
+          const finalLabor = laborSubtotal * opt.coefficient;
+          const serviceFeeOnLabor = finalLabor * 0.15; 
+          const serviceFeeOnMaterials = materialsSubtotal * 0.05; 
+          const newSubtotal =
+            finalLabor + materialsSubtotal + serviceFeeOnLabor + serviceFeeOnMaterials;
 
           return (
             <div
@@ -90,16 +95,16 @@ export default function PaymentOptionPanel({
               <p className="text-sm text-gray-700 mt-1">
                 <strong>Labor Cost:</strong>{" "}
                 <span className="text-blue-600 font-medium">
-                  ${formatWithSeparator(discountedLabor)}
+                  ${formatWithSeparator(finalLabor)}
                 </span>
                 <span className="ml-2 text-gray-500">
-                  (was ${formatWithSeparator(subtotal)})
+                  (was ${formatWithSeparator(laborSubtotal)})
                 </span>
               </p>
               <p className="text-sm text-gray-700">
                 <strong>New Subtotal:</strong>{" "}
                 <span className="font-medium text-blue-600">
-                  ${formatWithSeparator(newTotal)}
+                  ${formatWithSeparator(newSubtotal)}
                 </span>
               </p>
 
