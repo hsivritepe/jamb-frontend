@@ -33,21 +33,25 @@ const loadFromSession = (key: string, defaultValue: any) => {
 };
 
 // Prepare indoor and outdoor service arrays
-const indoorServices = Object.values(INDOOR_SERVICE_SECTIONS).map((section) => ({
-  title: section,
-  image: `/images/services/${section.toLowerCase().replace(/ /g, "_")}.jpg`,
-  subcategories: ALL_CATEGORIES.filter((cat) => cat.section === section).map(
-    (cat) => cat.title
-  ),
-}));
+const indoorServices = Object.values(INDOOR_SERVICE_SECTIONS).map(
+  (section) => ({
+    title: section,
+    image: `/images/services/${section.toLowerCase().replace(/ /g, "_")}.jpg`,
+    subcategories: ALL_CATEGORIES.filter((cat) => cat.section === section).map(
+      (cat) => cat.title
+    ),
+  })
+);
 
-const outdoorServices = Object.values(OUTDOOR_SERVICE_SECTIONS).map((section) => ({
-  title: section,
-  image: `/images/services/${section.toLowerCase().replace(/ /g, "_")}.jpg`,
-  subcategories: ALL_CATEGORIES.filter((cat) => cat.section === section).map(
-    (cat) => cat.title
-  ),
-}));
+const outdoorServices = Object.values(OUTDOOR_SERVICE_SECTIONS).map(
+  (section) => ({
+    title: section,
+    image: `/images/services/${section.toLowerCase().replace(/ /g, "_")}.jpg`,
+    subcategories: ALL_CATEGORIES.filter((cat) => cat.section === section).map(
+      (cat) => cat.title
+    ),
+  })
+);
 
 interface ServicesGridProps {
   title?: string;
@@ -108,15 +112,17 @@ export default function ServicesGrid({
       <div className="container mx-auto">
         <SectionBoxTitle>
           <div dangerouslySetInnerHTML={{ __html: title }} />
-          <p
-            className={`
-              font-semibold sm:font-normal text-gray-500
-              text-[20px] leading-[28px]
-              md:text-[30px] md:leading-[41px]
-            `}
-          >
-            {subtitle}
-          </p>
+          {subtitle && (
+            <p
+              className={`
+      font-semibold sm:font-normal text-gray-500
+      text-[20px] leading-[28px]
+      md:text-[30px] md:leading-[41px]
+    `}
+            >
+              {subtitle}
+            </p>
+          )}
         </SectionBoxTitle>
 
         <div className="flex justify-between items-center mb-8">
