@@ -196,7 +196,7 @@ export default function ServiceTimePicker({
   return (
     <div className="bg-white border border-gray-300 rounded-lg p-2 sm:p-4 w-full h-auto">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="pl-2 text-3xl font-bold sm:font-semibold text-gray-800">
+        <h2 className="pl-2 text-2xl sm:text-3xl font-bold sm:font-semibold text-gray-800">
           Select Available Date{" "}
           <span className="text-sm text-gray-500 font-semibold sm:font-normal">
             (Impacts Total Labor)
@@ -206,7 +206,7 @@ export default function ServiceTimePicker({
           <button
             onClick={onClose}
             title="Close"
-            className="text-gray-600 text-xl px-2 rounded hover:bg-gray-200 transition-colors active:scale-95"
+            className="text-gray-600 text-4xl px-2 rounded hover:bg-gray-200 transition-colors active:scale-95"
           >
             &times;
           </button>
