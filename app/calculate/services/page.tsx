@@ -46,6 +46,14 @@ export default function Services() {
   const [photos, setPhotos] = useState<string[]>(getSessionItem("photos", []));
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
 
+  // Show warning as alert instead of a block
+  useEffect(() => {
+    if (warningMessage) {
+      alert(warningMessage);
+      setWarningMessage(null);
+    }
+  }, [warningMessage]);
+
   // Categories map by section
   const categoriesBySection: Record<string, { id: string; title: string }[]> = {};
   ALL_CATEGORIES.forEach((cat) => {
@@ -228,7 +236,7 @@ export default function Services() {
             onChange={(e: ChangeEvent<HTMLInputElement>) =>
               setSearchQuery(e.target.value)
             }
-            placeholder="Search within selected sections..."
+            placeholder="Search within selected categories"
           />
           <div className="flex justify-between items-center text-sm text-gray-500 mt-2">
             <span>
@@ -249,12 +257,7 @@ export default function Services() {
           </div>
         </div>
 
-        {/* Warning message */}
-        <div className="h-6 mt-4 text-left">
-          {warningMessage && <p className="text-red-500">{warningMessage}</p>}
-        </div>
-
-        <div className="container mx-auto flex flex-col xl:flex-row mt-8 gap-6">
+        <div className="container mx-auto flex flex-col xl:flex-row items-start mt-8 gap-6">
           {/* Left side: categories */}
           <div className="w-full xl:flex-1">
             <div className="flex flex-col gap-3">
@@ -343,15 +346,18 @@ export default function Services() {
 
           {/* Right side: address & photos */}
           <div className="w-full md:w-full xl:w-1/2">
-            <AddressSection
-              address={address}
-              onAddressChange={handleAddressChange}
-              zip={zip}
-              onZipChange={handleZipChange}
-              stateName={stateName}
-              onStateChange={handleStateChange}
-              onUseMyLocation={handleUseMyLocation}
-            />
+            {/* Hide AddressSection on phones and tablets, show only on desktop */}
+            <div className="hidden xl:block">
+              <AddressSection
+                address={address}
+                onAddressChange={handleAddressChange}
+                zip={zip}
+                onZipChange={handleZipChange}
+                stateName={stateName}
+                onStateChange={handleStateChange}
+                onUseMyLocation={handleUseMyLocation}
+              />
+            </div>
 
             <PhotosAndDescription
               photos={photos}

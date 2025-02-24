@@ -47,9 +47,17 @@ export default function EmergencyServices() {
   const [searchQuery, setSearchQuery] = useState<string>(
     getSessionItem("searchQuery", "")
   );
-  const [warningMessage, setWarningMessage] = useState<string | null>(null);
 
-  // Address/Contact info (split into separate states)
+  // Show warning as an alert (instead of a dedicated block)
+  const [warningMessage, setWarningMessage] = useState<string | null>(null);
+  useEffect(() => {
+    if (warningMessage) {
+      alert(warningMessage);
+      setWarningMessage(null);
+    }
+  }, [warningMessage]);
+
+  // Address/Contact info
   const [address, setAddress] = useState<string>(getSessionItem("address", ""));
   const [city, setCity] = useState<string>(getSessionItem("city", ""));
   const [zip, setZip] = useState<string>(getSessionItem("zip", ""));
@@ -64,7 +72,7 @@ export default function EmergencyServices() {
   );
   const [photos, setPhotos] = useState<string[]>(getSessionItem("photos", []));
 
-  // Persist states in session storage
+  // Persist states in session
   useEffect(() => setSessionItem("selectedServices", selectedServices), [selectedServices]);
   useEffect(() => setSessionItem("searchQuery", searchQuery), [searchQuery]);
   useEffect(() => setSessionItem("address", address), [address]);
@@ -75,16 +83,9 @@ export default function EmergencyServices() {
   useEffect(() => setSessionItem("description", description), [description]);
   useEffect(() => setSessionItem("photos", photos), [photos]);
 
-  // Auto-fill address fields from location context if they're all empty
+  // Auto-fill address from location if empty
   useEffect(() => {
-    if (
-      !address &&
-      !city &&
-      !zip &&
-      !country &&
-      location?.city &&
-      location?.zip
-    ) {
+    if (!address && !city && !zip && !country && location?.city && location?.zip) {
       setAddress(location.city);
       setCity(location.city);
       setZip(location.zip);
@@ -93,7 +94,7 @@ export default function EmergencyServices() {
     }
   }, [address, city, zip, country, location, stateName]);
 
-  // Combine address for convenience
+  // Combine address
   useEffect(() => {
     const combinedAddress = [address, stateName, zip].filter(Boolean).join(", ");
     setSessionItem("fullAddress", combinedAddress);
@@ -197,18 +198,20 @@ export default function EmergencyServices() {
 
       {/* Header */}
       <div className="container mx-auto mt-8">
-        <div className="flex flex-col xl:flex-row justify-between items-start gap-2 w-full">
-          <SectionBoxTitle className="text-left">
+        <div className="flex flex-col md:flex-row justify-between gap-2">
+          <SectionBoxTitle className="flex-shrink-0">
             Let's Quickly Find the Help You Need
           </SectionBoxTitle>
-          <div className="self-end xl:self-center">
-            <Button onClick={handleNextClick}>Next →</Button>
+          <div className="flex flex-col items-end md:items-center md:flex-row md:justify-end">
+            <Button onClick={handleNextClick} className="mt-2 md:mt-0">
+              Next →
+            </Button>
           </div>
         </div>
       </div>
 
-      {/* Search and Clear */}
-      <div className="container w-full xl:w-[600px] mt-6 mb-4">
+      {/* Search bar */}
+      <div className="flex flex-col gap-4 mt-8 w-full xl:w-[600px]">
         <SearchServices
           value={searchQuery}
           onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
@@ -233,16 +236,11 @@ export default function EmergencyServices() {
         </div>
       </div>
 
-      {/* Warning */}
-      <div className="container mx-auto h-6 mt-4 text-left">
-        {warningMessage && <p className="text-red-500">{warningMessage}</p>}
-      </div>
-
-      {/* Main layout */}
-      <div className="container mx-auto flex flex-col xl:flex-row gap-6 w-full mt-4">
-        {/* Categories */}
+      {/* Main layout => left (categories) + right (address & photos) */}
+      <div className="container mx-auto flex flex-col xl:flex-row items-start mt-8 gap-6">
+        {/* Left side: categories */}
         <div className="w-full xl:flex-1">
-          <div className="flex flex-col gap-3 mt-3 w-full">
+          <div className="flex flex-col gap-3">
             {Object.entries(filteredServices).map(([category, { services }]) => {
               const selectedCount = selectedServices[category]?.length || 0;
               const categoryLabel = category.replace(/([A-Z])/g, " $1").trim();
@@ -250,7 +248,7 @@ export default function EmergencyServices() {
               return (
                 <div
                   key={category}
-                  className={`p-4 border rounded-xl bg-white ${
+                  className={`p-4 border rounded-xl bg-white xl:w-[600px] ${
                     selectedCount > 0 ? "border-blue-500" : "border-gray-300"
                   }`}
                 >
@@ -260,7 +258,7 @@ export default function EmergencyServices() {
                   >
                     <h3
                       className={`font-semibold sm:font-medium text-xl sm:text-2xl ${
-                        selectedCount > 0 ? "text-blue-600" : "text-black"
+                        selectedCount > 0 ? "text-blue-600" : "text-gray-800"
                       }`}
                     >
                       {categoryLabel}
@@ -279,39 +277,46 @@ export default function EmergencyServices() {
 
                   {expandedCategories.has(category) && (
                     <div className="mt-4 flex flex-col gap-3">
-                      {Object.entries(services).map(([serviceKey]) => {
-                        const serviceLabel = serviceKey
-                          .replace(/([A-Z])/g, " $1")
-                          .replace(/^./, (char) => char.toUpperCase())
-                          .trim();
-                        const isSelected =
-                          selectedServices[category]?.includes(serviceKey) || false;
+                      {Object.keys(services).length === 0 ? (
+                        <p className="text-sm text-gray-500">
+                          No services match your search.
+                        </p>
+                      ) : (
+                        Object.entries(services).map(([serviceKey]) => {
+                          // Convert serviceKey => label
+                          const serviceLabel = serviceKey
+                            .replace(/([A-Z])/g, " $1")
+                            .replace(/^./, (char) => char.toUpperCase())
+                            .trim();
+                          const isSelected =
+                            selectedServices[category]?.includes(serviceKey) || false;
 
-                        return (
-                          <div
-                            key={serviceKey}
-                            className="flex justify-between items-center"
-                          >
-                            <span
-                              className={`text-lg ${
-                                isSelected ? "text-blue-600" : "text-gray-800"
-                              }`}
+                          return (
+                            <div
+                              key={serviceKey}
+                              className="flex justify-between items-center"
                             >
-                              {serviceLabel}
-                            </span>
-                            <label className="relative inline-flex items-center cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={isSelected}
-                                onChange={() => handleServiceSelect(category, serviceKey)}
-                                className="sr-only peer"
-                              />
-                              <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300" />
-                              <div className="absolute top-[2px] left-[2px] w-[22px] h-[22px] bg-white rounded-full shadow-md peer-checked:translate-x-[24px] transform transition-transform duration-300" />
-                            </label>
-                          </div>
-                        );
-                      })}
+                              <span
+                                className={`text-lg font-medium ${
+                                  isSelected ? "text-blue-600" : "text-gray-800"
+                                }`}
+                              >
+                                {serviceLabel}
+                              </span>
+                              <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => handleServiceSelect(category, serviceKey)}
+                                  className="sr-only peer"
+                                />
+                                <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
+                                <div className="absolute top-[2px] left-[2px] w-[22px] h-[22px] bg-white rounded-full shadow-md peer-checked:translate-x-[24px] transform transition-transform duration-300"></div>
+                              </label>
+                            </div>
+                          );
+                        })
+                      )}
                     </div>
                   )}
                 </div>
@@ -320,17 +325,22 @@ export default function EmergencyServices() {
           </div>
         </div>
 
-        {/* Address and Photos */}
-        <div className="w-full xl:w-1/2 flex flex-col gap-6 mt-6 xl:mt-0">
-          <AddressSection
-            address={address}
-            onAddressChange={handleAddressChange}
-            zip={zip}
-            onZipChange={handleZipChange}
-            stateName={stateName}
-            onStateChange={handleStateChange}
-            onUseMyLocation={handleUseMyLocation}
-          />
+        {/* Right side: address & photos */}
+        {/* On desktop => fix width 600px & push to the right (ml-auto) */}
+        <div className="w-full xl:w-[600px] xl:ml-auto space-y-6 mt-8 xl:mt-0">
+          {/* AddressSection visible only on desktop */}
+          <div className="hidden xl:block">
+            <AddressSection
+              address={address}
+              onAddressChange={handleAddressChange}
+              zip={zip}
+              onZipChange={handleZipChange}
+              stateName={stateName}
+              onStateChange={handleStateChange}
+              onUseMyLocation={handleUseMyLocation}
+            />
+          </div>
+
           <PhotosAndDescription
             photos={photos}
             description={description}

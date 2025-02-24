@@ -30,22 +30,22 @@ interface FinishingMaterial {
   cost: string;
 }
 
-/** Formats a numeric value with commas and two decimals. */
+// Formats a numeric value with commas and two decimals.
 function formatWithSeparator(value: number): string {
   return new Intl.NumberFormat("en-US", { minimumFractionDigits: 2 }).format(value);
 }
 
-/** Converts a service ID from "1-1-1" to "1.1.1" for the API. */
+// Converts a service ID from "1-1-1" to "1.1.1" for the API.
 function convertServiceIdToApiFormat(serviceId: string) {
   return serviceId.replaceAll("-", ".");
 }
 
-/** Returns the base API URL or a fallback. */
+// Returns the base API URL or a fallback.
 function getApiBaseUrl(): string {
   return process.env.NEXT_PUBLIC_API_BASE_URL || "https://dev.thejamb.com";
 }
 
-/** Fetch finishing materials for a specific work_code. */
+// Fetch finishing materials for a specific work_code.
 async function fetchFinishingMaterials(workCode: string) {
   const baseUrl = getApiBaseUrl();
   const url = `${baseUrl}/work/finishing_materials`;
@@ -60,7 +60,7 @@ async function fetchFinishingMaterials(workCode: string) {
   return res.json();
 }
 
-/** Sends a request to calculate labor and materials cost. */
+// Sends a request to calculate labor and materials cost.
 async function calculatePrice(params: {
   work_code: string;
   zipcode: string;
@@ -81,7 +81,7 @@ async function calculatePrice(params: {
   return res.json();
 }
 
-/** Displays a service image using Next.js <Image>. */
+// Displays a service image using Next.js <Image>.
 function ServiceImage({ serviceId }: { serviceId: string }) {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
 
@@ -125,6 +125,14 @@ export default function RoomDetails() {
     getSessionItem("description", "")
   );
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
+
+  // Use an effect to show warning messages as alerts instead of a block
+  useEffect(() => {
+    if (warningMessage) {
+      alert(warningMessage);
+      setWarningMessage(null);
+    }
+  }, [warningMessage]);
 
   // Address states
   const [address, setAddress] = useState<string>(getSessionItem("address", ""));
@@ -295,9 +303,7 @@ export default function RoomDetails() {
     new Set()
   );
 
-  /**
-   * Loads finishing materials for a single service, then picks defaults if needed.
-   */
+  // Loads finishing materials for a single service, then picks defaults if needed.
   async function ensureFinishingMaterialsLoaded(serviceId: string) {
     if (!finishingMaterialsMapAll[serviceId]) {
       try {
@@ -323,7 +329,7 @@ export default function RoomDetails() {
     }
   }
 
-  /** Recompute costs whenever selected services or finishing materials change. */
+  // Recompute costs whenever selected services or finishing materials change.
   useEffect(() => {
     const { zip: userZip, country } = location;
     if (country !== "United States" || !/^\d{5}$/.test(userZip)) {
@@ -371,7 +377,7 @@ export default function RoomDetails() {
     finishingMaterialsMapAll,
   ]);
 
-  /** Toggle category expansion for a specific room. */
+  // Toggle category expansion for a specific room.
   function toggleCategory(roomId: string, catId: string) {
     setExpandedCategoriesByRoom((prev) => {
       const copy = { ...prev };
@@ -382,7 +388,7 @@ export default function RoomDetails() {
     });
   }
 
-  /** Toggle a service on/off in a given room. */
+  // Toggle a service on/off in a given room.
   async function handleServiceToggle(roomId: string, serviceId: string) {
     const roomServices = { ...(selectedServicesState[roomId] || {}) };
     const isCurrentlyOn = !!roomServices[serviceId];
@@ -424,7 +430,7 @@ export default function RoomDetails() {
     setWarningMessage(null);
   }
 
-  /** Increment or decrement quantity. */
+  // Increment or decrement quantity.
   function handleQuantityChange(
     roomId: string,
     serviceId: string,
@@ -452,7 +458,7 @@ export default function RoomDetails() {
     setManualInputValue((old) => ({ ...old, [serviceId]: null }));
   }
 
-  /** Handle manual input changes for quantity. */
+  // Handle manual input changes for quantity.
   function handleManualQuantityChange(
     roomId: string,
     serviceId: string,
@@ -479,14 +485,14 @@ export default function RoomDetails() {
     setSelectedServicesState((old) => ({ ...old, [roomId]: roomServices }));
   }
 
-  /** If user leaves input empty => revert to stored. */
+  // If user leaves input empty => revert to stored.
   function handleBlurInput(serviceId: string) {
     if (!manualInputValue[serviceId]) {
       setManualInputValue((old) => ({ ...old, [serviceId]: null }));
     }
   }
 
-  /** Clear all selected services in all chosen rooms. */
+  // Clear all selected services in all chosen rooms.
   function handleClearAll() {
     const ok = window.confirm("Are you sure you want to clear all selections?");
     if (!ok) return;
@@ -505,12 +511,12 @@ export default function RoomDetails() {
     setClientOwnedMaterials({});
   }
 
-  /** Sum all service costs. */
+  // Sum all service costs.
   function calculateTotalAllRooms(): number {
     return Object.values(serviceCosts).reduce((acc, val) => acc + val, 0);
   }
 
-  /** Proceed to next step => validate address & selections. */
+  // Proceed to next step => validate address & selections.
   function handleNext() {
     let anySelected = false;
     for (const roomId of Object.keys(selectedServicesState)) {
@@ -547,7 +553,7 @@ export default function RoomDetails() {
     router.push("/rooms/estimate");
   }
 
-  /** Toggle detailed cost breakdown for a single service. */
+  // Toggle detailed cost breakdown for a single service.
   function toggleServiceDetails(serviceId: string) {
     setExpandedServiceDetails((old) => {
       const copy = new Set(old);
@@ -556,7 +562,7 @@ export default function RoomDetails() {
     });
   }
 
-  /** Find a finishing material object by externalId. */
+  // Find a finishing material object by externalId.
   function findFinishingMaterialObj(
     serviceId: string,
     externalId: string
@@ -572,14 +578,14 @@ export default function RoomDetails() {
     return null;
   }
 
-  /** Pick a finishing material => finishingMaterialSelections[serviceId][sectionName] = externalId. */
+  // Pick a finishing material => finishingMaterialSelections[serviceId][sectionName] = externalId.
   function pickMaterial(serviceId: string, sectionName: string, externalId: string) {
     const existing = finishingMaterialSelections[serviceId] || {};
     const updated = { ...existing, [sectionName]: externalId };
     setFinishingMaterialSelections((old) => ({ ...old, [serviceId]: updated }));
   }
 
-  /** Mark a material as user-owned. */
+  // Mark a material as user-owned.
   function userHasOwnMaterial(serviceId: string, externalId: string) {
     if (!clientOwnedMaterials[serviceId]) {
       clientOwnedMaterials[serviceId] = new Set();
@@ -603,14 +609,14 @@ export default function RoomDetails() {
   const [calcModalRoomId, setCalcModalRoomId] = useState<string | null>(null);
   const [calcModalServiceId, setCalcModalServiceId] = useState<string | null>(null);
 
-  /** Open surface calc modal for a (roomId, serviceId). */
+  // Open surface calc modal for a (roomId, serviceId).
   function openSurfaceCalc(roomId: string, serviceId: string) {
     setCalcModalRoomId(roomId);
     setCalcModalServiceId(serviceId);
     setShowCalcModal(true);
   }
 
-  /** Apply the surface area result => update quantity. */
+  // Apply the surface area result => update quantity.
   function handleApplySquareFeet(roomId: string, serviceId: string, sqFeet: number) {
     const roomServices = { ...(selectedServicesState[roomId] || {}) };
     roomServices[serviceId] = sqFeet;
@@ -639,40 +645,33 @@ export default function RoomDetails() {
           </div>
         </div>
 
-        {/* Clear all / no service link */}
-        <div className="flex justify-between items-center text-sm text-gray-500 mt-8 w-full xl:max-w-[600px]">
-          <span>
-            No service?{" "}
-            <a href="#" className="text-blue-600 hover:underline focus:outline-none">
-              Contact support
-            </a>
-          </span>
-          <button
-            onClick={handleClearAll}
-            className="text-blue-600 hover:underline focus:outline-none"
-          >
-            Clear
-          </button>
-        </div>
-
-        {/* Warning messages */}
-        <div className="h-6 mt-4 text-left">
-          {warningMessage && <p className="text-red-500">{warningMessage}</p>}
-        </div>
-
-        {/* Search */}
-        <div className="w-full xl:max-w-[600px] mt-8 mb-4">
+        {/* Unified search bar + "No service?/Clear" block, same style as on previous page */}
+        <div className="flex flex-col gap-4 mt-8 w-full xl:w-[622px]">
           <SearchServices
             value={searchQuery}
             onChange={(e: ChangeEvent<HTMLInputElement>) =>
               setSearchQuery(e.target.value)
             }
-            placeholder="Search for services in your selected rooms..."
+            placeholder="Search for services in your selected rooms"
           />
+          <div className="flex justify-between items-center text-sm text-gray-500 mt-2">
+            <span>
+              No service?{" "}
+              <a href="#" className="text-blue-600 hover:underline focus:outline-none">
+                Contact support
+              </a>
+            </span>
+            <button
+              onClick={handleClearAll}
+              className="text-blue-600 hover:underline focus:outline-none"
+            >
+              Clear
+            </button>
+          </div>
         </div>
 
         {/* Main content => left (rooms) + right (summary & address) */}
-        <div className="container mx-auto relative flex flex-col xl:flex-row mt-8">
+        <div className="container mx-auto relative flex flex-col xl:flex-row items-start mt-8">
           {/* LEFT: chosen rooms */}
           <div className="w-full xl:flex-1 space-y-8">
             {chosenRooms.map((room) => {
@@ -1193,26 +1192,28 @@ export default function RoomDetails() {
               })()}
             </div>
 
-            {/* Address */}
-            <AddressSection
-              address={address}
-              onAddressChange={(e) => setAddress(e.target.value)}
-              zip={zip}
-              onZipChange={(e) => setZip(e.target.value)}
-              stateName={stateName}
-              onStateChange={(e) => setStateName(e.target.value)}
-              onUseMyLocation={() => {
-                if (location?.city && location?.state && location?.zip) {
-                  setAddress(location.city);
-                  setCity(location.city || "");
-                  setStateName(location.state);
-                  setCountry(location.country || "");
-                  setZip(location.zip);
-                } else {
-                  setWarningMessage("Location data is unavailable. Please enter manually.");
-                }
-              }}
-            />
+            {/* Hide AddressSection on phones/tablets, show only on desktop */}
+            <div className="hidden xl:block">
+              <AddressSection
+                address={address}
+                onAddressChange={(e) => setAddress(e.target.value)}
+                zip={zip}
+                onZipChange={(e) => setZip(e.target.value)}
+                stateName={stateName}
+                onStateChange={(e) => setStateName(e.target.value)}
+                onUseMyLocation={() => {
+                  if (location?.city && location?.state && location?.zip) {
+                    setAddress(location.city);
+                    setCity(location.city || "");
+                    setStateName(location.state);
+                    setCountry(location.country || "");
+                    setZip(location.zip);
+                  } else {
+                    setWarningMessage("Location data is unavailable. Please enter manually.");
+                  }
+                }}
+              />
+            </div>
 
             {/* Photos and description */}
             <PhotosAndDescription
