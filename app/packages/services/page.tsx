@@ -863,10 +863,11 @@ export default function PackageServicesPage() {
           </div>
         </div>
 
-        {/* Main layout => "For Home" + "For Garden" */}
+        {/* Main layout => "For Home" + "For Garden" + Summary + House info */}
+        {/* We replace the previous flex layout with two columns each max 600px wide */}
         <div className="container mx-auto relative flex flex-col xl:flex-row mt-8 gap-8">
-          {/* LEFT => services */}
-          <div className="w-full xl:flex-1 space-y-12">
+          {/* LEFT => "For Home" + "For Garden" */}
+          <div className="w-full xl:w-[600px] space-y-12">
             {/* For Home */}
             {Object.keys(homeSectionsMap).length > 0 && (
               <div className="w-full">
@@ -1649,9 +1650,9 @@ export default function PackageServicesPage() {
           </div>
 
           {/* RIGHT => summary + home info */}
-          <div className="w-full xl:w-1/2 xl:ml-auto pt-0 space-y-6 mt-8 xl:mt-0">
+          <div className="w-full xl:w-[500px] xl:ml-auto pt-0 space-y-6 mt-8 xl:mt-0">
             {/* Summary card */}
-            <div className="w-full xl:max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden">
+            <div className="w-full bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden">
               <SectionBoxSubtitle>Your {chosenPackage.title}</SectionBoxSubtitle>
               {Object.keys(mergedSelected).length === 0 ? (
                 <div className="text-left text-gray-500 text-medium mt-4">
@@ -1662,6 +1663,7 @@ export default function PackageServicesPage() {
                   <p className="text-gray-700 mb-4">
                     Here are your selected services, grouped by section &amp; category:
                   </p>
+                  {/* Summary structure */}
                   <div className="space-y-6">
                     {Object.entries(summaryStructure).map(([sectionName, cats]) => {
                       if (!Object.keys(cats).length) return null;
@@ -1732,7 +1734,7 @@ export default function PackageServicesPage() {
             </div>
 
             {/* House info */}
-            <div className="w-full xl:max-w-[500px] ml-auto bg-white p-4 rounded-lg border border-gray-300 overflow-hidden">
+            <div className="w-full bg-white p-4 rounded-lg border border-gray-300 overflow-hidden">
               <SectionBoxSubtitle>Home Details</SectionBoxSubtitle>
               <div className="mt-2 space-y-1 text-sm text-gray-700">
                 <p>
