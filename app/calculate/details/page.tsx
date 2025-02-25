@@ -40,9 +40,7 @@ function convertServiceIdToApiFormat(serviceId: string): string {
 
 /** Returns the base API URL or fallback. */
 function getApiBaseUrl(): string {
-  return (
-    process.env.NEXT_PUBLIC_API_BASE_URL || "https://dev.thejamb.com"
-  );
+  return process.env.NEXT_PUBLIC_API_BASE_URL || "https://dev.thejamb.com";
 }
 
 /** POST /work/finishing_materials => fetch finishing materials. */
@@ -857,8 +855,12 @@ export default function Details() {
                               {catTitle}
                               {selectedInCat > 0 && (
                                 <span className="text-sm text-gray-500 ml-2">
-                                  ({selectedInCat} 
-                                  <span className="hidden sm:inline"> selected</span>)
+                                  ({selectedInCat}
+                                  <span className="hidden sm:inline">
+                                    {" "}
+                                    selected
+                                  </span>
+                                  )
                                 </span>
                               )}
                             </h3>
@@ -922,8 +924,8 @@ export default function Details() {
                                           }
                                           className="sr-only peer"
                                         />
-                                        <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
-                                        <div className="absolute top-[2px] left-[2px] w-[22px] h-[22px] bg-white rounded-full shadow-md peer-checked:translate-x-[24px] transform transition-transform duration-300"></div>
+                                        <div className="w-[52px] h-[31px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
+                                        <div className="absolute top-[2px] left-[2px] w-[27px] h-[27px] bg-white rounded-full shadow-md transform transition-transform duration-300 peer-checked:translate-x-[21px]"></div>
                                       </label>
                                     </div>
 

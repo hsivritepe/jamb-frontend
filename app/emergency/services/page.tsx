@@ -40,10 +40,12 @@ export default function EmergencyServices() {
   }, []);
 
   // Service selection state
-  const [selectedServices, setSelectedServices] = useState<Record<string, string[]>>(
-    getSessionItem("selectedServices", {})
+  const [selectedServices, setSelectedServices] = useState<
+    Record<string, string[]>
+  >(getSessionItem("selectedServices", {}));
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
+    new Set()
   );
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState<string>(
     getSessionItem("searchQuery", "")
   );
@@ -73,7 +75,10 @@ export default function EmergencyServices() {
   const [photos, setPhotos] = useState<string[]>(getSessionItem("photos", []));
 
   // Persist states in session
-  useEffect(() => setSessionItem("selectedServices", selectedServices), [selectedServices]);
+  useEffect(
+    () => setSessionItem("selectedServices", selectedServices),
+    [selectedServices]
+  );
   useEffect(() => setSessionItem("searchQuery", searchQuery), [searchQuery]);
   useEffect(() => setSessionItem("address", address), [address]);
   useEffect(() => setSessionItem("city", city), [city]);
@@ -85,7 +90,14 @@ export default function EmergencyServices() {
 
   // Auto-fill address from location if empty
   useEffect(() => {
-    if (!address && !city && !zip && !country && location?.city && location?.zip) {
+    if (
+      !address &&
+      !city &&
+      !zip &&
+      !country &&
+      location?.city &&
+      location?.zip
+    ) {
       setAddress(location.city);
       setCity(location.city);
       setZip(location.zip);
@@ -96,13 +108,16 @@ export default function EmergencyServices() {
 
   // Combine address
   useEffect(() => {
-    const combinedAddress = [address, stateName, zip].filter(Boolean).join(", ");
+    const combinedAddress = [address, stateName, zip]
+      .filter(Boolean)
+      .join(", ");
     setSessionItem("fullAddress", combinedAddress);
   }, [address, stateName, zip]);
 
   // Count total available emergency services
-  const totalServices = Object.values(EMERGENCY_SERVICES)
-    .flatMap(({ services }) => Object.keys(services)).length;
+  const totalServices = Object.values(EMERGENCY_SERVICES).flatMap(
+    ({ services }) => Object.keys(services)
+  ).length;
 
   // Expand/collapse category sections
   function toggleCategory(category: string) {
@@ -144,11 +159,15 @@ export default function EmergencyServices() {
       (list) => list.length > 0
     );
     if (!anyServiceSelected) {
-      setWarningMessage("Please select at least one service before proceeding.");
+      setWarningMessage(
+        "Please select at least one service before proceeding."
+      );
       return;
     }
     if (!address.trim() || !stateName.trim() || !zip.trim()) {
-      setWarningMessage("Please enter your address, state, and ZIP before proceeding.");
+      setWarningMessage(
+        "Please enter your address, state, and ZIP before proceeding."
+      );
       return;
     }
     router.push("/emergency/details");
@@ -178,15 +197,18 @@ export default function EmergencyServices() {
 
   // Filter services by search
   const filteredServices: EmergencyServicesType = searchQuery
-    ? Object.entries(EMERGENCY_SERVICES).reduce((acc, [category, { services }]) => {
-        const matching = Object.entries(services).filter(([key]) =>
-          key.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-        if (matching.length > 0) {
-          acc[category] = { services: Object.fromEntries(matching) };
-        }
-        return acc;
-      }, {} as EmergencyServicesType)
+    ? Object.entries(EMERGENCY_SERVICES).reduce(
+        (acc, [category, { services }]) => {
+          const matching = Object.entries(services).filter(([key]) =>
+            key.toLowerCase().includes(searchQuery.toLowerCase())
+          );
+          if (matching.length > 0) {
+            acc[category] = { services: Object.fromEntries(matching) };
+          }
+          return acc;
+        },
+        {} as EmergencyServicesType
+      )
     : EMERGENCY_SERVICES;
 
   return (
@@ -214,7 +236,9 @@ export default function EmergencyServices() {
       <div className="flex flex-col gap-4 mt-8 w-full xl:w-[600px]">
         <SearchServices
           value={searchQuery}
-          onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+          onChange={(e: ChangeEvent<HTMLInputElement>) =>
+            setSearchQuery(e.target.value)
+          }
           placeholder={`Explore ${totalServices} emergency services`}
         />
         <div className="flex justify-between items-center text-sm text-gray-500 mt-2">
@@ -241,87 +265,97 @@ export default function EmergencyServices() {
         {/* Left side: categories */}
         <div className="w-full xl:flex-1">
           <div className="flex flex-col gap-3">
-            {Object.entries(filteredServices).map(([category, { services }]) => {
-              const selectedCount = selectedServices[category]?.length || 0;
-              const categoryLabel = category.replace(/([A-Z])/g, " $1").trim();
+            {Object.entries(filteredServices).map(
+              ([category, { services }]) => {
+                const selectedCount = selectedServices[category]?.length || 0;
+                const categoryLabel = category
+                  .replace(/([A-Z])/g, " $1")
+                  .trim();
 
-              return (
-                <div
-                  key={category}
-                  className={`p-4 border rounded-xl bg-white xl:w-[600px] ${
-                    selectedCount > 0 ? "border-blue-500" : "border-gray-300"
-                  }`}
-                >
-                  <button
-                    onClick={() => toggleCategory(category)}
-                    className="flex justify-between items-center w-full"
+                return (
+                  <div
+                    key={category}
+                    className={`p-4 border rounded-xl bg-white xl:w-[600px] ${
+                      selectedCount > 0 ? "border-blue-500" : "border-gray-300"
+                    }`}
                   >
-                    <h3
-                      className={`font-semibold sm:font-medium text-xl sm:text-2xl ${
-                        selectedCount > 0 ? "text-blue-600" : "text-gray-800"
-                      }`}
+                    <button
+                      onClick={() => toggleCategory(category)}
+                      className="flex justify-between items-center w-full"
                     >
-                      {categoryLabel}
-                      {selectedCount > 0 && (
-                        <span className="text-sm text-gray-500 ml-2">
-                          ({selectedCount} selected)
-                        </span>
-                      )}
-                    </h3>
-                    <ChevronDown
-                      className={`h-5 w-5 transform transition-transform ${
-                        expandedCategories.has(category) ? "rotate-180" : ""
-                      }`}
-                    />
-                  </button>
+                      <h3
+                        className={`font-semibold sm:font-medium text-xl sm:text-2xl ${
+                          selectedCount > 0 ? "text-blue-600" : "text-gray-800"
+                        }`}
+                      >
+                        {categoryLabel}
+                        {selectedCount > 0 && (
+                          <span className="text-sm text-gray-500 ml-2">
+                            ({selectedCount} selected)
+                          </span>
+                        )}
+                      </h3>
+                      <ChevronDown
+                        className={`h-5 w-5 transform transition-transform ${
+                          expandedCategories.has(category) ? "rotate-180" : ""
+                        }`}
+                      />
+                    </button>
 
-                  {expandedCategories.has(category) && (
-                    <div className="mt-4 flex flex-col gap-3">
-                      {Object.keys(services).length === 0 ? (
-                        <p className="text-sm text-gray-500">
-                          No services match your search.
-                        </p>
-                      ) : (
-                        Object.entries(services).map(([serviceKey]) => {
-                          // Convert serviceKey => label
-                          const serviceLabel = serviceKey
-                            .replace(/([A-Z])/g, " $1")
-                            .replace(/^./, (char) => char.toUpperCase())
-                            .trim();
-                          const isSelected =
-                            selectedServices[category]?.includes(serviceKey) || false;
+                    {expandedCategories.has(category) && (
+                      <div className="mt-4 flex flex-col gap-3">
+                        {Object.keys(services).length === 0 ? (
+                          <p className="text-sm text-gray-500">
+                            No services match your search.
+                          </p>
+                        ) : (
+                          Object.entries(services).map(([serviceKey]) => {
+                            // Convert serviceKey => label
+                            const serviceLabel = serviceKey
+                              .replace(/([A-Z])/g, " $1")
+                              .replace(/^./, (char) => char.toUpperCase())
+                              .trim();
+                            const isSelected =
+                              selectedServices[category]?.includes(
+                                serviceKey
+                              ) || false;
 
-                          return (
-                            <div
-                              key={serviceKey}
-                              className="flex justify-between items-center"
-                            >
-                              <span
-                                className={`text-lg font-medium ${
-                                  isSelected ? "text-blue-600" : "text-gray-800"
-                                }`}
+                            return (
+                              <div
+                                key={serviceKey}
+                                className="flex justify-between items-center"
                               >
-                                {serviceLabel}
-                              </span>
-                              <label className="relative inline-flex items-center cursor-pointer">
-                                <input
-                                  type="checkbox"
-                                  checked={isSelected}
-                                  onChange={() => handleServiceSelect(category, serviceKey)}
-                                  className="sr-only peer"
-                                />
-                                <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
-                                <div className="absolute top-[2px] left-[2px] w-[22px] h-[22px] bg-white rounded-full shadow-md peer-checked:translate-x-[24px] transform transition-transform duration-300"></div>
-                              </label>
-                            </div>
-                          );
-                        })
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                                <span
+                                  className={`text-lg font-medium ${
+                                    isSelected
+                                      ? "text-blue-600"
+                                      : "text-gray-800"
+                                  }`}
+                                >
+                                  {serviceLabel}
+                                </span>
+                                <label className="relative inline-flex items-center cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={() =>
+                                      handleServiceSelect(category, serviceKey)
+                                    }
+                                    className="sr-only peer"
+                                  />
+                                  <div className="w-[52px] h-[31px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
+                                  <div className="absolute top-[2px] left-[2px] w-[27px] h-[27px] bg-white rounded-full shadow-md transform transition-transform duration-300 peer-checked:translate-x-[21px]"></div>
+                                </label>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+            )}
           </div>
         </div>
 

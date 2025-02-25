@@ -55,7 +55,8 @@ export default function Services() {
   }, [warningMessage]);
 
   // Categories map by section
-  const categoriesBySection: Record<string, { id: string; title: string }[]> = {};
+  const categoriesBySection: Record<string, { id: string; title: string }[]> =
+    {};
   ALL_CATEGORIES.forEach((cat) => {
     if (!categoriesBySection[cat.section]) {
       categoriesBySection[cat.section] = [];
@@ -64,7 +65,10 @@ export default function Services() {
   });
 
   // Restore selected categories from session or init empty arrays
-  const storedSelectedCategories = getSessionItem("selectedCategoriesMap", null);
+  const storedSelectedCategories = getSessionItem(
+    "selectedCategoriesMap",
+    null
+  );
   const initialSelectedCategories: Record<string, string[]> =
     storedSelectedCategories ||
     (() => {
@@ -80,7 +84,10 @@ export default function Services() {
   >(initialSelectedCategories);
 
   // Sync form states to session
-  useEffect(() => setSessionItem("services_searchQuery", searchQuery), [searchQuery]);
+  useEffect(
+    () => setSessionItem("services_searchQuery", searchQuery),
+    [searchQuery]
+  );
   useEffect(() => setSessionItem("address", address), [address]);
   useEffect(() => setSessionItem("zip", zip), [zip]);
   useEffect(() => setSessionItem("stateName", stateName), [stateName]);
@@ -99,7 +106,14 @@ export default function Services() {
 
   // Attempt to auto-fill address, state, and zip from location context on page load (only if they're empty).
   useEffect(() => {
-    if (!address && !stateName && !zip && location?.city && location?.zip && location?.state) {
+    if (
+      !address &&
+      !stateName &&
+      !zip &&
+      location?.city &&
+      location?.zip &&
+      location?.state
+    ) {
       setAddress(location.city);
       setStateName(location.state);
       setZip(location.zip);
@@ -120,7 +134,9 @@ export default function Services() {
   ) as Record<string, { id: string; title: string }[]>;
 
   // Expand/collapse sections
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(
+    new Set()
+  );
   const toggleSection = (section: string) => {
     setExpandedSections((prev) => {
       const next = new Set(prev);
@@ -163,7 +179,9 @@ export default function Services() {
   const handleNext = () => {
     const totalChosen = Object.values(selectedCategoriesMap).flat().length;
     if (totalChosen === 0) {
-      setWarningMessage("Please select at least one category before proceeding.");
+      setWarningMessage(
+        "Please select at least one category before proceeding."
+      );
       return;
     }
     if (!address.trim()) {
@@ -263,7 +281,8 @@ export default function Services() {
             <div className="flex flex-col gap-3">
               {selectedSections.map((section) => {
                 const allCats = filteredCategoriesBySection[section] || [];
-                const selectedCount = (selectedCategoriesMap[section] || []).length;
+                const selectedCount = (selectedCategoriesMap[section] || [])
+                  .length;
 
                 return (
                   <div
@@ -278,9 +297,7 @@ export default function Services() {
                     >
                       <h3
                         className={`font-semibold sm:font-medium text-xl sm:text-2xl ${
-                          selectedCount > 0
-                            ? "text-blue-600"
-                            : "text-gray-800"
+                          selectedCount > 0 ? "text-blue-600" : "text-gray-800"
                         }`}
                       >
                         {section}
@@ -306,8 +323,9 @@ export default function Services() {
                         ) : (
                           allCats.map((cat) => {
                             const isSelected =
-                              selectedCategoriesMap[section]?.includes(cat.id) ||
-                              false;
+                              selectedCategoriesMap[section]?.includes(
+                                cat.id
+                              ) || false;
                             return (
                               <div
                                 key={cat.id}
@@ -315,7 +333,9 @@ export default function Services() {
                               >
                                 <span
                                   className={`text-lg font-medium ${
-                                    isSelected ? "text-blue-600" : "text-gray-800"
+                                    isSelected
+                                      ? "text-blue-600"
+                                      : "text-gray-800"
                                   }`}
                                 >
                                   {cat.title}
@@ -329,8 +349,8 @@ export default function Services() {
                                     }
                                     className="sr-only peer"
                                   />
-                                  <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
-                                  <div className="absolute top-[2px] left-[2px] w-[22px] h-[22px] bg-white rounded-full shadow-md peer-checked:translate-x-[24px] transform transition-transform duration-300"></div>
+                                  <div className="w-[52px] h-[31px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
+                                  <div className="absolute top-[2px] left-[2px] w-[27px] h-[27px] bg-white rounded-full shadow-md transform transition-transform duration-300 peer-checked:translate-x-[21px]"></div>
                                 </label>
                               </div>
                             );
