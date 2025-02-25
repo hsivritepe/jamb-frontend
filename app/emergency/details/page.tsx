@@ -141,7 +141,15 @@ export default function EmergencyDetails() {
     Record<string, Record<string, string | null>>
   >({});
   const [expandedServices, setExpandedServices] = useState<Set<string>>(new Set());
+
+  // Use alert for warnings
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
+  useEffect(() => {
+    if (warningMessage) {
+      alert(warningMessage);
+      setWarningMessage(null);
+    }
+  }, [warningMessage]);
 
   // Cost calculations and results
   const [serviceCosts, setServiceCosts] = useState<Record<string, number>>({});
@@ -580,12 +588,9 @@ export default function EmergencyDetails() {
             Clear
           </button>
         </div>
-
-        {/* Warning */}
-        <div className="h-6 mt-4 text-left">
-          {warningMessage && <p className="text-red-500">{warningMessage}</p>}
-        </div>
       </div>
+
+      {/* We removed the dedicated warning block and rely on alert via useEffect */}
 
       {/* Main content */}
       <div className="container mx-auto relative flex flex-col xl:flex-row mt-4">
@@ -637,6 +642,7 @@ export default function EmergencyDetails() {
                         const finalCost = serviceCosts[activityKey] || 0;
                         const calcResult = calculationResultsMap[activityKey];
                         const detailsExpanded = expandedServiceDetails.has(activityKey);
+
                         const showSurfaceCalcButton = foundActivity
                           ? ["sq ft", "K sq ft"].includes(
                               foundActivity.unit_of_measurement
@@ -658,9 +664,7 @@ export default function EmergencyDetails() {
                                 <input
                                   type="checkbox"
                                   checked={isSelected}
-                                  onChange={() =>
-                                    handleActivityToggle(service, activityKey)
-                                  }
+                                  onChange={() => handleActivityToggle(service, activityKey)}
                                   className="sr-only peer"
                                 />
                                 <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300" />
@@ -682,9 +686,7 @@ export default function EmergencyDetails() {
                                 <div className="flex justify-between items-center">
                                   <div className="flex items-center gap-1">
                                     <button
-                                      onClick={() =>
-                                        handleQuantityChange(service, activityKey, false)
-                                      }
+                                      onClick={() => handleQuantityChange(service, activityKey, false)}
                                       className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
                                     >
                                       −
@@ -718,9 +720,7 @@ export default function EmergencyDetails() {
                                       className="w-20 text-center px-2 py-1 border rounded"
                                     />
                                     <button
-                                      onClick={() =>
-                                        handleQuantityChange(service, activityKey, true)
-                                      }
+                                      onClick={() => handleQuantityChange(service, activityKey, true)}
                                       className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
                                     >
                                       +
@@ -742,9 +742,7 @@ export default function EmergencyDetails() {
                                   {showSurfaceCalcButton ? (
                                     <>
                                       <button
-                                        onClick={() =>
-                                          openSurfaceCalc(service, activityKey)
-                                        }
+                                        onClick={() => openSurfaceCalc(service, activityKey)}
                                         className="text-blue-600 text-sm font-medium hover:underline mr-auto"
                                       >
                                         Surface Calc
@@ -811,11 +809,10 @@ export default function EmergencyDetails() {
                                             <tbody className="divide-y divide-gray-200">
                                               {calcResult.materials.map(
                                                 (m: any, i: number) => {
-                                                  const fmObj =
-                                                    findFinishingMaterialObj(
-                                                      activityKey,
-                                                      m.external_id
-                                                    );
+                                                  const fmObj = findFinishingMaterialObj(
+                                                    activityKey,
+                                                    m.external_id
+                                                  );
                                                   const hasImage = fmObj?.image?.length
                                                     ? true
                                                     : false;
@@ -844,10 +841,7 @@ export default function EmergencyDetails() {
                                                             finishingMaterialsMapAll[
                                                               activityKey
                                                             ];
-                                                          if (
-                                                            fmData &&
-                                                            fmData.sections
-                                                          ) {
+                                                          if (fmData && fmData.sections) {
                                                             for (const [
                                                               secName,
                                                               list,
@@ -880,7 +874,7 @@ export default function EmergencyDetails() {
                                                               alt={m.name}
                                                               className="w-24 h-24 object-cover rounded"
                                                             />
-                                                            <span className="break-words">
+                                                            <span className="break-words text-blue-600">
                                                               {m.name}
                                                             </span>
                                                           </div>
