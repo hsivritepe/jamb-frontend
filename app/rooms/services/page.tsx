@@ -1028,7 +1028,7 @@ export default function RoomDetails() {
                                                                             alt={m.name}
                                                                             className="w-24 h-24 object-cover rounded"
                                                                           />
-                                                                          <span className="break-words">
+                                                                          <span className="break-words text-blue-600">
                                                                             {m.name}
                                                                           </span>
                                                                         </div>
@@ -1075,7 +1075,7 @@ export default function RoomDetails() {
           </div>
 
           {/* RIGHT: summary + address + photos/description */}
-          <div className="w-full xl:w-1/2 xl:ml-auto pt-0 space-y-6 mt-8 xl:mt-0">
+          <div className="w-full xl:w-1/2 xl:ml-auto pt-0 space-y-6 mt-2 xl:mt-0">
             {/* Summary */}
             <div className="w-full xl:max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden">
               <SectionBoxSubtitle>Summary</SectionBoxSubtitle>

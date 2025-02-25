@@ -821,7 +821,7 @@ export default function Details() {
           <div className="w-full xl:flex-1">
             {Object.entries(categoriesBySection).map(
               ([sectionName, catIds]) => (
-                <div key={sectionName} className="mb-8">
+                <div key={sectionName} className="mb-4">
                   <SectionBoxSubtitle>{sectionName}</SectionBoxSubtitle>
                   <div className="flex flex-col gap-4 mt-4 w-full xl:max-w-[600px]">
                     {catIds.map((catId) => {
@@ -1179,7 +1179,7 @@ export default function Details() {
                                                                       }
                                                                       className="w-24 h-24 object-cover rounded"
                                                                     />
-                                                                    <span className="break-words">
+                                                                    <span className="break-words text-blue-600">
                                                                       {m.name}
                                                                     </span>
                                                                   </div>
@@ -1226,7 +1226,7 @@ export default function Details() {
           </div>
 
           {/* RIGHT column => summary + recommended */}
-          <div className="w-full xl:w-1/2 xl:ml-auto mt-8 xl:mt-0">
+          <div className="w-full xl:w-1/2 xl:ml-auto mt-2 sm:mt-0">
             {/* Summary */}
             <div className="w-full xl:max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden">
               <SectionBoxSubtitle>Summary</SectionBoxSubtitle>

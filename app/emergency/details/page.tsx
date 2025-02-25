@@ -874,7 +874,7 @@ export default function EmergencyDetails() {
                                                               alt={m.name}
                                                               className="w-24 h-24 object-cover rounded"
                                                             />
-                                                            <span className="break-words">
+                                                            <span className="break-words text-blue-600">
                                                               {m.name}
                                                             </span>
                                                           </div>

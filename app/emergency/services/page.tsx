@@ -198,7 +198,7 @@ export default function EmergencyServices() {
 
       {/* Header */}
       <div className="container mx-auto mt-8">
-        <div className="flex flex-col md:flex-row justify-between gap-2">
+        <div className="flex flex-col xl:flex-row justify-between gap-2">
           <SectionBoxTitle className="flex-shrink-0">
             Let's Quickly Find the Help You Need
           </SectionBoxTitle>
@@ -326,8 +326,7 @@ export default function EmergencyServices() {
         </div>
 
         {/* Right side: address & photos */}
-        {/* On desktop => fix width 600px & push to the right (ml-auto) */}
-        <div className="w-full xl:w-[600px] xl:ml-auto space-y-6 mt-8 xl:mt-0">
+        <div className="w-full xl:w-[600px] xl:ml-auto space-y-6 mt-0">
           {/* AddressSection visible only on desktop */}
           <div className="hidden xl:block">
             <AddressSection
