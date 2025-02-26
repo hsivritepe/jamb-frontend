@@ -5,18 +5,15 @@ export const dynamic = "force-dynamic";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { addDays, addMonths, format } from "date-fns";
-
 import BreadCrumb from "@/components/ui/BreadCrumb";
 import Button from "@/components/ui/Button";
 import { SectionBoxSubtitle } from "@/components/ui/SectionBoxSubtitle";
 import PaymentOptionPanel from "@/components/ui/PaymentOptionPanel";
-
 import { PACKAGES_STEPS } from "@/constants/navigation";
 import { ALL_CATEGORIES } from "@/constants/categories";
 import { ALL_SERVICES } from "@/constants/services";
 import { PACKAGES } from "@/constants/packages";
 import { taxRatesUSA } from "@/constants/taxRatesUSA";
-
 import { getSessionItem, setSessionItem } from "@/utils/session";
 
 /**
@@ -457,6 +454,18 @@ export default function EstimatePage() {
             )}
           </div>
 
+          <div className="block sm:hidden w-full mt-6">
+          <PaymentOptionPanel
+            laborSubtotal={laborSubtotal}
+            materialsSubtotal={materialsSubtotal}
+            selectedOption={selectedPaymentOption}
+            onConfirm={(label, coeff) => {
+              setSelectedPaymentOption(label);
+              setPaymentCoefficient(coeff);
+            }}
+          />
+        </div>
+
           {/* Subtotals */}
           <div className="pt-4 mt-4 border-t border-gray-200">
             <div className="flex justify-between mb-2">
@@ -604,31 +613,11 @@ export default function EstimatePage() {
             >
               Proceed to Checkout →
             </button>
-            <Button
-              onClick={handleGoBack}
-              variant="secondary"
-              className="
-                w-full
-                justify-center
-                border border-blue-600
-                bg-transparent
-                !text-blue-600
-                hover:!bg-blue-50
-                hover:!text-blue-700
-                transition-colors
-                py-3
-                rounded-lg
-                font-xs
-                font-semibold sm:font-medium
-              "
-            >
-              Go back to Services →
-            </Button>
           </div>
         </div>
 
         {/* RIGHT: PaymentOptionPanel */}
-        <div className="w-full xl:w-[500px]">
+        <div className="hidden sm:block w-full xl:w-[500px]">
           <PaymentOptionPanel
             laborSubtotal={laborSubtotal}
             materialsSubtotal={materialsSubtotal}

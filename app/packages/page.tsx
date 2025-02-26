@@ -37,7 +37,7 @@ export default function PackagesPage() {
       <div className="container mx-auto">
         <BreadCrumb items={PACKAGES_STEPS} />
 
-        <div className="mt-8 mb-4">
+        <div className="mt-8">
           <SearchServices
             value={searchQuery}
             onChange={(e: ChangeEvent<HTMLInputElement>) =>

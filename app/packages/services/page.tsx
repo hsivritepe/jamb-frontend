@@ -19,14 +19,10 @@ import {
   INDOOR_SERVICE_SECTIONS,
   OUTDOOR_SERVICE_SECTIONS,
 } from "@/constants/categories";
-
 import { ChevronDown } from "lucide-react";
 import { getSessionItem, setSessionItem } from "@/utils/session";
-
 import FinishingMaterialsModal from "@/components/FinishingMaterialsModal";
 import SurfaceCalculatorModal from "@/components/SurfaceCalculatorModal";
-
-// Import the location context
 import { useLocation } from "@/context/LocationContext";
 
 /**
@@ -1456,8 +1452,8 @@ export default function PackageServicesPage() {
                                               }
                                               className="sr-only peer"
                                             />
-                                            <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300" />
-                                            <div className="absolute top-[2px] left-[2px] w-[22px] h-[22px] bg-white rounded-full shadow-md peer-checked:translate-x-[24px] transform transition-transform duration-300" />
+                                            <div className="w-[52px] h-[31px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
+                                            <div className="absolute top-[2px] left-[2px] w-[27px] h-[27px] bg-white rounded-full shadow-md transform transition-transform duration-300 peer-checked:translate-x-[21px]"></div>
                                           </label>
                                         </div>
 

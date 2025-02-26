@@ -194,7 +194,7 @@ export default function ServiceTimePicker({
   const confirmButtonLabel = hasConfirmed ? "Change Date" : "Confirm Date";
 
   return (
-    <div className="bg-white border border-gray-300 rounded-lg p-2 sm:p-4 w-full h-auto">
+    <div className="bg-white border-t border-b sm:border border-gray-300 sm:rounded-lg p-2 sm:p-4 w-full h-auto">
       <div className="flex justify-between items-center mb-4">
         <h2 className="pl-2 text-2xl sm:text-3xl font-bold sm:font-semibold text-gray-800">
           Select Available Date{" "}

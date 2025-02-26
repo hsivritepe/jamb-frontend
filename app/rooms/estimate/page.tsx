@@ -14,10 +14,6 @@ import { taxRatesUSA } from "@/constants/taxRatesUSA";
 import { getSessionItem, setSessionItem } from "@/utils/session";
 import { usePhotos } from "@/context/PhotosContext";
 
-/**
- * formatWithSeparator:
- * Formats a numeric value with commas and exactly two decimals (e.g., 1234.56).
- */
 function formatWithSeparator(value: number): string {
   return new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 2,
@@ -25,10 +21,6 @@ function formatWithSeparator(value: number): string {
   }).format(value);
 }
 
-/**
- * formatMobileNoDecimals:
- * Formats a number with no decimals for mobile displays.
- */
 function formatMobileNoDecimals(value: number): string {
   return new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 0,
@@ -36,11 +28,6 @@ function formatMobileNoDecimals(value: number): string {
   }).format(value);
 }
 
-/**
- * getTaxRateForState:
- * Returns a combined (state + local) tax rate for a given state (e.g., "CA").
- * If not found, returns 0.
- */
 function getTaxRateForState(stateName: string): number {
   if (!stateName) return 0;
   const row = taxRatesUSA.taxRates.find(
@@ -60,7 +47,10 @@ export default function RoomsEstimate() {
     .filter((r): r is Exclude<typeof r, undefined> => r !== undefined);
 
   useEffect(() => {
-    if (selectedRooms.length === 0 || chosenRooms.length !== selectedRooms.length) {
+    if (
+      selectedRooms.length === 0 ||
+      chosenRooms.length !== selectedRooms.length
+    ) {
       router.push("/rooms");
     }
   }, [selectedRooms, chosenRooms, router]);
@@ -78,13 +68,14 @@ export default function RoomsEstimate() {
     getSessionItem("rooms_selectedServicesWithQuantity", {});
 
   // Detailed cost breakdown for each service
-  const calculationResultsMap: Record<string, any> = getSessionItem("calculationResultsMap", {});
+  const calculationResultsMap: Record<string, any> =
+    getSessionItem("calculationResultsMap", {});
 
-  // Possibly user-owned finishing materials (if used)
+  // Possibly user-owned finishing materials
   const clientOwnedMaterials: Record<string, string[]> =
     getSessionItem("clientOwnedMaterials", {});
 
-  // Check if any service is selected and address is provided
+  // Validate if any service is selected
   useEffect(() => {
     const anySelected = chosenRooms.some((room) => {
       const roomServices = selectedServicesState[room.id] || {};
@@ -95,12 +86,12 @@ export default function RoomsEstimate() {
     }
   }, [chosenRooms, selectedServicesState, address, router]);
 
-  // Service time selection (date, timeCoefficient)
-  const [selectedTime, setSelectedTime] = useState<string | null>(
-    () => getSessionItem("selectedTime", null)
+  // Time selection
+  const [selectedTime, setSelectedTime] = useState<string | null>(() =>
+    getSessionItem("selectedTime", null)
   );
-  const [timeCoefficient, setTimeCoefficient] = useState<number>(
-    () => getSessionItem("timeCoefficient", 1)
+  const [timeCoefficient, setTimeCoefficient] = useState<number>(() =>
+    getSessionItem("timeCoefficient", 1)
   );
 
   useEffect(() => {
@@ -110,8 +101,9 @@ export default function RoomsEstimate() {
     setSessionItem("timeCoefficient", timeCoefficient);
   }, [timeCoefficient]);
 
-  // Allows manual override of material cost if needed
-  const [overrideCalcResults, setOverrideCalcResults] = useState<Record<string, any>>({});
+  // Manual override if removing finishing materials
+  const [overrideCalcResults, setOverrideCalcResults] =
+    useState<Record<string, any>>({});
 
   function getCalcResultFor(serviceId: string) {
     return overrideCalcResults[serviceId] || calculationResultsMap[serviceId];
@@ -129,6 +121,7 @@ export default function RoomsEstimate() {
     setOverrideCalcResults((prev) => ({ ...prev, [serviceId]: newObj }));
   }
 
+  // Summation of labor & materials
   function calculateLaborSubtotal(): number {
     let total = 0;
     chosenRooms.forEach((room) => {
@@ -165,16 +158,19 @@ export default function RoomsEstimate() {
   const serviceFeeOnLabor = finalLabor * 0.15;
   const serviceFeeOnMaterials = materialsSubtotal * 0.05;
 
+  // Persist fees to session
   useEffect(() => {
     setSessionItem("serviceFeeOnLabor", serviceFeeOnLabor);
     setSessionItem("serviceFeeOnMaterials", serviceFeeOnMaterials);
   }, [serviceFeeOnLabor, serviceFeeOnMaterials]);
 
-  const sumBeforeTax = finalLabor + materialsSubtotal + serviceFeeOnLabor + serviceFeeOnMaterials;
+  const sumBeforeTax =
+    finalLabor + materialsSubtotal + serviceFeeOnLabor + serviceFeeOnMaterials;
   const taxRatePercent = getTaxRateForState(stateName);
   const taxAmount = sumBeforeTax * (taxRatePercent / 100);
   const finalTotal = sumBeforeTax + taxAmount;
 
+  // Store summary in session if needed
   useEffect(() => {
     setSessionItem("rooms_laborSubtotal", laborSubtotal);
     setSessionItem("rooms_materialsSubtotal", materialsSubtotal);
@@ -192,10 +188,15 @@ export default function RoomsEstimate() {
   ]);
 
   function handleProceedToCheckout() {
+    // If user hasn't chosen a time => alert
+    if (!selectedTime) {
+      alert("Please select a date/time before proceeding.");
+      return;
+    }
     router.push("/rooms/checkout");
   }
 
-  // Build structured data for categories
+  // Build structures for categories
   type RoomData = {
     categoriesBySection: Record<string, string[]>;
     categoryServicesMap: Record<string, (typeof ALL_SERVICES)[number][]>;
@@ -222,7 +223,8 @@ export default function RoomsEstimate() {
       }
     });
 
-    const categoryServicesMap: Record<string, (typeof ALL_SERVICES)[number][]> = {};
+    const categoryServicesMap: Record<string, (typeof ALL_SERVICES)[number][]> =
+      {};
     chosenRoomServiceIDs.forEach((serviceId) => {
       const catId = serviceId.split("-").slice(0, 2).join("-");
       if (!categoryServicesMap[catId]) {
@@ -237,6 +239,7 @@ export default function RoomsEstimate() {
     roomsData[room.id] = { categoriesBySection, categoryServicesMap };
   }
 
+  // Construct address for display
   let constructedAddress = "";
   if (city) constructedAddress += city;
   if (stateName) {
@@ -325,12 +328,17 @@ export default function RoomsEstimate() {
                               const svcNumber = `${catNumber}.${svcIdx + 1}`;
                               const cr = getCalcResultFor(svc.id);
                               const qty = roomServices[svc.id] || 1;
-                              const laborVal = cr ? parseFloat(cr.work_cost) || 0 : 0;
-                              const matVal = cr ? parseFloat(cr.material_cost) || 0 : 0;
+                              const laborVal =
+                                cr ? parseFloat(cr.work_cost) || 0 : 0;
+                              const matVal =
+                                cr ? parseFloat(cr.material_cost) || 0 : 0;
                               const totalCost = laborVal + matVal;
 
                               return (
-                                <div key={svc.id} className="mb-6 ml-0 sm:ml-4 space-y-2">
+                                <div
+                                  key={svc.id}
+                                  className="mb-6 ml-0 sm:ml-4 space-y-2"
+                                >
                                   <h6 className="font-medium text-md text-gray-700">
                                     {svcNumber}. {svc.title}
                                   </h6>
@@ -366,7 +374,9 @@ export default function RoomsEstimate() {
                                         </span>
                                         <span className="text-sm font-medium text-gray-700">
                                           {cr.work_cost
-                                            ? `$${formatWithSeparator(parseFloat(cr.work_cost))}`
+                                            ? `$${formatWithSeparator(
+                                                parseFloat(cr.work_cost)
+                                              )}`
                                             : "—"}
                                         </span>
                                       </div>
@@ -377,53 +387,88 @@ export default function RoomsEstimate() {
                                         </span>
                                         <span className="text-sm font-medium text-gray-700">
                                           {cr.material_cost
-                                            ? `$${formatWithSeparator(parseFloat(cr.material_cost))}`
+                                            ? `$${formatWithSeparator(
+                                                parseFloat(cr.material_cost)
+                                              )}`
                                             : "—"}
                                         </span>
                                       </div>
 
-                                      {Array.isArray(cr.materials) && cr.materials.length > 0 && (
-                                        <div className="mt-4">
-                                          <table className="table-auto w-full text-sm text-gray-700">
-                                            <thead>
-                                              <tr className="border-b">
-                                                <th className="py-2 px-1 text-left">Name</th>
-                                                <th className="py-2 px-1 text-left">Price</th>
-                                                <th className="py-2 px-1 text-left">Qty</th>
-                                                <th className="py-2 px-1 text-left">Subtotal</th>
-                                              </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-gray-200">
-                                              {cr.materials.map((m: any, i: number) => {
-                                                const priceVal = parseFloat(m.cost_per_unit);
-                                                const subVal = parseFloat(m.cost);
-                                                return (
-                                                  <tr key={`${m.external_id}-${i}`}>
-                                                    <td className="py-3 px-1">{m.name}</td>
-                                                    <td className="py-3 px-1">
-                                                      <span className="block sm:hidden">
-                                                        ${formatMobileNoDecimals(priceVal)}
-                                                      </span>
-                                                      <span className="hidden sm:block">
-                                                        ${formatWithSeparator(priceVal)}
-                                                      </span>
-                                                    </td>
-                                                    <td className="py-3 px-3">{m.quantity}</td>
-                                                    <td className="py-3 px-3">
-                                                      <span className="block sm:hidden">
-                                                        ${formatMobileNoDecimals(subVal)}
-                                                      </span>
-                                                      <span className="hidden sm:block">
-                                                        ${formatWithSeparator(subVal)}
-                                                      </span>
-                                                    </td>
-                                                  </tr>
-                                                );
-                                              })}
-                                            </tbody>
-                                          </table>
-                                        </div>
-                                      )}
+                                      {Array.isArray(cr.materials) &&
+                                        cr.materials.length > 0 && (
+                                          <div className="mt-4">
+                                            <table className="table-auto w-full text-sm text-gray-700">
+                                              <thead>
+                                                <tr className="border-b">
+                                                  <th className="py-2 px-1 text-left">
+                                                    Name
+                                                  </th>
+                                                  <th className="py-2 px-1 text-left">
+                                                    Price
+                                                  </th>
+                                                  <th className="py-2 px-1 text-left">
+                                                    Qty
+                                                  </th>
+                                                  <th className="py-2 px-1 text-left">
+                                                    Subtotal
+                                                  </th>
+                                                </tr>
+                                              </thead>
+                                              <tbody className="divide-y divide-gray-200">
+                                                {cr.materials.map(
+                                                  (m: any, i: number) => {
+                                                    const priceVal = parseFloat(
+                                                      m.cost_per_unit
+                                                    );
+                                                    const subVal = parseFloat(
+                                                      m.cost
+                                                    );
+                                                    return (
+                                                      <tr
+                                                        key={`${m.external_id}-${i}`}
+                                                      >
+                                                        <td className="py-3 px-1">
+                                                          {m.name}
+                                                        </td>
+                                                        <td className="py-3 px-1">
+                                                          <span className="block sm:hidden">
+                                                            $
+                                                            {formatMobileNoDecimals(
+                                                              priceVal
+                                                            )}
+                                                          </span>
+                                                          <span className="hidden sm:block">
+                                                            $
+                                                            {formatWithSeparator(
+                                                              priceVal
+                                                            )}
+                                                          </span>
+                                                        </td>
+                                                        <td className="py-3 px-3">
+                                                          {m.quantity}
+                                                        </td>
+                                                        <td className="py-3 px-3">
+                                                          <span className="block sm:hidden">
+                                                            $
+                                                            {formatMobileNoDecimals(
+                                                              subVal
+                                                            )}
+                                                          </span>
+                                                          <span className="hidden sm:block">
+                                                            $
+                                                            {formatWithSeparator(
+                                                              subVal
+                                                            )}
+                                                          </span>
+                                                        </td>
+                                                      </tr>
+                                                    );
+                                                  }
+                                                )}
+                                              </tbody>
+                                            </table>
+                                          </div>
+                                        )}
                                     </div>
                                   )}
                                 </div>
@@ -448,10 +493,23 @@ export default function RoomsEstimate() {
             );
           })}
 
+          {/* >>>>>> For phones only: ServiceTimePicker here <<<<<< */}
+          <div className="block sm:hidden -mx-4 mt-6">
+            <ServiceTimePicker
+              subtotal={laborSubtotal}
+              onConfirm={(date, coefficient) => {
+                setSelectedTime(date);
+                setTimeCoefficient(coefficient);
+              }}
+            />
+          </div>
+
           {/* Overall summary */}
           <div className="pt-4 mt-4 border-t">
             <div className="flex justify-between mb-2">
-              <span className="font-semibold text-lg text-gray-600">Labor total:</span>
+              <span className="font-semibold text-lg text-gray-600">
+                Labor total:
+              </span>
               <span className="font-semibold text-lg text-gray-600">
                 ${formatWithSeparator(laborSubtotal)}
               </span>
@@ -496,7 +554,9 @@ export default function RoomsEstimate() {
               </span>
             </div>
             <div className="flex justify-between mb-2">
-              <span className="font-semibold text-xl text-gray-800">Subtotal</span>
+              <span className="font-semibold text-xl text-gray-800">
+                Subtotal
+              </span>
               <span className="font-semibold text-xl text-gray-800">
                 ${formatWithSeparator(sumBeforeTax)}
               </span>
@@ -572,8 +632,8 @@ export default function RoomsEstimate() {
           </div>
         </div>
 
-        {/* Time picker column */}
-        <div className="w-full xl:w-[500px]">
+        {/* Time picker column => hidden on phones, visible on sm+ */}
+        <div className="hidden sm:block w-full xl:w-[500px]">
           <ServiceTimePicker
             subtotal={laborSubtotal}
             onConfirm={(date, coefficient) => {
