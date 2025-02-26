@@ -1,6 +1,7 @@
 "use client";
 
 export const dynamic = "force-dynamic";
+
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ALL_SERVICES } from "@/constants/services";
@@ -8,10 +9,10 @@ import { ALL_CATEGORIES } from "@/constants/categories";
 import { taxRatesUSA } from "@/constants/taxRatesUSA";
 import { DisclaimerBlock } from "@/components/ui/DisclaimerBlock";
 import { getSessionItem } from "@/utils/session";
+import { usePhotos } from "@/context/PhotosContext";
 
 /**
  * Compress a base64-encoded image by drawing it on a canvas and exporting to JPEG.
- * The `quality` can be lowered (0.1 to 0.9) to reduce file size. 
  */
 function compressOnePhoto(base64String: string, quality = 0.4): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -25,7 +26,6 @@ function compressOnePhoto(base64String: string, quality = 0.4): Promise<string> 
         return reject(new Error("Canvas 2D context not available"));
       }
       ctx.drawImage(image, 0, 0);
-      // Export to JPEG at the specified quality
       const compressed = offCanvas.toDataURL("image/jpeg", quality);
       resolve(compressed);
     };
@@ -34,9 +34,6 @@ function compressOnePhoto(base64String: string, quality = 0.4): Promise<string> 
   });
 }
 
-/**
- * Formats a numeric value into a US-style string with commas and exactly two decimals.
- */
 function formatWithSeparator(value: number): string {
   return new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 2,
@@ -44,9 +41,6 @@ function formatWithSeparator(value: number): string {
   }).format(value);
 }
 
-/**
- * Looks up the combined state+local tax rate from taxRatesUSA for a given state code.
- */
 function getTaxRateForState(stateCode: string): number {
   if (!stateCode) return 0;
   const row = taxRatesUSA.taxRates.find(
@@ -55,9 +49,6 @@ function getTaxRateForState(stateCode: string): number {
   return row ? row.combinedStateAndLocalTaxRate : 0;
 }
 
-/**
- * Converts a numeric dollar amount into spelled-out English text (simplified).
- */
 function numberToWordsUSD(amount: number): string {
   const onesMap: Record<number, string> = {
     0: "zero",
@@ -103,14 +94,13 @@ function numberToWordsUSD(amount: number): string {
     const remainder = num % 100;
     let out = "";
     if (hundreds > 0) {
-      out += `${onesMap[hundreds]} hundred`;
+      out += onesMap[hundreds] + " hundred";
       if (remainder > 0) out += " ";
     }
     if (remainder > 0) {
       if (remainder < 100) out += twoDigits(remainder);
     }
-    if (!out) return "zero";
-    return out;
+    return out || "zero";
   }
 
   let integerPart = Math.floor(amount);
@@ -131,14 +121,10 @@ function numberToWordsUSD(amount: number): string {
     idx++;
   }
   if (!spelled) spelled = "zero";
-
   const decimalString = decimalPart < 10 ? `0${decimalPart}` : String(decimalPart);
   return `${spelled} and ${decimalString}/100 dollars`;
 }
 
-/**
- * Builds an estimate reference number, e.g., "CA-94103-20250131-1345"
- */
 function buildEstimateNumber(stateCode: string, zip: string): string {
   let prefix = "??-00000";
   if (stateCode && zip) {
@@ -153,9 +139,6 @@ function buildEstimateNumber(stateCode: string, zip: string): string {
   return `${prefix}-${yyyy}${mm}${dd}-${hh}${mins}`;
 }
 
-/**
- * getCategoryNameById: returns the category's display title or falls back to the catId.
- */
 function getCategoryNameById(catId: string): string {
   const found = ALL_CATEGORIES.find((c) => c.id === catId);
   return found ? found.title : catId;
@@ -163,19 +146,14 @@ function getCategoryNameById(catId: string): string {
 
 export default function PrintServicesEstimate() {
   const router = useRouter();
+  const { photos: contextPhotos } = usePhotos();
+  const [localPhotos, setLocalPhotos] = useState<string[]>(contextPhotos);
 
-  // Grab data from session
-  const selectedServicesState: Record<string, number> = getSessionItem(
-    "selectedServicesWithQuantity",
-    {}
-  );
-  const calculationResultsMap: Record<string, any> = getSessionItem(
-    "calculationResultsMap",
-    {}
-  );
+  const selectedServicesState: Record<string, number> =
+    getSessionItem("selectedServicesWithQuantity", {});
+  const calculationResultsMap: Record<string, any> =
+    getSessionItem("calculationResultsMap", {});
   const address = getSessionItem("address", "");
-  // store photos in local state to compress them
-  const [photos, setPhotos] = useState<string[]>(() => getSessionItem("photos", []));
   const description = getSessionItem("description", "");
   const selectedTime = getSessionItem<string | null>("selectedTime", null);
   const timeCoefficient = getSessionItem<number>("timeCoefficient", 1);
@@ -183,33 +161,35 @@ export default function PrintServicesEstimate() {
   const serviceFeeOnMaterials = getSessionItem("serviceFeeOnMaterials", 0);
   const userStateCode = getSessionItem("location_state", "");
   const userZip = getSessionItem("location_zip", "00000");
-  const selectedCategories: string[] = getSessionItem("services_selectedCategories", []);
+  const selectedCategories: string[] = getSessionItem(
+    "services_selectedCategories",
+    []
+  );
   const searchQuery: string = getSessionItem("services_searchQuery", "");
 
-  // If no data => redirect
   useEffect(() => {
-    if (Object.keys(selectedServicesState).length === 0 || !address.trim()) {
+    if (
+      Object.keys(selectedServicesState).length === 0 ||
+      !address.trim()
+    ) {
       router.push("/calculate/estimate");
     }
   }, [selectedServicesState, address, router]);
 
-  /**
-   * Compress any base64 photos on mount, storing them in local state
-   */
+  // Compress photos from context once on mount
   useEffect(() => {
-    if (photos.length > 0) {
-      const tasks = photos.map((original) => compressOnePhoto(original, 0.4));
+    if (localPhotos.length > 0) {
+      const tasks = localPhotos.map((original) => compressOnePhoto(original, 0.4));
       Promise.all(tasks)
         .then((compressedArr) => {
-          setPhotos(compressedArr);
+          setLocalPhotos(compressedArr);
         })
         .catch((err) => {
           console.warn("Photo compression error:", err);
         });
     }
-  }, [photos]);
+  }, [localPhotos]);
 
-  // Build categories by section
   const categoriesWithSection = selectedCategories
     .map((catId) => ALL_CATEGORIES.find((c) => c.id === catId) || null)
     .filter(Boolean) as (typeof ALL_CATEGORIES)[number][];
@@ -222,7 +202,6 @@ export default function PrintServicesEstimate() {
     categoriesBySection[cat.section].push(cat.id);
   });
 
-  // Build cat -> services map
   const categoryServicesMap: Record<string, (typeof ALL_SERVICES)[number][]> = {};
   selectedCategories.forEach((catId) => {
     let matched = ALL_SERVICES.filter((svc) => svc.id.startsWith(catId + "-"));
@@ -234,7 +213,6 @@ export default function PrintServicesEstimate() {
     categoryServicesMap[catId] = matched;
   });
 
-  // Summation
   function calculateLaborSubtotal(): number {
     let total = 0;
     for (const svcId of Object.keys(selectedServicesState)) {
@@ -265,8 +243,9 @@ export default function PrintServicesEstimate() {
   const finalTotal = sumBeforeTax + taxAmount;
   const finalTotalWords = numberToWordsUSD(finalTotal);
   const estimateNumber = buildEstimateNumber(userStateCode, userZip);
+  const laborDiff = finalLabor - laborSubtotal;
 
-  // On mount => rename document title => print
+  // Print on mount
   useEffect(() => {
     const oldTitle = document.title;
     document.title = `JAMB-Estimate-${estimateNumber}`;
@@ -277,23 +256,19 @@ export default function PrintServicesEstimate() {
     };
   }, [estimateNumber]);
 
-  // Materials & labor breakdown
   interface MaterialSpec {
     name: string;
     totalQuantity: number;
     totalCost: number;
   }
+
   const materialsSpecMap: Record<string, MaterialSpec> = {};
   const sectionLaborMap: Record<string, number> = {};
 
   for (const svcId of Object.keys(selectedServicesState)) {
     const cr = calculationResultsMap[svcId];
     if (!cr) continue;
-
-    // find which cat => which section
-    const catIdFound = selectedCategories.find((catId) =>
-      svcId.startsWith(catId + "-")
-    );
+    const catIdFound = selectedCategories.find((c) => svcId.startsWith(c + "-"));
     if (!catIdFound) continue;
     const catObj = ALL_CATEGORIES.find((x) => x.id === catIdFound);
     if (!catObj) continue;
@@ -329,9 +304,7 @@ export default function PrintServicesEstimate() {
     (acc, m) => acc + m.totalCost,
     0
   );
-  const laborDiff = finalLabor - laborSubtotal;
 
-  // Render
   return (
     <div className="p-4 my-2" style={{ backgroundColor: "#fff" }}>
       {/* Header */}
@@ -362,27 +335,27 @@ export default function PrintServicesEstimate() {
       </p>
 
       {/* Photos */}
-      {photos.length > 0 && (
+      {localPhotos.length > 0 && (
         <section className="mb-6">
           <h3 className="font-semibold text-xl mb-2">Uploaded Photos</h3>
-          {photos.length === 1 ? (
+          {localPhotos.length === 1 ? (
             <div className="flex w-full justify-center">
               <div className="w-1/2 overflow-hidden border border-gray-300">
                 <img
-                  src={photos[0]}
+                  src={localPhotos[0]}
                   alt="Uploaded Photo"
                   className="w-full h-full object-cover"
                 />
               </div>
             </div>
-          ) : photos.length <= 8 ? (
+          ) : localPhotos.length <= 8 ? (
             <div
-              className={`grid grid-cols-${photos.length} gap-2 w-full`}
+              className={`grid grid-cols-${localPhotos.length} gap-2 w-full`}
               style={{
-                gridTemplateColumns: `repeat(${photos.length}, minmax(0, 1fr))`,
+                gridTemplateColumns: `repeat(${localPhotos.length}, minmax(0, 1fr))`,
               }}
             >
-              {photos.map((photoUrl, idx) => (
+              {localPhotos.map((photoUrl, idx) => (
                 <div
                   key={idx}
                   className="overflow-hidden border border-gray-300"
@@ -398,7 +371,7 @@ export default function PrintServicesEstimate() {
           ) : (
             <div className="flex flex-col gap-2 w-full">
               <div className="grid grid-cols-8 gap-2 w-full">
-                {photos.slice(0, 8).map((photoUrl, idx) => (
+                {localPhotos.slice(0, 8).map((photoUrl, idx) => (
                   <div
                     key={idx}
                     className="overflow-hidden border border-gray-300"
@@ -412,7 +385,7 @@ export default function PrintServicesEstimate() {
                 ))}
               </div>
               <div className="grid grid-cols-8 gap-2 w-full">
-                {photos.slice(8).map((photoUrl, idx) => (
+                {localPhotos.slice(8).map((photoUrl, idx) => (
                   <div
                     key={idx}
                     className="overflow-hidden border border-gray-300"
@@ -430,7 +403,6 @@ export default function PrintServicesEstimate() {
         </section>
       )}
 
-      {/* Disclaimer */}
       <div className="mb-8">
         <DisclaimerBlock />
       </div>
