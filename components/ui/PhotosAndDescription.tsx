@@ -1,6 +1,7 @@
 "use client";
 
 import React, { ChangeEvent } from "react";
+import { ImagePlus } from "lucide-react";
 
 interface PhotosAndDescriptionProps {
   photos: string[];
@@ -19,7 +20,6 @@ export default function PhotosAndDescription({
 }: PhotosAndDescriptionProps) {
   /**
    * Converts selected files into base64 strings and adds them to `photos`.
-   * Resets input to allow re-selecting the same file if needed.
    * Limits total photos to 12.
    */
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -65,25 +65,46 @@ export default function PhotosAndDescription({
   return (
     <div
       className={`
-        w-full xl:max-w-[500px] xl:ml-auto
-        bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden
+        w-full
+        bg-#F8F9FB p-0
+        sm:bg-brand-light sm:p-4 sm:rounded-lg sm:border sm:border-gray-300
+        overflow-hidden
         ${className || ""}
+        xl:max-w-[500px] xl:ml-auto
       `}
     >
-      <h2 className="text-2xl font-semibold sm:font-medium text-gray-800 mb-4">
+      {/* For mobile: smaller title; for desktop: original styling */}
+      <h2 className="text-xl font-semibold text-gray-800 mb-3 sm:text-2xl sm:font-medium sm:mb-4 pl-2 sm:pl-0">
         Upload Photos &amp; Description
       </h2>
 
       <div className="flex flex-col gap-4">
-        {/* Photo Uploader */}
-        <div>
+        {/* Uploader Section */}
+        <div className="flex flex-col gap-2">
+          {/* Mobile: icon + tip. Hidden on sm (640px) and above */}
           <label
             htmlFor="photo-upload"
-            className="block w-full px-4 py-2 text-center font-semibold sm:font-medium bg-blue-500 text-white rounded-md 
+            className="flex items-center gap-2 text-blue-600 cursor-pointer sm:hidden pl-2 sm:pl-0"
+          >
+            <ImagePlus className="w-5 h-5" />
+            <span className="text-sm">
+              Click to add up to 12 images
+            </span>
+          </label>
+
+          {/* Desktop: original large button; hidden on mobile */}
+          <label
+            htmlFor="photo-upload"
+            className="hidden sm:block w-full px-4 py-2 text-center font-semibold sm:font-medium bg-blue-500 text-white rounded-md 
                        cursor-pointer hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400"
           >
             Choose Files
           </label>
+
+          <p className="text-base text-gray-500 hidden sm:block">
+            You can attach up to 12 images
+          </p>
+
           <input
             type="file"
             id="photo-upload"
@@ -92,11 +113,9 @@ export default function PhotosAndDescription({
             onChange={handleFileChange}
             className="hidden"
           />
-          <p className="text-sm text-gray-500 mt-1">
-            Maximum 12 images. Supported formats: JPG, PNG.
-          </p>
 
-          <div className="mt-4 grid grid-cols-3 gap-4">
+          {/* Display uploaded photos */}
+          <div className="mt-2 grid grid-cols-3 gap-3 sm:mt-4 sm:gap-4">
             {photos.map((photo, idx) => (
               <div key={idx} className="relative group">
                 <img
@@ -118,15 +137,19 @@ export default function PhotosAndDescription({
           </div>
         </div>
 
-        {/* Description field */}
+        {/* Description field - simpler for mobile, original for desktop */}
         <div>
           <textarea
-            rows={5}
+            rows={4}
             value={description}
             onChange={(e) => onSetDescription(e.target.value)}
-            placeholder="Please provide details about your issue (optional)..."
-            className="w-full px-4 py-2 border border-gray-300 rounded-md 
-                       focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Please provide details about your issue (optional)"
+            className={`
+              w-full border border-gray-300 rounded-xl sm:rounded-md
+              focus:outline-none focus:ring-blue-500
+              text-base p-2 sm:p-4 sm:focus:ring-2
+              placeholder:text-gray-600 sm:placeholder:text-gray-400
+            `}
           />
         </div>
       </div>

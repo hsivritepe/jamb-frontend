@@ -60,8 +60,8 @@ interface ServicesGridProps {
 }
 
 export default function ServicesGrid({
-  title = "Select a Service Category",
-  subtitle = "Choose the type of service you need, then click “Next” to proceed",
+  title = "Select Service Types",
+  subtitle = "Choose the trades you need, then click ‘Next’ to proceed",
   searchQuery = "",
 }: ServicesGridProps) {
   const router = useRouter();
