@@ -3,6 +3,55 @@
 import React, { ChangeEvent } from "react";
 import { ImagePlus } from "lucide-react";
 
+/**
+ * Asynchronously reads a File as a base64 string.
+ */
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      if (!evt.target?.result) {
+        return reject("No FileReader result.");
+      }
+      resolve(evt.target.result as string);
+    };
+    reader.onerror = (err) => reject(err);
+    reader.readAsDataURL(file);
+  });
+}
+
+/**
+ * Converts a HEIC/HEIF file to JPEG via heic2any and returns a base64 string.
+ */
+async function convertHeicFileToBase64(file: File, quality = 0.6): Promise<string> {
+  const { default: heic2any } = await import("heic2any");
+  const converted = await heic2any({
+    blob: file,
+    toType: "image/jpeg",
+    quality, 
+  });
+  const blobs = Array.isArray(converted) ? converted : [converted];
+  const jpegBlob = blobs[0];
+  return fileToBlobBase64(jpegBlob);
+}
+
+/**
+ * Reads a Blob as a base64 string.
+ */
+function fileToBlobBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      if (!evt.target?.result) {
+        return reject("No FileReader result.");
+      }
+      resolve(evt.target.result as string);
+    };
+    reader.onerror = (err) => reject(err);
+    reader.readAsDataURL(blob);
+  });
+}
+
 interface PhotosAndDescriptionProps {
   photos: string[];
   description: string;
@@ -10,7 +59,6 @@ interface PhotosAndDescriptionProps {
   onSetDescription: React.Dispatch<React.SetStateAction<string>>;
   className?: string;
 }
-
 
 export default function PhotosAndDescription({
   photos,
@@ -20,52 +68,48 @@ export default function PhotosAndDescription({
   className,
 }: PhotosAndDescriptionProps) {
   /**
-   * Converts selected files into base64 strings and appends them to the `photos` array.
-   * We do a quick check to limit the total to 12. If it exceeds, we show an alert.
+   * Handles file selection. Converts images to base64, supports HEIC/HEIF.
+   * Limits total photos to 12.
    */
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    // Prevent exceeding 12 photos total
     if (files.length > 12 || photos.length + files.length > 12) {
       alert("You can upload up to 12 photos total.");
       e.target.value = "";
       return;
     }
 
-    /**
-     * Convert each file to a base64 string using FileReader.
-     * We collect promises in an array, then handle them via Promise.all().
-     */
-    const fileReaders = files.map((file) => {
-      return new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (evt) => {
-          if (!evt.target?.result) {
-            return reject("No FileReader result.");
-          }
-          resolve(evt.target.result as string);
-        };
-        reader.onerror = (err) => reject(err);
-        reader.readAsDataURL(file);
-      });
-    });
+    const newBase64Images: string[] = [];
 
-    Promise.all(fileReaders)
-      .then((base64Array) => {
-        // Append the new base64 strings to existing photos
-        onSetPhotos((prev) => [...prev, ...base64Array]);
-      })
-      .catch((err) => {
-        console.error("Error reading files:", err);
-      });
+    for (const file of files) {
+      try {
+        const lowerName = file.name.toLowerCase();
+        const isHeic =
+          lowerName.endsWith(".heic") ||
+          lowerName.endsWith(".heif") ||
+          file.type.includes("heic") ||
+          file.type.includes("heif");
 
-    // Clear the input value so the same file can be re-selected if needed
+        if (isHeic) {
+          // Convert HEIC/HEIF to JPEG and store as base64
+          const convertedBase64 = await convertHeicFileToBase64(file, 0.3);
+          newBase64Images.push(convertedBase64);
+        } else {
+          // Just read as base64 if not HEIC
+          const base64 = await fileToBase64(file);
+          newBase64Images.push(base64);
+        }
+      } catch (err) {
+        console.error("Error reading file:", file.name, err);
+      }
+    }
+
+    onSetPhotos((prev) => [...prev, ...newBase64Images]);
     e.target.value = "";
   };
 
   /**
-   * Removes a photo from the `photos` array by its index.
-   * This is typically triggered by a small "X" button on the photo preview.
+   * Removes a photo by index from the photos array.
    */
   const handleRemovePhoto = (index: number) => {
     onSetPhotos((prev) => prev.filter((_, i) => i !== index));
@@ -82,18 +126,13 @@ export default function PhotosAndDescription({
         xl:max-w-[500px] xl:ml-auto
       `}
     >
-      {/* Heading for both mobile and desktop */}
       <h2 className="text-xl font-semibold text-gray-800 mb-3 sm:text-2xl sm:font-medium sm:mb-4 pl-2 sm:pl-0">
         Upload Photos &amp; Description
       </h2>
 
       <div className="flex flex-col gap-4">
-        {/* Photo Uploader Section */}
         <div className="flex flex-col gap-2">
-          {/**
-           * MOBILE: We display an icon + tip for uploading photos.
-           * This label is hidden on screens >= 640px (sm breakpoint).
-           */}
+          {/* Mobile label */}
           <label
             htmlFor="photo-upload"
             className="flex items-center gap-2 text-blue-600 cursor-pointer sm:hidden pl-2 sm:pl-0"
@@ -102,9 +141,7 @@ export default function PhotosAndDescription({
             <span className="text-sm">Click to add up to 12 images</span>
           </label>
 
-          {/**
-           * DESKTOP: A larger "Choose Files" button, hidden on mobile.
-           */}
+          {/* Desktop label */}
           <label
             htmlFor="photo-upload"
             className="hidden sm:block w-full px-4 py-2 text-center font-semibold sm:font-medium bg-blue-500 text-white rounded-md 
@@ -117,19 +154,16 @@ export default function PhotosAndDescription({
             You can attach up to 12 images
           </p>
 
-          {/**
-           * The actual file input is hidden; the labels above handle the UI.
-           */}
+          {/* Accept HEIC/HEIF as well */}
           <input
             type="file"
             id="photo-upload"
-            accept="image/*"
+            accept="image/*,.heic,.heif"
             multiple
             onChange={handleFileChange}
             className="hidden"
           />
 
-          {/* Display the uploaded photos in a grid */}
           <div className="mt-2 grid grid-cols-3 gap-3 sm:mt-4 sm:gap-4">
             {photos.map((photo, idx) => (
               <div key={idx} className="relative group">
@@ -138,10 +172,6 @@ export default function PhotosAndDescription({
                   alt={`Uploaded preview ${idx + 1}`}
                   className="w-full h-24 object-cover rounded-md border border-gray-300"
                 />
-                {/**
-                 * "Remove" button appears in the top-right corner of each photo.
-                 * It is hidden by default, then shown on hover (thanks to group-hover).
-                 */}
                 <button
                   onClick={() => handleRemovePhoto(idx)}
                   className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white 
@@ -156,7 +186,6 @@ export default function PhotosAndDescription({
           </div>
         </div>
 
-        {/* Description field (textarea) */}
         <div>
           <textarea
             rows={4}
