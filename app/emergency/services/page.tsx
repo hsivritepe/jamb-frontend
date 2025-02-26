@@ -210,13 +210,13 @@ export default function EmergencyServices() {
         <BreadCrumb items={EMERGENCY_STEPS} />
       </div>
 
-      {/* Header */}
+      {/* Header (desktop next button hidden on mobile) */}
       <div className="container mx-auto mt-8">
         <div className="flex flex-col xl:flex-row justify-between gap-2">
           <SectionBoxTitle className="flex-shrink-0">
             Let's Quickly Find the Help You Need
           </SectionBoxTitle>
-          <div className="flex flex-col items-end md:items-center md:flex-row md:justify-end">
+          <div className="hidden sm:flex flex-col items-end md:items-center md:flex-row md:justify-end">
             <Button onClick={handleNextClick} className="mt-2 md:mt-0">
               Next →
             </Button>
@@ -225,7 +225,7 @@ export default function EmergencyServices() {
       </div>
 
       {/* Search bar */}
-      <div className="flex flex-col gap-4 mt-8 w-full xl:w-[600px]">
+      <div className="flex flex-col gap-4 mt-2 sm:mt-8 w-full xl:w-[600px]">
         <SearchServices
           value={searchQuery}
           onChange={(e: ChangeEvent<HTMLInputElement>) =>
@@ -368,6 +368,13 @@ export default function EmergencyServices() {
             onSetDescription={setDescription}
           />
         </div>
+      </div>
+
+      {/* Next button for mobile only, pinned at bottom, hidden on sm+ (new comment in English) */}
+      <div className="block sm:hidden mt-6">
+        <Button onClick={handleNextClick} className="w-full justify-center">
+          Next →
+        </Button>
       </div>
     </main>
   );

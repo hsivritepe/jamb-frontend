@@ -33,7 +33,7 @@ export default function ServicePackages() {
   }
 
   return (
-    <section className="py-16">
+    <section className="py-4">
       <SectionBoxTitle>
       Tailored Service Packages for Your Every Home Need
       </SectionBoxTitle>
