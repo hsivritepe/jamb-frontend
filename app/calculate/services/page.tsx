@@ -1,5 +1,6 @@
 "use client";
 
+// This page is dynamically imported by Next.js
 export const dynamic = "force-dynamic";
 
 import { useState, ChangeEvent, useEffect } from "react";
@@ -20,11 +21,13 @@ export default function Services() {
   const router = useRouter();
   const { location } = useLocation();
 
-  // Selected sections from session; if none, redirect to /calculate
+  // Retrieve selected sections from session; if none, redirect to "/calculate"
   const selectedSections: string[] = getSessionItem(
     "services_selectedSections",
     []
   );
+
+  // If there are no selected sections, redirect to "/calculate"
   useEffect(() => {
     if (selectedSections.length === 0) {
       router.push("/calculate");
@@ -46,7 +49,7 @@ export default function Services() {
   const [photos, setPhotos] = useState<string[]>(getSessionItem("photos", []));
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
 
-  // Show warning as alert instead of a block
+  // Display warnings as alerts
   useEffect(() => {
     if (warningMessage) {
       alert(warningMessage);
@@ -54,7 +57,7 @@ export default function Services() {
     }
   }, [warningMessage]);
 
-  // Categories map by section
+  // Build a map of categories by each section
   const categoriesBySection: Record<string, { id: string; title: string }[]> =
     {};
   ALL_CATEGORIES.forEach((cat) => {
@@ -64,11 +67,8 @@ export default function Services() {
     categoriesBySection[cat.section].push({ id: cat.id, title: cat.title });
   });
 
-  // Restore selected categories from session or init empty arrays
-  const storedSelectedCategories = getSessionItem(
-    "selectedCategoriesMap",
-    null
-  );
+  // Load or initialize selected categories for each section from session
+  const storedSelectedCategories = getSessionItem("selectedCategoriesMap", null);
   const initialSelectedCategories: Record<string, string[]> =
     storedSelectedCategories ||
     (() => {
@@ -83,7 +83,7 @@ export default function Services() {
     Record<string, string[]>
   >(initialSelectedCategories);
 
-  // Sync form states to session
+  // Persist form states to session whenever they change
   useEffect(
     () => setSessionItem("services_searchQuery", searchQuery),
     [searchQuery]
@@ -98,13 +98,13 @@ export default function Services() {
     [selectedCategoriesMap]
   );
 
-  // Combine address
+  // Combine city, state, and ZIP into one string and store it
   useEffect(() => {
     const combined = [address, stateName, zip].filter(Boolean).join(", ");
     setSessionItem("fullAddress", combined);
   }, [address, stateName, zip]);
 
-  // Attempt to auto-fill address, state, and zip from location context on page load (only if they're empty).
+  // Attempt to auto-fill address fields from location context if empty
   useEffect(() => {
     if (
       !address &&
@@ -120,7 +120,7 @@ export default function Services() {
     }
   }, [location, address, stateName, zip]);
 
-  // Filter categories by search query
+  // Filter categories by the search query
   const filteredCategoriesBySection = Object.fromEntries(
     selectedSections.map((section) => {
       const allCats = categoriesBySection[section] || [];
@@ -133,10 +133,13 @@ export default function Services() {
     })
   ) as Record<string, { id: string; title: string }[]>;
 
-  // Expand/collapse sections
+  // State for which sections are expanded; for phones, we expand all by default
+  // to satisfy the requirement that categories are expanded upon page load.
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
-    new Set()
+    new Set(selectedSections)
   );
+
+  // Toggle expand/collapse for a given section
   const toggleSection = (section: string) => {
     setExpandedSections((prev) => {
       const next = new Set(prev);
@@ -145,7 +148,7 @@ export default function Services() {
     });
   };
 
-  // Category selection
+  // Handle category selection within a section
   const handleCategorySelect = (section: string, catId: string) => {
     setSelectedCategoriesMap((prev) => {
       const current = prev[section] || [];
@@ -160,7 +163,7 @@ export default function Services() {
     });
   };
 
-  // Clear all selections
+  // Clear all category selections
   const handleClearSelection = () => {
     const userConfirmed = window.confirm(
       "Are you sure you want to clear all selections? This will also collapse all sections."
@@ -175,13 +178,11 @@ export default function Services() {
     setExpandedSections(new Set());
   };
 
-  // Proceed to next step
+  // Move to the next step, with validations
   const handleNext = () => {
     const totalChosen = Object.values(selectedCategoriesMap).flat().length;
     if (totalChosen === 0) {
-      setWarningMessage(
-        "Please select at least one category before proceeding."
-      );
+      setWarningMessage("Please select at least one category before proceeding.");
       return;
     }
     if (!address.trim()) {
@@ -202,7 +203,7 @@ export default function Services() {
     router.push("/calculate/details");
   };
 
-  // Address handlers
+  // Handlers for address input changes
   const handleAddressChange = (e: ChangeEvent<HTMLInputElement>) => {
     setAddress(e.target.value);
   };
@@ -213,7 +214,7 @@ export default function Services() {
     setStateName(e.target.value);
   };
 
-  // Use stored location
+  // Attempt to use the location context if available
   const handleUseMyLocation = () => {
     if (location?.city && location?.zip && location?.state) {
       setAddress(location.city);
@@ -224,7 +225,7 @@ export default function Services() {
     }
   };
 
-  // Photo removal
+  // Remove photo by index (functionality used inside PhotosAndDescription)
   const handleRemovePhoto = (index: number) => {
     setPhotos((prev) => prev.filter((_, i) => i !== index));
   };
@@ -234,12 +235,14 @@ export default function Services() {
       <div className="container mx-auto">
         <BreadCrumb items={CALCULATE_STEPS} />
 
+        {/* Top section title and Next button (visible on md+ screens) */}
         <div className="mt-8">
           <div className="flex flex-col md:flex-row justify-between gap-2">
             <SectionBoxTitle className="flex-shrink-0">
               Select Your Categories
             </SectionBoxTitle>
-            <div className="flex flex-col items-end md:items-center md:flex-row md:justify-end">
+            {/* Hide this Next button on small screens, show on md+ */}
+            <div className="hidden md:flex flex-col items-end md:items-center md:flex-row md:justify-end">
               <Button onClick={handleNext} className="mt-2 md:mt-0">
                 Next →
               </Button>
@@ -248,7 +251,7 @@ export default function Services() {
         </div>
 
         {/* Search bar */}
-        <div className="flex flex-col gap-4 mt-8 w-full xl:w-[600px]">
+        <div className="flex flex-col gap-4 mt-2 sm:mt-8 w-full xl:w-[600px]">
           <SearchServices
             value={searchQuery}
             onChange={(e: ChangeEvent<HTMLInputElement>) =>
@@ -275,6 +278,7 @@ export default function Services() {
           </div>
         </div>
 
+        {/* Main content area: categories on the left, address + photos on the right */}
         <div className="container mx-auto flex flex-col xl:flex-row items-start mt-8 gap-6">
           {/* Left side: categories */}
           <div className="w-full xl:flex-1">
@@ -364,9 +368,9 @@ export default function Services() {
             </div>
           </div>
 
-          {/* Right side: address & photos */}
+          {/* Right side: Address (desktop only) + Photos and Description */}
           <div className="w-full md:w-full xl:w-1/2">
-            {/* Hide AddressSection on phones and tablets, show only on desktop */}
+            {/* AddressSection is hidden on phones and tablets, only shown on xl+ */}
             <div className="hidden xl:block">
               <AddressSection
                 address={address}
@@ -387,6 +391,13 @@ export default function Services() {
             />
           </div>
         </div>
+      </div>
+
+      {/* Next button for mobile: pinned at the bottom, full width, hidden on md+ */}
+      <div className="block sm:hidden mt-6">
+        <Button onClick={handleNext} className="w-full justify-center">
+          Next →
+        </Button>
       </div>
     </main>
   );

@@ -785,12 +785,17 @@ export default function Details() {
 
       <div className="container mx-auto">
         {/* Top row */}
-        <div className="flex flex-col xl:flex-row justify-between items-start mt-8">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-2 mt-8">
           <div className="w-full xl:w-auto">
-            <SectionBoxTitle>Choose a Service and Quantity</SectionBoxTitle>
+            <SectionBoxTitle>Select Your Services</SectionBoxTitle>
           </div>
-          <div className="w-full xl:w-auto flex justify-end mt-2 xl:mt-0">
-            <Button onClick={handleNext}>Next →</Button>
+          <div className="hidden sm:flex flex-col items-end sm:items-center sm:flex-row sm:justify-end">
+            <Button
+              onClick={handleNext}
+              className="px-8 py-2 text-lg font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap"
+            >
+              Next →
+            </Button>
           </div>
         </div>
 
@@ -1386,6 +1391,13 @@ export default function Details() {
         serviceId={calcServiceId}
         onApplySquareFeet={handleApplySquareFeet}
       />
+
+      {/* Next button for mobile: pinned at the bottom, full width, hidden on md+ */}
+      <div className="block sm:hidden mt-6">
+        <Button onClick={handleNext} className="w-full justify-center">
+          Next →
+        </Button>
+      </div>
     </main>
   );
 }
