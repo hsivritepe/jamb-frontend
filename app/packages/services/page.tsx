@@ -1,7 +1,6 @@
 "use client";
 
 export const dynamic = "force-dynamic";
-
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import React, { useState, useEffect, ChangeEvent } from "react";
@@ -10,7 +9,6 @@ import SearchServices from "@/components/SearchServices";
 import Button from "@/components/ui/Button";
 import { SectionBoxTitle } from "@/components/ui/SectionBoxTitle";
 import { SectionBoxSubtitle } from "@/components/ui/SectionBoxSubtitle";
-
 import { PACKAGES_STEPS } from "@/constants/navigation";
 import { PACKAGES } from "@/constants/packages";
 import { ALL_SERVICES } from "@/constants/services";
@@ -808,7 +806,7 @@ export default function PackageServicesPage() {
       </div>
 
       <div className="container mx-auto">
-        {/* Top row => package switcher + Next button */}
+        {/* Top row => package switcher + Next button (desktop) */}
         <div className="flex flex-col xl:flex-row justify-between items-start gap-4 mt-11">
           {/* Package switcher */}
           <div
@@ -845,8 +843,8 @@ export default function PackageServicesPage() {
             })}
           </div>
 
-          {/* Next button */}
-          <div className="w-full xl:w-auto flex justify-end">
+          {/* Next button hidden on mobile, shown on sm+ (new comment in English) */}
+          <div className="hidden sm:flex w-full xl:w-auto justify-end">
             <Button onClick={handleNext} variant="primary">
               Next →
             </Button>
@@ -1909,6 +1907,13 @@ export default function PackageServicesPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Next button for mobile only, pinned at bottom, hidden on sm+ (new comment in English) */}
+      <div className="block sm:hidden mt-6">
+        <Button onClick={handleNext} variant="primary" className="w-full justify-center">
+          Next →
+        </Button>
       </div>
 
       {/* Finishing Materials Modal */}

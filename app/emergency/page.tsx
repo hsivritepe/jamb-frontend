@@ -18,17 +18,17 @@ export default function Emergency() {
 
   return (
     <main className="min-h-screen pt-24">
-      <div className="container mx-auto xl:px-0 mb-16">
+      <div className="container mx-auto xl:px-0 mb-2 sm:mb-16">
         {/* Breadcrumb for Emergency steps */}
         <BreadCrumb items={EMERGENCY_STEPS} />
 
-        {/* "Next" button (top-right) */}
-        <div className="text-right mb-8 mt-8">
+        {/* Next button (desktop) - hidden on mobile, shown on sm+ (new comment in English) */}
+        <div className="hidden sm:flex justify-end mb-8 mt-8">
           <Button onClick={handleNext}>Next →</Button>
         </div>
 
         {/* Main content: single-column on smaller screens, 2 columns on xl */}
-        <div className="grid grid-cols-1 gap-8 xl:grid-cols-[45%,45%] xl:gap-[10%] xl:min-h-[500px]">
+        <div className="grid grid-cols-1 gap-8 xl:grid-cols-[45%,45%] xl:gap-[10%] xl:min-h-[500px] mt-4 sm:mt-0">
           {/* Left column: Text and checklist */}
           <div className="space-y-8">
             <SectionBoxTitle>
@@ -50,7 +50,9 @@ export default function Emergency() {
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-green-500">✓</span>
-                <p className="text-lg">Sign up, finalize details, and place your order</p>
+                <p className="text-lg">
+                  Sign up, finalize details, and place your order
+                </p>
               </div>
             </div>
           </div>
@@ -64,6 +66,13 @@ export default function Emergency() {
             />
           </div>
         </div>
+      </div>
+
+      {/* Next button for mobile only, pinned at bottom, hidden on sm+ (new comment in English) */}
+      <div className="block sm:hidden mt-6">
+        <Button onClick={handleNext} className="w-full justify-center">
+          Next →
+        </Button>
       </div>
     </main>
   );

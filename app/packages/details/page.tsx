@@ -193,14 +193,17 @@ export default function PackagesDetailsHomePage() {
       <div className="container mx-auto xl:px-0">
         <BreadCrumb items={PACKAGES_STEPS} />
 
-        {/* Top: Title + Next */}
+        {/* Top: Title + Next button (desktop view) */}
         <div className="flex justify-between items-center mt-8">
           <SectionBoxTitle>Home Details</SectionBoxTitle>
-          <Button onClick={handleNext}>Next →</Button>
+          {/* Next button hidden on mobile, shown on sm+ */}
+          <div className="hidden sm:block">
+            <Button onClick={handleNext}>Next →</Button>
+          </div>
         </div>
 
         {/* Sub-header + Clear */}
-        <div className="flex justify-between items-center mt-8 xl:max-w-3xl">
+        <div className="flex justify-between items-center mt-2 sm:mt-8 xl:max-w-3xl">
           <p className="text-gray-600">
             Please provide details about your home
           </p>
@@ -626,6 +629,13 @@ export default function PackagesDetailsHomePage() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Next button for mobile only, pinned at bottom, hidden on sm+ (new comment in English) */}
+      <div className="block sm:hidden mt-6">
+        <Button onClick={handleNext} className="w-full justify-center">
+          Next →
+        </Button>
       </div>
     </main>
   );
