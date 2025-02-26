@@ -18,6 +18,7 @@ import { useLocation } from "@/context/LocationContext";
 import { setSessionItem, getSessionItem } from "@/utils/session";
 import AddressSection from "@/components/ui/AddressSection";
 import PhotosAndDescription from "@/components/ui/PhotosAndDescription";
+import { usePhotos } from "@/context/PhotosContext";
 
 /**
  * Clears most session storage but preserves auth tokens and profile info.
@@ -40,12 +41,10 @@ export default function EmergencyServices() {
   }, []);
 
   // Service selection state
-  const [selectedServices, setSelectedServices] = useState<
-    Record<string, string[]>
-  >(getSessionItem("selectedServices", {}));
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
-    new Set()
+  const [selectedServices, setSelectedServices] = useState<Record<string, string[]>>(
+    getSessionItem("selectedServices", {})
   );
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState<string>(
     getSessionItem("searchQuery", "")
   );
@@ -72,13 +71,11 @@ export default function EmergencyServices() {
   const [description, setDescription] = useState<string>(
     getSessionItem("description", "")
   );
-  const [photos, setPhotos] = useState<string[]>(getSessionItem("photos", []));
+
+  const { photos, setPhotos } = usePhotos();
 
   // Persist states in session
-  useEffect(
-    () => setSessionItem("selectedServices", selectedServices),
-    [selectedServices]
-  );
+  useEffect(() => setSessionItem("selectedServices", selectedServices), [selectedServices]);
   useEffect(() => setSessionItem("searchQuery", searchQuery), [searchQuery]);
   useEffect(() => setSessionItem("address", address), [address]);
   useEffect(() => setSessionItem("city", city), [city]);
@@ -86,7 +83,6 @@ export default function EmergencyServices() {
   useEffect(() => setSessionItem("stateName", stateName), [stateName]);
   useEffect(() => setSessionItem("country", country), [country]);
   useEffect(() => setSessionItem("description", description), [description]);
-  useEffect(() => setSessionItem("photos", photos), [photos]);
 
   // Auto-fill address from location if empty
   useEffect(() => {
@@ -108,9 +104,7 @@ export default function EmergencyServices() {
 
   // Combine address
   useEffect(() => {
-    const combinedAddress = [address, stateName, zip]
-      .filter(Boolean)
-      .join(", ");
+    const combinedAddress = [address, stateName, zip].filter(Boolean).join(", ");
     setSessionItem("fullAddress", combinedAddress);
   }, [address, stateName, zip]);
 
@@ -159,9 +153,7 @@ export default function EmergencyServices() {
       (list) => list.length > 0
     );
     if (!anyServiceSelected) {
-      setWarningMessage(
-        "Please select at least one service before proceeding."
-      );
+      setWarningMessage("Please select at least one service before proceeding.");
       return;
     }
     if (!address.trim() || !stateName.trim() || !zip.trim()) {
@@ -265,97 +257,92 @@ export default function EmergencyServices() {
         {/* Left side: categories */}
         <div className="w-full xl:flex-1">
           <div className="flex flex-col gap-3">
-            {Object.entries(filteredServices).map(
-              ([category, { services }]) => {
-                const selectedCount = selectedServices[category]?.length || 0;
-                const categoryLabel = category
-                  .replace(/([A-Z])/g, " $1")
-                  .trim();
+            {Object.entries(filteredServices).map(([category, { services }]) => {
+              const selectedCount = selectedServices[category]?.length || 0;
+              const categoryLabel = category
+                .replace(/([A-Z])/g, " $1")
+                .trim();
 
-                return (
-                  <div
-                    key={category}
-                    className={`p-4 border rounded-xl bg-white xl:w-[600px] ${
-                      selectedCount > 0 ? "border-blue-500" : "border-gray-300"
-                    }`}
+              return (
+                <div
+                  key={category}
+                  className={`p-4 border rounded-xl bg-white xl:w-[600px] ${
+                    selectedCount > 0 ? "border-blue-500" : "border-gray-300"
+                  }`}
+                >
+                  <button
+                    onClick={() => toggleCategory(category)}
+                    className="flex justify-between items-center w-full"
                   >
-                    <button
-                      onClick={() => toggleCategory(category)}
-                      className="flex justify-between items-center w-full"
+                    <h3
+                      className={`font-semibold sm:font-medium text-xl sm:text-2xl ${
+                        selectedCount > 0 ? "text-blue-600" : "text-gray-800"
+                      }`}
                     >
-                      <h3
-                        className={`font-semibold sm:font-medium text-xl sm:text-2xl ${
-                          selectedCount > 0 ? "text-blue-600" : "text-gray-800"
-                        }`}
-                      >
-                        {categoryLabel}
-                        {selectedCount > 0 && (
-                          <span className="text-sm text-gray-500 ml-2">
-                            ({selectedCount} selected)
-                          </span>
-                        )}
-                      </h3>
-                      <ChevronDown
-                        className={`h-5 w-5 transform transition-transform ${
-                          expandedCategories.has(category) ? "rotate-180" : ""
-                        }`}
-                      />
-                    </button>
+                      {categoryLabel}
+                      {selectedCount > 0 && (
+                        <span className="text-sm text-gray-500 ml-2">
+                          ({selectedCount} selected)
+                        </span>
+                      )}
+                    </h3>
+                    <ChevronDown
+                      className={`h-5 w-5 transform transition-transform ${
+                        expandedCategories.has(category) ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
 
-                    {expandedCategories.has(category) && (
-                      <div className="mt-4 flex flex-col gap-3">
-                        {Object.keys(services).length === 0 ? (
-                          <p className="text-sm text-gray-500">
-                            No services match your search.
-                          </p>
-                        ) : (
-                          Object.entries(services).map(([serviceKey]) => {
-                            // Convert serviceKey => label
-                            const serviceLabel = serviceKey
-                              .replace(/([A-Z])/g, " $1")
-                              .replace(/^./, (char) => char.toUpperCase())
-                              .trim();
-                            const isSelected =
-                              selectedServices[category]?.includes(
-                                serviceKey
-                              ) || false;
+                  {expandedCategories.has(category) && (
+                    <div className="mt-4 flex flex-col gap-3">
+                      {Object.keys(services).length === 0 ? (
+                        <p className="text-sm text-gray-500">
+                          No services match your search.
+                        </p>
+                      ) : (
+                        Object.entries(services).map(([serviceKey]) => {
+                          // Convert serviceKey => label
+                          const serviceLabel = serviceKey
+                            .replace(/([A-Z])/g, " $1")
+                            .replace(/^./, (char) => char.toUpperCase())
+                            .trim();
+                          const isSelected =
+                            selectedServices[category]?.includes(serviceKey) ||
+                            false;
 
-                            return (
-                              <div
-                                key={serviceKey}
-                                className="flex justify-between items-center"
+                          return (
+                            <div
+                              key={serviceKey}
+                              className="flex justify-between items-center"
+                            >
+                              <span
+                                className={`text-lg font-medium ${
+                                  isSelected ? "text-blue-600" : "text-gray-800"
+                                }`}
                               >
-                                <span
-                                  className={`text-lg font-medium ${
-                                    isSelected
-                                      ? "text-blue-600"
-                                      : "text-gray-800"
-                                  }`}
-                                >
-                                  {serviceLabel}
-                                </span>
-                                <label className="relative inline-flex items-center cursor-pointer">
-                                  <input
-                                    type="checkbox"
-                                    checked={isSelected}
-                                    onChange={() =>
-                                      handleServiceSelect(category, serviceKey)
-                                    }
-                                    className="sr-only peer"
-                                  />
-                                  <div className="w-[52px] h-[31px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
-                                  <div className="absolute top-[2px] left-[2px] w-[27px] h-[27px] bg-white rounded-full shadow-md transform transition-transform duration-300 peer-checked:translate-x-[21px]"></div>
-                                </label>
-                              </div>
-                            );
-                          })
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              }
-            )}
+                                {serviceLabel}
+                              </span>
+                              <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() =>
+                                    handleServiceSelect(category, serviceKey)
+                                  }
+                                  className="sr-only peer"
+                                />
+                                <div className="w-[52px] h-[31px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
+                                <div className="absolute top-[2px] left-[2px] w-[27px] h-[27px] bg-white rounded-full shadow-md transform transition-transform duration-300 peer-checked:translate-x-[21px]"></div>
+                              </label>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
 

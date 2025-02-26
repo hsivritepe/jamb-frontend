@@ -14,6 +14,7 @@ import { useLocation } from "@/context/LocationContext";
 import { taxRatesUSA } from "@/constants/taxRatesUSA";
 import { getSessionItem, setSessionItem } from "@/utils/session";
 import { formatWithSeparator } from "@/utils/format";
+import { usePhotos } from "@/context/PhotosContext";
 
 /**
  * Formats a number without decimals for mobile displays.
@@ -68,7 +69,8 @@ export default function EmergencyEstimate() {
     {}
   );
   const fullAddress = getSessionItem<string>("fullAddress", "");
-  const photos = getSessionItem<string[]>("photos", []);
+  // *** Use PhotosContext instead of session for photos ***
+  const { photos } = usePhotos(); // <-- from context
   const description = getSessionItem<string>("description", "");
 
   // Redirect if missing data
@@ -352,7 +354,9 @@ export default function EmergencyEstimate() {
                                     <tbody className="divide-y divide-gray-200">
                                       {act.breakdown.materials.map(
                                         (m: any, idx: number) => {
-                                          const priceVal = parseFloat(m.cost_per_unit);
+                                          const priceVal = parseFloat(
+                                            m.cost_per_unit
+                                          );
                                           const subtotalVal = parseFloat(m.cost);
                                           return (
                                             <tr
@@ -483,7 +487,7 @@ export default function EmergencyEstimate() {
             <p className="text-gray-500 mt-2">{fullAddress}</p>
           </div>
 
-          {/* Photos */}
+          {/* Photos => from context */}
           <div className="mt-6">
             <h3 className="font-semibold text-xl text-gray-800">
               Uploaded Photos
@@ -528,12 +532,6 @@ export default function EmergencyEstimate() {
               onClick={handleProceedToCheckout}
             >
               Proceed to Checkout →
-            </button>
-            <button
-              onClick={() => router.back()}
-              className="w-full text-brand border border-brand py-3 rounded-lg font-semibold"
-            >
-              Add more services →
             </button>
           </div>
         </div>

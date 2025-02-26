@@ -514,12 +514,6 @@ export default function Estimate() {
             >
               Proceed to Checkout →
             </button>
-            <button
-              onClick={() => router.push("/calculate/details")}
-              className="w-full text-brand border border-brand py-3 rounded-lg font-semibold sm:font-medium"
-            >
-              Add more services →
-            </button>
           </div>
         </div>
 

@@ -20,6 +20,7 @@ import PhotosAndDescription from "@/components/ui/PhotosAndDescription";
 import { setSessionItem, getSessionItem } from "@/utils/session";
 import FinishingMaterialsModal from "@/components/FinishingMaterialsModal";
 import SurfaceCalculatorModal from "@/components/SurfaceCalculatorModal";
+import { usePhotos } from "@/context/PhotosContext";
 
 interface FinishingMaterial {
   id: number;
@@ -122,12 +123,12 @@ export default function RoomDetails() {
   const router = useRouter();
   const { location } = useLocation();
 
+  // Use PhotosContext instead of local state for photos
+  const { photos, setPhotos } = usePhotos();
+
   // Core states
   const [searchQuery, setSearchQuery] = useState<string>(
     getSessionItem("rooms_searchQuery", "")
-  );
-  const [photos, setPhotos] = useState<string[]>(() =>
-    getSessionItem("photos", [])
   );
   const [description, setDescription] = useState<string>(
     getSessionItem("description", "")
@@ -156,7 +157,6 @@ export default function RoomDetails() {
     () => setSessionItem("rooms_searchQuery", searchQuery),
     [searchQuery]
   );
-  useEffect(() => setSessionItem("photos", photos), [photos]);
   useEffect(() => setSessionItem("description", description), [description]);
   useEffect(() => setSessionItem("address", address), [address]);
   useEffect(() => setSessionItem("zip", zip), [zip]);
@@ -275,7 +275,7 @@ export default function RoomDetails() {
     Record<string, string | null>
   >({});
 
-  // Finishing materials map => { serviceId => { sections: {...} } }
+  // Finishing materials map => { serviceId => { sections: Record<string, FinishingMaterial[]> } }
   const [finishingMaterialsMapAll, setFinishingMaterialsMapAll] = useState<
     Record<string, { sections: Record<string, FinishingMaterial[]> }>
   >({});
@@ -1366,9 +1366,9 @@ export default function RoomDetails() {
               />
             </div>
 
-            {/* Photos and description */}
+            {/* Photos and description => from context */}
             <PhotosAndDescription
-              photos={photos}
+              photos={photos} // from PhotosContext
               description={description}
               onSetPhotos={setPhotos}
               onSetDescription={setDescription}

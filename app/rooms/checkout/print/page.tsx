@@ -1,6 +1,7 @@
 "use client";
 
 export const dynamic = "force-dynamic";
+
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ROOMS } from "@/constants/rooms";
@@ -9,10 +10,10 @@ import { ALL_CATEGORIES } from "@/constants/categories";
 import { DisclaimerBlock } from "@/components/ui/DisclaimerBlock";
 import { taxRatesUSA } from "@/constants/taxRatesUSA";
 import { getSessionItem } from "@/utils/session";
+import { usePhotos } from "@/context/PhotosContext";
 
 /**
  * Compress a base64-encoded image by drawing it on a canvas and exporting to JPEG.
- * The `quality` can be lowered (e.g., 0.4) to reduce file size.
  */
 function compressOnePhoto(base64String: string, quality = 0.4): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -26,7 +27,6 @@ function compressOnePhoto(base64String: string, quality = 0.4): Promise<string> 
         return reject(new Error("Canvas 2D context is not available"));
       }
       ctx.drawImage(image, 0, 0);
-      // Export to JPEG at the specified quality
       const compressed = offCanvas.toDataURL("image/jpeg", quality);
       resolve(compressed);
     };
@@ -35,9 +35,6 @@ function compressOnePhoto(base64String: string, quality = 0.4): Promise<string> 
   });
 }
 
-/**
- * Formats a numeric value with commas and exactly two decimals, e.g. 1234 => "1,234.00".
- */
 function formatWithSeparator(num: number): string {
   return new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 2,
@@ -45,10 +42,6 @@ function formatWithSeparator(num: number): string {
   }).format(num);
 }
 
-/**
- * Looks up the combined state+local tax rate from taxRatesUSA based on a given state code.
- * If not found, returns 0.
- */
 function getTaxRateForState(stateCode: string): number {
   if (!stateCode) return 0;
   const match = taxRatesUSA.taxRates.find(
@@ -57,9 +50,6 @@ function getTaxRateForState(stateCode: string): number {
   return match ? match.combinedStateAndLocalTaxRate : 0;
 }
 
-/**
- * Converts a numeric USD amount into spelled-out English text (simplified).
- */
 function numberToWordsUSD(amount: number): string {
   const onesMap: Record<number, string> = {
     0: "zero",
@@ -142,14 +132,9 @@ function numberToWordsUSD(amount: number): string {
   return `${wordsString} and ${decimalStr}/100 dollars`;
 }
 
-/**
- * Builds an estimate number in the format "ST-ZIP-YYYYMMDD-HHMM".
- * Example: "CA-90001-20250910-1445".
- */
 function buildEstimateNumber(stateName: string, zip: string): string {
   let stateZipBlock = "??-00000";
   if (stateName && zip) {
-    // optional logic: use first 2 letters of stateName
     const st = stateName.trim().split(" ")[0].slice(0, 2).toUpperCase();
     stateZipBlock = `${st}-${zip}`;
   }
@@ -164,32 +149,20 @@ function buildEstimateNumber(stateName: string, zip: string): string {
   return `${stateZipBlock}-${yyyy}${mm}${dd}-${hh}${mins}`;
 }
 
-/**
- * Returns a room object from ROOMS.indoor or ROOMS.outdoor by ID, or null if not found.
- */
 function getRoomById(roomId: string) {
   const allRooms = [...ROOMS.indoor, ...ROOMS.outdoor];
   return allRooms.find((r) => r.id === roomId) || null;
 }
 
-/**
- * Extracts the category portion from a service ID (e.g. "1-1-2" => "1-1").
- */
 function getCategoryIdFromServiceId(serviceId: string): string {
   return serviceId.split("-").slice(0, 2).join("-");
 }
 
-/**
- * Returns a category name from ALL_CATEGORIES by ID, or the catId if not found.
- */
 function getCategoryNameById(catId: string): string {
   const found = ALL_CATEGORIES.find((c) => c.id === catId);
   return found ? found.title : catId;
 }
 
-/**
- * Chooses either the override or the normal calculation results for a given serviceId.
- */
 function getCalcResultFor(
   serviceId: string,
   overrideCalc: Record<string, any>,
@@ -201,43 +174,38 @@ function getCalcResultFor(
 export default function PrintRoomsEstimate() {
   const router = useRouter();
 
-  // 1) Gather data from session
+  // Use PhotosContext and keep local state for compression
+  const { photos: contextPhotos } = usePhotos();
+  const [photos, setPhotos] = useState<string[]>(contextPhotos);
+
   const address: string = getSessionItem("address", "");
   const city: string = getSessionItem("city", "");
   const stateName: string = getSessionItem("stateName", "");
   const zip: string = getSessionItem("zip", "");
   const country: string = getSessionItem("country", "");
-  // We'll store photos in local state so we can compress them
-  const [photos, setPhotos] = useState<string[]>(() => getSessionItem("photos", []));
   const description: string = getSessionItem("description", "");
   const selectedTime: string | null = getSessionItem("selectedTime", null);
 
-  // Subtotals and fees
   const laborSubtotal: number = getSessionItem("rooms_laborSubtotal", 0);
   const materialsSubtotal: number = getSessionItem("rooms_materialsSubtotal", 0);
   const serviceFeeOnLabor: number = getSessionItem("serviceFeeOnLabor", 0);
   const serviceFeeOnMaterials: number = getSessionItem("serviceFeeOnMaterials", 0);
 
-  // Summaries
   const sumBeforeTax: number = getSessionItem("rooms_sumBeforeTax", 0);
   const taxRatePercent: number = getSessionItem("rooms_taxRatePercent", 0);
   const taxAmount: number = getSessionItem("rooms_taxAmount", 0);
   const finalTotal: number = getSessionItem("rooms_estimateFinalTotal", 0);
 
-  // The selected services: (roomId -> { serviceId -> qty })
   const selectedServicesState: Record<string, Record<string, number>> =
     getSessionItem("rooms_selectedServicesWithQuantity", {});
 
-  // The big data: normal + overrides
   const calculationResultsMap: Record<string, any> =
     getSessionItem("calculationResultsMap", {});
   const overrideCalcResults: Record<string, any> =
     getSessionItem("rooms_overrideCalcResults", {});
-
-  // Surcharges/discounts
   const timeCoefficient: number = getSessionItem("timeCoefficient", 1);
 
-  // 2) If no services or no address => redirect
+  // If no services or no address => redirect
   useEffect(() => {
     let hasServices = false;
     for (const roomId in selectedServicesState) {
@@ -251,7 +219,7 @@ export default function PrintRoomsEstimate() {
     }
   }, [selectedServicesState, address, router]);
 
-  // 3) Compress any photos on mount to reduce print size
+  // Compress photos from context once on mount
   useEffect(() => {
     if (photos.length > 0) {
       const tasks = photos.map((orig) => compressOnePhoto(orig, 0.4));
@@ -265,11 +233,11 @@ export default function PrintRoomsEstimate() {
     }
   }, [photos]);
 
-  // 4) Build the estimate number & spelled-out total
+  // Build estimate number & spelled-out total
   const estimateNumber = buildEstimateNumber(stateName, zip);
   const finalTotalWords = numberToWordsUSD(finalTotal);
 
-  // 5) Auto-print after a short delay
+  // Print automatically after short delay
   useEffect(() => {
     const oldTitle = document.title;
     document.title = `JAMB-Estimate-${estimateNumber}`;
@@ -282,7 +250,6 @@ export default function PrintRoomsEstimate() {
     };
   }, [estimateNumber]);
 
-  // Construct a single-line address
   let constructedAddress = address.trim();
   if (stateName) constructedAddress += `, ${stateName}`;
   if (zip) constructedAddress += ` ${zip}`;
@@ -296,7 +263,6 @@ export default function PrintRoomsEstimate() {
       </div>
       <hr className="border-gray-300 my-4" style={{ backgroundColor: "#fff" }} />
 
-      {/* Basic Info */}
       <div className="flex justify-between items-center mb-4 mt-4" style={{ backgroundColor: "transparent" }}>
         <div>
           <h1 className="text-2xl font-bold">Estimate for Selected Rooms</h1>
@@ -425,7 +391,6 @@ export default function PrintRoomsEstimate() {
               const sectionMap: Record<string, Record<string, string[]>> = {};
               let roomTotal = 0;
 
-              // Fill sectionMap
               for (const svcId of Object.keys(servicesInThisRoom)) {
                 const catId = getCategoryIdFromServiceId(svcId);
                 const catObj = ALL_CATEGORIES.find((c) => c.id === catId);
@@ -456,7 +421,6 @@ export default function PrintRoomsEstimate() {
                     </td>
                   </tr>
 
-                  {/* For each section + categories */}
                   {Object.entries(sectionMap).map(([secName, catObjMap], sIdx) => {
                     const sectionNumber = sIdx + 1;
                     return (
@@ -502,6 +466,7 @@ export default function PrintRoomsEstimate() {
                                 const svcTitle = foundSvc ? foundSvc.title : svcId;
                                 const qty = servicesInThisRoom[svcId] || 1;
                                 const cr = getCalcResultFor(svcId, overrideCalcResults, calculationResultsMap);
+
                                 let finalCost = 0;
                                 if (cr && cr.total) {
                                   finalCost = parseFloat(cr.total) || 0;
@@ -625,7 +590,7 @@ export default function PrintRoomsEstimate() {
           const roomTitle = roomObj ? roomObj.title : roomId;
           const roomServices = selectedServicesState[roomId];
 
-          // Build a structure for cost breakdown
+          // Build breakdown map
           const breakdownMap: Record<string, Record<string, string[]>> = {};
           for (const svcId of Object.keys(roomServices)) {
             const catId = getCategoryIdFromServiceId(svcId);
@@ -721,7 +686,7 @@ export default function PrintRoomsEstimate() {
                                   </div>
                                 </div>
 
-                                {/* Materials line items if present */}
+                                {/* Materials line items */}
                                 {cr && Array.isArray(cr.materials) && cr.materials.length > 0 && (
                                   <div className="mt-3 text-sm" style={{ color: "#444" }}>
                                     <p className="font-semibold mb-1">Materials:</p>
@@ -743,9 +708,7 @@ export default function PrintRoomsEstimate() {
                                             <td className="py-2 px-1">{m.name}</td>
                                             <td className="py-2 px-1">
                                               {m.cost_per_unit
-                                                ? `$${formatWithSeparator(
-                                                    parseFloat(m.cost_per_unit)
-                                                  )}`
+                                                ? `$${formatWithSeparator(parseFloat(m.cost_per_unit))}`
                                                 : "—"}
                                             </td>
                                             <td className="py-2 px-1">{m.quantity}</td>
@@ -785,7 +748,7 @@ export default function PrintRoomsEstimate() {
         </p>
 
         {(() => {
-          // Build a map of section -> labor sum
+          // Summarize labor by section
           const sectionLaborMap: Record<string, number> = {};
           for (const roomId in selectedServicesState) {
             const services = selectedServicesState[roomId];
@@ -801,7 +764,7 @@ export default function PrintRoomsEstimate() {
             }
           }
 
-          // Build materials map
+          // Summarize all materials
           const materialsSpecMap: Record<
             string,
             { name: string; qty: number; cost: number }
@@ -815,11 +778,7 @@ export default function PrintRoomsEstimate() {
               if (Array.isArray(cr.materials)) {
                 cr.materials.forEach((m: any) => {
                   if (!materialsSpecMap[m.name]) {
-                    materialsSpecMap[m.name] = {
-                      name: m.name,
-                      qty: 0,
-                      cost: 0,
-                    };
+                    materialsSpecMap[m.name] = { name: m.name, qty: 0, cost: 0 };
                   }
                   materialsSpecMap[m.name].qty += m.quantity || 0;
                   materialsSpecMap[m.name].cost += parseFloat(m.cost) || 0;
@@ -878,9 +837,7 @@ export default function PrintRoomsEstimate() {
                     </span>
                     <span>
                       {timeCoefficient > 1 ? "+" : "-"}$
-                      {formatWithSeparator(
-                        Math.abs(laborSubtotal * timeCoefficient - laborSubtotal)
-                      )}
+                      {formatWithSeparator(Math.abs(laborSubtotal * timeCoefficient - laborSubtotal))}
                     </span>
                   </div>
                 )}

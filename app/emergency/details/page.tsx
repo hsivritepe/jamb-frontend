@@ -17,6 +17,7 @@ import { formatWithSeparator } from "@/utils/format";
 
 import FinishingMaterialsModal from "@/components/FinishingMaterialsModal";
 import SurfaceCalculatorModal from "@/components/SurfaceCalculatorModal";
+import { usePhotos } from "@/context/PhotosContext";
 
 interface FinishingMaterial {
   id: number;
@@ -127,14 +128,14 @@ function capitalizeAndTransform(text: string): string {
 export default function EmergencyDetails() {
   const router = useRouter();
 
-  // Retrieve session data
+  // Retrieve session data (photos now come from context)
+  const { photos } = usePhotos(); // <-- from context
   const selectedServices = getSessionItem<Record<string, string[]>>(
     "selectedServices",
     {}
   );
   const fullAddress = getSessionItem<string>("fullAddress", "");
   const zip = getSessionItem<string>("zip", "");
-  const photos = getSessionItem<string[]>("photos", []);
   const description = getSessionItem<string>("description", "");
 
   // Activity selection and quantities
@@ -486,9 +487,7 @@ export default function EmergencyDetails() {
       (obj) => Object.keys(obj).length > 0
     );
     if (!hasAny) {
-      setWarningMessage(
-        "Please select at least one service before proceeding."
-      );
+      setWarningMessage("Please select at least one service before proceeding.");
       return;
     }
     if (!fullAddress.trim()) {
@@ -606,8 +605,6 @@ export default function EmergencyDetails() {
         </div>
       </div>
 
-      {/* We removed the dedicated warning block and rely on alert via useEffect */}
-
       {/* Main content */}
       <div className="container mx-auto relative flex flex-col xl:flex-row mt-4">
         {/* LEFT: Services list */}
@@ -650,345 +647,327 @@ export default function EmergencyDetails() {
 
                   {isExpanded && (
                     <div className="mt-4 flex flex-col gap-4">
-                      {Object.entries(activities).map(
-                        ([activityKey, activityData]) => {
-                          const isSelected =
-                            selectedActivities[service]?.[activityKey] != null;
-                          const foundActivity = ALL_SERVICES.find(
-                            (x) => x.id === activityKey
-                          );
-                          const activityLabel = capitalizeAndTransform(
-                            activityData.activity
-                          );
-                          const finalCost = serviceCosts[activityKey] || 0;
-                          const calcResult = calculationResultsMap[activityKey];
-                          const detailsExpanded =
-                            expandedServiceDetails.has(activityKey);
+                      {Object.entries(activities).map(([activityKey, activityData]) => {
+                        const isSelected =
+                          selectedActivities[service]?.[activityKey] != null;
+                        const foundActivity = ALL_SERVICES.find(
+                          (x) => x.id === activityKey
+                        );
+                        const activityLabel = capitalizeAndTransform(
+                          activityData.activity
+                        );
+                        const finalCost = serviceCosts[activityKey] || 0;
+                        const calcResult = calculationResultsMap[activityKey];
+                        const detailsExpanded =
+                          expandedServiceDetails.has(activityKey);
 
-                          const showSurfaceCalcButton = foundActivity
-                            ? ["sq ft", "K sq ft"].includes(
-                                foundActivity.unit_of_measurement
-                              )
-                            : false;
+                        const showSurfaceCalcButton = foundActivity
+                          ? ["sq ft", "K sq ft"].includes(
+                              foundActivity.unit_of_measurement
+                            )
+                          : false;
 
-                          return (
-                            <div key={activityKey} className="space-y-2">
-                              {/* Toggle */}
-                              <div className="flex justify-between items-center">
-                                <span
-                                  className={`text-lg ${
-                                    isSelected
-                                      ? "text-blue-600"
-                                      : "text-gray-800"
-                                  }`}
-                                >
-                                  {activityLabel}
-                                </span>
-                                <label className="relative inline-flex items-center cursor-pointer">
-                                  <input
-                                    type="checkbox"
-                                    checked={isSelected}
-                                    onChange={() =>
-                                      handleActivityToggle(service, activityKey)
-                                    }
-                                    className="sr-only peer"
-                                  />
-                                  <div className="w-[52px] h-[31px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
-                                  <div className="absolute top-[2px] left-[2px] w-[27px] h-[27px] bg-white rounded-full shadow-md transform transition-transform duration-300 peer-checked:translate-x-[21px]"></div>
-                                </label>
-                              </div>
+                        return (
+                          <div key={activityKey} className="space-y-2">
+                            {/* Toggle */}
+                            <div className="flex justify-between items-center">
+                              <span
+                                className={`text-lg ${
+                                  isSelected
+                                    ? "text-blue-600"
+                                    : "text-gray-800"
+                                }`}
+                              >
+                                {activityLabel}
+                              </span>
+                              <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() =>
+                                    handleActivityToggle(service, activityKey)
+                                  }
+                                  className="sr-only peer"
+                                />
+                                <div className="w-[52px] h-[31px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
+                                <div className="absolute top-[2px] left-[2px] w-[27px] h-[27px] bg-white rounded-full shadow-md transform transition-transform duration-300 peer-checked:translate-x-[21px]"></div>
+                              </label>
+                            </div>
 
-                              {isSelected && foundActivity && (
-                                <>
-                                  <ServiceImage activityKey={activityKey} />
+                            {isSelected && foundActivity && (
+                              <>
+                                <ServiceImage activityKey={activityKey} />
 
-                                  {foundActivity.description && (
-                                    <p className="text-sm text-gray-500">
-                                      {foundActivity.description}
-                                    </p>
-                                  )}
+                                {foundActivity.description && (
+                                  <p className="text-sm text-gray-500">
+                                    {foundActivity.description}
+                                  </p>
+                                )}
 
-                                  {/* Quantity */}
-                                  <div className="flex justify-between items-center">
-                                    <div className="flex items-center gap-1">
-                                      <button
-                                        onClick={() =>
-                                          handleQuantityChange(
-                                            service,
-                                            activityKey,
-                                            false
-                                          )
-                                        }
-                                        className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
-                                      >
-                                        −
-                                      </button>
-                                      <input
-                                        type="text"
-                                        value={
-                                          manualInputValue[service]?.[
-                                            activityKey
-                                          ] != null
-                                            ? manualInputValue[service][
+                                {/* Quantity */}
+                                <div className="flex justify-between items-center">
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      onClick={() =>
+                                        handleQuantityChange(service, activityKey, false)
+                                      }
+                                      className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
+                                    >
+                                      −
+                                    </button>
+                                    <input
+                                      type="text"
+                                      value={
+                                        manualInputValue[service]?.[activityKey] !=
+                                        null
+                                          ? manualInputValue[service]![activityKey]!
+                                          : (
+                                              selectedActivities[service]?.[
                                                 activityKey
-                                              ]!
-                                            : (
-                                                selectedActivities[service]?.[
-                                                  activityKey
-                                                ] || 1
-                                              ).toString()
-                                        }
-                                        onClick={() =>
-                                          setManualInputValue((old) => ({
-                                            ...old,
-                                            [service]: {
-                                              ...old[service],
-                                              [activityKey]: "",
-                                            },
-                                          }))
-                                        }
-                                        onBlur={() =>
-                                          handleBlurInput(service, activityKey)
-                                        }
-                                        onChange={(e) =>
-                                          handleManualQuantityChange(
-                                            service,
-                                            activityKey,
-                                            e.target.value
-                                          )
-                                        }
-                                        className="w-20 text-center px-2 py-1 border rounded"
-                                      />
-                                      <button
-                                        onClick={() =>
-                                          handleQuantityChange(
-                                            service,
-                                            activityKey,
-                                            true
-                                          )
-                                        }
-                                        className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
-                                      >
-                                        +
-                                      </button>
-                                      <span className="text-sm text-gray-600">
-                                        {foundActivity.unit_of_measurement}
-                                      </span>
-                                    </div>
-
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-lg text-blue-600 font-semibold">
-                                        ${formatWithSeparator(finalCost)}
-                                      </span>
-                                    </div>
+                                              ] || 1
+                                            ).toString()
+                                      }
+                                      onClick={() =>
+                                        setManualInputValue((old) => ({
+                                          ...old,
+                                          [service]: {
+                                            ...old[service],
+                                            [activityKey]: "",
+                                          },
+                                        }))
+                                      }
+                                      onBlur={() =>
+                                        handleBlurInput(service, activityKey)
+                                      }
+                                      onChange={(e) =>
+                                        handleManualQuantityChange(
+                                          service,
+                                          activityKey,
+                                          e.target.value
+                                        )
+                                      }
+                                      className="w-20 text-center px-2 py-1 border rounded"
+                                    />
+                                    <button
+                                      onClick={() =>
+                                        handleQuantityChange(service, activityKey, true)
+                                      }
+                                      className="w-8 h-8 bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg rounded"
+                                    >
+                                      +
+                                    </button>
+                                    <span className="text-sm text-gray-600">
+                                      {foundActivity.unit_of_measurement}
+                                    </span>
                                   </div>
 
-                                  {/* Surface calc / breakdown */}
-                                  <div className="mt-2 mb-3 flex items-center">
-                                    {showSurfaceCalcButton ? (
-                                      <>
-                                        <button
-                                          onClick={() =>
-                                            openSurfaceCalc(
-                                              service,
-                                              activityKey
-                                            )
-                                          }
-                                          className="text-blue-600 text-sm font-medium hover:underline mr-auto"
-                                        >
-                                          Surface Calc
-                                        </button>
-                                        <button
-                                          onClick={() =>
-                                            toggleActivityDetails(activityKey)
-                                          }
-                                          className={`text-blue-600 text-sm font-medium ${
-                                            detailsExpanded ? "" : "underline"
-                                          }`}
-                                        >
-                                          Cost Breakdown
-                                        </button>
-                                      </>
-                                    ) : (
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-lg text-blue-600 font-semibold">
+                                      ${formatWithSeparator(finalCost)}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {/* Surface calc / breakdown */}
+                                <div className="mt-2 mb-3 flex items-center">
+                                  {showSurfaceCalcButton ? (
+                                    <>
+                                      <button
+                                        onClick={() =>
+                                          openSurfaceCalc(service, activityKey)
+                                        }
+                                        className="text-blue-600 text-sm font-medium hover:underline mr-auto"
+                                      >
+                                        Surface Calc
+                                      </button>
                                       <button
                                         onClick={() =>
                                           toggleActivityDetails(activityKey)
                                         }
-                                        className={`ml-auto text-blue-600 text-sm font-medium ${
+                                        className={`text-blue-600 text-sm font-medium ${
                                           detailsExpanded ? "" : "underline"
                                         }`}
                                       >
                                         Cost Breakdown
                                       </button>
-                                    )}
-                                  </div>
+                                    </>
+                                  ) : (
+                                    <button
+                                      onClick={() =>
+                                        toggleActivityDetails(activityKey)
+                                      }
+                                      className={`ml-auto text-blue-600 text-sm font-medium ${
+                                        detailsExpanded ? "" : "underline"
+                                      }`}
+                                    >
+                                      Cost Breakdown
+                                    </button>
+                                  )}
+                                </div>
 
-                                  {/* Cost breakdown info */}
-                                  {calcResult && detailsExpanded && (
-                                    <div className="mt-4 p-2 sm:p-4 bg-gray-50 border rounded">
-                                      <div className="flex flex-col gap-2 mb-4">
-                                        <div className="flex justify-between">
-                                          <span className="text-md font-semibold text-gray-700">
-                                            Labor
-                                          </span>
-                                          <span className="text-md font-semibold text-gray-700">
-                                            {calcResult.work_cost
-                                              ? `$${calcResult.work_cost}`
-                                              : "—"}
-                                          </span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                          <span className="text-md font-semibold text-gray-700">
-                                            Materials, tools & equipment
-                                          </span>
-                                          <span className="text-md font-semibold text-gray-700">
-                                            {calcResult.material_cost
-                                              ? `$${calcResult.material_cost}`
-                                              : "—"}
-                                          </span>
-                                        </div>
+                                {/* Cost breakdown info */}
+                                {calcResult && detailsExpanded && (
+                                  <div className="mt-4 p-2 sm:p-4 bg-gray-50 border rounded">
+                                    <div className="flex flex-col gap-2 mb-4">
+                                      <div className="flex justify-between">
+                                        <span className="text-md font-semibold text-gray-700">
+                                          Labor
+                                        </span>
+                                        <span className="text-md font-semibold text-gray-700">
+                                          {calcResult.work_cost
+                                            ? `$${calcResult.work_cost}`
+                                            : "—"}
+                                        </span>
                                       </div>
+                                      <div className="flex justify-between">
+                                        <span className="text-md font-semibold text-gray-700">
+                                          Materials, tools & equipment
+                                        </span>
+                                        <span className="text-md font-semibold text-gray-700">
+                                          {calcResult.material_cost
+                                            ? `$${calcResult.material_cost}`
+                                            : "—"}
+                                        </span>
+                                      </div>
+                                    </div>
 
-                                      {Array.isArray(calcResult.materials) &&
-                                        calcResult.materials.length > 0 && (
-                                          <div className="mt-2">
-                                            <table className="table-auto w-full text-sm text-left text-gray-700">
-                                              <thead>
-                                                <tr className="border-b">
-                                                  <th className="py-2 px-1">
-                                                    Name
-                                                  </th>
-                                                  <th className="py-2 px-1">
-                                                    Price
-                                                  </th>
-                                                  <th className="py-2 px-1">
-                                                    Qty
-                                                  </th>
-                                                  <th className="py-2 px-1">
-                                                    Subtotal
-                                                  </th>
-                                                </tr>
-                                              </thead>
-                                              <tbody className="divide-y divide-gray-200">
-                                                {calcResult.materials.map(
-                                                  (m: any, i: number) => {
-                                                    const fmObj =
-                                                      findFinishingMaterialObj(
-                                                        activityKey,
-                                                        m.external_id
-                                                      );
-                                                    const hasImage = fmObj
-                                                      ?.image?.length
-                                                      ? true
-                                                      : false;
-                                                    const isClientOwned =
-                                                      clientOwnedMaterials[
-                                                        activityKey
-                                                      ]?.has(m.external_id);
+                                    {Array.isArray(calcResult.materials) &&
+                                      calcResult.materials.length > 0 && (
+                                        <div className="mt-2">
+                                          <table className="table-auto w-full text-sm text-left text-gray-700">
+                                            <thead>
+                                              <tr className="border-b">
+                                                <th className="py-2 px-1">
+                                                  Name
+                                                </th>
+                                                <th className="py-2 px-1">
+                                                  Price
+                                                </th>
+                                                <th className="py-2 px-1">
+                                                  Qty
+                                                </th>
+                                                <th className="py-2 px-1">
+                                                  Subtotal
+                                                </th>
+                                              </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-gray-200">
+                                              {calcResult.materials.map(
+                                                (m: any, i: number) => {
+                                                  const fmObj =
+                                                    findFinishingMaterialObj(
+                                                      activityKey,
+                                                      m.external_id
+                                                    );
+                                                  const hasImage = fmObj?.image
+                                                    ?.length
+                                                    ? true
+                                                    : false;
+                                                  const isClientOwned =
+                                                    clientOwnedMaterials[
+                                                      activityKey
+                                                    ]?.has(m.external_id);
 
-                                                    let rowClass = "";
-                                                    if (isClientOwned) {
-                                                      rowClass =
-                                                        "border border-red-500 bg-red-50";
-                                                    } else if (hasImage) {
-                                                      rowClass =
-                                                        "border border-blue-300 bg-white cursor-pointer";
-                                                    }
+                                                  let rowClass = "";
+                                                  if (isClientOwned) {
+                                                    rowClass =
+                                                      "border border-red-500 bg-red-50";
+                                                  } else if (hasImage) {
+                                                    rowClass =
+                                                      "border border-blue-300 bg-white cursor-pointer";
+                                                  }
 
-                                                    return (
-                                                      <tr
-                                                        key={`${m.external_id}-${i}`}
-                                                        className={`last:border-0 ${rowClass}`}
-                                                        onClick={() => {
+                                                  return (
+                                                    <tr
+                                                      key={`${m.external_id}-${i}`}
+                                                      className={`last:border-0 ${rowClass}`}
+                                                      onClick={() => {
+                                                        if (
+                                                          hasImage &&
+                                                          !isClientOwned
+                                                        ) {
+                                                          let foundSection:
+                                                            | string
+                                                            | null = null;
+                                                          const fmData =
+                                                            finishingMaterialsMapAll[
+                                                              activityKey
+                                                            ];
                                                           if (
-                                                            hasImage &&
-                                                            !isClientOwned
+                                                            fmData &&
+                                                            fmData.sections
                                                           ) {
-                                                            let foundSection:
-                                                              | string
-                                                              | null = null;
-                                                            const fmData =
-                                                              finishingMaterialsMapAll[
-                                                                activityKey
-                                                              ];
-                                                            if (
-                                                              fmData &&
+                                                            for (const [
+                                                              secName,
+                                                              list,
+                                                            ] of Object.entries(
                                                               fmData.sections
-                                                            ) {
-                                                              for (const [
-                                                                secName,
-                                                                list,
-                                                              ] of Object.entries(
-                                                                fmData.sections
-                                                              )) {
-                                                                if (
-                                                                  Array.isArray(
-                                                                    list
-                                                                  ) &&
-                                                                  list.some(
-                                                                    (xx) =>
-                                                                      xx.external_id ===
-                                                                      m.external_id
-                                                                  )
-                                                                ) {
-                                                                  foundSection =
-                                                                    secName;
-                                                                  break;
-                                                                }
+                                                            )) {
+                                                              if (
+                                                                Array.isArray(
+                                                                  list
+                                                                ) &&
+                                                                list.some(
+                                                                  (xx) =>
+                                                                    xx.external_id ===
+                                                                    m.external_id
+                                                                )
+                                                              ) {
+                                                                foundSection =
+                                                                  secName;
+                                                                break;
                                                               }
                                                             }
-                                                            setShowModalServiceId(
-                                                              activityKey
-                                                            );
-                                                            setShowModalSectionName(
-                                                              foundSection
-                                                            );
                                                           }
-                                                        }}
-                                                      >
-                                                        <td className="py-3 px-1">
-                                                          {hasImage ? (
-                                                            <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
-                                                              <img
-                                                                src={
-                                                                  fmObj?.image
-                                                                }
-                                                                alt={m.name}
-                                                                className="w-24 h-24 object-cover rounded"
-                                                              />
-                                                              <span className="break-words text-blue-600">
-                                                                {m.name}
-                                                              </span>
-                                                            </div>
-                                                          ) : (
-                                                            m.name
-                                                          )}
-                                                        </td>
-                                                        <td className="py-3 px-1">
-                                                          ${m.cost_per_unit}
-                                                        </td>
-                                                        <td className="py-3 px-3">
-                                                          {m.quantity}
-                                                        </td>
-                                                        <td className="py-3 px-3">
-                                                          ${m.cost}
-                                                        </td>
-                                                      </tr>
-                                                    );
-                                                  }
-                                                )}
-                                              </tbody>
-                                            </table>
-                                          </div>
-                                        )}
-                                    </div>
-                                  )}
-                                </>
-                              )}
-                            </div>
-                          );
-                        }
-                      )}
+                                                          setShowModalServiceId(
+                                                            activityKey
+                                                          );
+                                                          setShowModalSectionName(
+                                                            foundSection
+                                                          );
+                                                        }
+                                                      }}
+                                                    >
+                                                      <td className="py-3 px-1">
+                                                        {hasImage ? (
+                                                          <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+                                                            <img
+                                                              src={fmObj?.image}
+                                                              alt={m.name}
+                                                              className="w-24 h-24 object-cover rounded"
+                                                            />
+                                                            <span className="break-words text-blue-600">
+                                                              {m.name}
+                                                            </span>
+                                                          </div>
+                                                        ) : (
+                                                          m.name
+                                                        )}
+                                                      </td>
+                                                      <td className="py-3 px-1">
+                                                        ${m.cost_per_unit}
+                                                      </td>
+                                                      <td className="py-3 px-3">
+                                                        {m.quantity}
+                                                      </td>
+                                                      <td className="py-3 px-3">
+                                                        ${m.cost}
+                                                      </td>
+                                                    </tr>
+                                                  );
+                                                }
+                                              )}
+                                            </tbody>
+                                          </table>
+                                        </div>
+                                      )}
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -1062,7 +1041,7 @@ export default function EmergencyDetails() {
             </p>
           </div>
 
-          {/* Photos */}
+          {/* Photos => from context */}
           <div className="hidden sm:block w-full xl:max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
             <h2 className="text-2xl font-semibold text-gray-800 mb-4">
               Uploaded Photos
