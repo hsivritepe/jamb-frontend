@@ -1,6 +1,6 @@
 {
-    "from_id": 480,
-    "to_id": 1000,
+    "from_id":1348,
+    "to_id": 1624,
     "store_name": "HD",
     "endpoint_url": "https://dev.thejamb.com/material/update-finishing-material-cost"
   }

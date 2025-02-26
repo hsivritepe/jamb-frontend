@@ -14,6 +14,7 @@ import { ALL_SERVICES } from "@/constants/services";
 import { getSessionItem, setSessionItem } from "@/utils/session";
 import { formatWithSeparator } from "@/utils/format";
 import { Printer, Share2, Save } from "lucide-react";
+import { usePhotos } from "@/context/PhotosContext";
 
 /**
  * Inserts spaces before uppercase letters and capitalizes the string.
@@ -156,7 +157,7 @@ export default function EmergencyCheckoutPage() {
     {}
   );
   const fullAddress = getSessionItem<string>("fullAddress", "");
-  const photos = getSessionItem<string[]>("photos", []);
+  const { photos } = usePhotos();
   const description = getSessionItem<string>("description", "");
   const selectedTime = getSessionItem<string>("selectedTime", "No date selected");
 
@@ -338,11 +339,6 @@ export default function EmergencyCheckoutPage() {
 
         // Always transform the category name
         let catDisplay = capitalizeAndTransform(catKey);
-
-        // (Optional) If you only want to transform if category exists in EMERGENCY_SERVICES:
-        // if (EMERGENCY_SERVICES[catKey]) {
-        //   catDisplay = capitalizeAndTransform(catKey);
-        // }
 
         arr.push({
           category: catDisplay,
@@ -631,7 +627,6 @@ export default function EmergencyCheckoutPage() {
 
           <hr className="my-6 border-gray-200" />
 
-          {/* Photos */}
           <div>
             <SectionBoxSubtitle>Uploaded Photos</SectionBoxSubtitle>
             <div className="grid grid-cols-6 gap-2">

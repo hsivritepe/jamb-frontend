@@ -14,6 +14,7 @@ import { ALL_SERVICES } from "@/constants/services";
 import { ALL_CATEGORIES } from "@/constants/categories";
 import { getSessionItem, setSessionItem } from "@/utils/session";
 import PlaceOrderButton from "@/components/ui/PlaceOrderButton";
+import { usePhotos } from "@/context/PhotosContext";
 
 /**
  * Props for the print/share/save button bar.
@@ -179,13 +180,14 @@ function numberToWordsUSD(amount: number): string {
 export default function RoomsCheckout() {
   const router = useRouter();
 
-  // Selected services
+  // Use PhotosContext instead of session for photos
+  const { photos } = usePhotos(); // <-- from context
+
   const selectedServicesState: Record<string, Record<string, number>> =
     getSessionItem("rooms_selectedServicesWithQuantity", {});
 
   const address: string = getSessionItem("address", "");
   const description: string = getSessionItem("description", "");
-  const photos: string[] = getSessionItem("photos", []);
   const city: string = getSessionItem("city", "");
   const stateName: string = getSessionItem("stateName", "");
   const zip: string = getSessionItem("zip", "");
@@ -193,13 +195,11 @@ export default function RoomsCheckout() {
   const selectedTime: string | null = getSessionItem("selectedTime", null);
   const timeCoefficient: number = getSessionItem("timeCoefficient", 1);
 
-  // Calculations
   const calculationResultsMap: Record<string, any> =
     getSessionItem("calculationResultsMap", {});
   const overrideCalcResults: Record<string, any> =
     getSessionItem("rooms_overrideCalcResults", {});
 
-  // Summaries from previous step
   const laborSubtotal: number = getSessionItem("rooms_laborSubtotal", 0);
   const materialsSubtotal: number = getSessionItem("rooms_materialsSubtotal", 0);
   const sumBeforeTax: number = getSessionItem("rooms_sumBeforeTax", 0);
@@ -209,7 +209,6 @@ export default function RoomsCheckout() {
   const serviceFeeOnLabor: number = getSessionItem("serviceFeeOnLabor", 0);
   const serviceFeeOnMaterials: number = getSessionItem("serviceFeeOnMaterials", 0);
 
-  // Redirect if nothing is selected or no address
   useEffect(() => {
     let anySelected = false;
     for (const roomId in selectedServicesState) {
@@ -223,12 +222,10 @@ export default function RoomsCheckout() {
     }
   }, [selectedServicesState, address, router]);
 
-  // Determine which rooms actually have services
   const chosenRoomIds = Object.keys(selectedServicesState).filter(
     (roomId) => Object.keys(selectedServicesState[roomId]).length > 0
   );
 
-  // Address string
   let constructedAddress = "";
   if (city) constructedAddress += city;
   if (stateName) {
@@ -244,13 +241,13 @@ export default function RoomsCheckout() {
     constructedAddress += country;
   }
 
-  // Temporary reference code
   const estimateNumber = buildEstimateNumber(stateName, zip);
   const spelledOutTotal = numberToWordsUSD(finalTotal);
 
-  /**
-   * Builds the "worksData" array describing each service line item for order posting.
-   */
+  function getCalcResultFor(serviceId: string) {
+    return overrideCalcResults[serviceId] || calculationResultsMap[serviceId];
+  }
+
   function buildWorksData() {
     const works: Array<{
       type: string;
@@ -274,7 +271,7 @@ export default function RoomsCheckout() {
       const roomServices = selectedServicesState[roomId];
       for (const svcId of Object.keys(roomServices)) {
         const qty = roomServices[svcId];
-        const resultObj = overrideCalcResults[svcId] || calculationResultsMap[svcId];
+        const resultObj = getCalcResultFor(svcId);
         if (!resultObj) continue;
 
         const laborVal = parseFloat(resultObj.work_cost) || 0;
@@ -316,11 +313,7 @@ export default function RoomsCheckout() {
     return works;
   }
 
-  /**
-   * Clears session storage for "rooms" data on successful order, then navigates away.
-   */
   function onOrderSuccess() {
-    // Remove keys associated with the "rooms" flow
     sessionStorage.removeItem("rooms_selectedServicesWithQuantity");
     sessionStorage.removeItem("rooms_selectedSections");
     sessionStorage.removeItem("rooms_searchQuery");
@@ -332,10 +325,7 @@ export default function RoomsCheckout() {
     sessionStorage.removeItem("rooms_taxRatePercent");
     sessionStorage.removeItem("rooms_taxAmount");
     sessionStorage.removeItem("rooms_estimateFinalTotal");
-
-    // Optionally remove other global or local keys if needed
     sessionStorage.removeItem("description");
-    sessionStorage.removeItem("photos");
     sessionStorage.removeItem("selectedTime");
     sessionStorage.removeItem("timeCoefficient");
 
@@ -407,7 +397,7 @@ export default function RoomsCheckout() {
               let roomLabor = 0;
               let roomMaterials = 0;
               Object.keys(roomServices).forEach((svcId) => {
-                const cr = overrideCalcResults[svcId] || calculationResultsMap[svcId];
+                const cr = getCalcResultFor(svcId);
                 if (!cr) return;
                 roomLabor += parseFloat(cr.work_cost) || 0;
                 roomMaterials += parseFloat(cr.material_cost) || 0;
@@ -459,7 +449,7 @@ export default function RoomsCheckout() {
                                 const foundSvc = ALL_SERVICES.find((s) => s.id === svcId);
                                 if (!foundSvc) return null;
 
-                                const cr = overrideCalcResults[svcId] || calculationResultsMap[svcId];
+                                const cr = getCalcResultFor(svcId);
                                 const qty = roomServices[svcId] || 1;
                                 const laborCost = cr ? parseFloat(cr.work_cost) || 0 : 0;
                                 const matCost = cr ? parseFloat(cr.material_cost) || 0 : 0;
@@ -531,7 +521,9 @@ export default function RoomsCheckout() {
                                                       <td className="py-3 px-3">
                                                         ${formatWithSeparator(priceVal)}
                                                       </td>
-                                                      <td className="py-3 px-3">{m.quantity}</td>
+                                                      <td className="py-3 px-3">
+                                                        {m.quantity}
+                                                      </td>
                                                       <td className="py-3 px-3">
                                                         ${formatWithSeparator(subVal)}
                                                       </td>
@@ -670,7 +662,7 @@ export default function RoomsCheckout() {
             </p>
           </div>
 
-          {/* Photos */}
+          {/* Photos => from context */}
           <hr className="my-6 border-gray-200" />
           <div>
             <SectionBoxSubtitle>Uploaded Photos</SectionBoxSubtitle>
