@@ -1,6 +1,7 @@
 "use client";
 
 export const dynamic = "force-dynamic";
+
 import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { EMERGENCY_SERVICES } from "@/constants/emergency";
@@ -9,6 +10,7 @@ import { taxRatesUSA } from "@/constants/taxRatesUSA";
 import { DisclaimerBlock } from "@/components/ui/DisclaimerBlock";
 import { getSessionItem } from "@/utils/session";
 import { formatWithSeparator } from "@/utils/format";
+import { usePhotos } from "@/context/PhotosContext";
 
 /**
  * Returns combined state+local tax rate from taxRatesUSA, or 0 if not found.
@@ -172,11 +174,11 @@ interface SelectedActivities {
 export default function PrintEmergencyEstimate() {
   const router = useRouter();
 
-  // (1) Load from session using new helper
+  // (1) Load from session
   const selectedActivities = getSessionItem<SelectedActivities>("selectedActivities", {});
   const calculationResultsMap = getSessionItem<Record<string, any>>("calculationResultsMap", {});
   const fullAddress = getSessionItem<string>("fullAddress", "");
-  const photos = getSessionItem<string[]>("photos", []);
+  const { photos } = usePhotos();
   const description = getSessionItem<string>("description", "");
   const date = getSessionItem<string>("selectedTime", "No date selected");
   const timeCoefficient = getSessionItem<number>("timeCoefficient", 1);
@@ -384,7 +386,7 @@ export default function PrintEmergencyEstimate() {
           <span>{description || "No details provided"}</span>
         </div>
 
-        {/* Photos logic here */}
+        {/* Photos => from context */}
         {photos.length > 0 && (
           <div className="mt-2">
             <strong>Uploaded Photos:</strong>

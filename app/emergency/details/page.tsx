@@ -17,6 +17,7 @@ import { formatWithSeparator } from "@/utils/format";
 
 import FinishingMaterialsModal from "@/components/FinishingMaterialsModal";
 import SurfaceCalculatorModal from "@/components/SurfaceCalculatorModal";
+import { usePhotos } from "@/context/PhotosContext";
 
 interface FinishingMaterial {
   id: number;
@@ -60,7 +61,9 @@ async function calculatePrice(params: {
     body: JSON.stringify(params),
   });
   if (!res.ok) {
-    throw new Error(`Failed to calculate price (work_code=${params.work_code}).`);
+    throw new Error(
+      `Failed to calculate price (work_code=${params.work_code}).`
+    );
   }
   return res.json();
 }
@@ -78,7 +81,9 @@ async function fetchFinishingMaterials(workCode: string) {
     body: JSON.stringify({ work_code: workCode }),
   });
   if (!res.ok) {
-    throw new Error(`Failed to fetch finishing materials (work_code=${workCode}).`);
+    throw new Error(
+      `Failed to fetch finishing materials (work_code=${workCode}).`
+    );
   }
   return res.json();
 }
@@ -123,14 +128,14 @@ function capitalizeAndTransform(text: string): string {
 export default function EmergencyDetails() {
   const router = useRouter();
 
-  // Retrieve session data
+  // Retrieve session data (photos now come from context)
+  const { photos } = usePhotos(); // <-- from context
   const selectedServices = getSessionItem<Record<string, string[]>>(
     "selectedServices",
     {}
   );
   const fullAddress = getSessionItem<string>("fullAddress", "");
   const zip = getSessionItem<string>("zip", "");
-  const photos = getSessionItem<string[]>("photos", []);
   const description = getSessionItem<string>("description", "");
 
   // Activity selection and quantities
@@ -140,8 +145,18 @@ export default function EmergencyDetails() {
   const [manualInputValue, setManualInputValue] = useState<
     Record<string, Record<string, string | null>>
   >({});
-  const [expandedServices, setExpandedServices] = useState<Set<string>>(new Set());
+  const [expandedServices, setExpandedServices] = useState<Set<string>>(
+    new Set()
+  );
+
+  // Use alert for warnings
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
+  useEffect(() => {
+    if (warningMessage) {
+      alert(warningMessage);
+      setWarningMessage(null);
+    }
+  }, [warningMessage]);
 
   // Cost calculations and results
   const [serviceCosts, setServiceCosts] = useState<Record<string, number>>({});
@@ -163,19 +178,21 @@ export default function EmergencyDetails() {
   >({});
 
   // Modals: finishing materials, surface calculator
-  const [showModalServiceId, setShowModalServiceId] = useState<string | null>(null);
-  const [showModalSectionName, setShowModalSectionName] = useState<string | null>(
+  const [showModalServiceId, setShowModalServiceId] = useState<string | null>(
     null
   );
-  const [expandedServiceDetails, setExpandedServiceDetails] = useState<Set<string>>(
-    new Set()
-  );
+  const [showModalSectionName, setShowModalSectionName] = useState<
+    string | null
+  >(null);
+  const [expandedServiceDetails, setExpandedServiceDetails] = useState<
+    Set<string>
+  >(new Set());
 
   // Surface calculator
   const [surfaceCalcOpen, setSurfaceCalcOpen] = useState(false);
-  const [surfaceCalcServiceKey, setSurfaceCalcServiceKey] = useState<string | null>(
-    null
-  );
+  const [surfaceCalcServiceKey, setSurfaceCalcServiceKey] = useState<
+    string | null
+  >(null);
   const [surfaceCalcActivityKey, setSurfaceCalcActivityKey] = useState<
     string | null
   >(null);
@@ -267,7 +284,10 @@ export default function EmergencyDetails() {
 
         const laborCost = parseFloat(resp.work_cost) || 0;
         const matCost = parseFloat(resp.material_cost) || 0;
-        setServiceCosts((old) => ({ ...old, [activityKey]: laborCost + matCost }));
+        setServiceCosts((old) => ({
+          ...old,
+          [activityKey]: laborCost + matCost,
+        }));
         setCalculationResultsMap((old) => ({ ...old, [activityKey]: resp }));
       } catch (err) {
         console.error("Error in calculatePrice:", err);
@@ -569,7 +589,10 @@ export default function EmergencyDetails() {
         <div className="flex justify-between items-center text-sm text-gray-500 mt-8 w-full xl:max-w-[600px]">
           <span>
             No service?{" "}
-            <a href="#" className="text-blue-600 hover:underline focus:outline-none">
+            <a
+              href="#"
+              className="text-blue-600 hover:underline focus:outline-none"
+            >
               Contact emergency support
             </a>
           </span>
@@ -579,11 +602,6 @@ export default function EmergencyDetails() {
           >
             Clear
           </button>
-        </div>
-
-        {/* Warning */}
-        <div className="h-6 mt-4 text-left">
-          {warningMessage && <p className="text-red-500">{warningMessage}</p>}
         </div>
       </div>
 
@@ -595,7 +613,9 @@ export default function EmergencyDetails() {
             {servicesList.map(({ service, category, activities }) => {
               const serviceLabel = capitalizeAndTransform(service);
               const isExpanded = expandedServices.has(service);
-              const chosenCount = Object.keys(selectedActivities[service] || {}).length;
+              const chosenCount = Object.keys(
+                selectedActivities[service] || {}
+              ).length;
 
               return (
                 <div
@@ -633,10 +653,14 @@ export default function EmergencyDetails() {
                         const foundActivity = ALL_SERVICES.find(
                           (x) => x.id === activityKey
                         );
-                        const activityLabel = capitalizeAndTransform(activityData.activity);
+                        const activityLabel = capitalizeAndTransform(
+                          activityData.activity
+                        );
                         const finalCost = serviceCosts[activityKey] || 0;
                         const calcResult = calculationResultsMap[activityKey];
-                        const detailsExpanded = expandedServiceDetails.has(activityKey);
+                        const detailsExpanded =
+                          expandedServiceDetails.has(activityKey);
+
                         const showSurfaceCalcButton = foundActivity
                           ? ["sq ft", "K sq ft"].includes(
                               foundActivity.unit_of_measurement
@@ -649,7 +673,9 @@ export default function EmergencyDetails() {
                             <div className="flex justify-between items-center">
                               <span
                                 className={`text-lg ${
-                                  isSelected ? "text-blue-600" : "text-gray-800"
+                                  isSelected
+                                    ? "text-blue-600"
+                                    : "text-gray-800"
                                 }`}
                               >
                                 {activityLabel}
@@ -663,8 +689,8 @@ export default function EmergencyDetails() {
                                   }
                                   className="sr-only peer"
                                 />
-                                <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300" />
-                                <div className="absolute top-[2px] left-[2px] w-[22px] h-[22px] bg-white rounded-full shadow-md peer-checked:translate-x-[24px] transform transition-transform duration-300" />
+                                <div className="w-[52px] h-[31px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
+                                <div className="absolute top-[2px] left-[2px] w-[27px] h-[27px] bg-white rounded-full shadow-md transform transition-transform duration-300 peer-checked:translate-x-[21px]"></div>
                               </label>
                             </div>
 
@@ -692,10 +718,13 @@ export default function EmergencyDetails() {
                                     <input
                                       type="text"
                                       value={
-                                        manualInputValue[service]?.[activityKey] != null
-                                          ? manualInputValue[service][activityKey]!
+                                        manualInputValue[service]?.[activityKey] !=
+                                        null
+                                          ? manualInputValue[service]![activityKey]!
                                           : (
-                                              selectedActivities[service]?.[activityKey] || 1
+                                              selectedActivities[service]?.[
+                                                activityKey
+                                              ] || 1
                                             ).toString()
                                       }
                                       onClick={() =>
@@ -707,7 +736,9 @@ export default function EmergencyDetails() {
                                           },
                                         }))
                                       }
-                                      onBlur={() => handleBlurInput(service, activityKey)}
+                                      onBlur={() =>
+                                        handleBlurInput(service, activityKey)
+                                      }
                                       onChange={(e) =>
                                         handleManualQuantityChange(
                                           service,
@@ -750,7 +781,9 @@ export default function EmergencyDetails() {
                                         Surface Calc
                                       </button>
                                       <button
-                                        onClick={() => toggleActivityDetails(activityKey)}
+                                        onClick={() =>
+                                          toggleActivityDetails(activityKey)
+                                        }
                                         className={`text-blue-600 text-sm font-medium ${
                                           detailsExpanded ? "" : "underline"
                                         }`}
@@ -760,7 +793,9 @@ export default function EmergencyDetails() {
                                     </>
                                   ) : (
                                     <button
-                                      onClick={() => toggleActivityDetails(activityKey)}
+                                      onClick={() =>
+                                        toggleActivityDetails(activityKey)
+                                      }
                                       className={`ml-auto text-blue-600 text-sm font-medium ${
                                         detailsExpanded ? "" : "underline"
                                       }`}
@@ -802,10 +837,18 @@ export default function EmergencyDetails() {
                                           <table className="table-auto w-full text-sm text-left text-gray-700">
                                             <thead>
                                               <tr className="border-b">
-                                                <th className="py-2 px-1">Name</th>
-                                                <th className="py-2 px-1">Price</th>
-                                                <th className="py-2 px-1">Qty</th>
-                                                <th className="py-2 px-1">Subtotal</th>
+                                                <th className="py-2 px-1">
+                                                  Name
+                                                </th>
+                                                <th className="py-2 px-1">
+                                                  Price
+                                                </th>
+                                                <th className="py-2 px-1">
+                                                  Qty
+                                                </th>
+                                                <th className="py-2 px-1">
+                                                  Subtotal
+                                                </th>
                                               </tr>
                                             </thead>
                                             <tbody className="divide-y divide-gray-200">
@@ -816,13 +859,14 @@ export default function EmergencyDetails() {
                                                       activityKey,
                                                       m.external_id
                                                     );
-                                                  const hasImage = fmObj?.image?.length
+                                                  const hasImage = fmObj?.image
+                                                    ?.length
                                                     ? true
                                                     : false;
                                                   const isClientOwned =
-                                                    clientOwnedMaterials[activityKey]?.has(
-                                                      m.external_id
-                                                    );
+                                                    clientOwnedMaterials[
+                                                      activityKey
+                                                    ]?.has(m.external_id);
 
                                                   let rowClass = "";
                                                   if (isClientOwned) {
@@ -838,8 +882,13 @@ export default function EmergencyDetails() {
                                                       key={`${m.external_id}-${i}`}
                                                       className={`last:border-0 ${rowClass}`}
                                                       onClick={() => {
-                                                        if (hasImage && !isClientOwned) {
-                                                          let foundSection: string | null = null;
+                                                        if (
+                                                          hasImage &&
+                                                          !isClientOwned
+                                                        ) {
+                                                          let foundSection:
+                                                            | string
+                                                            | null = null;
                                                           const fmData =
                                                             finishingMaterialsMapAll[
                                                               activityKey
@@ -855,20 +904,27 @@ export default function EmergencyDetails() {
                                                               fmData.sections
                                                             )) {
                                                               if (
-                                                                Array.isArray(list) &&
+                                                                Array.isArray(
+                                                                  list
+                                                                ) &&
                                                                 list.some(
                                                                   (xx) =>
                                                                     xx.external_id ===
                                                                     m.external_id
                                                                 )
                                                               ) {
-                                                                foundSection = secName;
+                                                                foundSection =
+                                                                  secName;
                                                                 break;
                                                               }
                                                             }
                                                           }
-                                                          setShowModalServiceId(activityKey);
-                                                          setShowModalSectionName(foundSection);
+                                                          setShowModalServiceId(
+                                                            activityKey
+                                                          );
+                                                          setShowModalSectionName(
+                                                            foundSection
+                                                          );
                                                         }
                                                       }}
                                                     >
@@ -880,7 +936,7 @@ export default function EmergencyDetails() {
                                                               alt={m.name}
                                                               className="w-24 h-24 object-cover rounded"
                                                             />
-                                                            <span className="break-words">
+                                                            <span className="break-words text-blue-600">
                                                               {m.name}
                                                             </span>
                                                           </div>
@@ -932,32 +988,35 @@ export default function EmergencyDetails() {
             ) : (
               <>
                 <ul className="mt-4 space-y-2 pb-4">
-                  {Object.entries(selectedActivities).flatMap(([srvKey, acts]) =>
-                    Object.entries(acts).map(([activityKey, quantity]) => {
-                      const foundAct = ALL_SERVICES.find((x) => x.id === activityKey);
-                      if (!foundAct) return null;
-                      const finalCost = serviceCosts[activityKey] || 0;
-                      return (
-                        <li
-                          key={activityKey}
-                          className="grid grid-cols-3 gap-2 text-sm text-gray-600"
-                          style={{
-                            gridTemplateColumns: "46% 25% 25%",
-                            width: "100%",
-                          }}
-                        >
-                          <span className="truncate overflow-hidden">
-                            {foundAct.title}
-                          </span>
-                          <span className="text-right">
-                            {quantity} {foundAct.unit_of_measurement}
-                          </span>
-                          <span className="text-right">
-                            ${formatWithSeparator(finalCost)}
-                          </span>
-                        </li>
-                      );
-                    })
+                  {Object.entries(selectedActivities).flatMap(
+                    ([srvKey, acts]) =>
+                      Object.entries(acts).map(([activityKey, quantity]) => {
+                        const foundAct = ALL_SERVICES.find(
+                          (x) => x.id === activityKey
+                        );
+                        if (!foundAct) return null;
+                        const finalCost = serviceCosts[activityKey] || 0;
+                        return (
+                          <li
+                            key={activityKey}
+                            className="grid grid-cols-3 gap-2 text-sm text-gray-600"
+                            style={{
+                              gridTemplateColumns: "46% 25% 25%",
+                              width: "100%",
+                            }}
+                          >
+                            <span className="truncate overflow-hidden">
+                              {foundAct.title}
+                            </span>
+                            <span className="text-right">
+                              {quantity} {foundAct.unit_of_measurement}
+                            </span>
+                            <span className="text-right">
+                              ${formatWithSeparator(finalCost)}
+                            </span>
+                          </li>
+                        );
+                      })
                   )}
                 </ul>
                 <div className="flex justify-between items-center mb-2">
@@ -974,13 +1033,15 @@ export default function EmergencyDetails() {
 
           {/* Address */}
           <div className="hidden sm:block w-full xl:max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-4">Address</h2>
+            <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+              Address
+            </h2>
             <p className="text-gray-500 text-medium">
               {fullAddress || "No address provided"}
             </p>
           </div>
 
-          {/* Photos */}
+          {/* Photos => from context */}
           <div className="hidden sm:block w-full xl:max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
             <h2 className="text-2xl font-semibold text-gray-800 mb-4">
               Uploaded Photos
@@ -997,7 +1058,9 @@ export default function EmergencyDetails() {
               ))}
             </div>
             {photos.length === 0 && (
-              <p className="text-medium text-gray-500 mt-2">No photos uploaded</p>
+              <p className="text-medium text-gray-500 mt-2">
+                No photos uploaded
+              </p>
             )}
           </div>
 

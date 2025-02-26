@@ -15,6 +15,7 @@ import { useLocation } from "@/context/LocationContext";
 import { getSessionItem, setSessionItem } from "@/utils/session";
 import { Printer, Share2, Save } from "lucide-react";
 import PlaceOrderButton from "@/components/ui/PlaceOrderButton";
+import { usePhotos } from "@/context/PhotosContext";
 
 interface WorkItem {
   type: string;
@@ -90,33 +91,21 @@ function buildEstimateNumber(stateCode: string, zip: string): string {
   if (stateCode && zip) {
     stateZipBlock = `${stateCode}-${zip}`;
   }
-
   const now = new Date();
   const yyyy = String(now.getFullYear());
   const mm = String(now.getMonth() + 1).padStart(2, "0");
   const dd = String(now.getDate()).padStart(2, "0");
   const hh = String(now.getHours()).padStart(2, "0");
   const mins = String(now.getMinutes()).padStart(2, "0");
-
   return `${stateZipBlock}-${yyyy}${mm}${dd}-${hh}${mins}`;
 }
 
 function numberToWordsUSD(amount: number): string {
   const integerPart = Math.floor(amount);
   const decimalPart = Math.round((amount - integerPart) * 100);
-
-  const ones = [
-    "", "one", "two", "three", "four",
-    "five", "six", "seven", "eight", "nine"
-  ];
-  const teens = [
-    "ten","eleven","twelve","thirteen","fourteen",
-    "fifteen","sixteen","seventeen","eighteen","nineteen"
-  ];
-  const tensWords = [
-    "","",
-    "twenty","thirty","forty","fifty","sixty","seventy","eighty","ninety"
-  ];
+  const ones = ["","one","two","three","four","five","six","seven","eight","nine"];
+  const teens = ["ten","eleven","twelve","thirteen","fourteen","fifteen","sixteen","seventeen","eighteen","nineteen"];
+  const tensWords = ["","","twenty","thirty","forty","fifty","sixty","seventy","eighty","ninety"];
 
   function threeDigitToWords(n: number): string {
     const hundred = Math.floor(n / 100);
@@ -160,7 +149,6 @@ function numberToWordsUSD(amount: number): string {
 
   const dollarsPart = numberToWords(Math.floor(amount));
   const centsPart = decimalPart < 10 ? `0${decimalPart}` : String(decimalPart);
-
   return `${dollarsPart} and ${centsPart}/100 dollars`.trim();
 }
 
@@ -172,6 +160,7 @@ function getCategoryNameById(catId: string): string {
 export default function CheckoutPage() {
   const router = useRouter();
   const { location } = useLocation();
+  const { photos } = usePhotos();
 
   const userStateCode = location.state || "";
   const userZip = location.zip || "00000";
@@ -181,7 +170,6 @@ export default function CheckoutPage() {
   const calculationResultsMap: Record<string, any> =
     getSessionItem("calculationResultsMap", {});
   const address: string = getSessionItem("address", "");
-  const photos: string[] = getSessionItem("photos", []);
   const description: string = getSessionItem("description", "");
   const selectedTime: string | null = getSessionItem("selectedTime", null);
   const timeCoefficient: number = getSessionItem("timeCoefficient", 1);
@@ -209,6 +197,7 @@ export default function CheckoutPage() {
     }
     return total;
   }
+
   function calculateMaterialsSubtotal(): number {
     let total = 0;
     for (const svcId of Object.keys(selectedServicesState)) {
@@ -227,7 +216,8 @@ export default function CheckoutPage() {
   const serviceFeeOnMaterials = getSessionItem("serviceFeeOnMaterials", 0);
 
   const finalLabor = laborSubtotal * timeCoefficient;
-  const sumBeforeTax = finalLabor + materialsSubtotal + serviceFeeOnLabor + serviceFeeOnMaterials;
+  const sumBeforeTax =
+    finalLabor + materialsSubtotal + serviceFeeOnLabor + serviceFeeOnMaterials;
   const taxRatePercent = getTaxRateForState(userStateCode);
   const taxAmount = sumBeforeTax * (taxRatePercent / 100);
   const finalTotal = sumBeforeTax + taxAmount;
@@ -285,7 +275,10 @@ export default function CheckoutPage() {
     serviceFeeOnMaterials,
   };
 
-  const selectedCategories: string[] = getSessionItem("services_selectedCategories", []);
+  const selectedCategories: string[] = getSessionItem(
+    "services_selectedCategories",
+    []
+  );
   const searchQuery: string = getSessionItem("services_searchQuery", "");
   const categoriesWithSection = selectedCategories
     .map((catId) => ALL_CATEGORIES.find((c) => c.id === catId) || null)
@@ -332,7 +325,6 @@ export default function CheckoutPage() {
           <PlaceOrderButton
             photos={photos}
             orderData={orderData}
-            // no onOrderSuccess => use default
           />
         </div>
 
@@ -602,7 +594,6 @@ export default function CheckoutPage() {
 
           <hr className="my-6 border-gray-200" />
 
-          {/* Selected date/time */}
           <div>
             <SectionBoxSubtitle>Date of Service</SectionBoxSubtitle>
             <p className="text-gray-600">{selectedTime || "No date selected"}</p>
@@ -610,7 +601,6 @@ export default function CheckoutPage() {
 
           <hr className="my-6 border-gray-200" />
 
-          {/* Problem description */}
           <div>
             <SectionBoxSubtitle>Problem Description</SectionBoxSubtitle>
             <p className="text-gray-600">{description || "No details provided"}</p>
@@ -618,7 +608,6 @@ export default function CheckoutPage() {
 
           <hr className="my-6 border-gray-200" />
 
-          {/* Address */}
           <div>
             <SectionBoxSubtitle>Address</SectionBoxSubtitle>
             <p className="text-gray-600">{address || "No address provided"}</p>
@@ -626,7 +615,6 @@ export default function CheckoutPage() {
 
           <hr className="my-6 border-gray-200" />
 
-          {/* Photos */}
           <div>
             <SectionBoxSubtitle>Uploaded Photos</SectionBoxSubtitle>
             <div className="grid grid-cols-6 gap-2">

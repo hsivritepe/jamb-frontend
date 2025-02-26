@@ -12,6 +12,7 @@ import { ALL_CATEGORIES } from "@/constants/categories";
 import { ALL_SERVICES } from "@/constants/services";
 import { taxRatesUSA } from "@/constants/taxRatesUSA";
 import { getSessionItem, setSessionItem } from "@/utils/session";
+import { usePhotos } from "@/context/PhotosContext";
 
 /**
  * formatWithSeparator:
@@ -64,13 +65,13 @@ export default function RoomsEstimate() {
     }
   }, [selectedRooms, chosenRooms, router]);
 
-  const address: string = getSessionItem("address", "");
-  const photos: string[] = getSessionItem("photos", []);
+  const { photos } = usePhotos();
   const description: string = getSessionItem("description", "");
   const stateName: string = getSessionItem("stateName", "");
   const zip: string = getSessionItem("zip", "");
   const city: string = getSessionItem("city", "");
   const country: string = getSessionItem("country", "");
+  const address: string = getSessionItem("address", "");
 
   // Services chosen: { roomId: { serviceId: quantity } }
   const selectedServicesState: Record<string, Record<string, number>> =
@@ -522,7 +523,7 @@ export default function RoomsEstimate() {
             </p>
           </div>
 
-          {/* Photos */}
+          {/* Photos => from PhotosContext */}
           <div className="mt-6">
             <h3 className="font-semibold text-xl text-gray-800">
               Uploaded Photos
@@ -567,12 +568,6 @@ export default function RoomsEstimate() {
               className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold sm:font-medium hover:bg-blue-700 transition-colors"
             >
               Proceed to Checkout →
-            </button>
-            <button
-              onClick={() => router.push("/calculate/details")}
-              className="w-full text-brand border border-brand py-3 rounded-lg font-semibold sm:font-medium"
-            >
-              Add more services →
             </button>
           </div>
         </div>

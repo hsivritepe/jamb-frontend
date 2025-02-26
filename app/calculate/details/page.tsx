@@ -15,6 +15,7 @@ import { ChevronDown } from "lucide-react";
 import { setSessionItem, getSessionItem } from "@/utils/session";
 import RecommendedActivities from "@/components/RecommendedActivities";
 import FinishingMaterialsModal from "@/components/FinishingMaterialsModal";
+import { usePhotos } from "@/context/PhotosContext";
 
 /** Interface describing finishing materials returned by /work/finishing_materials. */
 interface FinishingMaterial {
@@ -126,26 +127,22 @@ function SurfaceCalculatorModal({
 }: SurfaceCalculatorModalProps) {
   if (!show) return null;
 
-  // internal states
+  // Internal states for user input
   const [system, setSystem] = useState<"ft" | "m">("ft");
   const [lengthVal, setLengthVal] = useState("");
   const [widthVal, setWidthVal] = useState("");
   const [sqMetersVal, setSqMetersVal] = useState("");
 
-  // compute area from length*width => always in sq ft
   function computeAreaSqFt(): number {
     const lengthNum = parseFloat(lengthVal) || 0;
     const widthNum = parseFloat(widthVal) || 0;
     if (system === "m") {
-      // each dimension in meters => area in m^2 => convert to ft^2
-      // 1 m^2 = 10.7639 ft^2
       return lengthNum * widthNum * 10.7639;
     }
     // system = ft => direct
     return lengthNum * widthNum;
   }
 
-  // compute from known sq meters
   function computeAreaFromSqMeters(): number {
     const val = parseFloat(sqMetersVal) || 0;
     return val * 10.7639; // 1 m^2 = 10.7639 ft^2
@@ -156,9 +153,9 @@ function SurfaceCalculatorModal({
       onClose();
       return;
     }
-    // decide which area to take
+    // Decide which area to take
     let areaFt = computeAreaSqFt();
-    // if user typed sq meters => prefer that
+    // If user typed sq meters => prefer that
     if (sqMetersVal.trim()) {
       areaFt = computeAreaFromSqMeters();
     }
@@ -184,13 +181,13 @@ function SurfaceCalculatorModal({
           </button>
         </div>
 
-        {/* short instructions */}
+        {/* Short instructions */}
         <p className="text-sm text-gray-600 mb-4">
           Enter length & width in meters or feet, or a known m² area to convert
           to sq ft automatically.
         </p>
 
-        {/* system toggle */}
+        {/* System toggle (ft vs m) */}
         <div className="mb-4">
           <span className="text-sm text-gray-700 mr-2">Units (LxW):</span>
           <button
@@ -215,7 +212,7 @@ function SurfaceCalculatorModal({
           </button>
         </div>
 
-        {/* length + width */}
+        {/* Length + width inputs */}
         <div className="flex gap-2 mb-4">
           <div className="flex-1">
             <label className="block text-sm text-gray-600 mb-1">Length</label>
@@ -239,7 +236,7 @@ function SurfaceCalculatorModal({
           </div>
         </div>
 
-        {/* or known sq meters */}
+        {/* Or known sq meters */}
         <div className="mb-4">
           <label className="block text-sm text-gray-600 mb-1">
             Or known area (m²):
@@ -291,14 +288,10 @@ function SurfaceCalculatorModal({
   );
 }
 
-/**
- * The main "Details" page component
- */
 export default function Details() {
   const router = useRouter();
   const { location } = useLocation();
 
-  // Load from session
   const [selectedCategories, setSelectedCategories] = useState<string[]>(() =>
     getSessionItem("services_selectedCategories", [])
   );
@@ -306,17 +299,15 @@ export default function Details() {
     getSessionItem("address", "")
   );
   const description = getSessionItem<string>("description", "");
-  const photos = getSessionItem<string[]>("photos", []);
+  const { photos } = usePhotos(); 
   const searchQuery = getSessionItem<string>("services_searchQuery", "");
 
   useEffect(() => {
-    // If no selected categories or no address => redirect
     if (selectedCategories.length === 0 || !address) {
       router.push("/calculate");
     }
   }, [selectedCategories, address, router]);
 
-  // Update address if location changes
   useEffect(() => {
     const newAddr = [
       location.city,
@@ -333,11 +324,20 @@ export default function Details() {
   }, [location]);
 
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
+  useEffect(() => {
+    if (warningMessage) {
+      alert(warningMessage);
+      setWarningMessage(null);
+    }
+  }, [warningMessage]);
+
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
     new Set()
   );
 
-  // Build categories by section
+  /**
+   * categoriesWithSection => array of category objects that match the user's selections.
+   */
   const categoriesWithSection = useMemo(() => {
     return selectedCategories
       .map((id) => ALL_CATEGORIES.find((x) => x.id === id) || null)
@@ -355,7 +355,7 @@ export default function Details() {
     return out;
   }, [categoriesWithSection]);
 
-  // category => array of services
+
   const categoryServicesMap: Record<string, (typeof ALL_SERVICES)[number][]> =
     useMemo(() => {
       const map: Record<string, (typeof ALL_SERVICES)[number][]> = {};
@@ -371,20 +371,30 @@ export default function Details() {
       return map;
     }, [selectedCategories, searchQuery]);
 
-  // selectedServices => { [serviceId]: quantity }
+  /**
+   * selectedServicesState => { [serviceId]: quantity }
+   * The user can add or remove a service, or change its quantity.
+   */
   const [selectedServicesState, setSelectedServicesState] = useState<
     Record<string, number>
   >(() => getSessionItem("selectedServicesWithQuantity", {}));
+
   useEffect(() => {
     setSessionItem("selectedServicesWithQuantity", selectedServicesState);
   }, [selectedServicesState]);
 
-  // finishingMaterialsMapAll => data from /work/finishing_materials
+  /**
+   * finishingMaterialsMapAll => { [serviceId]: { sections: Record<string, FinishingMaterial[]> } }
+   * We fetch finishing materials from the server and store them here.
+   */
   const [finishingMaterialsMapAll, setFinishingMaterialsMapAll] = useState<
     Record<string, { sections: Record<string, FinishingMaterial[]> }>
   >({});
 
-  // finishingMaterialSelections => { [serviceId]: { [sectionName]: external_id } }
+  /**
+   * finishingMaterialSelections => tracks which finishing materials
+   * the user picks in each section for each service.
+   */
   const [finishingMaterialSelections, setFinishingMaterialSelections] =
     useState<Record<string, Record<string, string>>>({});
 
@@ -395,14 +405,18 @@ export default function Details() {
   const [calculationResultsMap, setCalculationResultsMap] = useState<
     Record<string, any>
   >({});
+
+  // Expand/collapse cost breakdown details for each service
   const [expandedServiceDetails, setExpandedServiceDetails] = useState<
     Set<string>
   >(new Set());
+
+  // Track user marking certain materials as "client-owned"
   const [clientOwnedMaterials, setClientOwnedMaterials] = useState<
     Record<string, Set<string>>
   >({});
 
-  // State for the finishing-material modal
+  // For the finishing-material modal
   const [showModalServiceId, setShowModalServiceId] = useState<string | null>(
     null
   );
@@ -410,15 +424,12 @@ export default function Details() {
     string | null
   >(null);
 
-  // State for the surface calculator
+  // For the surface calculator
   const [showSurfaceCalc, setShowSurfaceCalc] = useState(false);
   const [calcServiceId, setCalcServiceId] = useState<string | null>(null);
 
-  // This is triggered from SurfaceCalculatorModal's "Apply" button
   function handleApplySquareFeet(serviceId: string | null, sqFeet: number) {
     if (!serviceId) return;
-    // If the user hasn't turned on the service yet, we could auto-enable,
-    // or just skip. Below we assume the service is already toggled on.
     setSelectedServicesState((old) => {
       if (!(serviceId in old)) {
         return old; // do nothing if not toggled
@@ -438,7 +449,7 @@ export default function Details() {
     setSessionItem("calculationResultsMap", calculationResultsMap);
   }, [calculationResultsMap]);
 
-  /** Expand/collapse a category => possibly fetch finishing materials. */
+  /** Expand/collapse a category. Also fetch finishing materials if needed. */
   function toggleCategory(catId: string) {
     setExpandedCategories((old) => {
       const next = new Set(old);
@@ -453,7 +464,7 @@ export default function Details() {
     });
   }
 
-  /** Toggle a service. */
+  /** Toggles a service on/off. */
   function handleServiceToggle(serviceId: string) {
     setSelectedServicesState((old) => {
       const isOn = old[serviceId] != null;
@@ -499,7 +510,7 @@ export default function Details() {
     setWarningMessage(null);
   }
 
-  /** Increment or decrement quantity. */
+  /** Increment or decrement service quantity. */
   function handleQuantityChange(
     serviceId: string,
     increment: boolean,
@@ -527,7 +538,7 @@ export default function Details() {
     setManualInputValue((old) => ({ ...old, [serviceId]: null }));
   }
 
-  /** Manual input change. */
+  /** Handle manual input in the quantity field. */
   function handleManualQuantityChange(
     serviceId: string,
     val: string,
@@ -554,14 +565,14 @@ export default function Details() {
     }));
   }
 
-  /** If user leaves input blank => revert. */
+  /** If input is left blank on blur, revert it to null so we show the current quantity. */
   function handleBlurInput(serviceId: string) {
     if (!manualInputValue[serviceId]) {
       setManualInputValue((old) => ({ ...old, [serviceId]: null }));
     }
   }
 
-  /** Clear all selections. */
+  /** Clear all selected services. */
   function clearAllSelections() {
     if (!window.confirm("Are you sure you want to clear all services?")) return;
 
@@ -575,7 +586,7 @@ export default function Details() {
     setClientOwnedMaterials({});
   }
 
-  /** Load finishing materials for a single service. */
+  /** Load finishing materials for a specific service. */
   async function ensureFinishingMaterialsLoaded(serviceId: string) {
     try {
       if (!finishingMaterialsMapAll[serviceId]) {
@@ -635,7 +646,6 @@ export default function Details() {
     }
   }
 
-  /** Recompute cost whenever user changes selected services or ZIP changes. */
   useEffect(() => {
     async function recalcAll() {
       const svcIds = Object.keys(selectedServicesState);
@@ -694,17 +704,15 @@ export default function Details() {
     recalcAll();
   }, [selectedServicesState, finishingMaterialSelections, location]);
 
-  /** Summation of service costs. */
+  /** Sum up all service costs. */
   function calculateTotal() {
     return Object.values(serviceCosts).reduce((a, b) => a + b, 0);
   }
 
-  /** Next => validate selections and go to estimate page. */
+  /** "Next" => validate and go to estimate page. */
   function handleNext() {
     if (Object.keys(selectedServicesState).length === 0) {
-      setWarningMessage(
-        "Please select at least one service before proceeding."
-      );
+      setWarningMessage("Please select at least one service before proceeding.");
       return;
     }
     if (!address.trim()) {
@@ -714,7 +722,7 @@ export default function Details() {
     router.push("/calculate/estimate");
   }
 
-  /** Toggle expanded service details. */
+  /** Expand/collapse the cost breakdown for a specific service. */
   function toggleServiceDetails(serviceId: string) {
     setExpandedServiceDetails((old) => {
       const copy = new Set(old);
@@ -727,7 +735,7 @@ export default function Details() {
     });
   }
 
-  /** Find finishing material object. */
+  /** Find finishing material object by external_id. */
   function findFinishingMaterialObj(
     serviceId: string,
     extId: string
@@ -743,7 +751,7 @@ export default function Details() {
     return null;
   }
 
-  /** pickMaterial => finishingMaterialSelections[serviceId][sectionName] = externalId. */
+  /** Assign finishing material to finishingMaterialSelections. */
   function pickMaterial(
     serviceId: string,
     sectionName: string,
@@ -755,7 +763,7 @@ export default function Details() {
     setFinishingMaterialSelections({ ...finishingMaterialSelections });
   }
 
-  /** userHasOwnMaterial => client highlights that item in red. */
+  /** Mark a material as client-owned. */
   function userHasOwnMaterial(serviceId: string, extId: string) {
     if (!clientOwnedMaterials[serviceId]) {
       clientOwnedMaterials[serviceId] = new Set();
@@ -778,17 +786,22 @@ export default function Details() {
 
       <div className="container mx-auto">
         {/* Top row */}
-        <div className="flex flex-col xl:flex-row justify-between items-start mt-8">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-2 mt-8">
           <div className="w-full xl:w-auto">
-            <SectionBoxTitle>Choose a Service and Quantity</SectionBoxTitle>
+            <SectionBoxTitle>Select Your Services</SectionBoxTitle>
           </div>
-          <div className="w-full xl:w-auto flex justify-end mt-2 xl:mt-0">
-            <Button onClick={handleNext}>Next →</Button>
+          <div className="hidden sm:flex flex-col items-end sm:items-center sm:flex-row sm:justify-end">
+            <Button
+              onClick={handleNext}
+              className="px-8 py-2 text-lg font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap"
+            >
+              Next →
+            </Button>
           </div>
         </div>
 
         {/* "No service?" + "Clear" */}
-        <div className="flex justify-between items-center text-sm text-gray-500 mt-8 w-full xl:max-w-[600px]">
+        <div className="flex justify-between items-center text-sm text-gray-500 mt-4 sm:mt-2 w-full xl:max-w-[600px]">
           <span>
             No service?{" "}
             <a
@@ -806,18 +819,13 @@ export default function Details() {
           </button>
         </div>
 
-        {/* Warnings */}
-        <div className="h-6 mt-4 text-left">
-          {warningMessage && <p className="text-red-500">{warningMessage}</p>}
-        </div>
-
         {/* Main layout */}
         <div className="container mx-auto relative flex flex-col xl:flex-row mt-8">
-          {/* LEFT column */}
+          {/* LEFT column => categories + services */}
           <div className="w-full xl:flex-1">
             {Object.entries(categoriesBySection).map(
               ([sectionName, catIds]) => (
-                <div key={sectionName} className="mb-8">
+                <div key={sectionName} className="mb-4">
                   <SectionBoxSubtitle>{sectionName}</SectionBoxSubtitle>
                   <div className="flex flex-col gap-4 mt-4 w-full xl:max-w-[600px]">
                     {catIds.map((catId) => {
@@ -853,8 +861,12 @@ export default function Details() {
                               {catTitle}
                               {selectedInCat > 0 && (
                                 <span className="text-sm text-gray-500 ml-2">
-                                  ({selectedInCat} 
-                                  <span className="hidden sm:inline"> selected</span>)
+                                  ({selectedInCat}
+                                  <span className="hidden sm:inline">
+                                    {" "}
+                                    selected
+                                  </span>
+                                  )
                                 </span>
                               )}
                             </h3>
@@ -886,16 +898,19 @@ export default function Details() {
                                 const detailsExpanded =
                                   expandedServiceDetails.has(svc.id);
 
-                                // Let's define a helper to open the surface calc
-                                function openSurfaceCalc() {
-                                  setCalcServiceId(svc.id);
-                                  setShowSurfaceCalc(true);
-                                }
-
+                                /**
+                                 * If this service has unit_of_measurement that includes "sq ft",
+                                 * we show a "Surface Calc" button.
+                                 */
                                 const showSurfaceCalcButton =
                                   svc.unit_of_measurement
                                     .toLowerCase()
                                     .includes("sq ft");
+
+                                function openSurfaceCalc() {
+                                  setCalcServiceId(svc.id);
+                                  setShowSurfaceCalc(true);
+                                }
 
                                 return (
                                   <div key={svc.id} className="space-y-2">
@@ -918,8 +933,8 @@ export default function Details() {
                                           }
                                           className="sr-only peer"
                                         />
-                                        <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
-                                        <div className="absolute top-[2px] left-[2px] w-[22px] h-[22px] bg-white rounded-full shadow-md peer-checked:translate-x-[24px] transform transition-transform duration-300"></div>
+                                        <div className="w-[52px] h-[31px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
+                                        <div className="absolute top-[2px] left-[2px] w-[27px] h-[27px] bg-white rounded-full shadow-md transform transition-transform duration-300 peer-checked:translate-x-[21px]"></div>
                                       </label>
                                     </div>
 
@@ -1031,7 +1046,7 @@ export default function Details() {
                                           )}
                                         </div>
 
-                                        {/* Cost breakdown menu*/}
+                                        {/* Cost breakdown details */}
                                         {calcResult && detailsExpanded && (
                                           <div className="mt-4 p-2 sm:p-4 bg-gray-50 border rounded">
                                             <div className="flex flex-col gap-2 mb-4">
@@ -1163,8 +1178,6 @@ export default function Details() {
                                                             >
                                                               <td className="py-3 px-1">
                                                                 {hasImage ? (
-                                                                  //
-                                                                  // On phones => vertical stack, on bigger => horizontal
                                                                   <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center break-words">
                                                                     <img
                                                                       src={
@@ -1175,7 +1188,7 @@ export default function Details() {
                                                                       }
                                                                       className="w-24 h-24 object-cover rounded"
                                                                     />
-                                                                    <span className="break-words">
+                                                                    <span className="break-words text-blue-600">
                                                                       {m.name}
                                                                     </span>
                                                                   </div>
@@ -1221,8 +1234,8 @@ export default function Details() {
             )}
           </div>
 
-          {/* RIGHT column => summary + recommended */}
-          <div className="w-full xl:w-1/2 xl:ml-auto mt-8 xl:mt-0">
+          {/* RIGHT column => summary, address, photos, recommended */}
+          <div className="w-full xl:w-1/2 xl:ml-auto mt-2 sm:mt-0">
             {/* Summary */}
             <div className="w-full xl:max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden">
               <SectionBoxSubtitle>Summary</SectionBoxSubtitle>
@@ -1307,7 +1320,7 @@ export default function Details() {
               )}
             </div>
 
-            {/* Address block */}
+            {/* Address block (desktop only) */}
             <div className="hidden sm:block w-full xl:max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
               <h2 className="text-2xl font-medium text-gray-800 mb-4">
                 Address
@@ -1317,7 +1330,7 @@ export default function Details() {
               </p>
             </div>
 
-            {/* Photos block */}
+            {/* Photos block (desktop only) */}
             <div className="hidden sm:block w-full xl:max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
               <h2 className="text-2xl font-medium text-gray-800 mb-4">
                 Uploaded Photos
@@ -1340,7 +1353,7 @@ export default function Details() {
               )}
             </div>
 
-            {/* Additional details */}
+            {/* Additional details (desktop only) */}
             <div className="hidden sm:block w-full xl:max-w-[500px] ml-auto bg-brand-light p-4 rounded-lg border border-gray-300 overflow-hidden mt-6">
               <h2 className="text-2xl font-medium text-gray-800 mb-4">
                 Additional details
@@ -1350,7 +1363,7 @@ export default function Details() {
               </p>
             </div>
 
-            {/* RecommendedActivities */}
+            {/* Recommended activities / upsell */}
             <RecommendedActivities
               selectedServicesState={selectedServicesState}
               onUpdateSelectedServicesState={setSelectedServicesState}
@@ -1380,6 +1393,13 @@ export default function Details() {
         serviceId={calcServiceId}
         onApplySquareFeet={handleApplySquareFeet}
       />
+
+      {/* Next button for mobile: pinned at the bottom, hidden on md+ */}
+      <div className="block sm:hidden mt-6">
+        <Button onClick={handleNext} className="w-full justify-center">
+          Next →
+        </Button>
+      </div>
     </main>
   );
 }
