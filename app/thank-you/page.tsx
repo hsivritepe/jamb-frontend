@@ -3,58 +3,51 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle } from "lucide-react";
+import { usePhotos } from "@/context/PhotosContext";
 
-/**
- * Clears all session storage data except for "authToken" and "profileData".
- * This is used after showing the "Thank you" page.
- */
 function preserveAuthAndClearOthers() {
   const authToken = sessionStorage.getItem("authToken");
   const profileData = sessionStorage.getItem("profileData");
-
   sessionStorage.clear();
-
   if (authToken) sessionStorage.setItem("authToken", authToken);
   if (profileData) sessionStorage.setItem("profileData", profileData);
 }
 
-/** Time (in ms) before session data is cleared (except auth) and pointer events are restored. */
 const CLEAR_DELAY_MS = 3000;
 
 export default function ThankYouPage() {
   const router = useRouter();
   const [orderCode, setOrderCode] = useState("");
   const [orderTotal, setOrderTotal] = useState("");
+  const { setPhotos } = usePhotos();
 
   useEffect(() => {
-    // 1) Load order details from session
     const codeFromSession = sessionStorage.getItem("orderCode") || "";
     const totalFromSession = sessionStorage.getItem("orderTotal") || "";
     setOrderCode(codeFromSession);
     setOrderTotal(totalFromSession);
 
-    // 2) Temporarily disable clicking on header/footer
+    // Clear all photos from context
+    setPhotos([]);
+
     const header = document.querySelector("header");
     const footer = document.querySelector("footer");
     if (header) header.style.pointerEvents = "none";
     if (footer) footer.style.pointerEvents = "none";
 
-    // 3) Clear session data (except auth) and restore pointer events after a delay
     const timer = setTimeout(() => {
       preserveAuthAndClearOthers();
       if (header) header.style.pointerEvents = "auto";
       if (footer) footer.style.pointerEvents = "auto";
     }, CLEAR_DELAY_MS);
 
-    // 4) Cleanup if user navigates away earlier
     return () => {
       clearTimeout(timer);
       if (header) header.style.pointerEvents = "auto";
       if (footer) footer.style.pointerEvents = "auto";
     };
-  }, []);
+  }, [setPhotos]);
 
-  /** Navigates to /dashboard and immediately clears session except auth. */
   const handleGoToDashboard = () => {
     preserveAuthAndClearOthers();
     router.push("/dashboard");
