@@ -72,10 +72,20 @@ export default function ExpandedOrderRow({
   onCloseExpanded,
 }: ExpandedOrderRowProps) {
   const router = useRouter();
+
+  // State for the current order data
   const [currentOrder, setCurrentOrder] = useState<CompositeOrder>(order);
+
+  // State to show/hide ServiceTimePicker
   const [showServiceTimePicker, setShowServiceTimePicker] = useState(false);
+
+  // State to track if there are changes to the order
   const [hasChanges, setHasChanges] = useState(false);
 
+  // State to handle modal with enlarged images
+  const [selectedPhotoUrl, setSelectedPhotoUrl] = useState<string | null>(null);
+
+  // Function to collect some base values from current order
   function getBaseValues() {
     const sumWorksTotals = currentOrder.works.reduce(
       (acc, w) => acc + parseFloat(w.total),
@@ -92,7 +102,9 @@ export default function ExpandedOrderRow({
     const laborBase = sumWorksTotals - sumMaterials;
     const oldSurcharge = parseFloat(currentOrder.date_surcharge || "0");
     const oldFeeLabor = parseFloat(currentOrder.service_fee_on_labor || "0");
-    const feeMaterials = parseFloat(currentOrder.service_fee_on_materials || "0");
+    const feeMaterials = parseFloat(
+      currentOrder.service_fee_on_materials || "0"
+    );
     return {
       laborBase,
       oldSurcharge,
@@ -102,6 +114,7 @@ export default function ExpandedOrderRow({
     };
   }
 
+  // Function to get date difference info for highlighting
   function getDateDiffLabel(): { label: string; isWarning: boolean } {
     const dateStr = currentOrder.common.selected_date;
     if (!dateStr) {
@@ -113,15 +126,18 @@ export default function ExpandedOrderRow({
 
     if (diff < 0) return { label: "Date expired. Update", isWarning: true };
     if (diff === 0) return { label: "Expires today. Update", isWarning: true };
-    if (diff === 1) return { label: "Expires in 1 day. Update", isWarning: true };
-    if (diff === 2) return { label: "Expires in 2 days. Update", isWarning: true };
+    if (diff === 1)
+      return { label: "Expires in 1 day. Update", isWarning: true };
+    if (diff === 2)
+      return { label: "Expires in 2 days. Update", isWarning: true };
 
-    // normal date
+    // Normal date
     return { label: currentOrder.common.selected_date, isWarning: false };
   }
 
   const { label: dateLabel, isWarning: dateIsRed } = getDateDiffLabel();
 
+  // Function to confirm a new date locally
   function handleConfirmNewDateLocal(newDate: string, newCoef: number) {
     setHasChanges(true);
 
@@ -164,6 +180,7 @@ export default function ExpandedOrderRow({
     setShowServiceTimePicker(false);
   }
 
+  // Function to submit the update to the server
   async function handleSubmitUpdate() {
     try {
       const payload = {
@@ -215,13 +232,20 @@ export default function ExpandedOrderRow({
     0
   );
   const sumMaterialsCost = currentOrder.works.reduce((acc, w) => {
-    const matSum = w.materials.reduce((mAcc, mat) => mAcc + parseFloat(mat.cost), 0);
+    const matSum = w.materials.reduce(
+      (mAcc, mat) => mAcc + parseFloat(mat.cost),
+      0
+    );
     return acc + matSum;
   }, 0);
 
   const laborTotal = sumWorksTotals - sumMaterialsCost;
-  const serviceFeeOnLaborNum = parseFloat(currentOrder.service_fee_on_labor || "0");
-  const serviceFeeOnMaterialsNum = parseFloat(currentOrder.service_fee_on_materials || "0");
+  const serviceFeeOnLaborNum = parseFloat(
+    currentOrder.service_fee_on_labor || "0"
+  );
+  const serviceFeeOnMaterialsNum = parseFloat(
+    currentOrder.service_fee_on_materials || "0"
+  );
   const subtotalNum = parseFloat(currentOrder.subtotal || "0");
   const taxRateNum = parseFloat(currentOrder.tax_rate || "0");
   const taxAmountNum = parseFloat(currentOrder.tax_amount || "0");
@@ -240,10 +264,7 @@ export default function ExpandedOrderRow({
       <td colSpan={4} className="px-2 sm:px-3 py-3 text-sm text-gray-700">
         <h2 className="text-xl sm:text-2xl font-bold mb-2">
           Order for{" "}
-          {currentOrder.works.length > 0
-            ? currentOrder.works[0].type
-            : "N/A"}{" "}
-          №
+          {currentOrder.works.length > 0 ? currentOrder.works[0].type : "N/A"} №
           {currentOrder.code}
         </h2>
 
@@ -253,7 +274,6 @@ export default function ExpandedOrderRow({
 
         <p className="mb-4">
           <strong>Start Date:</strong>{" "}
-          {/* If the date is "warning" label => red text, otherwise blue */}
           <span
             onClick={() => setShowServiceTimePicker(true)}
             className={
@@ -267,7 +287,7 @@ export default function ExpandedOrderRow({
         </p>
 
         {showServiceTimePicker && (
-          <div className="my-6">
+          <div className="my-6 -mx-2 sm:mx-8">
             <ServiceTimePicker
               subtotal={laborTotal}
               onClose={() => setShowServiceTimePicker(false)}
@@ -296,7 +316,8 @@ export default function ExpandedOrderRow({
                     <img
                       src={work.photo}
                       alt={work.name}
-                      className="w-full h-auto object-cover border rounded"
+                      className="w-full h-auto object-cover border rounded cursor-pointer"
+                      onClick={() => setSelectedPhotoUrl(work.photo)}
                     />
                   </div>
                 )}
@@ -317,7 +338,9 @@ export default function ExpandedOrderRow({
                   </p>
                   <p className="mb-2">
                     <strong>Materials, tools & equipment:</strong>{" "}
-                    {matsSum.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                    {matsSum.toLocaleString("en-US", {
+                      minimumFractionDigits: 2,
+                    })}
                   </p>
                 </div>
               </div>
@@ -343,10 +366,14 @@ export default function ExpandedOrderRow({
                               {mat.name}
                               {mat.photo && (
                                 <div className="my-1">
+                                  {/* Clickable image that opens the modal */}
                                   <img
                                     src={mat.photo}
                                     alt={mat.name}
-                                    className="w-32 h-32 object-cover rounded"
+                                    className="w-32 h-32 object-cover rounded cursor-pointer"
+                                    onClick={() =>
+                                      setSelectedPhotoUrl(mat.photo)
+                                    }
                                   />
                                 </div>
                               )}
@@ -415,7 +442,9 @@ export default function ExpandedOrderRow({
           </p>
           <p>
             <strong>
-              Taxes ({taxRateNum.toLocaleString("en-US", { minimumFractionDigits: 2 })}%):
+              Taxes (
+              {taxRateNum.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+              %):
             </strong>{" "}
             {taxAmountNum.toLocaleString("en-US", { minimumFractionDigits: 2 })}
           </p>
@@ -431,22 +460,24 @@ export default function ExpandedOrderRow({
           </p>
         )}
 
-        {currentOrder.common.photos && currentOrder.common.photos.length > 0 && (
-          <div>
-            <p className="font-semibold">Attached Photos:</p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-2">
-              {currentOrder.common.photos.map((photoUrl) => (
-                <div key={photoUrl}>
-                  <img
-                    src={photoUrl}
-                    alt="Order photo"
-                    className="border rounded w-full h-32 sm:h-64 object-cover"
-                  />
-                </div>
-              ))}
+        {currentOrder.common.photos &&
+          currentOrder.common.photos.length > 0 && (
+            <div>
+              <p className="font-semibold">Attached Photos:</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-2">
+                {currentOrder.common.photos.map((photoUrl) => (
+                  <div key={photoUrl}>
+                    <img
+                      src={photoUrl}
+                      alt="Order photo"
+                      className="border rounded w-full h-32 sm:h-64 object-cover cursor-pointer"
+                      onClick={() => setSelectedPhotoUrl(photoUrl)}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
         {/* Desktop buttons */}
         <div className="mt-6 hidden sm:flex items-center gap-3 justify-end">
@@ -480,9 +511,7 @@ export default function ExpandedOrderRow({
             </div>
           ) : (
             <button
-              onClick={() =>
-                onDeleteOrder(currentOrder.id, currentOrder.code)
-              }
+              onClick={() => onDeleteOrder(currentOrder.id, currentOrder.code)}
               className="inline-flex items-center gap-2 px-4 py-2 border border-red-500 text-red-600 rounded hover:bg-red-50"
               title="Delete order"
             >
@@ -523,9 +552,7 @@ export default function ExpandedOrderRow({
             </div>
           ) : (
             <button
-              onClick={() =>
-                onDeleteOrder(currentOrder.id, currentOrder.code)
-              }
+              onClick={() => onDeleteOrder(currentOrder.id, currentOrder.code)}
               className="inline-flex items-center gap-2 px-3 py-2 border border-red-500 text-red-600 text-sm rounded hover:bg-red-50"
               title="Delete order"
             >
@@ -534,6 +561,25 @@ export default function ExpandedOrderRow({
             </button>
           )}
         </div>
+
+        {/* Modal to show enlarged photos */}
+        {selectedPhotoUrl && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70">
+            <div className="relative">
+              <button
+                onClick={() => setSelectedPhotoUrl(null)}
+                className="absolute top-2 right-2 text-white bg-gray-800 rounded-full w-8 h-8 flex items-center justify-center"
+              >
+                X
+              </button>
+              <img
+                src={selectedPhotoUrl}
+                alt="Enlarged"
+                className="rounded border object-contain max-w-[90vw] md:max-h-[90vh]"
+              />
+            </div>
+          </div>
+        )}
       </td>
     </tr>
   );

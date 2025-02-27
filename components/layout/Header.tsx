@@ -332,19 +332,23 @@ export default function Header() {
     }
   };
 
-  const handleZipLookup = async () => {
-    if (!manualLocation.zip.trim()) {
+  /**
+   * Looks up city/state from a ZIP code. Ensures we always get the city in English.
+   */
+  const handleZipLookup = async (zipParam?: string) => {
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    const zipToUse = zipParam?.trim() || manualLocation.zip.trim();
+
+    if (!zipToUse) {
       alert("Please enter a ZIP code");
       return;
     }
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
     if (!apiKey) {
       console.error("Missing Google Maps API key");
       return;
     }
-    const zip = manualLocation.zip.trim();
     try {
-      const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${zip}&components=country:US&key=${apiKey}`;
+      const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${zipToUse}&components=country:US&language=en&key=${apiKey}`;
       const res = await fetch(url);
       const data = await res.json();
       if (data.results && data.results.length > 0) {
@@ -646,9 +650,14 @@ export default function Header() {
               type="text"
               placeholder="Enter your ZIP code"
               value={manualLocation.zip}
-              onChange={(e) =>
-                setManualLocation({ ...manualLocation, zip: e.target.value })
-              }
+              onChange={(e) => {
+                const value = e.target.value;
+                setManualLocation({ ...manualLocation, zip: value });
+                // Trigger lookup immediately upon typing exactly 5 digits (all numeric)
+                if (value.trim().length === 5 && /^[0-9]{5}$/.test(value.trim())) {
+                  handleZipLookup(value);
+                }
+              }}
               className="w-full p-3 mb-4 border border-gray-300 rounded-lg text-base"
             />
 
@@ -680,7 +689,7 @@ export default function Header() {
               </button>
               <button
                 className="flex-1 p-3 font-semibold sm:font-medium border rounded-lg bg-green-100 text-green-700 border-green-300 hover:bg-green-200"
-                onClick={handleZipLookup}
+                onClick={() => handleZipLookup()}
               >
                 ZIP
               </button>
