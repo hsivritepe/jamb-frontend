@@ -11,7 +11,7 @@ const steps: Step[] = [
     number: "1",
     title: "Select a Service, Room, or Package",
     description:
-      "Choose your work type, quantity, finishing materials, and start time or payment plan. Our system generates a detailed estimate instantly—no registration needed.",
+      "Pick the service, room, or package you need and add any details like quantity or finishing materials. You can also choose a convenient start time or even a payment plan. As you do, our system instantly shows a detailed price estimate — no sign-up required.",
     row: 1,
     colSpan: 3,
     colStart: 1,
@@ -19,9 +19,9 @@ const steps: Step[] = [
   {
     id: 2,
     number: "2",
-    title: "Wait for System Confirmation",
+    title: "Instant Confirmation",
     description:
-      "We check all materials and finalize the estimate with assigned professionals, ensuring accurate scheduling and costs without delays.",
+      "Sit back while our system double-checks all the details and assigns the right professionals to your project. In no time, you’ll receive a confirmed schedule and price with no surprises or delays.",
     row: 2,
     colSpan: 3,
     colStart: 3,
@@ -31,7 +31,7 @@ const steps: Step[] = [
     number: "3",
     title: "Confirm and Pay",
     description:
-      "Once confirmed, pay in the app. We order materials and dispatch pros automatically. If issues arise, we reassign workers or substitutes to keep everything on track.",
+      "Once you’re ready, confirm your booking and pay securely through the app. We’ll immediately order all the needed materials and send the professionals to your home to get started. If anything unexpected comes up, we’ll quickly assign a replacement so your project stays on track.",
     row: 1,
     colSpan: 3,
     colStart: 5,
@@ -39,9 +39,9 @@ const steps: Step[] = [
   {
     id: 4,
     number: "4",
-    title: "Monitor All Stages in the App",
+    title: "Track Progress in the App",
     description:
-      "Track progress in real time, view documentation if needed, and reach support anytime. You stay in control while we handle logistics and execution.",
+      "Follow your project in real time through our app. You can review each stage, see any relevant documentation, and contact support whenever you need.",
     row: 2,
     colSpan: 2,
     colStart: 7,

@@ -78,13 +78,15 @@ export default function HeroSection() {
         <div className="bg-white rounded-2xl p-4 sm:p-8 flex flex-col justify-between text-base">
           <div>
             <SectionBoxTitle>
-              Smart Estimates,
-              <br />
-              Stress-Free Renovations
+              Everything for Your Home, Just a Few Clicks Away
             </SectionBoxTitle>
             <p className="text-gray-600 mb-8">
-              Answer a few quick questions to receive accurate quotes,
-              and let us handle your entire project.
+              Get instant, accurate cost estimates to plan your budget, book
+              services when you’re ready, and track progress in real time. Our
+              platform automatically orders materials and assigns top-rated
+              contractors, making the entire process smooth and transparent.
+              <br />
+              Want regular service? Subscribe for ongoing care.
             </p>
           </div>
 

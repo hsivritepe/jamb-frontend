@@ -5841,6 +5841,8 @@ export const ALL_SERVICES = [
         id: "9-2-1",
         unit_of_measurement: "lin ft",
         title: "Premium Cedar Fence Installation",
+        min_quantity: 8,
+        max_quantity: 1000,        
         description: "Installation of a premium cedar fence for durability and natural beauty. This service includes site preparation, installation of cedar fence panels and posts, and finishing touches. Includes comprehensive labor, rough materials, equipment usage, and cedar fence materials (client's choice of specifications). Ensures a high-quality and long-lasting fence.",
         category: SERVICE_CATEGORIES.FENCE,
     },
@@ -5874,7 +5876,7 @@ export const ALL_SERVICES = [
     {
         id: "9-2-5",
         unit_of_measurement: "lin ft",
-        min_quantity: 8,
+        min_quantity: 50,
         max_quantity: 10000,
         title: "Chain Link Fence Installation",
         description: "Installation of a chain link fence for security and boundary definition. This service includes site preparation, installation of chain link mesh and posts, and finishing touches. Includes comprehensive labor, rough materials, equipment usage, and chain link materials (client's choice of specifications). Ensures a secure and durable fence.",
