@@ -1,0 +1,54 @@
+{
+    "flooring": [
+      {
+        "subcategory": "Carpet",
+        "breadcrumbUrl": "https://www.homedepot.com/b/Flooring-Carpet-Installed-Carpet/N-5yc1vZ2fkpcfz"
+      },
+      {
+        "subcategory": "Carpet_Pad",
+        "breadcrumbUrl": "https://www.homedepot.com/b/Flooring-Carpet-Carpet-Padding/N-5yc1vZbois"
+      },
+      {
+        "subcategory": "Vinyl_Tile",
+        "breadcrumbUrl": "https://www.homedepot.com/b/Flooring-Vinyl-Flooring-Vinyl-Tile-Flooring/N-5yc1vZaq27"
+      },
+      {
+        "subcategory": "Vinyl_Covering",
+        "breadcrumbUrl": "https://www.homedepot.com/b/Flooring-Vinyl-Flooring-Vinyl-Plank-Flooring/N-5yc1vZbzjz"
+      },
+      {
+        "subcategory": "Laminate",
+        "breadcrumbUrl": "https://www.homedepot.com/b/Flooring-Laminate-Flooring/N-5yc1vZare1?catStyle=ShowProducts"
+      },
+      {
+        "subcategory": "Bamboo_Flooring",
+        "breadcrumbUrl": "https://www.homedepot.com/b/Flooring-Hardwood-Flooring-Bamboo-Flooring/N-5yc1vZbrfe"
+      },
+      {
+        "subcategory": "Wood_Floor",
+        "breadcrumbUrl": "https://www.homedepot.com/b/Flooring-Hardwood-Flooring-Solid-Hardwood/N-5yc1vZbejw"
+      },
+      {
+        "subcategory": "Engineered_Wood",
+        "breadcrumbUrl": "https://www.homedepot.com/b/Flooring-Hardwood-Flooring-Engineered-Hardwood/N-5yc1vZb9as"
+      },
+      {
+        "subcategory": "Underlayment",
+        "breadcrumbUrl": "https://www.homedepot.com/b/Lumber-Composites-Plywood/N-5yc1vZbqm7"
+      },
+      {
+        "subcategory": "Baseboard",
+        "breadcrumbUrl": "https://www.homedepot.com/b/Building-Materials-Moulding-Millwork-Moulding-Baseboard/N-5yc1vZcbjp"
+      }
+    ],
+    "tiling": [
+      {
+        "subcategory": "Ceramic",
+        "breadcrumbUrl": ""
+      },
+      {
+        "subcategory": "Porcelain",
+        "breadcrumbUrl": ""
+      }
+    ]
+  }

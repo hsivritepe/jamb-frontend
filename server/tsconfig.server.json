@@ -1,0 +1,19 @@
+{
+  "extends": "../../tsconfig.json", // если там правда лежит ваш tsconfig.json
+  "compilerOptions": {
+    // Переопределяем под CommonJS, чтобы ts-node мог запускать
+    "module": "CommonJS",
+    "moduleResolution": "node",
+
+    // Если надо импортировать JSON-данные напрямую:
+    "resolveJsonModule": true,
+
+    // Если надо import fs from 'fs':
+    "esModuleInterop": true,
+
+    // Чтобы ts-node не генерировал .js файлы на диск
+    "noEmit": true
+  },
+  // Инструкция, какие файлы включать
+  "include": ["."]
+}
