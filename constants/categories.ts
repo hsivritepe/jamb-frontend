@@ -187,7 +187,7 @@ export const ALL_CATEGORIES = [
   { id: "10-3", title: "EV Chargers", section: OUTDOOR_SERVICE_SECTIONS.OUTDOOR_ELECTRICAL },
   { id: "10-4", title: "Pool and Spa", section: OUTDOOR_SERVICE_SECTIONS.OUTDOOR_ELECTRICAL },
   { id: "10-5", title: "Ceiling Fans", section: OUTDOOR_SERVICE_SECTIONS.OUTDOOR_ELECTRICAL },
-  { id: "10-6", title: "AUDIO_VISUAL", section: OUTDOOR_SERVICE_SECTIONS.OUTDOOR_ELECTRICAL },
+  { id: "10-6", title: "Audio and Video", section: OUTDOOR_SERVICE_SECTIONS.OUTDOOR_ELECTRICAL },
   { id: "10-7", title: "Backup Power", section: OUTDOOR_SERVICE_SECTIONS.OUTDOOR_ELECTRICAL },
   { id: "10-8", title: "Safety Inspections", section: OUTDOOR_SERVICE_SECTIONS.OUTDOOR_ELECTRICAL },
   { id: "10-9", title: "Solar Panels", section: OUTDOOR_SERVICE_SECTIONS.OUTDOOR_ELECTRICAL },
