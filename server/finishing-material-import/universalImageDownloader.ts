@@ -7,12 +7,16 @@ import axios from 'axios';
 import dotenv from 'dotenv';
 import { Storage } from '@google-cloud/storage';
 
+// ------------------------------
 // 1) Load environment variables
+// ------------------------------
 dotenv.config({
   path: path.join(__dirname, '..', '..', '.env.local'),
 });
 
-// 2) Google Cloud Storage bucket setup
+// ------------------------------
+// 2) GCS Bucket Setup
+// ------------------------------
 const BUCKET_NAME = process.env.GCP_BUCKET_NAME || 'jamb-dataset';
 const storage = new Storage({
   projectId: process.env.GCP_PROJECT_ID,
@@ -22,19 +26,21 @@ const storage = new Storage({
   },
 });
 
-// 3) Progress and limit setup
-// We'll keep a maximum of 1000 images per subcategory
+// ------------------------------
+// 3) Progress / Limit Setup
+// ------------------------------
+// We'll keep a global limit of 1000 images per subcategory
 const MAX_PHOTOS_PER_SUBCATEGORY = 1000;
 
-// We'll read "progress.json" in the same folder for tracking processed items
-// Example structure:
+// We'll read progress.json (same folder) for processed items
+// Structure example:
 // {
-//   "processed": { "304698228": true, ... },
+//   "processed": { "304698228": true, "304998497": true, ... },
 //   "photosBySubcategory": { "Carpet": 123, "Carpet_Pad": 50, ... }
 // }
 interface ProgressData {
-  processed: Record<string, boolean>;          // itemId -> true if processed
-  photosBySubcategory: Record<string, number>; // subcategory -> current photo count
+  processed: Record<string, boolean>;        
+  photosBySubcategory: Record<string, number>;
 }
 
 const progressPath = path.join(__dirname, 'progress.json');
@@ -54,7 +60,9 @@ function saveProgress() {
   console.log('Progress saved to progress.json');
 }
 
-// 4) Interfaces for BigBox and finishing_breadcrumbs
+// ------------------------------
+// 4) BigBox interfaces & axios
+// ------------------------------
 interface SubcategoryEntry {
   subcategory: string;
   breadcrumbUrl: string;
@@ -87,13 +95,15 @@ interface ProductResponse {
   };
 }
 
-// 5) BigBox helper functions
 const BIGBOX_API_URL = 'https://api.bigboxapi.com/request';
 const bigboxClient = axios.create({
   baseURL: BIGBOX_API_URL,
   timeout: 30000,
 });
 
+// ------------------------------
+// 5) BigBox helper functions
+// ------------------------------
 function getBigBoxApiKeyOrThrow(): string {
   const key = process.env.API_SUPPLIER_KEY;
   if (!key) {
@@ -129,7 +139,9 @@ async function fetchProductDetails(itemId: string): Promise<ProductResponse> {
   return response.data;
 }
 
+// ------------------------------
 // 6) Image download & upload
+// ------------------------------
 async function downloadImageAsBuffer(imageUrl: string): Promise<Buffer> {
   const resp = await axios.get<ArrayBuffer>(imageUrl, { responseType: 'arraybuffer' });
   return Buffer.from(resp.data);
@@ -147,7 +159,9 @@ async function uploadBufferToGCS(destinationPath: string, buffer: Buffer) {
   console.log(`Uploaded to gs://${BUCKET_NAME}/${destinationPath}`);
 }
 
+// ------------------------------
 // 7) Main logic
+// ------------------------------
 async function runUniversalImageDownload() {
   // A) Read finishing_breadcrumbs.json
   const jsonPath = path.join(__dirname, 'finishing_breadcrumbs.json');
@@ -168,7 +182,7 @@ async function runUniversalImageDownload() {
     for (const entry of subcategories) {
       const { subcategory, breadcrumbUrl } = entry;
 
-      // Skip if breadcrumbUrl is empty
+      // If the breadcrumbUrl is empty, skip
       if (!breadcrumbUrl) {
         console.warn(`Skipping subcategory "${subcategory}" because breadcrumbUrl is empty.`);
         continue;
@@ -182,15 +196,6 @@ async function runUniversalImageDownload() {
       }
 
       console.log(`\n--> Subcategory: "${subcategory}", URL: ${breadcrumbUrl}`);
-
-      // Create local folder if it doesn't exist, so we have a matching structure
-      // for (topLevelCategory + subcategory). We won't store images locally,
-      // but we maintain folder existence as requested.
-      const localSubcatDir = path.join(__dirname, topLevelCategory, subcategory);
-      if (!fs.existsSync(localSubcatDir)) {
-        fs.mkdirSync(localSubcatDir, { recursive: true });
-        console.log(`Created local directory: ${localSubcatDir}`);
-      }
 
       // D) Fetch items from BigBox
       try {
@@ -236,11 +241,10 @@ async function runUniversalImageDownload() {
               img.type === 'primary' || img.type === 'image_left_view'
             );
 
-            // If subcat is close to 1000, slice images so we won't exceed 1000
             const subcatCountSoFar = progressData.photosBySubcategory[subcategory] || 0;
             const canTake = MAX_PHOTOS_PER_SUBCATEGORY - subcatCountSoFar;
             if (canTake <= 0) {
-              console.log(`Subcategory="${subcategory}" at or above 1000. Stop processing.`);
+              console.log(`Subcategory="${subcategory}" is at or above 1000 images. Stopping...`);
               break;
             }
             if (selectedImages.length > canTake) {
@@ -252,7 +256,7 @@ async function runUniversalImageDownload() {
               continue;
             }
 
-            // G) Download & upload each image
+            // G) Download & upload each selected image
             let imgIndex = 0;
             for (const img of selectedImages) {
               if (!img.link) continue;
@@ -261,12 +265,12 @@ async function runUniversalImageDownload() {
               try {
                 const imageBuffer = await downloadImageAsBuffer(img.link);
 
-                // Construct GCS path
+                // GCS path
                 const folderPath = `${topLevelCategory}/${subcategory}`;
-                const gcsFileName = `${itemId}-${imgIndex}.jpg`;
-                const destinationPath = `${folderPath}/${gcsFileName}`;
+                const fileName = `${itemId}-${imgIndex}.jpg`;
+                const destinationPath = `${folderPath}/${fileName}`;
 
-                // Upload only to GCS (no local file storage)
+                // Upload only to GCS
                 await uploadBufferToGCS(destinationPath, imageBuffer);
 
                 // Update photo count
@@ -297,17 +301,17 @@ async function runUniversalImageDownload() {
           } catch (prodErr) {
             console.error(`Error fetching product details for itemId=${itemId}`, prodErr);
           }
-        } // end results
+        } // end items
       } catch (catErr) {
         console.error(`Error fetching subcategory="${subcategory}"`, catErr);
       }
-    } // end subcategories
-  } // end topLevelCategories
+    }
+  }
 
   console.log('\nAll done!');
 }
 
-// Execute
+// Execute main
 runUniversalImageDownload().catch(err => {
   console.error('Unhandled error in runUniversalImageDownload:', err);
 });
