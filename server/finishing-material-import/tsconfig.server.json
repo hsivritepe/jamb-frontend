@@ -1,13 +1,10 @@
 {
-  // If your main tsconfig is in jamb-frontend/tsconfig.json,
-  // and you are currently in jamb-frontend/server/finishing-material-import,
-  // you only need two dots (../../).
   "extends": "../../tsconfig.json",
-
   "compilerOptions": {
-    // override
     "module": "CommonJS",
     "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
     "noEmit": true
   },
   "include": ["."]

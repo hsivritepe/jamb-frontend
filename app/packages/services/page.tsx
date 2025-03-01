@@ -1,7 +1,6 @@
 "use client";
 
 export const dynamic = "force-dynamic";
-
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import React, { useState, useEffect, ChangeEvent } from "react";
@@ -10,7 +9,6 @@ import SearchServices from "@/components/SearchServices";
 import Button from "@/components/ui/Button";
 import { SectionBoxTitle } from "@/components/ui/SectionBoxTitle";
 import { SectionBoxSubtitle } from "@/components/ui/SectionBoxSubtitle";
-
 import { PACKAGES_STEPS } from "@/constants/navigation";
 import { PACKAGES } from "@/constants/packages";
 import { ALL_SERVICES } from "@/constants/services";
@@ -19,14 +17,10 @@ import {
   INDOOR_SERVICE_SECTIONS,
   OUTDOOR_SERVICE_SECTIONS,
 } from "@/constants/categories";
-
 import { ChevronDown } from "lucide-react";
 import { getSessionItem, setSessionItem } from "@/utils/session";
-
 import FinishingMaterialsModal from "@/components/FinishingMaterialsModal";
 import SurfaceCalculatorModal from "@/components/SurfaceCalculatorModal";
-
-// Import the location context
 import { useLocation } from "@/context/LocationContext";
 
 /**
@@ -812,7 +806,7 @@ export default function PackageServicesPage() {
       </div>
 
       <div className="container mx-auto">
-        {/* Top row => package switcher + Next button */}
+        {/* Top row => package switcher + Next button (desktop) */}
         <div className="flex flex-col xl:flex-row justify-between items-start gap-4 mt-11">
           {/* Package switcher */}
           <div
@@ -849,8 +843,8 @@ export default function PackageServicesPage() {
             })}
           </div>
 
-          {/* Next button */}
-          <div className="w-full xl:w-auto flex justify-end">
+          {/* Next button hidden on mobile, shown on sm+ (new comment in English) */}
+          <div className="hidden sm:flex w-full xl:w-auto justify-end">
             <Button onClick={handleNext} variant="primary">
               Next →
             </Button>
@@ -1456,8 +1450,8 @@ export default function PackageServicesPage() {
                                               }
                                               className="sr-only peer"
                                             />
-                                            <div className="w-[50px] h-[26px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300" />
-                                            <div className="absolute top-[2px] left-[2px] w-[22px] h-[22px] bg-white rounded-full shadow-md peer-checked:translate-x-[24px] transform transition-transform duration-300" />
+                                            <div className="w-[52px] h-[31px] bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
+                                            <div className="absolute top-[2px] left-[2px] w-[27px] h-[27px] bg-white rounded-full shadow-md transform transition-transform duration-300 peer-checked:translate-x-[21px]"></div>
                                           </label>
                                         </div>
 
@@ -1913,6 +1907,13 @@ export default function PackageServicesPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Next button for mobile only, pinned at bottom, hidden on sm+ (new comment in English) */}
+      <div className="block sm:hidden mt-6">
+        <Button onClick={handleNext} variant="primary" className="w-full justify-center">
+          Next →
+        </Button>
       </div>
 
       {/* Finishing Materials Modal */}

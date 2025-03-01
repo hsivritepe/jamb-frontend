@@ -412,6 +412,16 @@ export default function EmergencyEstimate() {
             })}
           </div>
 
+          <div className="block sm:hidden -mx-4 mt-6">
+  <ServiceTimePicker
+    subtotal={laborSubtotal}
+    onConfirm={(date, coefficient) => {
+      setSelectedTime(date);
+      setTimeCoefficient(coefficient);
+    }}
+  />
+</div>
+
           {/* Price summary */}
           <div className="pt-4 mt-4">
             <div className="flex justify-between mb-2">
@@ -538,7 +548,7 @@ export default function EmergencyEstimate() {
 
         {/* RIGHT: time picker & immediate steps */}
         <div className="w-full xl:w-[500px] flex flex-col">
-          <div className="mb-10">
+          <div className="hidden sm:block mb-10">
             <ServiceTimePicker
               subtotal={laborSubtotal}
               onConfirm={(date, coefficient) => {

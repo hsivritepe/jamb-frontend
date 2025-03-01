@@ -580,13 +580,13 @@ export default function EmergencyDetails() {
           <div>
             <SectionBoxTitle>Emergency Details</SectionBoxTitle>
           </div>
-          <div className="w-full xl:w-auto flex justify-end mt-2 xl:mt-0">
+          <div className="hidden sm:flex w-full xl:w-auto justify-end mt-2 xl:mt-0">
             <Button onClick={handleNext}>Next →</Button>
           </div>
         </div>
 
         {/* "No service" + Clear */}
-        <div className="flex justify-between items-center text-sm text-gray-500 mt-8 w-full xl:max-w-[600px]">
+        <div className="flex justify-between items-center text-sm text-gray-500 mt-2 sm:mt-8 w-full xl:max-w-[600px]">
           <span>
             No service?{" "}
             <a
@@ -1075,6 +1075,12 @@ export default function EmergencyDetails() {
           </div>
         </div>
       </div>
+
+      <div className="block sm:hidden mt-6">
+            <Button onClick={handleNext} className="w-full justify-center">
+              Next →
+            </Button>
+          </div>
 
       {/* Finishing Materials Modal */}
       <FinishingMaterialsModal

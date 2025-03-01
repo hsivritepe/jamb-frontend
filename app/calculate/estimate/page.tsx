@@ -152,8 +152,11 @@ export default function Estimate() {
   const taxAmount = sumBeforeTax * (taxRatePercent / 100);
   const finalTotal = sumBeforeTax + taxAmount;
 
-  /** Handler to proceed to checkout. */
   function handleProceedToCheckout() {
+    if (!selectedTime) {
+      alert("Please select a start date/time before proceeding to checkout.");
+      return;
+    }
     router.push("/calculate/checkout");
   }
 
@@ -383,6 +386,17 @@ export default function Estimate() {
             })}
           </div>
 
+          {/* >>>>>> For phones only: move the time picker here <<<<<< */}
+          <div className="block sm:hidden mt-6 -mx-4">
+            <ServiceTimePicker
+              subtotal={laborSubtotal}
+              onConfirm={(date, coefficient) => {
+                setSelectedTime(date);
+                setTimeCoefficient(coefficient);
+              }}
+            />
+          </div>
+
           {/* Subtotals & Final */}
           <div className="pt-4 mt-4 border-t">
             <div className="flex justify-between mb-2">
@@ -425,7 +439,7 @@ export default function Estimate() {
             <div className="flex justify-between mb-2">
               <span className="text-gray-600">Service Fee (15% on labor)</span>
               <span className="font-semibold text-lg text-gray-600">
-                ${formatWithSeparator(serviceFeeOnLabor)}
+                ${formatWithSeparator(finalLabor * 0.15)}
               </span>
             </div>
             <div className="flex justify-between mb-2">
@@ -433,7 +447,7 @@ export default function Estimate() {
                 Delivery &amp; Processing (5% on materials)
               </span>
               <span className="font-semibold text-lg text-gray-600">
-                ${formatWithSeparator(serviceFeeOnMaterials)}
+                ${formatWithSeparator(materialsSubtotal * 0.05)}
               </span>
             </div>
 
@@ -456,7 +470,7 @@ export default function Estimate() {
 
             <div className="flex justify-between text-2xl font-semibold mt-4">
               <span>Total</span>
-              <span>${formatWithSeparator(finalTotal)}</span>
+              <span>${formatWithSeparator(sumBeforeTax + taxAmount)}</span>
             </div>
           </div>
 
@@ -496,7 +510,7 @@ export default function Estimate() {
             )}
           </div>
 
-          {/* Additional details (description) */}
+          {/* Additional details */}
           <div className="mt-6">
             <h3 className="font-semibold text-xl text-gray-800">
               Additional details
@@ -506,7 +520,7 @@ export default function Estimate() {
             </p>
           </div>
 
-          {/* Buttons => Proceed to Checkout or go back */}
+          {/* Checkout button with time validation */}
           <div className="mt-6 space-y-4">
             <button
               className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold sm:font-medium hover:bg-blue-700 transition-colors"
@@ -517,8 +531,8 @@ export default function Estimate() {
           </div>
         </div>
 
-        {/* RIGHT column => date/time selection => coefficient */}
-        <div className="w-full xl:w-[500px]">
+        {/* RIGHT column => date/time selection => coefficient (desktop) */}
+        <div className="hidden sm:block w-full xl:w-[500px]">
           <ServiceTimePicker
             subtotal={laborSubtotal}
             onConfirm={(date, coefficient) => {
