@@ -8,9 +8,11 @@ import { usePhotos } from "@/context/PhotosContext";
 function preserveAuthAndClearOthers() {
   const authToken = sessionStorage.getItem("authToken");
   const profileData = sessionStorage.getItem("profileData");
+  const userEmail = sessionStorage.getItem("userEmail");
   sessionStorage.clear();
   if (authToken) sessionStorage.setItem("authToken", authToken);
   if (profileData) sessionStorage.setItem("profileData", profileData);
+  if (userEmail) sessionStorage.setItem("userEmail", userEmail);
 }
 
 const CLEAR_DELAY_MS = 3000;

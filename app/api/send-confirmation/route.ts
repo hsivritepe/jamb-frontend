@@ -33,11 +33,14 @@ export async function POST(request: NextRequest) {
     // 3) Construct the text of the email
     const dashboardLink =
       process.env.NEXT_PUBLIC_SITE_URL?.concat("/dashboard") ||
-      "http://localhost:3000/dashboard";
+      "http://thejamb.com/dashboard";
 
     const textBody = `
-Your Order Confirmation
-=======================
+Thank You for Your Order!
+
+
+We have saved your order details
+========================
 
 Order Number: ${orderId}
 Date: ${date || "N/A"}

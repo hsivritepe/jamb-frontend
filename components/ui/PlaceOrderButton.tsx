@@ -1,5 +1,3 @@
-// jamb-frontend/components/ui/PlaceOrderButton.tsx
-
 "use client";
 
 export const dynamic = "force-dynamic";
@@ -32,7 +30,7 @@ interface WorkItem {
 }
 
 /**
- * Represents the props for PlaceOrderButton.
+ * Props for PlaceOrderButton.
  */
 interface PlaceOrderButtonProps {
   photos: string[];
@@ -57,7 +55,7 @@ interface PlaceOrderButtonProps {
 }
 
 /**
- * Checks if the base64 string might be in HEIC format (heic or heif).
+ * Checks if a base64 string might be in HEIC format.
  */
 function isHeicBase64(base64Data: string): boolean {
   const match = base64Data.match(/^data:(image\/[^;]+);base64,/);
@@ -68,7 +66,6 @@ function isHeicBase64(base64Data: string): boolean {
 
 /**
  * Converts a HEIC base64 string into a JPEG File.
- * Uses the "heic2any" package for conversion.
  */
 async function convertHeicBase64ToFile(base64Data: string): Promise<File> {
   const heicFile = base64ToFile(base64Data);
@@ -83,7 +80,7 @@ async function convertHeicBase64ToFile(base64Data: string): Promise<File> {
 }
 
 /**
- * Converts any base64 data into a File object, inferring the extension from the MIME type.
+ * Converts any base64 data into a File object, inferring extension from its MIME type.
  */
 function base64ToFile(base64Data: string): File {
   const match = base64Data.match(/^data:(.*?);base64,(.*)$/);
@@ -106,12 +103,7 @@ function base64ToFile(base64Data: string): File {
 }
 
 /**
- * The PlaceOrderButton component handles:
- * 1) Checking if the user is logged in,
- * 2) Parallel uploading of photos using Promise.all,
- * 3) Creating the order (calling /api/orders/create),
- * 4) Sending a simple confirmation email (no PDF),
- * 5) Finally redirecting to /thank-you or calling onOrderSuccess.
+ * PlaceOrderButton creates an order, uploads photos in parallel, and sends a confirmation email.
  */
 export default function PlaceOrderButton({
   photos,
@@ -121,35 +113,23 @@ export default function PlaceOrderButton({
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
-  /**
-   * Checks if the user is currently logged in by seeing if there's an authToken in sessionStorage.
-   */
   function isUserLoggedIn(): boolean {
     return !!sessionStorage.getItem("authToken");
   }
 
-  /**
-   * Main handler triggered when clicking on the "Save your order" button.
-   */
   async function handlePlaceOrder() {
-    // If user is not logged in, store data in session and redirect to /login
+    // If user is not logged in, store data and redirect to /login
     if (!isUserLoggedIn()) {
       sessionStorage.setItem("tempOrderData", JSON.stringify(orderData));
       sessionStorage.setItem("tempOrderPhotos", JSON.stringify(photos));
 
-      // Determine where to redirect after login
       let nextPath = "/calculate/checkout";
       if (orderData.worksData.length > 0) {
         const firstType = orderData.worksData[0].type;
-        if (firstType === "emergency") {
-          nextPath = "/emergency/checkout";
-        } else if (firstType === "rooms") {
-          nextPath = "/rooms/checkout";
-        } else if (firstType === "packages") {
-          nextPath = "/packages/checkout";
-        }
+        if (firstType === "emergency") nextPath = "/emergency/checkout";
+        else if (firstType === "rooms") nextPath = "/rooms/checkout";
+        else if (firstType === "packages") nextPath = "/packages/checkout";
       }
-
       router.push(`/login?next=${encodeURIComponent(nextPath)}`);
       return;
     }
@@ -161,18 +141,11 @@ export default function PlaceOrderButton({
         throw new Error("No auth token found.");
       }
 
-      /**
-       * 1) Parallel uploading of photos using Promise.all.
-       *    This speeds up the total photo upload time if we have multiple images.
-       */
-      console.log("[DEBUG] Starting parallel photo uploads.");
-
+      // 1) Parallel photo uploads
       const uploadPromises = photos.map(async (p) => {
-        // If photo is already a URL (not base64), just return it
         if (!p.startsWith("data:")) {
           return p;
         }
-        // Otherwise, process base64 image
         try {
           let file: File;
           if (isHeicBase64(p)) {
@@ -187,7 +160,6 @@ export default function PlaceOrderButton({
           };
           const compressedFile = await imageCompression(file, compressionOptions);
 
-          // Get signed URL for GCS
           const signedUrlResp = await fetch("/api/gcs-upload", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -201,7 +173,6 @@ export default function PlaceOrderButton({
           }
           const { uploadUrl, publicUrl } = await signedUrlResp.json();
 
-          // Upload to GCS
           const uploadResp = await fetch(uploadUrl, {
             method: "PUT",
             headers: { "Content-Type": compressedFile.type },
@@ -212,13 +183,11 @@ export default function PlaceOrderButton({
             throw new Error(`GCS upload failed: ${gcsRespText}`);
           }
           return publicUrl;
-        } catch (error) {
-          console.error("Photo upload error:", error);
+        } catch {
           return null;
         }
       });
 
-      // Wait for all uploads to complete
       const uploadResults = await Promise.all(uploadPromises);
       const uploadedPhotoUrls = uploadResults.filter((url) => url != null);
 
@@ -226,11 +195,7 @@ export default function PlaceOrderButton({
         alert("Some photos failed to upload. Order will proceed without them.");
       }
 
-      /**
-       * 2) Build the "works" array from orderData. This part depends on your existing structure.
-       */
-      console.log("[DEBUG] Building works array.");
-
+      // 2) Build works array
       const works = orderData.worksData.map((w) => ({
         type: w.type,
         code: w.code,
@@ -259,7 +224,6 @@ export default function PlaceOrderButton({
           : [],
       }));
 
-      // Additional fields that might be needed
       const serviceFeeOnLabor = orderData.serviceFeeOnLabor
         ? orderData.serviceFeeOnLabor.toFixed(2)
         : "0.00";
@@ -270,10 +234,7 @@ export default function PlaceOrderButton({
       const paymentCoefficient =
         orderData.paymentCoefficient?.toFixed(2) || "1.00";
 
-      /**
-       * 3) Prepare the body to send to /api/orders/create.
-       *    This contains all the user_token, photos, works, and so on.
-       */
+      // 3) Request body for creating an order
       const bodyToSend = {
         zipcode: orderData.zipcode,
         user_token: authToken,
@@ -298,11 +259,6 @@ export default function PlaceOrderButton({
         total: orderData.finalTotal.toFixed(2),
       };
 
-      console.log("[DEBUG] Creating order with bodyToSend:", bodyToSend);
-
-      /**
-       * 4) Call /api/orders/create to actually create the order in your backend.
-       */
       const createOrderResp = await fetch("/api/orders/create", {
         method: "POST",
         headers: {
@@ -324,53 +280,38 @@ export default function PlaceOrderButton({
       }
 
       const resultData = await createOrderResp.json();
-      console.log("[DEBUG] /api/orders/create response:", resultData);
 
-      // Extract the order code from the server response
       const orderCode = resultData.order_code || "";
       const orderTotal = bodyToSend.total || "";
 
-      // Store in sessionStorage for future use
       sessionStorage.setItem("orderCode", orderCode);
       sessionStorage.setItem("orderTotal", orderTotal);
 
-      /**
-       * 5) Send a simple confirmation email (without PDF) via /api/send-confirmation.
-       *    The server might not return user email, so we might default to "info@thejamb.com".
-       */
-      const userEmail = resultData.email || "info@thejamb.com";
-      console.log("[DEBUG] userEmail from server:", userEmail);
-      console.log("[DEBUG] orderCode:", orderCode, "orderTotal:", orderTotal);
-      console.log("[DEBUG] selectedTime:", orderData.selectedTime);
+      // Use stored user email from login
+      const storedEmail = sessionStorage.getItem("userEmail") || "info@thejamb.com";
 
-      const payload = {
-        email: userEmail,
+      const confirmationPayload = {
+        email: storedEmail,
         orderId: orderCode,
         total: orderTotal,
         date: orderData.selectedTime || "",
       };
 
-      console.log("[DEBUG] About to POST /api/send-confirmation with:", payload);
-
       await fetch("/api/send-confirmation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(confirmationPayload),
       })
         .then(async (resp) => {
-          const data = await resp.json();
           if (!resp.ok) {
+            const data = await resp.json();
             throw new Error(data.error || "Failed to send email");
           }
-          console.log("[DEBUG] Email sent response:", data.message);
         })
         .catch((err) => {
           console.error("Error sending confirmation email:", err);
         });
 
-      /**
-       * 6) Finally, either call onOrderSuccess or redirect to /thank-you.
-       */
       if (onOrderSuccess) {
         onOrderSuccess();
       } else {
