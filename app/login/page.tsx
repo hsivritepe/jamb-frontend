@@ -1,3 +1,5 @@
+// jamb-frontend/app/login/page.tsx
+
 "use client";
 
 export const dynamic = "force-dynamic";
@@ -11,19 +13,19 @@ import FacebookIcon from "@/components/icons/FacebookIcon";
 import AppleIcon from "@/components/icons/AppleIcon";
 
 export default function LoginOrRegisterPage() {
-  // Navigation
+  // Router and search params
   const router = useRouter();
   const searchParams = useSearchParams();
   const nextUrl = searchParams.get("next") || "";
 
-  // Registration form states
+  // Registration state
   const [email, setEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
   const [agreedToTos, setAgreedToTos] = useState(false);
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
 
-  // Login form states
+  // Login state
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [showLoginPassword, setShowLoginPassword] = useState(false);
@@ -56,12 +58,14 @@ export default function LoginOrRegisterPage() {
       });
 
       if (res.ok) {
+        // If registration success, redirect to confirm page
         let confirmUrl = `/confirm?email=${encodeURIComponent(email)}`;
         if (nextUrl) {
           confirmUrl += `&next=${encodeURIComponent(nextUrl)}`;
         }
         router.push(confirmUrl);
       } else if (res.status === 400) {
+        // If server responded 400, parse JSON error
         const data = await res.json();
         alert(`Registration error: ${data.error}`);
       } else {
@@ -74,7 +78,7 @@ export default function LoginOrRegisterPage() {
   };
 
   /**
-   * Logs in existing users and stores their auth token.
+   * Logs in existing users and stores their auth token and email in sessionStorage.
    */
   const handleLogin = async () => {
     try {
@@ -88,10 +92,14 @@ export default function LoginOrRegisterPage() {
       });
 
       if (res.ok) {
+        // Successfully authenticated
         const data = await res.json();
-        sessionStorage.setItem("authToken", data.token);
 
-        // Fetch user info
+        // 1) Save token in sessionStorage
+        sessionStorage.setItem("authToken", data.token);
+        sessionStorage.setItem("userEmail", loginEmail);
+
+        // 3) Optionally fetch additional user info
         try {
           const userRes = await fetch("https://dev.thejamb.com/user/info", {
             method: "POST",
@@ -106,20 +114,25 @@ export default function LoginOrRegisterPage() {
           console.error("Error fetching user info after login:", err);
         }
 
-        // Notify app and redirect
+        // Trigger an event so other parts of the app know auth changed
         window.dispatchEvent(new Event("authChange"));
+
+        // 4) Redirect user
         if (nextUrl) {
           router.push(nextUrl);
         } else {
           router.push("/profile");
         }
       } else if (res.status === 400) {
+        // If 400, parse error
         const data = await res.json();
         alert(`Login error: ${data.error}`);
       } else if (res.status === 401) {
+        // If 401, parse error
         const data = await res.json();
         alert(`Unauthorized: ${data.error}`);
       } else {
+        // Otherwise unknown error
         alert(`Login error. Status: ${res.status}`);
       }
     } catch (error) {
