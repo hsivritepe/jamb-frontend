@@ -1,5 +1,4 @@
 "use client";
-
 export const dynamic = "force-dynamic";
 
 import { useEffect, useRef, useState } from "react";
@@ -88,11 +87,9 @@ export default function ProfilePage() {
   // Static map URLs
   const [mapUrl, setMapUrl] = useState("");
   const [streetViewUrl, setStreetViewUrl] = useState("");
+  const [greetingText, setGreetingText] = useState("");
+  const [hasName, setHasName] = useState(false);
 
-  /**
-   * On mount, check token in sessionStorage. If not found => /login.
-   * If present, load profile data from session or fetch from server.
-   */
   useEffect(() => {
     const storedToken = sessionStorage.getItem("authToken");
     if (!storedToken) {
@@ -141,9 +138,14 @@ export default function ProfilePage() {
     }
   }, [router]);
 
-  /**
-   * Fetch user info from /user/info if not in sessionStorage or parse fails.
-   */
+  useEffect(() => {
+    setGreetingText(getGreeting());
+  }, []);
+
+  useEffect(() => {
+    setHasName(Boolean(profile.name.trim()));
+  }, [profile.name]);
+
   async function fetchUserInfo(_token: string) {
     setLoading(true);
     setErrorMsg("");
@@ -291,7 +293,7 @@ export default function ProfilePage() {
   }
 
   /**
-   * Close modals on outside click
+   * Close modals if click is outside of them
    */
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -317,20 +319,18 @@ export default function ProfilePage() {
     };
   }, [showContactModal, showPropertyModal]);
 
-  // Greeting
-  const greetingText = getGreeting();
-  const hasName = Boolean(profile.name.trim());
-
-  // Check if user has address
+  // Check if the user has any address fields
   const hasAddress = Boolean(
     address.country.trim() ||
-    address.address.trim() ||
-    address.city.trim() ||
-    address.state.trim() ||
-    address.zipcode.trim()
+      address.address.trim() ||
+      address.city.trim() ||
+      address.state.trim() ||
+      address.zipcode.trim()
   );
 
-  // Geocode logic to get map images if user has address
+  /**
+   * Geocode logic to get map images if the user has an address
+   */
   useEffect(() => {
     if (!hasAddress) {
       setMapUrl("");
@@ -379,7 +379,6 @@ export default function ProfilePage() {
           const newStreetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=600x300&location=${lat},${lng}&fov=80&heading=70&pitch=0&language=en&key=${apiKey}`;
           setStreetViewUrl(newStreetViewUrl);
 
-          // Store in session
           const stored = sessionStorage.getItem("profileData");
           if (stored) {
             const parsedData = JSON.parse(stored);
@@ -410,10 +409,13 @@ export default function ProfilePage() {
           {greetingText}, {hasName ? profile.name : "Guest"}!
         </h1>
 
-        {/* Nav row */}
+        {/* Navigation row */}
         <div className="flex items-center justify-between mb-10">
           <div className="flex items-center gap-8">
-            <Link href="/profile" className="text-blue-600 border-b-2 border-blue-600">
+            <Link
+              href="/profile"
+              className="text-blue-600 border-b-2 border-blue-600"
+            >
               Profile
             </Link>
             <Link href="/dashboard" className="text-gray-600 hover:text-blue-600">
@@ -545,7 +547,9 @@ export default function ProfilePage() {
                 />
               </div>
               <div>
-                <label className="block text-sm mb-1 text-gray-600">Last Name</label>
+                <label className="block text-sm mb-1 text-gray-600">
+                  Last Name
+                </label>
                 <input
                   type="text"
                   placeholder="Last Name"
@@ -557,7 +561,9 @@ export default function ProfilePage() {
                 />
               </div>
               <div>
-                <label className="block text-sm mb-1 text-gray-600">Email address</label>
+                <label className="block text-sm mb-1 text-gray-600">
+                  Email address
+                </label>
                 <input
                   type="email"
                   placeholder="hello@thejamb.com"
@@ -569,7 +575,9 @@ export default function ProfilePage() {
                 />
               </div>
               <div>
-                <label className="block text-sm mb-1 text-gray-600">Phone number</label>
+                <label className="block text-sm mb-1 text-gray-600">
+                  Phone number
+                </label>
                 <input
                   type="tel"
                   placeholder="+1 234 56 78 90"
@@ -624,7 +632,9 @@ export default function ProfilePage() {
                 />
               </div>
               <div>
-                <label className="block text-sm mb-1 text-gray-600">Address line</label>
+                <label className="block text-sm mb-1 text-gray-600">
+                  Address line
+                </label>
                 <input
                   type="text"
                   placeholder="123 Main St"
