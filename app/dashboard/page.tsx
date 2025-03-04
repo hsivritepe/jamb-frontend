@@ -204,7 +204,10 @@ export default function OrdersPage() {
             "EEE, d MMM yyyy",
             new Date()
           );
-          orderDetails.daysDiff = differenceInCalendarDays(parsedDate, new Date());
+          orderDetails.daysDiff = differenceInCalendarDays(
+            parsedDate,
+            new Date()
+          );
         } catch {
           orderDetails.daysDiff = null;
         }
@@ -470,7 +473,9 @@ export default function OrdersPage() {
                             </td>
                             <td className="hidden sm:table-cell w-1/4 py-2 px-3 text-right">
                               <button
-                                onClick={() => router.push(`/dashboard/print/${order.code}`)}
+                                onClick={() =>
+                                  router.push(`/dashboard/print/${order.code}`)
+                                }
                                 className="text-gray-500 hover:text-blue-600 mr-3"
                                 title="Print order"
                               >
@@ -488,7 +493,9 @@ export default function OrdersPage() {
                                 </div>
                               ) : (
                                 <button
-                                  onClick={() => initiateDeleteOrder(order.id, order.code)}
+                                  onClick={() =>
+                                    initiateDeleteOrder(order.id, order.code)
+                                  }
                                   className="text-gray-500 hover:text-red-600"
                                   title="Delete order"
                                 >
@@ -498,19 +505,24 @@ export default function OrdersPage() {
                             </td>
                           </tr>
 
+                          {/* We put the <tr> with colSpan=4 here instead of inside ExpandedOrderRow */}
                           {isExpanded && expandedOrderDetails && (
-                            <ExpandedOrderRow
-                              order={expandedOrderDetails}
-                              isPendingDelete={isPendingDelete}
-                              undoDelete={undoDelete}
-                              onDeleteOrder={(id, code) =>
-                                initiateDeleteOrder(id, code)
-                              }
-                              token={token}
-                              onRefreshOrders={handleRefreshOrders}
-                              // callback to close
-                              onCloseExpanded={handleCloseExpanded}
-                            />
+                            <tr className="bg-gray-100">
+                              <td colSpan={4}>
+                                <ExpandedOrderRow
+                                  order={expandedOrderDetails}
+                                  isPendingDelete={isPendingDelete}
+                                  undoDelete={undoDelete}
+                                  onDeleteOrder={(id, code) =>
+                                    initiateDeleteOrder(id, code)
+                                  }
+                                  token={token}
+                                  onRefreshOrders={handleRefreshOrders}
+                                  // callback to close
+                                  onCloseExpanded={handleCloseExpanded}
+                                />
+                              </td>
+                            </tr>
                           )}
                         </React.Fragment>
                       );
