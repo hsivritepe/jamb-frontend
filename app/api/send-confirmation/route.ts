@@ -367,8 +367,11 @@ export async function POST(request: NextRequest) {
     await browser.close();
 
     // 15) Attach PDF to email
+    const fromEmail = process.env.SMTP_FROM_EMAIL || "info@thejamb.com";
+    const fromField = `"JAMB Home Services" <${fromEmail}>`;
+
     const mailOptions = {
-      from: process.env.SMTP_FROM_EMAIL || "info@thejamb.com",
+      from: fromField,
       to: body.email,
       subject: `Order Confirmation #${body.orderId}`,
       text: `Thank you for your saved order #${body.orderId}!\nCheck the attached PDF for details.\n\nJAMB Team\n\nCheck details: https://thejamb.com/dashboard`,
