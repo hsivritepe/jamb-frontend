@@ -27,7 +27,7 @@ interface MaterialSpec {
 }
 
 /**
- * Returns "Material #<external_id>" if the material name is missing.
+ * If the material name is missing, returns "Material #<external_id>".
  */
 function getMaterialName(mat: MaterialSpec): string {
   if (mat.name && mat.name.trim()) return mat.name;
@@ -35,7 +35,7 @@ function getMaterialName(mat: MaterialSpec): string {
 }
 
 /**
- * A single "WorkItem" representing one service with possible materials.
+ * One "WorkItem" (service) in the PDF, possibly with materials.
  */
 interface WorkItem {
   type: string;
@@ -93,7 +93,7 @@ function toNum(str: string | number): number {
 
 export async function POST(request: NextRequest) {
   try {
-    // 1) Parse the incoming JSON request
+    // 1) Parse the incoming JSON
     const body: ConfirmationPayload = await request.json();
 
     // 2) Validate required fields
@@ -104,18 +104,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 3) Set up Nodemailer (SMTP configuration)
+    // 3) Configure Nodemailer
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || "smtp.office365.com",
       port: Number(process.env.SMTP_PORT || 587),
-      secure: false, // use STARTTLS on port 587
+      secure: false,
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
       },
     });
 
-    // 4) Convert string-based numeric fields to numbers
+    // 4) Convert numeric fields to numbers
     let laborSubtotalNum = toNum(body.laborSubtotal);
     let materialsSubtotalNum = toNum(body.materialsSubtotal);
     let sumBeforeTaxNum = toNum(body.sumBeforeTax);
@@ -124,11 +124,10 @@ export async function POST(request: NextRequest) {
     let serviceFeeLaborNum = toNum(body.serviceFeeOnLabor);
     let serviceFeeMaterialsNum = toNum(body.serviceFeeOnMaterials);
 
-    // 5) timeCoefficient and date surcharge from the request
     const timeCoeffNum = toNum(body.timeCoefficient || "1");
     const dateSurchargeValue = toNum(body.date_surcharge || "0");
 
-    // 6) Re-compute labor and materials from the works array
+    // 5) Recompute labor and materials from the works array
     const computedLaborSubtotal = body.works.reduce(
       (acc, w) => acc + toNum(w.labor_cost),
       0
@@ -141,7 +140,7 @@ export async function POST(request: NextRequest) {
     laborSubtotalNum = computedLaborSubtotal;
     materialsSubtotalNum = computedMaterialsSubtotal;
 
-    // 7) Compute final labor (with time coefficient) and the surcharge
+    // 6) Calculate final labor + surcharge
     const finalLabor = laborSubtotalNum * timeCoeffNum;
     const computedSurcharge = finalLabor - laborSubtotalNum;
     const isDiscount = computedSurcharge < 0;
@@ -151,14 +150,15 @@ export async function POST(request: NextRequest) {
     const signPrefix = isDiscount ? "-" : "+";
     const absSurcharge = Math.abs(computedSurcharge);
 
-    // 8) Compute subtotal and final total
+    // 7) Subtotal & total
     const sumBeforeTaxCalc =
       finalLabor + materialsSubtotalNum + serviceFeeLaborNum + serviceFeeMaterialsNum;
     sumBeforeTaxNum = sumBeforeTaxCalc;
+
     const finalTotalCalc = sumBeforeTaxCalc + taxAmountNum;
     finalTotalNum = finalTotalCalc;
 
-    // 9) Build the HTML snippet for each WorkItem
+    // 8) Build HTML for each WorkItem
     let worksHtml = "";
     body.works.forEach((w, idx) => {
       const totalVal = toNum(w.total);
@@ -217,7 +217,7 @@ export async function POST(request: NextRequest) {
       `;
     });
 
-    // 10) Handle uploaded photos
+    // 9) Handle uploaded photos
     let photosHtml = "";
     if (Array.isArray(body.photos) && body.photos.length > 0) {
       const photoTags = body.photos
@@ -237,7 +237,7 @@ export async function POST(request: NextRequest) {
       `;
     }
 
-    // 11) Disclaimers
+    // 10) Disclaimers
     const disclaimers = `
       <p style="font-size:0.9rem; color:#999; margin-top:30px;">
         *All labor times and materials are estimated. Actual costs may vary.<br/>
@@ -245,7 +245,7 @@ export async function POST(request: NextRequest) {
       </p>
     `;
 
-    // 12) Final HTML content for PDF generation
+    // 11) Final HTML for PDF
     const htmlContent = `
 <!DOCTYPE html>
 <html lang="en">
@@ -343,7 +343,7 @@ export async function POST(request: NextRequest) {
       <div>Total:</div>
       <div>$${formatWithSeparator(finalTotalNum)}</div>
     </div>
-    <!-- Optional: timeCoefficient (uncomment if needed)
+    <!-- Optional: timeCoefficient if needed
     <div class="row">
       <div class="label">Time Coefficient:</div>
       <div>${timeCoeffNum}</div>
@@ -356,17 +356,29 @@ export async function POST(request: NextRequest) {
 </html>
 `;
 
-    // 13) Call chromium.executablePath() as a function
-    const ep = await chromium.executablePath();
+    // 12) Attempt serverless-compatible path
+    let ep: string | null = null;
+    try {
+      ep = await chromium.executablePath();
+    } catch (err) {
+      console.warn("Could not retrieve chromium.executablePath()", err);
+    }
 
-    // 14) Launch Puppeteer with the resolved path
-    const browser = await puppeteer.launch({
-      args: chromium.args,
-      executablePath: ep || undefined,
-      headless: chromium.headless,
-    });
+    // 13) Puppeteer fallback
+    let browser;
+    if (!ep) {
+      console.log("Falling back to Puppeteer's bundled Chromium (local dev).");
+      browser = await puppeteer.launch({ headless: true });
+    } else {
+      console.log("Launching serverless Chromium from @sparticuz/chromium");
+      browser = await puppeteer.launch({
+        args: chromium.args,
+        executablePath: ep,
+        headless: chromium.headless,
+      });
+    }
 
-    // 15) Generate the PDF
+    // 14) Generate PDF as Buffer
     const page = await browser.newPage();
     await page.setContent(htmlContent, { waitUntil: "domcontentloaded" });
     const pdfBuffer = (await page.pdf({
@@ -376,7 +388,7 @@ export async function POST(request: NextRequest) {
 
     await browser.close();
 
-    // 16) Prepare the email with PDF attachment
+    // 15) Attach PDF to email
     const mailOptions = {
       from: process.env.SMTP_FROM_EMAIL || "info@thejamb.com",
       to: body.email,
@@ -385,7 +397,7 @@ export async function POST(request: NextRequest) {
       attachments: [
         {
           filename: `order-${body.orderId}.pdf`,
-          content: pdfBuffer, // must be a string | Buffer | Readable
+          content: pdfBuffer,
           contentType: "application/pdf",
         },
       ],
@@ -393,11 +405,10 @@ export async function POST(request: NextRequest) {
 
     await transporter.sendMail(mailOptions);
 
-    // 17) Return a successful response
+    // 16) Success
     return NextResponse.json({ message: "Email with PDF sent successfully" });
   } catch (err: any) {
     console.error("Error sending confirmation email with PDF:", err);
-    // In case of an error, return a 500 response with the error message
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
