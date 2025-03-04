@@ -85,7 +85,6 @@ export default function ExpandedOrderRow({
   // State to handle modal with enlarged images
   const [selectedPhotoUrl, setSelectedPhotoUrl] = useState<string | null>(null);
 
-  // Function to collect some base values from current order
   function getBaseValues() {
     const sumWorksTotals = currentOrder.works.reduce(
       (acc, w) => acc + parseFloat(w.total),
@@ -114,7 +113,6 @@ export default function ExpandedOrderRow({
     };
   }
 
-  // Function to get date difference info for highlighting
   function getDateDiffLabel(): { label: string; isWarning: boolean } {
     const dateStr = currentOrder.common.selected_date;
     if (!dateStr) {
@@ -131,13 +129,11 @@ export default function ExpandedOrderRow({
     if (diff === 2)
       return { label: "Expires in 2 days. Update", isWarning: true };
 
-    // Normal date
     return { label: currentOrder.common.selected_date, isWarning: false };
   }
 
   const { label: dateLabel, isWarning: dateIsRed } = getDateDiffLabel();
 
-  // Function to confirm a new date locally
   function handleConfirmNewDateLocal(newDate: string, newCoef: number) {
     setHasChanges(true);
 
@@ -180,7 +176,6 @@ export default function ExpandedOrderRow({
     setShowServiceTimePicker(false);
   }
 
-  // Function to submit the update to the server
   async function handleSubmitUpdate() {
     try {
       const payload = {
@@ -259,7 +254,7 @@ export default function ExpandedOrderRow({
     ? "inline-flex items-center gap-2 px-3 py-2 border border-gray-400 text-gray-700 text-sm rounded hover:bg-gray-50"
     : "inline-flex items-center gap-2 px-3 py-2 border border-gray-300 text-gray-400 text-sm rounded cursor-not-allowed";
 
-  // Instead of <tr> ... <td colSpan={4}>, we return a <div>:
+  // Вместо <tr> мы возвращаем <div> (убираем bg-gray-100, так как он уже есть в <tr> родителя)
   return (
     <div className="px-2 sm:px-3 py-3 text-sm text-gray-700">
       <h2 className="text-xl sm:text-2xl font-bold mb-2">
@@ -457,23 +452,24 @@ export default function ExpandedOrderRow({
         </p>
       )}
 
-      {currentOrder.common.photos && currentOrder.common.photos.length > 0 && (
-        <div>
-          <p className="font-semibold">Attached Photos:</p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-2">
-            {currentOrder.common.photos.map((photoUrl) => (
-              <div key={photoUrl}>
-                <img
-                  src={photoUrl}
-                  alt="Order photo"
-                  className="border rounded w-full h-32 sm:h-64 object-cover cursor-pointer"
-                  onClick={() => setSelectedPhotoUrl(photoUrl)}
-                />
-              </div>
-            ))}
+      {currentOrder.common.photos &&
+        currentOrder.common.photos.length > 0 && (
+          <div>
+            <p className="font-semibold">Attached Photos:</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-2">
+              {currentOrder.common.photos.map((photoUrl) => (
+                <div key={photoUrl}>
+                  <img
+                    src={photoUrl}
+                    alt="Order photo"
+                    className="border rounded w-full h-32 sm:h-64 object-cover cursor-pointer"
+                    onClick={() => setSelectedPhotoUrl(photoUrl)}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
       {/* Desktop buttons */}
       <div className="mt-6 hidden sm:flex items-center gap-3 justify-end">

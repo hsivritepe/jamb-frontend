@@ -505,10 +505,10 @@ export default function OrdersPage() {
                             </td>
                           </tr>
 
-                          {/* We put the <tr> with colSpan=4 here instead of inside ExpandedOrderRow */}
+                          {/* ВАЖНО: теперь сам <tr className="bg-gray-100"> объявлен здесь */}
                           {isExpanded && expandedOrderDetails && (
                             <tr className="bg-gray-100">
-                              <td colSpan={4}>
+                              <td colSpan={4} className="p-0">
                                 <ExpandedOrderRow
                                   order={expandedOrderDetails}
                                   isPendingDelete={isPendingDelete}
