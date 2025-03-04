@@ -1,5 +1,4 @@
 "use client";
-
 export const dynamic = "force-dynamic";
 
 import { useEffect, useRef, useState } from "react";
@@ -18,6 +17,8 @@ function getGreeting(): string {
 
 export default function SettingsPage() {
   const router = useRouter();
+
+  // Token for authentication
   const [token, setToken] = useState("");
 
   // Example user preferences
@@ -29,12 +30,17 @@ export default function SettingsPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const editModalRef = useRef<HTMLDivElement>(null);
 
-  // User name from session
+  // User name from session, plus a boolean to track if it exists
   const [userName, setUserName] = useState("");
   const [hasName, setHasName] = useState(false);
 
-  // Load token and user name on mount
+  // Greeting text stored in state to avoid SSR/client mismatch
+  const [greetingText, setGreetingText] = useState("");
+
+  // Load token, user name, and greeting text on mount
   useEffect(() => {
+    setGreetingText(getGreeting());
+
     const storedToken = sessionStorage.getItem("authToken");
     if (!storedToken) {
       router.push("/login");
@@ -65,7 +71,7 @@ export default function SettingsPage() {
     router.push("/login");
   }
 
-  // Close modal if clicking outside
+  // Close the edit modal if the user clicks outside
   useEffect(() => {
     function handleOutsideClick(e: MouseEvent) {
       if (showEditModal && editModalRef.current) {
@@ -80,12 +86,13 @@ export default function SettingsPage() {
     } else {
       document.removeEventListener("mousedown", handleOutsideClick);
     }
+
     return () => {
       document.removeEventListener("mousedown", handleOutsideClick);
     };
   }, [showEditModal]);
 
-  // Example save preferences
+  // Example function to "save" preferences
   const handleSave = () => {
     alert("Preferences saved!");
     setShowEditModal(false);
@@ -126,8 +133,6 @@ export default function SettingsPage() {
     }
   }
 
-  const greetingText = getGreeting();
-
   return (
     <div className="pt-24 min-h-screen w-full bg-gray-50 pb-10">
       <div className="max-w-7xl mx-0 sm:mx-auto px-0 sm:px-4">
@@ -159,7 +164,6 @@ export default function SettingsPage() {
 
         {/* Preferences */}
         <h2 className="text-xl font-semibold mb-3">Details</h2>
-
         <div className="bg-white p-4 rounded-md shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4">
           <div className="flex flex-col sm:flex-row gap-4 sm:gap-12 text-sm text-gray-700">
             <div>
@@ -221,7 +225,7 @@ export default function SettingsPage() {
               </button>
             </div>
 
-            {/* Form fields */}
+            {/* Form fields for preferences */}
             <div className="flex flex-col gap-4 flex-1 overflow-y-auto">
               <div>
                 <label className="block text-sm mb-1 text-gray-600">Language</label>
