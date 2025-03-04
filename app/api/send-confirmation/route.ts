@@ -217,26 +217,6 @@ export async function POST(request: NextRequest) {
       `;
     });
 
-    // 9) Handle uploaded photos
-    let photosHtml = "";
-    if (Array.isArray(body.photos) && body.photos.length > 0) {
-      const photoTags = body.photos
-        .map(
-          (url) => `
-            <div style="border:1px solid #ccc; margin:3px; display:inline-block;">
-              <img src="${url}" style="width:100px;" alt="uploaded"/>
-            </div>`
-        )
-        .join("");
-
-      photosHtml = `
-        <h3 style="margin:6px 0 4px; font-size:1rem;">Uploaded Photos</h3>
-        <div style="margin:6px 0; display:flex; flex-wrap:wrap;">
-          ${photoTags}
-        </div>
-      `;
-    }
-
     // 10) Disclaimers
     const disclaimers = `
       <p style="font-size:0.9rem; color:#999; margin-top:30px;">
@@ -297,8 +277,6 @@ export async function POST(request: NextRequest) {
     ${worksHtml}
   </div>
 
-  ${photosHtml}
-
   <div class="section">
     <h3>Totals</h3>
     <!-- Labor -->
@@ -343,7 +321,7 @@ export async function POST(request: NextRequest) {
       <div>Total:</div>
       <div>$${formatWithSeparator(finalTotalNum)}</div>
     </div>
-    <!-- Optional: timeCoefficient if needed
+    <!-- Optional: timeCoefficient
     <div class="row">
       <div class="label">Time Coefficient:</div>
       <div>${timeCoeffNum}</div>
@@ -405,7 +383,7 @@ export async function POST(request: NextRequest) {
 
     await transporter.sendMail(mailOptions);
 
-    // 16) Success
+    // 16) Return success
     return NextResponse.json({ message: "Email with PDF sent successfully" });
   } catch (err: any) {
     console.error("Error sending confirmation email with PDF:", err);
