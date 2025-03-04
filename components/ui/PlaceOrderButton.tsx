@@ -7,7 +7,18 @@ import { useRouter } from "next/navigation";
 import imageCompression from "browser-image-compression";
 
 /**
- * Represents a single work item in the order.
+ * Interface representing a single material item inside a WorkItem.
+ */
+interface MaterialSpec {
+  external_id: string;
+  quantity: number;
+  costPerUnit: number;
+  total: number;
+  name: string;
+}
+
+/**
+ * Interface representing a single WorkItem in the order.
  */
 interface WorkItem {
   type: string;
@@ -21,19 +32,14 @@ interface WorkItem {
   total: number;
   paymentType?: string;
   paymentCoefficient?: number;
-  materials?: Array<{
-    external_id: string;
-    quantity: number;
-    costPerUnit: number;
-    total: number;
-  }>;
+  materials?: MaterialSpec[];
 }
 
 /**
- * Props for PlaceOrderButton.
+ * Interface for the props of PlaceOrderButton.
  */
 interface PlaceOrderButtonProps {
-  photos: string[];
+  photos: string[]; // array of base64 or hosted URLs
   orderData: {
     zipcode: string;
     address: string;
@@ -55,7 +61,7 @@ interface PlaceOrderButtonProps {
 }
 
 /**
- * Checks if a base64 string might be in HEIC format.
+ * Checks if the base64 string might be in HEIC format.
  */
 function isHeicBase64(base64Data: string): boolean {
   const match = base64Data.match(/^data:(image\/[^;]+);base64,/);
@@ -65,7 +71,7 @@ function isHeicBase64(base64Data: string): boolean {
 }
 
 /**
- * Converts a HEIC base64 string into a JPEG File.
+ * Converts a HEIC base64 string into a JPEG File using heic2any.
  */
 async function convertHeicBase64ToFile(base64Data: string): Promise<File> {
   const heicFile = base64ToFile(base64Data);
@@ -103,7 +109,12 @@ function base64ToFile(base64Data: string): File {
 }
 
 /**
- * PlaceOrderButton creates an order, uploads photos in parallel, and sends a confirmation email.
+ * This component handles:
+ * 1) Checking user auth
+ * 2) Uploading photos in parallel
+ * 3) Creating the order in your backend (/api/orders/create)
+ * 4) Sending a PDF confirmation email via /api/send-confirmation
+ * 5) Redirecting to /thank-you or calling onOrderSuccess
  */
 export default function PlaceOrderButton({
   photos,
@@ -113,16 +124,23 @@ export default function PlaceOrderButton({
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
+  /**
+   * Checks sessionStorage for authToken to confirm if user is logged in.
+   */
   function isUserLoggedIn(): boolean {
     return !!sessionStorage.getItem("authToken");
   }
 
+  /**
+   * The main handler for placing the order.
+   */
   async function handlePlaceOrder() {
-    // If user is not logged in, store data and redirect to /login
+    // If user not logged in, we save data in session and redirect to /login
     if (!isUserLoggedIn()) {
       sessionStorage.setItem("tempOrderData", JSON.stringify(orderData));
       sessionStorage.setItem("tempOrderPhotos", JSON.stringify(photos));
 
+      // Decide which path to go after login
       let nextPath = "/calculate/checkout";
       if (orderData.worksData.length > 0) {
         const firstType = orderData.worksData[0].type;
@@ -136,23 +154,28 @@ export default function PlaceOrderButton({
 
     setLoading(true);
     try {
+      // 1) Get auth token
       const authToken = sessionStorage.getItem("authToken");
       if (!authToken) {
         throw new Error("No auth token found.");
       }
 
-      // 1) Parallel photo uploads
-      const uploadPromises = photos.map(async (p) => {
-        if (!p.startsWith("data:")) {
-          return p;
+      // 2) Parallel photo uploads
+      const uploadPromises = photos.map(async (base64OrUrl) => {
+        // If it's already a hosted URL, no upload needed
+        if (!base64OrUrl.startsWith("data:")) {
+          return base64OrUrl;
         }
+
+        // Otherwise, convert from base64 -> file
         try {
           let file: File;
-          if (isHeicBase64(p)) {
-            file = await convertHeicBase64ToFile(p);
+          if (isHeicBase64(base64OrUrl)) {
+            file = await convertHeicBase64ToFile(base64OrUrl);
           } else {
-            file = base64ToFile(p);
+            file = base64ToFile(base64OrUrl);
           }
+          // Compress the file using browser-image-compression
           const compressionOptions = {
             maxSizeMB: 1,
             maxWidthOrHeight: 1920,
@@ -160,6 +183,7 @@ export default function PlaceOrderButton({
           };
           const compressedFile = await imageCompression(file, compressionOptions);
 
+          // Get signed URL from /api/gcs-upload
           const signedUrlResp = await fetch("/api/gcs-upload", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -173,6 +197,7 @@ export default function PlaceOrderButton({
           }
           const { uploadUrl, publicUrl } = await signedUrlResp.json();
 
+          // Upload to GCS
           const uploadResp = await fetch(uploadUrl, {
             method: "PUT",
             headers: { "Content-Type": compressedFile.type },
@@ -183,19 +208,21 @@ export default function PlaceOrderButton({
             throw new Error(`GCS upload failed: ${gcsRespText}`);
           }
           return publicUrl;
-        } catch {
+        } catch (err) {
+          console.error("Photo upload error:", err);
+          // If error, return null or skip
           return null;
         }
       });
 
       const uploadResults = await Promise.all(uploadPromises);
-      const uploadedPhotoUrls = uploadResults.filter((url) => url != null);
+      const uploadedPhotoUrls = uploadResults.filter((url) => url != null) as string[];
 
       if (uploadedPhotoUrls.length < photos.length) {
         alert("Some photos failed to upload. Order will proceed without them.");
       }
 
-      // 2) Build works array
+      // 3) Build the "works" array for /api/orders/create
       const works = orderData.worksData.map((w) => ({
         type: w.type,
         code: w.code,
@@ -210,16 +237,16 @@ export default function PlaceOrderButton({
           ? w.serviceFeeOnMaterials.toFixed(2)
           : "0.00",
         total: w.total.toFixed(2),
-        payment_type: w.paymentType?.trim() || "n/a",
+        payment_type: w.paymentType || "n/a",
         payment_coefficient: w.paymentCoefficient
           ? w.paymentCoefficient.toFixed(2)
           : "1.00",
         materials: w.materials
-          ? w.materials.map((m) => ({
-              external_id: m.external_id,
-              quantity: m.quantity,
-              cost_per_unit: m.costPerUnit.toFixed(2),
-              total: m.total.toFixed(2),
+          ? w.materials.map((mat) => ({
+              external_id: mat.external_id,
+              quantity: mat.quantity,
+              cost_per_unit: mat.costPerUnit.toFixed(2),
+              total: mat.total.toFixed(2),
             }))
           : [],
       }));
@@ -230,11 +257,8 @@ export default function PlaceOrderButton({
       const serviceFeeOnMaterials = orderData.serviceFeeOnMaterials
         ? orderData.serviceFeeOnMaterials.toFixed(2)
         : "0.00";
-      const paymentType = orderData.paymentType || "n/a";
-      const paymentCoefficient =
-        orderData.paymentCoefficient?.toFixed(2) || "1.00";
 
-      // 3) Request body for creating an order
+      // 4) Body for creating the order
       const bodyToSend = {
         zipcode: orderData.zipcode,
         user_token: authToken,
@@ -253,12 +277,14 @@ export default function PlaceOrderButton({
         ).toFixed(2),
         service_fee_on_labor: serviceFeeOnLabor,
         service_fee_on_materials: serviceFeeOnMaterials,
-        payment_type: paymentType,
-        payment_coefficient: paymentCoefficient,
+        payment_type: orderData.paymentType || "n/a",
+        payment_coefficient:
+          orderData.paymentCoefficient?.toFixed(2) || "1.00",
         subtotal: orderData.sumBeforeTax.toFixed(2),
         total: orderData.finalTotal.toFixed(2),
       };
 
+      // 5) Create the order via /api/orders/create
       const createOrderResp = await fetch("/api/orders/create", {
         method: "POST",
         headers: {
@@ -280,38 +306,95 @@ export default function PlaceOrderButton({
       }
 
       const resultData = await createOrderResp.json();
-
       const orderCode = resultData.order_code || "";
       const orderTotal = bodyToSend.total || "";
 
+      // Save some info in sessionStorage
       sessionStorage.setItem("orderCode", orderCode);
       sessionStorage.setItem("orderTotal", orderTotal);
 
-      // Use stored user email from login
-      const storedEmail = sessionStorage.getItem("userEmail") || "info@thejamb.com";
+      // 6) Build the full data for PDF-based confirmation
+      // We'll gather everything for the /api/send-confirmation route
+      const userEmail = sessionStorage.getItem("userEmail") || "info@thejamb.com";
 
-      const confirmationPayload = {
-        email: storedEmail,
+      // Convert numbers to strings for the PDF route
+      const laborSubtotalStr = orderData.laborSubtotal.toFixed(2);
+      const materialsSubtotalStr = (
+        orderData.sumBeforeTax - orderData.laborSubtotal -
+        (orderData.serviceFeeOnLabor ?? 0)
+      ).toFixed(2); 
+      // Or compute as needed
+      const sumBeforeTaxStr = orderData.sumBeforeTax.toFixed(2);
+      const finalTotalStr = orderData.finalTotal.toFixed(2);
+      const taxAmountStr = orderData.taxAmount.toFixed(2);
+      const timeCoefficientStr = orderData.timeCoefficient.toFixed(2);
+      const sFeeLabor = (orderData.serviceFeeOnLabor ?? 0).toFixed(2);
+      const sFeeMaterials = (orderData.serviceFeeOnMaterials ?? 0).toFixed(2);
+
+      // Convert works data for the PDF
+      const worksForPdf = orderData.worksData.map((w) => ({
+        type: w.type,
+        code: w.code,
+        unit_of_measurement: w.unitOfMeasurement,
+        work_count: String(w.quantity),
+        labor_cost: w.laborCost.toFixed(2),
+        materials_cost: w.materialsCost.toFixed(2),
+        service_fee_on_labor: w.serviceFeeOnLabor
+          ? w.serviceFeeOnLabor.toFixed(2)
+          : "0.00",
+        service_fee_on_materials: w.serviceFeeOnMaterials
+          ? w.serviceFeeOnMaterials.toFixed(2)
+          : "0.00",
+        total: w.total.toFixed(2),
+        payment_type: w.paymentType ?? "n/a",
+        payment_coefficient: w.paymentCoefficient
+          ? w.paymentCoefficient.toFixed(2)
+          : "1.00",
+        materials: w.materials?.map((mat) => ({
+          external_id: mat.external_id,
+          name: mat.name || "",
+          quantity: mat.quantity,
+          cost_per_unit: mat.costPerUnit.toFixed(2),
+          total: mat.total.toFixed(2),
+        })) || [],
+      }));
+
+      // Build the final object for PDF route
+      const pdfConfirmationBody = {
+        email: userEmail,
         orderId: orderCode,
-        total: orderTotal,
-        date: orderData.selectedTime || "",
+        address: orderData.address,
+        description: orderData.description,
+        selectedDate: orderData.selectedTime,
+        laborSubtotal: laborSubtotalStr,
+        materialsSubtotal: materialsSubtotalStr,
+        sumBeforeTax: sumBeforeTaxStr,
+        finalTotal: finalTotalStr,
+        taxAmount: taxAmountStr,
+        timeCoefficient: timeCoefficientStr,
+        serviceFeeOnLabor: sFeeLabor,
+        serviceFeeOnMaterials: sFeeMaterials,
+        works: worksForPdf,
+        photos: uploadedPhotoUrls, 
       };
 
+      // 7) Call /api/send-confirmation to generate and email PDF
       await fetch("/api/send-confirmation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(confirmationPayload),
+        body: JSON.stringify(pdfConfirmationBody),
       })
         .then(async (resp) => {
           if (!resp.ok) {
-            const data = await resp.json();
-            throw new Error(data.error || "Failed to send email");
+            const errData = await resp.json();
+            throw new Error(errData.error || "Failed to send PDF email");
           }
         })
         .catch((err) => {
-          console.error("Error sending confirmation email:", err);
+          console.error("Error sending confirmation email with PDF:", err);
         });
 
+      // 8) Done, go to /thank-you or call onOrderSuccess
       if (onOrderSuccess) {
         onOrderSuccess();
       } else {

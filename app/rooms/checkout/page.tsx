@@ -261,6 +261,7 @@ export default function RoomsCheckout() {
       total: number;
       materials?: Array<{
         external_id: string;
+        name: string;
         quantity: number;
         costPerUnit: number;
         total: number;
@@ -284,12 +285,14 @@ export default function RoomsCheckout() {
         let mats: Array<{
           external_id: string;
           quantity: number;
+          name: string;
           costPerUnit: number;
           total: number;
         }> = [];
         if (Array.isArray(resultObj.materials)) {
           mats = resultObj.materials.map((m: any) => ({
             external_id: m.external_id,
+            name: m.name || "",
             quantity: m.quantity,
             costPerUnit: parseFloat(m.cost_per_unit) || 0,
             total: parseFloat(m.cost) || 0,
