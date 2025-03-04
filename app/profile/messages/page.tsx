@@ -67,7 +67,7 @@ export default function MessagesPage() {
               Orders
             </Link>
             {/* Active => Messages */}
-            <Link href="/messages" className="text-blue-600 border-b-2 border-blue-600">
+            <Link href="/profile/messages" className="text-blue-600 border-b-2 border-blue-600">
               Messages
             </Link>
             <Link href="/profile/settings" className="text-gray-600 hover:text-blue-600">
