@@ -1,10 +1,13 @@
+// app/api/send-confirmation/route.ts
+
 import { NextRequest, NextResponse } from "next/server";
 import nodemailer from "nodemailer";
 import puppeteer from "puppeteer";
+import chromium from "@sparticuz/chromium";
 import { ALL_SERVICES } from "@/constants/services";
 
 /**
- * Converts a service code (e.g., "1.1.2") to a user-friendly title by lookup in ALL_SERVICES.
+ * Converts a service code (e.g. "1.1.2") to a user-friendly title by searching in ALL_SERVICES.
  */
 function findServiceTitle(serviceCode: string): string {
   const normalized = serviceCode.replace(/\./g, "-");
@@ -24,7 +27,7 @@ interface MaterialSpec {
 }
 
 /**
- * If material name is absent, return "Material #<external_id>" as fallback.
+ * If the material name is missing, returns "Material #<external_id>".
  */
 function getMaterialName(mat: MaterialSpec): string {
   if (mat.name && mat.name.trim()) return mat.name;
@@ -32,7 +35,7 @@ function getMaterialName(mat: MaterialSpec): string {
 }
 
 /**
- * A single "WorkItem" (service) in the PDF.
+ * One "WorkItem" (service) in the PDF, possibly with materials.
  */
 interface WorkItem {
   type: string;
@@ -50,7 +53,7 @@ interface WorkItem {
 }
 
 /**
- * The shape of the JSON payload for this route.
+ * The shape of the JSON payload expected by this route.
  */
 interface ConfirmationPayload {
   email: string;
@@ -82,7 +85,7 @@ function formatWithSeparator(value: number): string {
 }
 
 /**
- * Safely converts string or number to a float.
+ * Converts a string or number to a float, returning 0 if parsing fails.
  */
 function toNum(str: string | number): number {
   return Number(str) || 0;
@@ -90,9 +93,10 @@ function toNum(str: string | number): number {
 
 export async function POST(request: NextRequest) {
   try {
-    // Parse JSON from request
+    // 1) Parse the incoming JSON
     const body: ConfirmationPayload = await request.json();
 
+    // 2) Validate required fields
     if (!body.email || !body.orderId) {
       return NextResponse.json(
         { error: "Missing required fields: email or orderId" },
@@ -100,18 +104,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Configure Nodemailer
+    // 3) Configure Nodemailer
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || "smtp.office365.com",
       port: Number(process.env.SMTP_PORT || 587),
-      secure: false, // use STARTTLS on port 587
+      secure: false,
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
       },
     });
 
-    // Convert string fields into floats
+    // 4) Convert numeric fields to numbers
     let laborSubtotalNum = toNum(body.laborSubtotal);
     let materialsSubtotalNum = toNum(body.materialsSubtotal);
     let sumBeforeTaxNum = toNum(body.sumBeforeTax);
@@ -121,7 +125,9 @@ export async function POST(request: NextRequest) {
     let serviceFeeMaterialsNum = toNum(body.serviceFeeOnMaterials);
 
     const timeCoeffNum = toNum(body.timeCoefficient || "1");
-    const dateSurchargeValue = parseFloat(body.date_surcharge || "0");
+    const dateSurchargeValue = toNum(body.date_surcharge || "0");
+
+    // 5) Recompute labor and materials from the works array
     const computedLaborSubtotal = body.works.reduce(
       (acc, w) => acc + toNum(w.labor_cost),
       0
@@ -133,6 +139,8 @@ export async function POST(request: NextRequest) {
 
     laborSubtotalNum = computedLaborSubtotal;
     materialsSubtotalNum = computedMaterialsSubtotal;
+
+    // 6) Calculate final labor + surcharge
     const finalLabor = laborSubtotalNum * timeCoeffNum;
     const computedSurcharge = finalLabor - laborSubtotalNum;
     const isDiscount = computedSurcharge < 0;
@@ -141,6 +149,8 @@ export async function POST(request: NextRequest) {
       : "Surcharge (Date Selection)";
     const signPrefix = isDiscount ? "-" : "+";
     const absSurcharge = Math.abs(computedSurcharge);
+
+    // 7) Subtotal & total
     const sumBeforeTaxCalc =
       finalLabor + materialsSubtotalNum + serviceFeeLaborNum + serviceFeeMaterialsNum;
     sumBeforeTaxNum = sumBeforeTaxCalc;
@@ -148,6 +158,7 @@ export async function POST(request: NextRequest) {
     const finalTotalCalc = sumBeforeTaxCalc + taxAmountNum;
     finalTotalNum = finalTotalCalc;
 
+    // 8) Build HTML for each WorkItem
     let worksHtml = "";
     body.works.forEach((w, idx) => {
       const totalVal = toNum(w.total);
@@ -206,7 +217,7 @@ export async function POST(request: NextRequest) {
       `;
     });
 
-    // Handle Photos block
+    // 9) Handle uploaded photos
     let photosHtml = "";
     if (Array.isArray(body.photos) && body.photos.length > 0) {
       const photoTags = body.photos
@@ -226,7 +237,7 @@ export async function POST(request: NextRequest) {
       `;
     }
 
-    // Disclaimers
+    // 10) Disclaimers
     const disclaimers = `
       <p style="font-size:0.9rem; color:#999; margin-top:30px;">
         *All labor times and materials are estimated. Actual costs may vary.<br/>
@@ -234,7 +245,7 @@ export async function POST(request: NextRequest) {
       </p>
     `;
 
-    // Final PDF HTML content
+    // 11) Final HTML for PDF
     const htmlContent = `
 <!DOCTYPE html>
 <html lang="en">
@@ -332,7 +343,7 @@ export async function POST(request: NextRequest) {
       <div>Total:</div>
       <div>$${formatWithSeparator(finalTotalNum)}</div>
     </div>
-    <!-- Optional: show timeCoefficient if desired
+    <!-- Optional: timeCoefficient if needed
     <div class="row">
       <div class="label">Time Coefficient:</div>
       <div>${timeCoeffNum}</div>
@@ -345,17 +356,39 @@ export async function POST(request: NextRequest) {
 </html>
 `;
 
-    // Generate the PDF via Puppeteer
-    const browser = await puppeteer.launch({ headless: true });
+    // 12) Attempt serverless-compatible path
+    let ep: string | null = null;
+    try {
+      ep = await chromium.executablePath();
+    } catch (err) {
+      console.warn("Could not retrieve chromium.executablePath()", err);
+    }
+
+    // 13) Puppeteer fallback
+    let browser;
+    if (!ep) {
+      console.log("Falling back to Puppeteer's bundled Chromium (local dev).");
+      browser = await puppeteer.launch({ headless: true });
+    } else {
+      console.log("Launching serverless Chromium from @sparticuz/chromium");
+      browser = await puppeteer.launch({
+        args: chromium.args,
+        executablePath: ep,
+        headless: chromium.headless,
+      });
+    }
+
+    // 14) Generate PDF as Buffer
     const page = await browser.newPage();
     await page.setContent(htmlContent, { waitUntil: "domcontentloaded" });
     const pdfBuffer = (await page.pdf({
       format: "A4",
       printBackground: true,
     })) as Buffer;
+
     await browser.close();
 
-    // Send the email with PDF attached
+    // 15) Attach PDF to email
     const mailOptions = {
       from: process.env.SMTP_FROM_EMAIL || "info@thejamb.com",
       to: body.email,
@@ -372,6 +405,7 @@ export async function POST(request: NextRequest) {
 
     await transporter.sendMail(mailOptions);
 
+    // 16) Success
     return NextResponse.json({ message: "Email with PDF sent successfully" });
   } catch (err: any) {
     console.error("Error sending confirmation email with PDF:", err);
