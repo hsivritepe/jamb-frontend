@@ -3,6 +3,9 @@ import nodemailer from "nodemailer";
 import puppeteer from "puppeteer";
 import { ALL_SERVICES } from "@/constants/services";
 
+/**
+ * Converts a service code (e.g., "1.1.2") to a user-friendly title by lookup in ALL_SERVICES.
+ */
 function findServiceTitle(serviceCode: string): string {
   const normalized = serviceCode.replace(/\./g, "-");
   const found = ALL_SERVICES.find((svc) => svc.id === normalized);
@@ -10,7 +13,7 @@ function findServiceTitle(serviceCode: string): string {
 }
 
 /**
- * A helper interface for material items. "name?" is optional, if available.
+ * Represents a single material item in the PDF data.
  */
 interface MaterialSpec {
   external_id: string;
@@ -21,21 +24,19 @@ interface MaterialSpec {
 }
 
 /**
- * A helper to pick the material name (fallback to external_id).
+ * If material name is absent, return "Material #<external_id>" as fallback.
  */
 function getMaterialName(mat: MaterialSpec): string {
-  if (mat.name && mat.name.trim()) {
-    return mat.name;
-  }
+  if (mat.name && mat.name.trim()) return mat.name;
   return `Material #${mat.external_id}`;
 }
 
 /**
- * Interface for a single WorkItem in the PDF data.
+ * A single "WorkItem" (service) in the PDF.
  */
 interface WorkItem {
   type: string;
-  code: string; // e.g. "1.1.2"
+  code: string;
   unit_of_measurement: string;
   work_count: string;
   labor_cost: string;
@@ -48,6 +49,9 @@ interface WorkItem {
   materials: MaterialSpec[];
 }
 
+/**
+ * The shape of the JSON payload for this route.
+ */
 interface ConfirmationPayload {
   email: string;
   orderId: string;
@@ -64,10 +68,11 @@ interface ConfirmationPayload {
   serviceFeeOnMaterials: string;
   works: WorkItem[];
   photos: string[];
+  date_surcharge?: string;
 }
 
 /**
- * Formats numbers with commas and two decimals.
+ * Formats a numeric value with commas and exactly two decimals (US style).
  */
 function formatWithSeparator(value: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -77,7 +82,7 @@ function formatWithSeparator(value: number): string {
 }
 
 /**
- * Converts a string or number to a float safely.
+ * Safely converts string or number to a float.
  */
 function toNum(str: string | number): number {
   return Number(str) || 0;
@@ -85,7 +90,7 @@ function toNum(str: string | number): number {
 
 export async function POST(request: NextRequest) {
   try {
-    // 1) Parse JSON from the request body
+    // Parse JSON from request
     const body: ConfirmationPayload = await request.json();
 
     if (!body.email || !body.orderId) {
@@ -95,40 +100,63 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 2) Configure Nodemailer (Office 365 example)
+    // Configure Nodemailer
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || "smtp.office365.com",
       port: Number(process.env.SMTP_PORT || 587),
-      secure: false, // STARTTLS on 587
+      secure: false, // use STARTTLS on port 587
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
       },
     });
 
-    // 3) Convert numeric strings from the request body into real numbers
-    const laborSubtotalNum = toNum(body.laborSubtotal);
-    const materialsSubtotalNum = toNum(body.materialsSubtotal);
-    const sumBeforeTaxNum = toNum(body.sumBeforeTax);
-    const finalTotalNum = toNum(body.finalTotal);
-    const taxAmountNum = toNum(body.taxAmount);
-    const timeCoeff = toNum(body.timeCoefficient);
-    const serviceFeeLaborNum = toNum(body.serviceFeeOnLabor);
-    const serviceFeeMaterialsNum = toNum(body.serviceFeeOnMaterials);
+    // Convert string fields into floats
+    let laborSubtotalNum = toNum(body.laborSubtotal);
+    let materialsSubtotalNum = toNum(body.materialsSubtotal);
+    let sumBeforeTaxNum = toNum(body.sumBeforeTax);
+    let finalTotalNum = toNum(body.finalTotal);
+    let taxAmountNum = toNum(body.taxAmount);
+    let serviceFeeLaborNum = toNum(body.serviceFeeOnLabor);
+    let serviceFeeMaterialsNum = toNum(body.serviceFeeOnMaterials);
 
-    // 4) Build the HTML for each WorkItem
+    const timeCoeffNum = toNum(body.timeCoefficient || "1");
+    const dateSurchargeValue = parseFloat(body.date_surcharge || "0");
+    const computedLaborSubtotal = body.works.reduce(
+      (acc, w) => acc + toNum(w.labor_cost),
+      0
+    );
+    const computedMaterialsSubtotal = body.works.reduce(
+      (acc, w) => acc + toNum(w.materials_cost),
+      0
+    );
+
+    laborSubtotalNum = computedLaborSubtotal;
+    materialsSubtotalNum = computedMaterialsSubtotal;
+    const finalLabor = laborSubtotalNum * timeCoeffNum;
+    const computedSurcharge = finalLabor - laborSubtotalNum;
+    const isDiscount = computedSurcharge < 0;
+    const dateSurchargeLabel = isDiscount
+      ? "Discount (Date Selection)"
+      : "Surcharge (Date Selection)";
+    const signPrefix = isDiscount ? "-" : "+";
+    const absSurcharge = Math.abs(computedSurcharge);
+    const sumBeforeTaxCalc =
+      finalLabor + materialsSubtotalNum + serviceFeeLaborNum + serviceFeeMaterialsNum;
+    sumBeforeTaxNum = sumBeforeTaxCalc;
+
+    const finalTotalCalc = sumBeforeTaxCalc + taxAmountNum;
+    finalTotalNum = finalTotalCalc;
+
     let worksHtml = "";
     body.works.forEach((w, idx) => {
       const totalVal = toNum(w.total);
       const laborVal = toNum(w.labor_cost);
       const materialsVal = toNum(w.materials_cost);
-
-      // Find the service's user-friendly title
       const serviceTitle = findServiceTitle(w.code);
 
-      // Build a materials table if we have any
       let materialsTable = "";
-      if (w.materials?.length) {
+      if (w.materials && w.materials.length > 0) {
         const rows = w.materials
           .map((mat) => {
             const cpu = toNum(mat.cost_per_unit);
@@ -137,7 +165,7 @@ export async function POST(request: NextRequest) {
             return `
               <tr>
                 <td>${matName}</td>
-                <td style="text-align:right;">$${formatWithSeparator(cpu)}</td>
+                <td style="text-align:center;">$${formatWithSeparator(cpu)}</td>
                 <td style="text-align:center;">${mat.quantity}</td>
                 <td style="text-align:right;">$${formatWithSeparator(sub)}</td>
               </tr>
@@ -150,7 +178,7 @@ export async function POST(request: NextRequest) {
             <thead style="background:#f9f9f9">
               <tr>
                 <th style="text-align:left;">Material</th>
-                <th style="text-align:right;">Unit Price</th>
+                <th style="text-align:center;">Unit Price</th>
                 <th style="text-align:center;">Qty</th>
                 <th style="text-align:right;">Subtotal</th>
               </tr>
@@ -178,15 +206,15 @@ export async function POST(request: NextRequest) {
       `;
     });
 
-    // 5) Photos HTML if we want them in the PDF
+    // Handle Photos block
     let photosHtml = "";
-    if (Array.isArray(body.photos) && body.photos.length) {
+    if (Array.isArray(body.photos) && body.photos.length > 0) {
       const photoTags = body.photos
         .map(
           (url) => `
-          <div style="border:1px solid #ccc; margin:3px; display:inline-block;">
-            <img src="${url}" style="width:100px;" alt="img"/>
-          </div>`
+            <div style="border:1px solid #ccc; margin:3px; display:inline-block;">
+              <img src="${url}" style="width:100px;" alt="uploaded"/>
+            </div>`
         )
         .join("");
 
@@ -198,7 +226,7 @@ export async function POST(request: NextRequest) {
       `;
     }
 
-    // 6) Minimal disclaimers
+    // Disclaimers
     const disclaimers = `
       <p style="font-size:0.9rem; color:#999; margin-top:30px;">
         *All labor times and materials are estimated. Actual costs may vary.<br/>
@@ -206,7 +234,7 @@ export async function POST(request: NextRequest) {
       </p>
     `;
 
-    // 7) Build final HTML with your heading "JAMB - Home Services"
+    // Final PDF HTML content
     const htmlContent = `
 <!DOCTYPE html>
 <html lang="en">
@@ -254,7 +282,7 @@ export async function POST(request: NextRequest) {
   </div>
 
   <div class="section" style="margin-top:14px;">
-    <h3>Works</h3>
+    <h3>Your Selected Services:</h3>
     ${worksHtml}
   </div>
 
@@ -262,34 +290,54 @@ export async function POST(request: NextRequest) {
 
   <div class="section">
     <h3>Totals</h3>
+    <!-- Labor -->
     <div class="row">
-      <div class="label">Labor subtotal:</div>
+      <div class="label">Labor Total:</div>
       <div>$${formatWithSeparator(laborSubtotalNum)}</div>
     </div>
+    <!-- Materials -->
     <div class="row">
-      <div class="label">Materials subtotal:</div>
+      <div class="label">Materials, tools & equipment:</div>
       <div>$${formatWithSeparator(materialsSubtotalNum)}</div>
     </div>
+    <!-- Surcharge or Discount -->
     <div class="row">
-      <div class="label">Service fee (on Labor):</div>
+      <div class="label">${dateSurchargeLabel}:</div>
+      <div>
+        ${signPrefix}$${formatWithSeparator(absSurcharge)}
+      </div>
+    </div>
+    <!-- Service Fee on Labor -->
+    <div class="row">
+      <div class="label">Service Fee on Labor:</div>
       <div>$${formatWithSeparator(serviceFeeLaborNum)}</div>
     </div>
+    <!-- Delivery & Processing Fee -->
     <div class="row">
-      <div class="label">Proccessing and Delivery fee (on Materials):</div>
+      <div class="label">Delivery & Processing Fee:</div>
       <div>$${formatWithSeparator(serviceFeeMaterialsNum)}</div>
     </div>
+    <!-- Subtotal -->
     <div class="row">
-      <div class="label">Subtotal before tax:</div>
+      <div class="label">Subtotal:</div>
       <div>$${formatWithSeparator(sumBeforeTaxNum)}</div>
     </div>
+    <!-- Taxes -->
     <div class="row">
-      <div class="label">Tax:</div>
+      <div class="label">Taxes:</div>
       <div>$${formatWithSeparator(taxAmountNum)}</div>
     </div>
+    <!-- Final Total -->
     <div class="row" style="font-weight:bold; margin-top:6px;">
       <div>Total:</div>
       <div>$${formatWithSeparator(finalTotalNum)}</div>
     </div>
+    <!-- Optional: show timeCoefficient if desired
+    <div class="row">
+      <div class="label">Time Coefficient:</div>
+      <div>${timeCoeffNum}</div>
+    </div>
+    -->
   </div>
 
   ${disclaimers}
@@ -297,19 +345,17 @@ export async function POST(request: NextRequest) {
 </html>
 `;
 
-    // 8) Launch Puppeteer, generate PDF from the above HTML
+    // Generate the PDF via Puppeteer
     const browser = await puppeteer.launch({ headless: true });
     const page = await browser.newPage();
     await page.setContent(htmlContent, { waitUntil: "domcontentloaded" });
-
     const pdfBuffer = (await page.pdf({
       format: "A4",
       printBackground: true,
     })) as Buffer;
-
     await browser.close();
 
-    // 9) Build and send email with the PDF attachment
+    // Send the email with PDF attached
     const mailOptions = {
       from: process.env.SMTP_FROM_EMAIL || "info@thejamb.com",
       to: body.email,
