@@ -280,6 +280,7 @@ export default function CheckoutPage() {
       paymentCoefficient?: number;
       materials?: Array<{
         external_id: string;
+        name: string;
         quantity: number;
         costPerUnit: number;
         total: number;
@@ -299,6 +300,7 @@ export default function CheckoutPage() {
 
       let materialsDetail: Array<{
         external_id: string;
+        name: string;
         quantity: number;
         costPerUnit: number;
         total: number;
@@ -307,6 +309,7 @@ export default function CheckoutPage() {
       if (Array.isArray(breakdown.materials)) {
         materialsDetail = breakdown.materials.map((m: any) => ({
           external_id: m.external_id,
+          name: m.name || "",
           quantity: m.quantity,
           costPerUnit: parseFloat(m.cost_per_unit),
           total: parseFloat(m.cost),

@@ -231,6 +231,7 @@ export default function EmergencyCheckoutPage() {
       paymentCoefficient?: number;
       materials?: Array<{
         external_id: string;
+        name: string;
         quantity: number;
         costPerUnit: number;
         total: number;
@@ -249,6 +250,7 @@ export default function EmergencyCheckoutPage() {
 
         let mats: Array<{
           external_id: string;
+          name: string;
           quantity: number;
           costPerUnit: number;
           total: number;
@@ -256,6 +258,7 @@ export default function EmergencyCheckoutPage() {
         if (Array.isArray(calcRes.materials)) {
           mats = calcRes.materials.map((m: any) => ({
             external_id: m.external_id,
+            name: m.name || "",
             quantity: m.quantity,
             costPerUnit: parseFloat(m.cost_per_unit) || 0,
             total: parseFloat(m.cost) || 0,
