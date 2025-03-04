@@ -1,5 +1,4 @@
 "use client";
-
 export const dynamic = "force-dynamic";
 
 import { useEffect, useState } from "react";
@@ -18,12 +17,16 @@ function getGreeting(): string {
 
 export default function MessagesPage() {
   const router = useRouter();
+
   const [token, setToken] = useState("");
   const [userName, setUserName] = useState("");
   const [hasName, setHasName] = useState(false);
-
-  // "inbox" or "outbox"
+  const [greetingText, setGreetingText] = useState("");
   const [tab, setTab] = useState<"inbox" | "outbox">("inbox");
+
+  useEffect(() => {
+    setGreetingText(getGreeting());
+  }, []);
 
   useEffect(() => {
     const storedToken = sessionStorage.getItem("authToken");
@@ -33,7 +36,6 @@ export default function MessagesPage() {
     }
     setToken(storedToken);
 
-    // Attempt to read user's name from profileData
     const storedProfile = sessionStorage.getItem("profileData");
     if (storedProfile) {
       try {
@@ -48,8 +50,6 @@ export default function MessagesPage() {
       }
     }
   }, [router]);
-
-  const greetingText = getGreeting();
 
   return (
     <div className="pt-24 min-h-screen w-full bg-gray-50 pb-10">
@@ -68,8 +68,10 @@ export default function MessagesPage() {
             <Link href="/dashboard" className="text-gray-600 hover:text-blue-600">
               Orders
             </Link>
-            {/* Active => Messages */}
-            <Link href="/profile/messages" className="text-blue-600 border-b-2 border-blue-600">
+            <Link
+              href="/profile/messages"
+              className="text-blue-600 border-b-2 border-blue-600"
+            >
               Messages
             </Link>
             <Link href="/profile/settings" className="text-gray-600 hover:text-blue-600">
@@ -82,14 +84,14 @@ export default function MessagesPage() {
         <div className="flex items-center gap-4 mb-6 text-sm font-medium">
           <button
             onClick={() => setTab("inbox")}
-            className={`px-3 py-2 rounded 
+            className={`px-3 py-2 rounded
               ${tab === "inbox" ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-100"}`}
           >
             Inbox
           </button>
           <button
             onClick={() => setTab("outbox")}
-            className={`px-3 py-2 rounded 
+            className={`px-3 py-2 rounded
               ${tab === "outbox" ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-100"}`}
           >
             Outbox
