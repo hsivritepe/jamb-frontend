@@ -505,7 +505,6 @@ export default function OrdersPage() {
                             </td>
                           </tr>
 
-                          {/* ВАЖНО: теперь сам <tr className="bg-gray-100"> объявлен здесь */}
                           {isExpanded && expandedOrderDetails && (
                             <tr className="bg-gray-100">
                               <td colSpan={4} className="p-0">
