@@ -1,5 +1,3 @@
-// jamb-frontend/app/login/page.tsx
-
 "use client";
 
 export const dynamic = "force-dynamic";
@@ -11,6 +9,7 @@ import Link from "next/link";
 import GoogleIcon from "@/components/icons/GoogleIcon";
 import FacebookIcon from "@/components/icons/FacebookIcon";
 import AppleIcon from "@/components/icons/AppleIcon";
+import { useGoogleLogin } from "@react-oauth/google";
 
 export default function LoginOrRegisterPage() {
   // Router and search params
@@ -18,14 +17,14 @@ export default function LoginOrRegisterPage() {
   const searchParams = useSearchParams();
   const nextUrl = searchParams.get("next") || "";
 
-  // Registration state
+  // State variables for registration
   const [email, setEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
   const [agreedToTos, setAgreedToTos] = useState(false);
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
 
-  // Login state
+  // State variables for login
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [showLoginPassword, setShowLoginPassword] = useState(false);
@@ -78,7 +77,7 @@ export default function LoginOrRegisterPage() {
   };
 
   /**
-   * Logs in existing users and stores their auth token and email in sessionStorage.
+   * Logs in existing users, storing their auth token in sessionStorage.
    */
   const handleLogin = async () => {
     try {
@@ -99,7 +98,7 @@ export default function LoginOrRegisterPage() {
         sessionStorage.setItem("authToken", data.token);
         sessionStorage.setItem("userEmail", loginEmail);
 
-        // 3) Optionally fetch additional user info
+        // 2) Optionally fetch additional user info
         try {
           const userRes = await fetch("https://dev.thejamb.com/user/info", {
             method: "POST",
@@ -117,7 +116,7 @@ export default function LoginOrRegisterPage() {
         // Trigger an event so other parts of the app know auth changed
         window.dispatchEvent(new Event("authChange"));
 
-        // 4) Redirect user
+        // Redirect user
         if (nextUrl) {
           router.push(nextUrl);
         } else {
@@ -132,7 +131,6 @@ export default function LoginOrRegisterPage() {
         const data = await res.json();
         alert(`Unauthorized: ${data.error}`);
       } else {
-        // Otherwise unknown error
         alert(`Login error. Status: ${res.status}`);
       }
     } catch (error) {
@@ -168,6 +166,84 @@ export default function LoginOrRegisterPage() {
       alert("Failed to request a password reset. Check the console.");
       console.error("Forgot Password error:", error);
     }
+  };
+
+  // Function to call the server for social login
+  async function callServerSocialLogin(provider: "google", token: string) {
+    try {
+      const res = await fetch(`https://dev.thejamb.com/connect/${provider}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        alert(`Social login error: ${data.error || res.statusText}`);
+        return null;
+      }
+      const data = await res.json();
+      return data.token; // userToken from the server
+    } catch (err) {
+      console.error("Social login failed:", err);
+      alert("Social login failed. Check console.");
+      return null;
+    }
+  }
+
+  // useGoogleLogin hook
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      const serverToken = await callServerSocialLogin(
+        "google",
+        tokenResponse.access_token
+      );
+      if (serverToken) {
+        sessionStorage.setItem("authToken", serverToken);
+
+        // Optionally fetch user info
+        try {
+          const userRes = await fetch("https://dev.thejamb.com/user/info", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token: serverToken }),
+          });
+          if (userRes.ok) {
+            const userData = await userRes.json();
+            sessionStorage.setItem("profileData", JSON.stringify(userData));
+          }
+        } catch (err) {
+          console.error("Error fetching user info after Google login:", err);
+        }
+
+        // Trigger authChange
+        window.dispatchEvent(new Event("authChange"));
+
+        // Redirect
+        if (nextUrl) {
+          router.push(nextUrl);
+        } else {
+          router.push("/profile");
+        }
+      }
+    },
+    onError: (errorResponse) => {
+      console.error("Google login error:", errorResponse);
+      alert("Google login error. Check console for details.");
+    },
+  });
+
+  // Replaces the old placeholder
+  const handleGoogleLogin = () => {
+    googleLogin();
+  };
+
+  // Placeholders for Facebook and Apple
+  const handleFacebookLogin = () => {
+    alert("Facebook login not implemented yet");
+  };
+
+  const handleAppleLogin = () => {
+    alert("Apple login not implemented yet");
   };
 
   return (
@@ -220,10 +296,16 @@ export default function LoginOrRegisterPage() {
               />
               <button
                 type="button"
-                onClick={() => setShowRegisterPassword(!showRegisterPassword)}
+                onClick={() =>
+                  setShowRegisterPassword(!showRegisterPassword)
+                }
                 className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-gray-700"
               >
-                {showRegisterPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                {showRegisterPassword ? (
+                  <EyeOff className="w-5 h-5" />
+                ) : (
+                  <Eye className="w-5 h-5" />
+                )}
               </button>
             </div>
           </div>
@@ -267,13 +349,22 @@ export default function LoginOrRegisterPage() {
           <div className="mt-8 text-center">
             <p className="text-gray-500 text-sm mb-2">Sign in with</p>
             <div className="flex justify-center gap-4">
-              <button className="border p-3 rounded hover:bg-gray-100 flex items-center justify-center">
+              <button
+                className="border p-3 rounded hover:bg-gray-100 flex items-center justify-center"
+                onClick={handleGoogleLogin}
+              >
                 <GoogleIcon className="w-6 h-6" />
               </button>
-              <button className="border p-3 rounded hover:bg-gray-100 flex items-center justify-center">
+              <button
+                className="border p-3 rounded hover:bg-gray-100 flex items-center justify-center"
+                onClick={handleFacebookLogin}
+              >
                 <FacebookIcon className="w-6 h-6" />
               </button>
-              <button className="border p-3 rounded hover:bg-gray-100 flex items-center justify-center">
+              <button
+                className="border p-3 rounded hover:bg-gray-100 flex items-center justify-center"
+                onClick={handleAppleLogin}
+              >
                 <AppleIcon className="w-6 h-6" />
               </button>
             </div>
@@ -317,10 +408,16 @@ export default function LoginOrRegisterPage() {
                   />
                   <button
                     type="button"
-                    onClick={() => setShowLoginPassword(!showLoginPassword)}
+                    onClick={() =>
+                      setShowLoginPassword(!showLoginPassword)
+                    }
                     className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-gray-700"
                   >
-                    {showLoginPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    {showLoginPassword ? (
+                      <EyeOff className="w-5 h-5" />
+                    ) : (
+                      <Eye className="w-5 h-5" />
+                    )}
                   </button>
                 </div>
               </div>
@@ -342,13 +439,40 @@ export default function LoginOrRegisterPage() {
               </button>
 
               <div className="text-center mt-4">
-                <span className="text-sm text-gray-700">No account yet?</span>{" "}
+                <span className="text-sm text-gray-700">
+                  No account yet?
+                </span>{" "}
                 <button
                   onClick={() => setShowRegister(true)}
                   className="text-blue-600 underline text-sm"
                 >
                   Create Account
                 </button>
+              </div>
+
+              {/* Social login icons */}
+              <div className="mt-8 text-center">
+                <p className="text-gray-500 text-sm mb-2">Login with</p>
+                <div className="flex justify-center gap-4">
+                  <button
+                    className="border p-3 rounded hover:bg-gray-100 flex items-center justify-center"
+                    onClick={handleGoogleLogin}
+                  >
+                    <GoogleIcon className="w-6 h-6" />
+                  </button>
+                  <button
+                    className="border p-3 rounded hover:bg-gray-100 flex items-center justify-center"
+                    onClick={handleFacebookLogin}
+                  >
+                    <FacebookIcon className="w-6 h-6" />
+                  </button>
+                  <button
+                    className="border p-3 rounded hover:bg-gray-100 flex items-center justify-center"
+                    onClick={handleAppleLogin}
+                  >
+                    <AppleIcon className="w-6 h-6" />
+                  </button>
+                </div>
               </div>
             </>
           ) : (
@@ -360,7 +484,8 @@ export default function LoginOrRegisterPage() {
                 Forgot Password
               </h1>
               <p className="mb-4 text-sm text-gray-700">
-                Enter your email below. We'll send a reset code if your account exists.
+                Enter your email below. We'll send a reset code if your account
+                exists.
               </p>
 
               <div className="mb-4">
