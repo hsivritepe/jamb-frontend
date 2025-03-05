@@ -1,13 +1,9 @@
-// app/api/send-confirmation/route.ts
-
 import { NextRequest, NextResponse } from "next/server";
 import nodemailer from "nodemailer";
-import puppeteer from "puppeteer";
-import chromium from "@sparticuz/chromium";
 import { ALL_SERVICES } from "@/constants/services";
 
 /**
- * Converts a service code (e.g. "1.1.2") to a user-friendly title by searching in ALL_SERVICES.
+ * Converts a service code into a user-friendly title
  */
 function findServiceTitle(serviceCode: string): string {
   const normalized = serviceCode.replace(/\./g, "-");
@@ -16,7 +12,7 @@ function findServiceTitle(serviceCode: string): string {
 }
 
 /**
- * Represents a single material item in the PDF data.
+ * Represents a single material item in the order.
  */
 interface MaterialSpec {
   external_id: string;
@@ -35,7 +31,7 @@ function getMaterialName(mat: MaterialSpec): string {
 }
 
 /**
- * One "WorkItem" (service) in the PDF, possibly with materials.
+ * Describes a "WorkItem" (service) with optional materials.
  */
 interface WorkItem {
   type: string;
@@ -53,7 +49,7 @@ interface WorkItem {
 }
 
 /**
- * The shape of the JSON payload expected by this route.
+ * The shape of the incoming JSON body for confirmation.
  */
 interface ConfirmationPayload {
   email: string;
@@ -91,12 +87,20 @@ function toNum(str: string | number): number {
   return Number(str) || 0;
 }
 
+/**
+ * Helper to format date/time for Google Calendar link (YYYYMMDDTHHMMSSZ).
+ */
+function toGoogleDateString(date: Date): string {
+  // Example: "20250310T100000Z"
+  return date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+}
+
 export async function POST(request: NextRequest) {
   try {
-    // 1) Parse the incoming JSON
+    // 1) Parse the incoming JSON body
     const body: ConfirmationPayload = await request.json();
 
-    // 2) Validate required fields
+    // 2) Check required fields
     if (!body.email || !body.orderId) {
       return NextResponse.json(
         { error: "Missing required fields: email or orderId" },
@@ -104,7 +108,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 3) Configure Nodemailer
+    // 3) Configure Nodemailer (SMTP)
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || "smtp.office365.com",
       port: Number(process.env.SMTP_PORT || 587),
@@ -115,7 +119,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // 4) Convert numeric fields to numbers
+    // 4) Convert various numeric fields
     let laborSubtotalNum = toNum(body.laborSubtotal);
     let materialsSubtotalNum = toNum(body.materialsSubtotal);
     let sumBeforeTaxNum = toNum(body.sumBeforeTax);
@@ -127,7 +131,7 @@ export async function POST(request: NextRequest) {
     const timeCoeffNum = toNum(body.timeCoefficient || "1");
     const dateSurchargeValue = toNum(body.date_surcharge || "0");
 
-    // 5) Recompute labor and materials from the works array
+    // 5) Recompute labor/materials from works[] for consistency
     const computedLaborSubtotal = body.works.reduce(
       (acc, w) => acc + toNum(w.labor_cost),
       0
@@ -140,7 +144,7 @@ export async function POST(request: NextRequest) {
     laborSubtotalNum = computedLaborSubtotal;
     materialsSubtotalNum = computedMaterialsSubtotal;
 
-    // 6) Calculate final labor + surcharge
+    // 6) Calculate final labor, surcharge/discount
     const finalLabor = laborSubtotalNum * timeCoeffNum;
     const computedSurcharge = finalLabor - laborSubtotalNum;
     const isDiscount = computedSurcharge < 0;
@@ -150,7 +154,7 @@ export async function POST(request: NextRequest) {
     const signPrefix = isDiscount ? "-" : "+";
     const absSurcharge = Math.abs(computedSurcharge);
 
-    // 7) Subtotal & total
+    // 7) Compute subtotal & final total
     const sumBeforeTaxCalc =
       finalLabor + materialsSubtotalNum + serviceFeeLaborNum + serviceFeeMaterialsNum;
     sumBeforeTaxNum = sumBeforeTaxCalc;
@@ -158,7 +162,7 @@ export async function POST(request: NextRequest) {
     const finalTotalCalc = sumBeforeTaxCalc + taxAmountNum;
     finalTotalNum = finalTotalCalc;
 
-    // 8) Build HTML for each WorkItem
+    // 8) Build the HTML snippet for each WorkItem
     let worksHtml = "";
     body.works.forEach((w, idx) => {
       const totalVal = toNum(w.total);
@@ -217,7 +221,18 @@ export async function POST(request: NextRequest) {
       `;
     });
 
-    // 10) Disclaimers
+    // 9) Generate a Google Calendar link (assuming 1 hour block from selectedDate)
+    //    If selectedDate is invalid or missing, we fallback to "now".
+    const startDate = body.selectedDate ? new Date(body.selectedDate) : new Date();
+    const endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // +1 hour
+    const startStr = toGoogleDateString(startDate); // e.g. "20250310T100000Z"
+    const endStr = toGoogleDateString(endDate);
+
+    const calendarDetails = encodeURIComponent(body.description || "");
+    const calendarLocation = encodeURIComponent(body.address || "");
+    const googleCalendarLink = `https://www.google.com/calendar/render?action=TEMPLATE&text=JAMB+Service+Order+${body.orderId}&dates=${startStr}/${endStr}&details=${calendarDetails}&location=${calendarLocation}`;
+
+    // 10) Disclaimer text
     const disclaimers = `
       <p style="font-size:0.9rem; color:#999; margin-top:30px;">
         *All labor times and materials are estimated. Actual costs may vary.<br/>
@@ -225,45 +240,29 @@ export async function POST(request: NextRequest) {
       </p>
     `;
 
-    // 11) Final HTML for PDF
-    const htmlContent = `
+    // 11) Assemble HTML email content
+    const htmlEmailContent = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <title>Order ${body.orderId}</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      margin: 30px;
-      color: #333;
-    }
-    h1, h2, h3 {
-      margin: 0.5em 0;
-    }
-    .section {
-      margin-top: 20px;
-    }
-    .row {
-      display: flex;
-      justify-content: space-between;
-      margin: 4px 0;
-    }
-    .label {
-      font-weight: bold;
-    }
-    table {
-      border-collapse: collapse;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 4px 6px;
-    }
-  </style>
 </head>
-<body>
-  <h1 style="margin-bottom:2px;">JAMB - Home Services</h1>
+<body style="font-family: sans-serif; color: #333; margin: 10px;">
+  <p>
+    Thank you for your order!<br/>
+    Check the Estimate below.<br/>
+    <br/>
+    <br/>
+    More info on
+    <a href="https://thejamb.com/dashboard" target="_blank">Dashboard</a>
+    <br/><br/>
+    <a href="${googleCalendarLink}" target="_blank">Add to Google Calendar</a>
+  </p>
+
   <hr style="border:none; border-top:1px solid #ccc; margin-bottom:14px;"/>
+
+  <h1 style="margin-bottom:4px;">JAMB - Home Services</h1>
 
   <h2>Order #${body.orderId}</h2>
   <div>
@@ -272,124 +271,49 @@ export async function POST(request: NextRequest) {
     <strong>Description:</strong> ${body.description || "No details provided"}
   </div>
 
-  <div class="section" style="margin-top:14px;">
+  <div style="margin-top:16px;">
     <h3>Your Selected Services:</h3>
     ${worksHtml}
   </div>
 
-  <div class="section">
+  <div style="margin-top:20px;">
     <h3>Totals</h3>
-    <!-- Labor -->
-    <div class="row">
-      <div class="label">Labor Total:</div>
-      <div>$${formatWithSeparator(laborSubtotalNum)}</div>
+    <div style="margin:4px 0;"><strong>Labor Total:</strong> $${formatWithSeparator(laborSubtotalNum)}</div>
+    <div style="margin:4px 0;"><strong>Materials, tools & equipment:</strong> $${formatWithSeparator(materialsSubtotalNum)}</div>
+    <div style="margin:4px 0;"><strong>${dateSurchargeLabel}:</strong> ${signPrefix}$${formatWithSeparator(absSurcharge)}</div>
+    <div style="margin:4px 0;"><strong>Service Fee on Labor:</strong> $${formatWithSeparator(serviceFeeLaborNum)}</div>
+    <div style="margin:4px 0;"><strong>Delivery & Processing Fee:</strong> $${formatWithSeparator(serviceFeeMaterialsNum)}</div>
+    <div style="margin:4px 0;"><strong>Subtotal:</strong> $${formatWithSeparator(sumBeforeTaxNum)}</div>
+    <div style="margin:4px 0;"><strong>Taxes:</strong> $${formatWithSeparator(taxAmountNum)}</div>
+    <div style="margin:6px 0; font-weight:bold; font-size:1.5rem;">
+      Total: $${formatWithSeparator(finalTotalNum)}
     </div>
-    <!-- Materials -->
-    <div class="row">
-      <div class="label">Materials, tools & equipment:</div>
-      <div>$${formatWithSeparator(materialsSubtotalNum)}</div>
-    </div>
-    <!-- Surcharge or Discount -->
-    <div class="row">
-      <div class="label">${dateSurchargeLabel}:</div>
-      <div>
-        ${signPrefix}$${formatWithSeparator(absSurcharge)}
-      </div>
-    </div>
-    <!-- Service Fee on Labor -->
-    <div class="row">
-      <div class="label">Service Fee on Labor:</div>
-      <div>$${formatWithSeparator(serviceFeeLaborNum)}</div>
-    </div>
-    <!-- Delivery & Processing Fee -->
-    <div class="row">
-      <div class="label">Delivery & Processing Fee:</div>
-      <div>$${formatWithSeparator(serviceFeeMaterialsNum)}</div>
-    </div>
-    <!-- Subtotal -->
-    <div class="row">
-      <div class="label">Subtotal:</div>
-      <div>$${formatWithSeparator(sumBeforeTaxNum)}</div>
-    </div>
-    <!-- Taxes -->
-    <div class="row">
-      <div class="label">Taxes:</div>
-      <div>$${formatWithSeparator(taxAmountNum)}</div>
-    </div>
-    <!-- Final Total -->
-    <div class="row" style="font-weight:bold; margin-top:6px;">
-      <div>Total:</div>
-      <div>$${formatWithSeparator(finalTotalNum)}</div>
-    </div>
-    <!-- Optional: timeCoefficient
-    <div class="row">
-      <div class="label">Time Coefficient:</div>
-      <div>${timeCoeffNum}</div>
-    </div>
-    -->
   </div>
 
   ${disclaimers}
+
 </body>
 </html>
 `;
 
-    // 12) Attempt serverless-compatible path
-    let ep: string | null = null;
-    try {
-      ep = await chromium.executablePath();
-    } catch (err) {
-      console.warn("Could not retrieve chromium.executablePath()", err);
-    }
-
-    // 13) Puppeteer fallback
-    let browser;
-    if (!ep) {
-      console.log("Falling back to Puppeteer's bundled Chromium (local dev).");
-      browser = await puppeteer.launch({ headless: true });
-    } else {
-      console.log("Launching serverless Chromium from @sparticuz/chromium");
-      browser = await puppeteer.launch({
-        args: chromium.args,
-        executablePath: ep,
-        headless: chromium.headless,
-      });
-    }
-
-    // 14) Generate PDF as Buffer
-    const page = await browser.newPage();
-    await page.setContent(htmlContent, { waitUntil: "domcontentloaded" });
-    const pdfBuffer = (await page.pdf({
-      format: "A4",
-      printBackground: true,
-    })) as Buffer;
-
-    await browser.close();
-
-    // 15) Attach PDF to email
+    // 12) Send the email
     const fromEmail = process.env.SMTP_FROM_EMAIL || "info@thejamb.com";
-    const fromField = `"JAMB Home Services" <${fromEmail}>`;
+    const fromField = `"JAMB" <${fromEmail}>`;
 
-    const mailOptions = {
+    await transporter.sendMail({
       from: fromField,
       to: body.email,
       subject: `Order Confirmation #${body.orderId}`,
-      text: `Thank you for your saved order #${body.orderId}!\nCheck the attached PDF for details.\n\nJAMB Team\n\nCheck details: https://thejamb.com/dashboard`,
-      attachments: [
-        {
-          filename: `order-${body.orderId}.pdf`,
-          content: pdfBuffer,
-          contentType: "application/pdf",
-        },
-      ],
-    };
+      text: `Thank you for your saved order #${body.orderId}!\nCheck the Estimate below.\n\nJAMB Team\n\nMore information: https://thejamb.com/dashboard\n\n${googleCalendarLink}`,
+      html: htmlEmailContent,
+    });
 
-    await transporter.sendMail(mailOptions);
-
-    // 16) Return success
-    return NextResponse.json({ message: "Email with PDF sent successfully" });
+    // 13) Return success
+    return NextResponse.json({
+      message: "HTML email with Calendar link sent successfully (no PDF).",
+    });
   } catch (err: any) {
-    console.error("Error sending confirmation email with PDF:", err);
+    console.error("Error sending confirmation email (HTML only):", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
