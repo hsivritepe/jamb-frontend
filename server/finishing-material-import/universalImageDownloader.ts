@@ -32,21 +32,39 @@ const storage = new Storage({
 // We'll keep a global limit of 1000 images per subcategory
 const MAX_PHOTOS_PER_SUBCATEGORY = 1000;
 
-// We'll read progress.json (same folder) for processed items
-// Structure example:
-// {
-//   "processed": { "304698228": true, "304998497": true, ... },
-//   "photosBySubcategory": { "Carpet": 123, "Carpet_Pad": 50, ... }
-// }
+/**
+ * Структура, которую храним в progress.json
+ * (ничего из старого не удаляем, только добавляем 2 поля)
+ */
 interface ProgressData {
-  processed: Record<string, boolean>;        
-  photosBySubcategory: Record<string, number>;
+  processed: Record<string, boolean>;                     // Уже обработанные itemId
+  photosBySubcategory: Record<string, number>;           // Счётчик скачанных фото на subcategory
+
+  // --- NEW FIELDS for resuming pagination ---
+  /**
+   * lastPageBySubcategory[subcat] = номер последней УСПЕШНО обработанной страницы.
+   * При новом запуске начнём со следующей.
+   */
+  lastPageBySubcategory: Record<string, number>;
+
+  /**
+   * seenItemIdsBySubcategory[subcat] = массив itemId, которые уже встречались на всех предыдущих страницах
+   * (нужно, чтобы не качать заново дубликаты при возобновлении)
+   */
+  seenItemIdsBySubcategory: Record<string, string[]>;
 }
 
+// Путь до progress.json
 const progressPath = path.join(__dirname, 'progress.json');
+
+// Если progress.json уже есть, грузим оттуда. Если нет — используем дефолтную структуру
 let progressData: ProgressData = {
   processed: {},
   photosBySubcategory: {},
+
+  // по умолчанию пустые объекты
+  lastPageBySubcategory: {},
+  seenItemIdsBySubcategory: {},
 };
 
 if (fs.existsSync(progressPath)) {
@@ -55,6 +73,7 @@ if (fs.existsSync(progressPath)) {
   console.log('Loaded existing progress from progress.json');
 }
 
+// Удобная функция для сохранения
 function saveProgress() {
   fs.writeFileSync(progressPath, JSON.stringify(progressData, null, 2), 'utf-8');
   console.log('Progress saved to progress.json');
@@ -98,7 +117,7 @@ interface ProductResponse {
 const BIGBOX_API_URL = 'https://api.bigboxapi.com/request';
 const bigboxClient = axios.create({
   baseURL: BIGBOX_API_URL,
-  timeout: 30000,
+  timeout: 60000, // 60s
 });
 
 // ------------------------------
@@ -159,6 +178,15 @@ async function uploadBufferToGCS(destinationPath: string, buffer: Buffer) {
   console.log(`Uploaded to gs://${BUCKET_NAME}/${destinationPath}`);
 }
 
+// ------------------------------------------------
+// Build next-page URL with Nao (offset-based)
+// ------------------------------------------------
+function buildNextPageUrlNao(baseUrl: string, page: number, itemsPerPage = 24): string {
+  const offset = itemsPerPage * (page - 1);
+  const separator = baseUrl.includes('?') ? '&' : '?';
+  return `${baseUrl}${separator}Nao=${offset}`;
+}
+
 // ------------------------------
 // 7) Main logic
 // ------------------------------
@@ -197,111 +225,107 @@ async function runUniversalImageDownload() {
 
       console.log(`\n--> Subcategory: "${subcategory}", URL: ${breadcrumbUrl}`);
 
-      // D) Fetch items from BigBox
       try {
-        const categoryResp = await fetchItemsFromBreadcrumb(breadcrumbUrl, 'category');
-        let results = categoryResp.category_results || categoryResp.search_results || [];
+        // -----------------------------------------------------
+        // 1) Определяем, с какой страницы начинаем
+        // Если в progress.json уже что-то есть, начинаем со (lastPage + 1),
+        // иначе — с 1-й
+        // -----------------------------------------------------
+        const lastProcessedPage = progressData.lastPageBySubcategory[subcategory] || 0;
+        let currentPage = lastProcessedPage === 0 ? 1 : lastProcessedPage + 1;
 
-        console.log(`Found ${results.length} items for subcategory="${subcategory}"`);
+        // Инициализируем (или восстанавливаем) Set `seenItemIds`
+        // Если там уже что-то было, берем из progress.json
+        const existingSeenArr = progressData.seenItemIdsBySubcategory[subcategory] || [];
+        const seenItemIds = new Set<string>(existingSeenArr);
 
-        // E) Iterate items
-        let itemIndex = 0;
-        for (const r of results) {
-          itemIndex++;
-          const itemId = r.product?.item_id;
-          if (!itemId) continue;
+        // -----------------------------------------------------
+        // Будем ограничивать общее число страниц
+        // -----------------------------------------------------
+        const MAX_PAGES = 50; // или любое другое число, чтобы не ходить бесконечно
 
-          // If we already processed this item, skip
-          if (progressData.processed[itemId]) {
-            console.log(`   [${itemIndex}/${results.length}] itemId=${itemId} already processed. Skipping.`);
-            continue;
-          }
-
-          // If subcategory is at limit, break
-          const currentPhotoCount = progressData.photosBySubcategory[subcategory] || 0;
-          if (currentPhotoCount >= MAX_PHOTOS_PER_SUBCATEGORY) {
-            console.log(`Reached 1000 images in subcategory="${subcategory}". Moving on...`);
+        // Цикл, пока не достигнем MAX_PAGES или 1000 фото
+        while (true) {
+          // Если субкатегория уже добрала 1000 картинок
+          if ((progressData.photosBySubcategory[subcategory] || 0) >= MAX_PHOTOS_PER_SUBCATEGORY) {
+            console.log(`Reached 1000 images in subcategory="${subcategory}". Stop pagination.`);
             break;
           }
 
-          console.log(`   [${itemIndex}/${results.length}] itemId = ${itemId}`);
+          // Если вышли за пределы MAX_PAGES
+          if (currentPage > MAX_PAGES) {
+            console.log(`Reached ${MAX_PAGES} pages for "${subcategory}". Stopping pagination.`);
+            break;
+          }
 
-          try {
-            // F) Fetch product details
-            const productResp = await fetchProductDetails(itemId);
-            const product = productResp.product;
-            if (!product) {
-              console.warn(`No product info for itemId=${itemId}. Skipping...`);
-              continue;
-            }
+          // Сформируем ссылку. Если currentPage=1, берём исходный breadcrumbUrl (без ?Nao=)
+          let pageUrl: string;
+          if (currentPage === 1) {
+            pageUrl = breadcrumbUrl;
+          } else {
+            // всё что выше 1, используем buildNextPageUrlNao
+            pageUrl = buildNextPageUrlNao(breadcrumbUrl, currentPage, 24);
+          }
 
-            // Filter images to "primary" or "image_left_view"
-            const images = product.images || [];
-            let selectedImages = images.filter(img =>
-              img.type === 'primary' || img.type === 'image_left_view'
-            );
+          console.log(`\nFetching page ${currentPage} for subcategory="${subcategory}" => URL: ${pageUrl}`);
 
-            const subcatCountSoFar = progressData.photosBySubcategory[subcategory] || 0;
-            const canTake = MAX_PHOTOS_PER_SUBCATEGORY - subcatCountSoFar;
-            if (canTake <= 0) {
-              console.log(`Subcategory="${subcategory}" is at or above 1000 images. Stopping...`);
+          // Попробуем загрузить товары на странице
+          let pageResults: Array<{ product?: { item_id?: string } }> = [];
+          let success = false;
+          const maxRetries = 3;
+
+          for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+              const resp = await fetchItemsFromBreadcrumb(pageUrl, 'category');
+              pageResults = resp.category_results || resp.search_results || [];
+              success = true;
               break;
-            }
-            if (selectedImages.length > canTake) {
-              selectedImages = selectedImages.slice(0, canTake);
-            }
-
-            if (selectedImages.length === 0) {
-              console.warn(`No matching images for itemId=${itemId}. Skipping...`);
-              continue;
-            }
-
-            // G) Download & upload each selected image
-            let imgIndex = 0;
-            for (const img of selectedImages) {
-              if (!img.link) continue;
-              imgIndex++;
-
-              try {
-                const imageBuffer = await downloadImageAsBuffer(img.link);
-
-                // GCS path
-                const folderPath = `${topLevelCategory}/${subcategory}`;
-                const fileName = `${itemId}-${imgIndex}.jpg`;
-                const destinationPath = `${folderPath}/${fileName}`;
-
-                // Upload only to GCS
-                await uploadBufferToGCS(destinationPath, imageBuffer);
-
-                // Update photo count
-                progressData.photosBySubcategory[subcategory] =
-                  (progressData.photosBySubcategory[subcategory] || 0) + 1;
-                saveProgress();
-
-                // If we reached 1000 for this subcategory, break
-                const newCount = progressData.photosBySubcategory[subcategory];
-                if (newCount >= MAX_PHOTOS_PER_SUBCATEGORY) {
-                  console.log(`Reached 1000 images in subcategory="${subcategory}" after itemId=${itemId}.`);
-                  break;
-                }
-              } catch (imgErr) {
-                console.error(`Error downloading/uploading image #${imgIndex} for itemId=${itemId}`, imgErr);
+            } catch (err: any) {
+              if (err.code === 'ECONNABORTED') {
+                console.warn(`Timeout on page ${currentPage}, attempt ${attempt}, subcat="${subcategory}". Retrying...`);
+              } else {
+                console.error(`Error on page ${currentPage}, attempt ${attempt}`, err);
               }
             }
-
-            // Mark this item as processed
-            progressData.processed[itemId] = true;
-            saveProgress();
-
-            // If subcategory hit 1000 mid-item
-            if ((progressData.photosBySubcategory[subcategory] || 0) >= MAX_PHOTOS_PER_SUBCATEGORY) {
-              console.log(`Hit 1000-limit in subcategory="${subcategory}". Stopping item loop.`);
-              break;
-            }
-          } catch (prodErr) {
-            console.error(`Error fetching product details for itemId=${itemId}`, prodErr);
           }
-        } // end items
+
+          if (!success) {
+            console.log(
+              `Could not fetch page ${currentPage} after ${maxRetries} attempts. Stopping pagination for "${subcategory}".`
+            );
+            break;
+          }
+
+          // Если товаров 0 => похоже, страниц больше нет
+          if (pageResults.length === 0) {
+            console.log(`No more items found on page ${currentPage}. Stopping pagination for "${subcategory}".`);
+            break;
+          }
+
+          console.log(`Found ${pageResults.length} items on page ${currentPage}.`);
+
+          // ----------------------------------------------
+          // 2) "На лету" обрабатываем товары этой страницы
+          // ----------------------------------------------
+          await processPageItems(pageResults, topLevelCategory, subcategory, seenItemIds);
+
+          // После обработки текущей страницы:
+          // - Сохраним currentPage как "lastPageBySubcategory[subcat]"
+          progressData.lastPageBySubcategory[subcategory] = currentPage;
+          // - Обновим массив seenItemIdsBySubcategory[subcat]
+          progressData.seenItemIdsBySubcategory[subcategory] = Array.from(seenItemIds);
+          saveProgress();
+
+          // Если по ходу достигли 1000 — прекращаем сразу
+          if ((progressData.photosBySubcategory[subcategory] || 0) >= MAX_PHOTOS_PER_SUBCATEGORY) {
+            console.log(`Reached 1000 images in subcategory="${subcategory}" mid-pagination. Break now.`);
+            break;
+          }
+
+          // Переходим к следующей странице
+          currentPage++;
+        }
+
       } catch (catErr) {
         console.error(`Error fetching subcategory="${subcategory}"`, catErr);
       }
@@ -311,7 +335,126 @@ async function runUniversalImageDownload() {
   console.log('\nAll done!');
 }
 
-// Execute main
-runUniversalImageDownload().catch(err => {
+/**
+ * processPageItems - обрабатывает "товары" конкретной страницы (скачивает картинки)
+ * @param pageItems
+ * @param topLevelCategory
+ * @param subcategory
+ * @param seenItemIds - Set всех itemId, которые мы уже видели в рамках этой subcategory
+ */
+async function processPageItems(
+  pageItems: Array<{ product?: { item_id?: string } }>,
+  topLevelCategory: string,
+  subcategory: string,
+  seenItemIds: Set<string>,
+) {
+  let itemIndex = 0;
+
+  for (const r of pageItems) {
+    itemIndex++;
+    const itemId = r.product?.item_id;
+    if (!itemId) continue;
+
+    // Проверка: вдруг этот itemId уже встречался
+    if (seenItemIds.has(itemId)) {
+      // Дубликат, пропустим
+      console.log(`[PAGE] itemIndex=${itemIndex}, itemId=${itemId} is already in seenItemIds. Skipping.`);
+      continue;
+    }
+
+    // Добавляем его в set, чтобы не взять повторно на следующей странице
+    seenItemIds.add(itemId);
+
+    // Если мы уже обработали этот itemId (т.е. скачали картинки) раньше
+    if (progressData.processed[itemId]) {
+      console.log(`[PAGE] itemIndex=${itemIndex} itemId=${itemId} already processed. Skipping.`);
+      continue;
+    }
+
+    // Если subcategory уже на 1000
+    const currentPhotoCount = progressData.photosBySubcategory[subcategory] || 0;
+    if (currentPhotoCount >= MAX_PHOTOS_PER_SUBCATEGORY) {
+      console.log(`Reached 1000 images in subcategory="${subcategory}". Exiting processPageItems.`);
+      return;
+    }
+
+    console.log(`[PAGE] itemIndex=${itemIndex}, itemId=${itemId}`);
+
+    try {
+      // Fetch product details
+      const productResp = await fetchProductDetails(itemId);
+      const product = productResp.product;
+      if (!product) {
+        console.warn(`No product info for itemId=${itemId}. Skipping...`);
+        continue;
+      }
+
+      const images = product.images || [];
+      // Выбираем "primary" или "image_left_view"
+      let selectedImages = images.filter((img) => img.type === 'primary' || img.type === 'image_left_view');
+
+      const subcatCountSoFar = progressData.photosBySubcategory[subcategory] || 0;
+      const canTake = MAX_PHOTOS_PER_SUBCATEGORY - subcatCountSoFar;
+      if (canTake <= 0) {
+        console.log(`Subcategory="${subcategory}" is at or above 1000 images. Stopping...`);
+        return;
+      }
+      if (selectedImages.length > canTake) {
+        selectedImages = selectedImages.slice(0, canTake);
+      }
+
+      if (selectedImages.length === 0) {
+        console.warn(`No matching images for itemId=${itemId}. Skipping...`);
+        continue;
+      }
+
+      let imgIndex = 0;
+      for (const img of selectedImages) {
+        if (!img.link) continue;
+        imgIndex++;
+
+        try {
+          const imageBuffer = await downloadImageAsBuffer(img.link);
+
+          // GCS path
+          const folderPath = `${topLevelCategory}/${subcategory}`;
+          const fileName = `${itemId}-${imgIndex}.jpg`;
+          const destinationPath = `${folderPath}/${fileName}`;
+
+          // Upload only to GCS
+          await uploadBufferToGCS(destinationPath, imageBuffer);
+
+          // Update photo count
+          progressData.photosBySubcategory[subcategory] =
+            (progressData.photosBySubcategory[subcategory] || 0) + 1;
+          saveProgress();
+
+          const newCount = progressData.photosBySubcategory[subcategory];
+          if (newCount >= MAX_PHOTOS_PER_SUBCATEGORY) {
+            console.log(`Reached 1000 images in subcategory="${subcategory}" after itemId=${itemId}.`);
+            break;
+          }
+        } catch (imgErr) {
+          console.error(`Error downloading/uploading image #${imgIndex} for itemId=${itemId}`, imgErr);
+        }
+      }
+
+      // Mark item as processed
+      progressData.processed[itemId] = true;
+      saveProgress();
+
+      // Если по ходу загрузки достигли 1000
+      if ((progressData.photosBySubcategory[subcategory] || 0) >= MAX_PHOTOS_PER_SUBCATEGORY) {
+        console.log(`Hit 1000-limit in subcategory="${subcategory}". Stopping item loop.`);
+        return; // выходим из processPageItems
+      }
+    } catch (prodErr) {
+      console.error(`Error fetching product details for itemId=${itemId}`, prodErr);
+    }
+  }
+}
+
+// Запуск
+runUniversalImageDownload().catch((err) => {
   console.error('Unhandled error in runUniversalImageDownload:', err);
 });
