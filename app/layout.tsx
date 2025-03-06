@@ -36,8 +36,6 @@ export default function RootLayout({ children }: LayoutProps) {
   return (
     <html lang="en">
       <body className={`${manrope.className} bg-[#F8F9FB]`}>
-        {/* We keep <html> and <body> on the server side */}
-        {/* Then we render the client layout with all providers */}
         <RootLayoutClient>{children}</RootLayoutClient>
       </body>
     </html>
