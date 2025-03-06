@@ -34,7 +34,7 @@ export default function SettingsPage() {
   const [userName, setUserName] = useState("");
   const [hasName, setHasName] = useState(false);
 
-  // Greeting text stored in state to avoid SSR/client mismatch
+  // Greeting text stored in state
   const [greetingText, setGreetingText] = useState("");
 
   // Load token, user name, and greeting text on mount
@@ -63,10 +63,13 @@ export default function SettingsPage() {
     }
   }, [router]);
 
-  // Logout handler
+  /**
+   * Logs the user out by removing all relevant sessionStorage items.
+   */
   function handleLogout() {
     sessionStorage.removeItem("authToken");
     sessionStorage.removeItem("profileData");
+    sessionStorage.removeItem("userEmail");
     window.dispatchEvent(new Event("authChange"));
     router.push("/login");
   }
@@ -119,6 +122,7 @@ export default function SettingsPage() {
         alert("Account deleted successfully. Goodbye!");
         sessionStorage.removeItem("authToken");
         sessionStorage.removeItem("profileData");
+        sessionStorage.removeItem("userEmail");
         window.dispatchEvent(new Event("authChange"));
         router.push("/login");
       } else if (response.status === 400 || response.status === 404) {
