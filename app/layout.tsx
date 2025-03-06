@@ -1,11 +1,7 @@
 import { Manrope } from "next/font/google";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
-import { LayoutProps } from "@/types/layout";
 import "./globals.css";
-import { LocationProvider } from "@/context/LocationContext";
-import { PhotosProvider } from "@/context/PhotosContext";
-import { Suspense } from "react";
+import RootLayoutClient from "./RootLayoutClient";
+import { LayoutProps } from "@/types/layout";
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -40,15 +36,7 @@ export default function RootLayout({ children }: LayoutProps) {
   return (
     <html lang="en">
       <body className={`${manrope.className} bg-[#F8F9FB]`}>
-        <PhotosProvider>
-          <LocationProvider>
-            <Header />
-            <Suspense fallback={<div>Loading page...</div>}>
-              <div className="max-w-7xl mx-auto px-2 sm:px-4">{children}</div>
-            </Suspense>
-            <Footer />
-          </LocationProvider>
-        </PhotosProvider>
+        <RootLayoutClient>{children}</RootLayoutClient>
       </body>
     </html>
   );
