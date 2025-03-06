@@ -92,6 +92,8 @@ export default function LoginOrRegisterPage() {
       if (res.ok) {
         // On success, get token
         const data = await res.json();
+
+        // Save token and typed email
         sessionStorage.setItem("authToken", data.token);
         sessionStorage.setItem("userEmail", loginEmail);
 
@@ -166,7 +168,10 @@ export default function LoginOrRegisterPage() {
   /**
    * Sends the access token for social login to our backend.
    */
-  async function callServerSocialLogin(provider: "google" | "facebook" | "apple", token: string) {
+  async function callServerSocialLogin(
+    provider: "google" | "facebook" | "apple",
+    token: string
+  ) {
     try {
       const res = await fetch(`https://dev.thejamb.com/connect/${provider}`, {
         method: "POST",
@@ -179,7 +184,7 @@ export default function LoginOrRegisterPage() {
         return null;
       }
       const data = await res.json();
-      return data.token; // userToken from the server
+      return data.token;
     } catch (err) {
       console.error("Social login failed:", err);
       alert("Social login failed. Check console.");
@@ -187,14 +192,21 @@ export default function LoginOrRegisterPage() {
     }
   }
 
-  // Google OAuth logic
+  /**
+   * Google OAuth logic via @react-oauth/google
+   */
   const googleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
-      const serverToken = await callServerSocialLogin("google", tokenResponse.access_token);
+      // 1) Send accessToken to our server
+      const serverToken = await callServerSocialLogin(
+        "google",
+        tokenResponse.access_token
+      );
       if (serverToken) {
+        // 2) Save authToken to sessionStorage
         sessionStorage.setItem("authToken", serverToken);
 
-        // Optionally fetch user info
+        // 3) Optionally fetch user info to get email
         try {
           const userRes = await fetch("https://dev.thejamb.com/user/info", {
             method: "POST",
@@ -204,13 +216,18 @@ export default function LoginOrRegisterPage() {
           if (userRes.ok) {
             const userData = await userRes.json();
             sessionStorage.setItem("profileData", JSON.stringify(userData));
+            if (userData?.email) {
+              sessionStorage.setItem("userEmail", userData.email);
+            }
           }
         } catch (err) {
           console.error("Error fetching user info after Google login:", err);
         }
 
+        // 4) Dispatch authChange
         window.dispatchEvent(new Event("authChange"));
 
+        // 5) Redirect
         if (nextUrl) {
           router.push(nextUrl);
         } else {
@@ -224,17 +241,23 @@ export default function LoginOrRegisterPage() {
     },
   });
 
-  // Google button handler
+  /**
+   * Handler for Google button
+   */
   const handleGoogleLogin = () => {
     googleLogin();
   };
 
-  // Facebook placeholder
+  /**
+   * Placeholder for Facebook
+   */
   const handleFacebookLogin = () => {
     alert("Facebook login not implemented yet");
   };
 
-  // Apple placeholder: we disable Apple login here
+  /**
+   * Placeholder for Apple
+   */
   const handleAppleLogin = () => {
     alert("Apple login not implemented yet");
   };
@@ -242,15 +265,17 @@ export default function LoginOrRegisterPage() {
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-gray-50 px-4 py-10">
       {showRegister ? (
-        // =========================================
-        //       REGISTRATION FORM SECTION
-        // =========================================
+        // ==================================
+        //        REGISTRATION FORM
+        // ==================================
         <div className="w-full max-w-md bg-white p-8 mt-20 rounded-lg shadow">
           <h1 className="text-2xl font-bold mb-6 text-center">Create Account</h1>
 
           {/* Email */}
           <div className="mb-4">
-            <label className="block text-sm text-gray-600 mb-1">Email address</label>
+            <label className="block text-sm text-gray-600 mb-1">
+              Email address
+            </label>
             <input
               type="email"
               placeholder="E.g. hello@thejamb.com"
@@ -262,7 +287,9 @@ export default function LoginOrRegisterPage() {
 
           {/* Phone */}
           <div className="mb-4">
-            <label className="block text-sm text-gray-600 mb-1">Phone number</label>
+            <label className="block text-sm text-gray-600 mb-1">
+              Phone number
+            </label>
             <input
               type="tel"
               placeholder="+1"
@@ -288,11 +315,7 @@ export default function LoginOrRegisterPage() {
                 onClick={() => setShowRegisterPassword(!showRegisterPassword)}
                 className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-gray-700"
               >
-                {showRegisterPassword ? (
-                  <EyeOff className="w-5 h-5" />
-                ) : (
-                  <Eye className="w-5 h-5" />
-                )}
+                {showRegisterPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
           </div>
@@ -359,9 +382,9 @@ export default function LoginOrRegisterPage() {
           </div>
         </div>
       ) : (
-        // =========================================
-        //           LOGIN FORM SECTION
-        // =========================================
+        // ==================================
+        //          LOGIN FORM
+        // ==================================
         <div className="w-full max-w-md bg-white p-8 rounded-lg shadow">
           {!showForgotPassword ? (
             <>
@@ -369,7 +392,9 @@ export default function LoginOrRegisterPage() {
 
               {/* Email */}
               <div className="mb-4">
-                <label className="block text-sm text-gray-600 mb-1">Email address</label>
+                <label className="block text-sm text-gray-600 mb-1">
+                  Email address
+                </label>
                 <input
                   type="email"
                   placeholder="E.g. hello@thejamb.com"
@@ -395,11 +420,7 @@ export default function LoginOrRegisterPage() {
                     onClick={() => setShowLoginPassword(!showLoginPassword)}
                     className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-gray-700"
                   >
-                    {showLoginPassword ? (
-                      <EyeOff className="w-5 h-5" />
-                    ) : (
-                      <Eye className="w-5 h-5" />
-                    )}
+                    {showLoginPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
               </div>
@@ -448,7 +469,7 @@ export default function LoginOrRegisterPage() {
                   >
                     <FacebookIcon className="w-6 h-6" />
                   </button>
-                  {/* Apple (deactivated) */}
+                  {/* Apple (placeholder) */}
                   <button
                     className="border p-3 rounded hover:bg-gray-100 flex items-center justify-center"
                     onClick={handleAppleLogin}
@@ -459,9 +480,9 @@ export default function LoginOrRegisterPage() {
               </div>
             </>
           ) : (
-            // =========================================
-            //      FORGOT PASSWORD SECTION
-            // =========================================
+            // ==================================
+            //     FORGOT PASSWORD FORM
+            // ==================================
             <>
               <h1 className="text-2xl font-bold mb-6 text-center">
                 Forgot Password
