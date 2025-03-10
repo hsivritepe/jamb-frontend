@@ -1,12 +1,16 @@
-// next.config.js
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ["dev.thejamb.com"],
-    //unoptimized: true,
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'dev.thejamb.com',
+        port: '',
+        pathname: '/**',
+      },
+    ],
   },
   reactStrictMode: true,
 };
- 
+
 module.exports = nextConfig;
