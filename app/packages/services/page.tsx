@@ -843,7 +843,7 @@ export default function PackageServicesPage() {
             })}
           </div>
 
-          {/* Next button hidden on mobile, shown on sm+ (new comment in English) */}
+          {/* Next button hidden on mobile, shown on sm+ */}
           <div className="hidden sm:flex w-full xl:w-auto justify-end">
             <Button onClick={handleNext} variant="primary">
               Next →
@@ -890,7 +890,6 @@ export default function PackageServicesPage() {
         </div>
 
         {/* Main layout => "For Home" + "For Garden" + Summary + House info */}
-        {/* We replace the previous flex layout with two columns each max 600px wide */}
         <div className="container mx-auto relative flex flex-col xl:flex-row mt-8 gap-8">
           {/* LEFT => "For Home" + "For Garden" */}
           <div className="w-full xl:w-[600px] space-y-12">
@@ -1202,37 +1201,43 @@ export default function PackageServicesPage() {
                                                               m: any,
                                                               idx2: number
                                                             ) => {
-                                                              const hasImage =
-                                                                !!findFinishingMaterialObj(
+                                                              // 1) Находим finishingMaterialObj
+                                                              const fmObj =
+                                                                findFinishingMaterialObj(
                                                                   svc.id,
                                                                   m.external_id
-                                                                )?.image;
+                                                                );
+                                                              const hasImage =
+                                                                fmObj?.image
+                                                                  ? true
+                                                                  : false;
                                                               const isClientOwned =
                                                                 clientOwnedMaterials[
                                                                   svc.id
                                                                 ]?.has(
                                                                   m.external_id
                                                                 );
+
+                                                              // 2) rowClass
                                                               let rowClass = "";
-                                                              if (
-                                                                isClientOwned
-                                                              ) {
+                                                              if (isClientOwned) {
                                                                 rowClass =
                                                                   "border border-red-500 bg-red-50";
                                                               } else if (
                                                                 hasImage
                                                               ) {
                                                                 rowClass =
-                                                                  "border bg-white cursor-pointer";
+                                                                  "border border-blue-300 bg-white cursor-pointer";
                                                               }
+
                                                               return (
                                                                 <tr
                                                                   key={`${m.external_id}-${idx2}`}
                                                                   className={`last:border-0 ${rowClass}`}
                                                                   onClick={() => {
                                                                     if (
-                                                                      !isClientOwned &&
-                                                                      hasImage
+                                                                      hasImage &&
+                                                                      !isClientOwned
                                                                     ) {
                                                                       let foundSection:
                                                                         | string
@@ -1279,7 +1284,26 @@ export default function PackageServicesPage() {
                                                                   }}
                                                                 >
                                                                   <td className="py-3 px-1 align-top">
-                                                                    {m.name}
+                                                                    {hasImage ? (
+                                                                      <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center break-words">
+                                                                        <img
+                                                                          src={
+                                                                            fmObj?.image
+                                                                          }
+                                                                          alt={
+                                                                            m.name
+                                                                          }
+                                                                          className="w-24 h-24 object-cover rounded"
+                                                                        />
+                                                                        <span className="break-words text-blue-600">
+                                                                          {
+                                                                            m.name
+                                                                          }
+                                                                        </span>
+                                                                      </div>
+                                                                    ) : (
+                                                                      m.name
+                                                                    )}
                                                                   </td>
                                                                   <td className="py-3 px-1">
                                                                     $
@@ -1288,7 +1312,9 @@ export default function PackageServicesPage() {
                                                                     }
                                                                   </td>
                                                                   <td className="py-3 px-1">
-                                                                    {m.quantity}
+                                                                    {
+                                                                      m.quantity
+                                                                    }
                                                                   </td>
                                                                   <td className="py-3 px-1">
                                                                     ${m.cost}
@@ -1630,11 +1656,15 @@ export default function PackageServicesPage() {
                                                               m: any,
                                                               idx2: number
                                                             ) => {
-                                                              const hasImage =
-                                                                !!findFinishingMaterialObj(
+                                                              const fmObj =
+                                                                findFinishingMaterialObj(
                                                                   svc.id,
                                                                   m.external_id
-                                                                )?.image;
+                                                                );
+                                                              const hasImage =
+                                                                fmObj?.image
+                                                                  ? true
+                                                                  : false;
                                                               const isClientOwned =
                                                                 clientOwnedMaterials[
                                                                   svc.id
@@ -1642,16 +1672,14 @@ export default function PackageServicesPage() {
                                                                   m.external_id
                                                                 );
                                                               let rowClass = "";
-                                                              if (
-                                                                isClientOwned
-                                                              ) {
+                                                              if (isClientOwned) {
                                                                 rowClass =
                                                                   "border border-red-500 bg-red-50";
                                                               } else if (
                                                                 hasImage
                                                               ) {
                                                                 rowClass =
-                                                                  "border bg-white cursor-pointer";
+                                                                  "border border-blue-300 bg-white cursor-pointer";
                                                               }
                                                               return (
                                                                 <tr
@@ -1659,8 +1687,8 @@ export default function PackageServicesPage() {
                                                                   className={`last:border-0 ${rowClass}`}
                                                                   onClick={() => {
                                                                     if (
-                                                                      !isClientOwned &&
-                                                                      hasImage
+                                                                      hasImage &&
+                                                                      !isClientOwned
                                                                     ) {
                                                                       let foundSection:
                                                                         | string
@@ -1707,7 +1735,26 @@ export default function PackageServicesPage() {
                                                                   }}
                                                                 >
                                                                   <td className="py-3 px-1 align-top">
-                                                                    {m.name}
+                                                                    {hasImage ? (
+                                                                      <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center break-words">
+                                                                        <img
+                                                                          src={
+                                                                            fmObj?.image
+                                                                          }
+                                                                          alt={
+                                                                            m.name
+                                                                          }
+                                                                          className="w-24 h-24 object-cover rounded"
+                                                                        />
+                                                                        <span className="break-words text-blue-600">
+                                                                          {
+                                                                            m.name
+                                                                          }
+                                                                        </span>
+                                                                      </div>
+                                                                    ) : (
+                                                                      m.name
+                                                                    )}
                                                                   </td>
                                                                   <td className="py-3 px-1">
                                                                     $
@@ -1909,7 +1956,7 @@ export default function PackageServicesPage() {
         </div>
       </div>
 
-      {/* Next button for mobile only, pinned at bottom, hidden on sm+ (new comment in English) */}
+      {/* Next button for mobile only, pinned at bottom, hidden on sm+ */}
       <div className="block sm:hidden mt-6">
         <Button onClick={handleNext} variant="primary" className="w-full justify-center">
           Next →
@@ -1924,8 +1971,26 @@ export default function PackageServicesPage() {
         finishingMaterialSelections={finishingMaterialSelections}
         setFinishingMaterialSelections={setFinishingMaterialSelections}
         closeModal={closeModal}
-        userHasOwnMaterial={userHasOwnMaterial}
         formatWithSeparator={formatWithSeparator}
+
+        userHasOwnMaterial={(serviceId, extId) => {
+          if (!clientOwnedMaterials[serviceId]) {
+            clientOwnedMaterials[serviceId] = new Set();
+          }
+          clientOwnedMaterials[serviceId].add(extId);
+          setClientOwnedMaterials({ ...clientOwnedMaterials });
+
+          if (showModalSectionName) {
+            const picksObj = finishingMaterialSelections[serviceId] || {};
+            if (picksObj[showModalSectionName] === extId) {
+              delete picksObj[showModalSectionName];
+              finishingMaterialSelections[serviceId] = { ...picksObj };
+              setFinishingMaterialSelections({ ...finishingMaterialSelections });
+            }
+          }
+
+          closeModal();
+        }}
       />
 
       {/* Surface Calculator Modal */}

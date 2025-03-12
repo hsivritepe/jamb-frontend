@@ -427,7 +427,7 @@ export default function Details() {
     if (!serviceId) return;
     setSelectedServicesState((old) => {
       if (!(serviceId in old)) {
-        return old; // do nothing if not toggled
+        return old;
       }
       return {
         ...old,
@@ -758,12 +758,7 @@ export default function Details() {
     setFinishingMaterialSelections({ ...finishingMaterialSelections });
   }
 
-  /**
-   * If user clicks "I have my own", remove this extId from finishingMaterialSelections
-   * so it's no longer in cost breakdown. Then can close the modal.
-   */
   function userHasOwnMaterial(serviceId: string, extId: string, sectionName?: string) {
-    // Keep original code for marking as client-owned (if needed)
     if (!clientOwnedMaterials[serviceId]) {
       clientOwnedMaterials[serviceId] = new Set();
     }
@@ -1387,16 +1382,12 @@ export default function Details() {
         finishingMaterialSelections={finishingMaterialSelections}
         setFinishingMaterialSelections={setFinishingMaterialSelections}
         closeModal={closeModal}
-        /** We pass a function that also gets the sectionName and then removes from finishingMaterialSelections. */
         userHasOwnMaterial={(svcId, extId) => {
-          // We keep client-owned logic:
           if (!clientOwnedMaterials[svcId]) {
             clientOwnedMaterials[svcId] = new Set();
           }
           clientOwnedMaterials[svcId].add(extId);
           setClientOwnedMaterials({ ...clientOwnedMaterials });
-
-          // Also remove from finishingMaterialSelections for cost breakdown
           if (showModalSectionName) {
             const picksObj = finishingMaterialSelections[svcId] || {};
             if (picksObj[showModalSectionName] === extId) {
