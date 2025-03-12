@@ -552,7 +552,8 @@ export default function EmergencyDetails() {
   }
 
   /**
-   * Marks a material as owned by the client.
+   * Marks a material as user-owned.
+   * (Original logic. We'll enhance in the FinishingMaterialsModal prop.)
    */
   function userHasOwnMaterial(activityKey: string, externalId: string) {
     if (!clientOwnedMaterials[activityKey]) {
@@ -859,10 +860,10 @@ export default function EmergencyDetails() {
                                                       activityKey,
                                                       m.external_id
                                                     );
-                                                  const hasImage = fmObj?.image
-                                                    ?.length
-                                                    ? true
-                                                    : false;
+                                                  const hasImage =
+                                                    fmObj?.image?.length
+                                                      ? true
+                                                      : false;
                                                   const isClientOwned =
                                                     clientOwnedMaterials[
                                                       activityKey
@@ -1090,8 +1091,27 @@ export default function EmergencyDetails() {
         finishingMaterialSelections={finishingMaterialSelections}
         setFinishingMaterialSelections={setFinishingMaterialSelections}
         closeModal={closeModal}
-        userHasOwnMaterial={userHasOwnMaterial}
         formatWithSeparator={formatWithSeparator}
+        userHasOwnMaterial={(activityKey, externalId) => {
+          if (!clientOwnedMaterials[activityKey]) {
+            clientOwnedMaterials[activityKey] = new Set();
+          }
+          clientOwnedMaterials[activityKey].add(externalId);
+          setClientOwnedMaterials({ ...clientOwnedMaterials });
+
+          // Remove from finishingMaterialSelections => no longer used in pricing
+          if (showModalSectionName) {
+            const picksObj = finishingMaterialSelections[activityKey] || {};
+            if (picksObj[showModalSectionName] === externalId) {
+              delete picksObj[showModalSectionName];
+              finishingMaterialSelections[activityKey] = { ...picksObj };
+              setFinishingMaterialSelections({ ...finishingMaterialSelections });
+            }
+          }
+
+          // Finally close the modal
+          closeModal();
+        }}
       />
 
       {/* Surface Calculator Modal */}
