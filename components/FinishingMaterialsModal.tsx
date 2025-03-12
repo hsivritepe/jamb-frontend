@@ -172,7 +172,7 @@ export default function FinishingMaterialsModal({
                 onClick={() => userHasOwnMaterial(serviceId, currentExtId)}
                 className="text-xs px-2 py-1 rounded border border-red-500 text-red-500 hover:bg-red-500 hover:text-white active:bg-red-600"
               >
-                I have my own
+                I’ll use my own
               </button>
             </div>
           </div>
