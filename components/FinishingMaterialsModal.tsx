@@ -19,7 +19,6 @@ function parseCostString(costStr: string | undefined): number {
   return isNaN(parsed) ? 0 : parsed;
 }
 
-// Component props
 interface FinishingMaterialsModalProps {
   showModalServiceId: string | null;
   showModalSectionName: string | null;
@@ -154,6 +153,7 @@ export default function FinishingMaterialsModal({
           </button>
         </div>
 
+        {/* Current chosen material header */}
         {curMat && (
           <div className="border-b bg-white z-10 sticky top-[52px] px-4 py-2 flex flex-col gap-1 sm:flex-row sm:items-center">
             <div className="flex-1 overflow-hidden pr-3">
@@ -172,7 +172,7 @@ export default function FinishingMaterialsModal({
                 onClick={() => userHasOwnMaterial(serviceId, currentExtId)}
                 className="text-xs px-2 py-1 rounded border border-red-500 text-red-500 hover:bg-red-500 hover:text-white active:bg-red-600"
               >
-                I have my own
+                I’ll use my own
               </button>
             </div>
           </div>

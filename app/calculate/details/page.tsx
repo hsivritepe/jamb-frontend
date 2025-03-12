@@ -139,7 +139,6 @@ function SurfaceCalculatorModal({
     if (system === "m") {
       return lengthNum * widthNum * 10.7639;
     }
-    // system = ft => direct
     return lengthNum * widthNum;
   }
 
@@ -153,13 +152,11 @@ function SurfaceCalculatorModal({
       onClose();
       return;
     }
-    // Decide which area to take
     let areaFt = computeAreaSqFt();
-    // If user typed sq meters => prefer that
     if (sqMetersVal.trim()) {
       areaFt = computeAreaFromSqMeters();
     }
-    if (areaFt < 1) areaFt = 1; // minimal
+    if (areaFt < 1) areaFt = 1;
     onApplySquareFeet(serviceId, Math.round(areaFt));
     onClose();
   }
@@ -254,9 +251,7 @@ function SurfaceCalculatorModal({
         <div className="mb-4 text-sm text-gray-700">
           <p className="mb-1">
             Calculated from length & width:{" "}
-            <span className="font-medium">
-              {Math.round(computeAreaSqFt())} sq ft
-            </span>
+            <span className="font-medium">{Math.round(computeAreaSqFt())} sq ft</span>
           </p>
           {sqMetersVal.trim() && (
             <p>
@@ -432,7 +427,7 @@ export default function Details() {
     if (!serviceId) return;
     setSelectedServicesState((old) => {
       if (!(serviceId in old)) {
-        return old; // do nothing if not toggled
+        return old;
       }
       return {
         ...old,
@@ -763,13 +758,22 @@ export default function Details() {
     setFinishingMaterialSelections({ ...finishingMaterialSelections });
   }
 
-  /** Mark a material as client-owned. */
-  function userHasOwnMaterial(serviceId: string, extId: string) {
+  function userHasOwnMaterial(serviceId: string, extId: string, sectionName?: string) {
     if (!clientOwnedMaterials[serviceId]) {
       clientOwnedMaterials[serviceId] = new Set();
     }
     clientOwnedMaterials[serviceId].add(extId);
     setClientOwnedMaterials({ ...clientOwnedMaterials });
+
+    // Additionally remove it from finishingMaterialSelections => cost breakdown
+    if (sectionName) {
+      const picksObj = finishingMaterialSelections[serviceId] || {};
+      if (picksObj[sectionName] === extId) {
+        delete picksObj[sectionName];
+        finishingMaterialSelections[serviceId] = { ...picksObj };
+        setFinishingMaterialSelections({ ...finishingMaterialSelections });
+      }
+    }
   }
 
   /** Close finishing materials modal. */
@@ -898,10 +902,6 @@ export default function Details() {
                                 const detailsExpanded =
                                   expandedServiceDetails.has(svc.id);
 
-                                /**
-                                 * If this service has unit_of_measurement that includes "sq ft",
-                                 * we show a "Surface Calc" button.
-                                 */
                                 const showSurfaceCalcButton =
                                   svc.unit_of_measurement
                                     .toLowerCase()
@@ -1382,7 +1382,24 @@ export default function Details() {
         finishingMaterialSelections={finishingMaterialSelections}
         setFinishingMaterialSelections={setFinishingMaterialSelections}
         closeModal={closeModal}
-        userHasOwnMaterial={userHasOwnMaterial}
+        userHasOwnMaterial={(svcId, extId) => {
+          if (!clientOwnedMaterials[svcId]) {
+            clientOwnedMaterials[svcId] = new Set();
+          }
+          clientOwnedMaterials[svcId].add(extId);
+          setClientOwnedMaterials({ ...clientOwnedMaterials });
+          if (showModalSectionName) {
+            const picksObj = finishingMaterialSelections[svcId] || {};
+            if (picksObj[showModalSectionName] === extId) {
+              delete picksObj[showModalSectionName];
+              finishingMaterialSelections[svcId] = { ...picksObj };
+              setFinishingMaterialSelections({ ...finishingMaterialSelections });
+            }
+          }
+
+          // Close modal immediately
+          closeModal();
+        }}
         formatWithSeparator={formatWithSeparator}
       />
 

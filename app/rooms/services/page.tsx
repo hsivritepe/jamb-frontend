@@ -679,7 +679,7 @@ export default function RoomDetails() {
               </SectionBoxTitle>
             )}
           </div>
-          {/* Next button hidden on mobile, shown on sm+ (new comment in English) */}
+          {/* Next button hidden on mobile, shown on sm+ */}
           <div className="hidden sm:flex w-full xl:w-auto justify-end mt-2 xl:mt-0">
             <Button onClick={handleNext}>Next →</Button>
           </div>
@@ -1380,7 +1380,7 @@ export default function RoomDetails() {
         </div>
       </div>
 
-      {/* Next button for mobile only, pinned at bottom, hidden on sm+ (new comment in English) */}
+      {/* Next button for mobile only, pinned at bottom, hidden on sm+ */}
       <div className="block sm:hidden mt-6">
         <Button onClick={handleNext} className="w-full justify-center">
           Next →
@@ -1395,8 +1395,27 @@ export default function RoomDetails() {
         finishingMaterialSelections={finishingMaterialSelections}
         setFinishingMaterialSelections={setFinishingMaterialSelections}
         closeModal={closeModal}
-        userHasOwnMaterial={userHasOwnMaterial}
         formatWithSeparator={formatWithSeparator}
+        userHasOwnMaterial={(serviceId, extId) => {
+          if (!clientOwnedMaterials[serviceId]) {
+            clientOwnedMaterials[serviceId] = new Set();
+          }
+          clientOwnedMaterials[serviceId].add(extId);
+          setClientOwnedMaterials((old) => ({ ...old }));
+
+          // Remove from finishingMaterialSelections => unselect from cost breakdown:
+          if (showModalSectionName) {
+            const picksObj = finishingMaterialSelections[serviceId] || {};
+            if (picksObj[showModalSectionName] === extId) {
+              delete picksObj[showModalSectionName];
+              finishingMaterialSelections[serviceId] = { ...picksObj };
+              setFinishingMaterialSelections({ ...finishingMaterialSelections });
+            }
+          }
+
+          // Finally close the modal:
+          closeModal();
+        }}
       />
 
       {/* Surface Calculator Modal */}
