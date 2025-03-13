@@ -629,7 +629,7 @@ export default function Header() {
               id="city-input"
               name="city"
               type="text"
-              placeholder="Enter your city"
+              placeholder="Enter your city (e.g., New York)"
               value={manualLocation.city}
               onChange={(e) =>
                 setManualLocation({ ...manualLocation, city: e.target.value })
@@ -648,7 +648,7 @@ export default function Header() {
               id="zip-input"
               name="zip"
               type="text"
-              placeholder="Enter your ZIP code"
+              placeholder="Enter your ZIP code (e.g., 10001)"
               value={manualLocation.zip}
               onChange={(e) => {
                 const value = e.target.value;

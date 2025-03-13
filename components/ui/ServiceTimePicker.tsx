@@ -218,8 +218,8 @@ export default function ServiceTimePicker({
         className={`w-full py-2 mb-6 border rounded-lg font-semibold sm:font-medium transition-transform active:scale-95
           ${
             anytimeSelected
-              ? "bg-brand text-white border-brand"
-              : "text-brand border-brand"
+              ? "bg-blue-100 text-brand border-brand shadow-lg"
+              : "hover:bg-gray-100 text-brand border-brand"
           }
         `}
       >
@@ -327,8 +327,8 @@ export default function ServiceTimePicker({
             !selectedDate
               ? "opacity-50 cursor-not-allowed bg-blue-600 text-white"
               : hasConfirmed
-              ? "bg-blue-600 text-white"
-              : "bg-red-600 text-white"
+              ? "border border-blue-600 text-blue-600 bg-transparent"
+              : "bg-blue-600 text-white"
           }
         `}
       >
