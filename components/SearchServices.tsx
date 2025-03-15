@@ -36,7 +36,7 @@ export default function SearchServices({
       <button
         type="button"
         onClick={() => setShowModal(true)}
-        className="absolute right-3 top-3 text-gray-600 hover:text-gray-800"
+        className="absolute right-3 top-3 text-gray-600 hover:text-gray-800 hidden" // hide button
         title="Photo recognition"
       >
         <Camera size={24} />
