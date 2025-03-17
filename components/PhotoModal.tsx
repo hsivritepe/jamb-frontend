@@ -188,7 +188,7 @@ export default function PhotoModal({ onClose, onSelectCategory }: PhotoModalProp
       <div
         onClick={(e) => e.stopPropagation()}
         className="
-          relative bg-white rounded-lg shadow-lg
+          relative bg-white sm:rounded-lg shadow-lg
           w-full 
           h-screen
           sm:h-auto
