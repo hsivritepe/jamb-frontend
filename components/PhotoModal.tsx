@@ -4,9 +4,6 @@ import React, { ChangeEvent, useState, MouseEvent } from "react";
 import { X } from "lucide-react";
 import imageCompression from "browser-image-compression";
 
-/**
- * Dynamically import heic2any to handle HEIC/HEIF => JPEG conversion.
- */
 async function convertHeicFileToJpeg(file: File, quality = 0.6): Promise<File> {
   const { default: heic2any } = await import("heic2any");
   const converted = await heic2any({
@@ -22,16 +19,15 @@ async function convertHeicFileToJpeg(file: File, quality = 0.6): Promise<File> {
   });
 }
 
-/**
- * Creates an object URL for previewing an image in <img src="...">.
- */
-function createPreviewUrl(file: File): string {
-  return URL.createObjectURL(file);
+function normalizeCategory(cat: string): string {
+  if (cat.toLowerCase().endsWith("s")) {
+    return cat.slice(0, -1);
+  }
+  return cat;
 }
 
-interface Prediction {
-  category: string;
-  confidence: number;
+function createPreviewUrl(file: File): string {
+  return URL.createObjectURL(file);
 }
 
 interface PhotoModalProps {
@@ -41,10 +37,14 @@ interface PhotoModalProps {
 
 export default function PhotoModal({ onClose, onSelectCategory }: PhotoModalProps) {
   const [files, setFiles] = useState<File[]>([]);
-  const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+
+  const [categories, setCategories] = useState<string[]>([]);
+  const [description, setDescription] = useState("");
+  const [recommendation, setRecommendation] = useState("");
+
   const handleOuterClick = (e: MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) {
       onClose();
@@ -54,7 +54,6 @@ export default function PhotoModal({ onClose, onSelectCategory }: PhotoModalProp
   const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(e.target.files || []);
     if (selectedFiles.length === 0) return;
-
     if (files.length + selectedFiles.length > 1) {
       alert("You can upload up to 1 photo total.");
       e.target.value = "";
@@ -84,20 +83,23 @@ export default function PhotoModal({ onClose, onSelectCategory }: PhotoModalProp
         const compressedFile = await imageCompression(convertedFile, options);
         newFiles.push(compressedFile);
       } catch (err: any) {
-        console.error("Error processing file:", err);
         setError(err.message || "File conversion/compression error");
       }
     }
 
     setFiles((prev) => [...prev, ...newFiles]);
     e.target.value = "";
-    setPredictions([]);
-    setSubmitted(false)
+    setCategories([]);
+    setDescription("");
+    setRecommendation("");
+    setSubmitted(false);
   };
 
   const handleRemoveFile = (index: number) => {
     setFiles((prev) => prev.filter((_, i) => i !== index));
-    setPredictions([]);
+    setCategories([]);
+    setDescription("");
+    setRecommendation("");
     setSubmitted(false);
   };
 
@@ -108,13 +110,15 @@ export default function PhotoModal({ onClose, onSelectCategory }: PhotoModalProp
     }
     setError(null);
     setLoading(true);
-    setPredictions([]);
+    setCategories([]);
+    setDescription("");
+    setRecommendation("");
 
     try {
       const formData = new FormData();
       formData.append("file", files[0], files[0].name);
 
-      const response = await fetch("http://127.0.0.1:8000/predict", {
+      const response = await fetch("/api/predict", {
         method: "POST",
         body: formData,
       });
@@ -123,20 +127,39 @@ export default function PhotoModal({ onClose, onSelectCategory }: PhotoModalProp
       }
 
       const data = await response.json();
-      console.log("Predict result:", data);
-      setPredictions(data.predictions || []);
+      setCategories(data.categories || []);
+      setDescription(data.description || "");
+      setRecommendation(data.recommendation || "");
       setSubmitted(true);
     } catch (err: any) {
-      console.error("Upload error:", err);
       setError(err.message || "Upload error");
     } finally {
       setLoading(false);
     }
   };
 
-  const handlePredictionClick = (cat: string) => {
-    const displayCat = cat.replace(/_/g, " ");
-    onSelectCategory(displayCat);
+  const handlePredictionClick = async (cat: string) => {
+    const finalCat = normalizeCategory(cat);
+    onSelectCategory(finalCat);
+
+    if (files[0]) {
+      try {
+        const formData = new FormData();
+        formData.append("file", files[0]);
+        formData.append("category", finalCat);
+
+        const res = await fetch("/api/upload-gcs", {
+          method: "POST",
+          body: formData,
+        });
+        if (!res.ok) {
+          throw new Error(`GCS upload failed with status ${res.status}`);
+        }
+      } catch (err) {
+        setError((err as Error).message);
+      }
+    }
+
     onClose();
   };
 
@@ -146,7 +169,7 @@ export default function PhotoModal({ onClose, onSelectCategory }: PhotoModalProp
 
   const getButtonLabel = () => {
     if (loading) return "Analyzing...";
-    if (submitted) return "See options below";
+    if (submitted) return "See results below";
     return "Send / Recognize";
   };
 
@@ -162,20 +185,18 @@ export default function PhotoModal({ onClose, onSelectCategory }: PhotoModalProp
       className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60"
       onClick={handleOuterClick}
     >
-
       <div
         onClick={(e) => e.stopPropagation()}
         className="
           relative bg-white rounded-lg shadow-lg
           w-full 
-          h-screen           /* full height on mobile */
-          sm:h-auto          /* from sm onwards auto height */
+          h-screen
+          sm:h-auto
           sm:max-w-sm 
           sm:max-h-[90%]
           overflow-auto p-4
         "
       >
-        {/* Close button */}
         <button
           className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
           onClick={onClose}
@@ -192,7 +213,6 @@ export default function PhotoModal({ onClose, onSelectCategory }: PhotoModalProp
           Please attach 1 photo
         </p>
 
-        {/* File input */}
         <label
           htmlFor="photo-picker"
           className="block w-full text-center py-2 bg-blue-600 text-white
@@ -210,7 +230,6 @@ export default function PhotoModal({ onClose, onSelectCategory }: PhotoModalProp
 
         {error && <div className="text-red-500 mt-2 text-sm">{error}</div>}
 
-        {/* Preview chosen file(s) */}
         <div className="mt-4 grid grid-cols-1 gap-3">
           {files.map((file, idx) => {
             const previewUrl = createPreviewUrl(file);
@@ -235,7 +254,6 @@ export default function PhotoModal({ onClose, onSelectCategory }: PhotoModalProp
           })}
         </div>
 
-        {/* "Send / Recognize" button */}
         <button
           onClick={handleSubmit}
           disabled={isButtonDisabled()}
@@ -245,27 +263,32 @@ export default function PhotoModal({ onClose, onSelectCategory }: PhotoModalProp
           {getButtonLabel()}
         </button>
 
-        {/* Predictions & "None" only if we have predictions */}
-        {predictions.length > 0 && (
-          <div className="mt-4 flex flex-col gap-2">
-            {predictions.map((p, i) => {
-              // Replace underscores with spaces
-              const displayCat = p.category.replace(/_/g, " ");
-              return (
-                <button
-                  key={i}
-                  onClick={() => handlePredictionClick(p.category)}
-                  className="text-left px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded"
-                >
-                  {displayCat}
-                </button>
-              );
-            })}
+        {submitted && (categories.length > 0 || description || recommendation) && (
+          <div className="mt-4 flex flex-col gap-2 border-t pt-3">
+            <h3 className="text-sm font-semibold">Possible Categories:</h3>
+            {categories.map((cat, i) => (
+              <button
+                key={i}
+                onClick={() => handlePredictionClick(cat)}
+                className="text-left px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded"
+              >
+                {cat}
+              </button>
+            ))}
 
-            {/* None button to close without selecting */}
+            <h3 className="text-sm font-semibold mt-2">Description:</h3>
+            <p className="text-gray-800 text-sm">{description}</p>
+
+            {recommendation && (
+              <>
+                <h3 className="text-sm font-semibold mt-2">Recommendation:</h3>
+                <p className="text-gray-800 text-sm">{recommendation}</p>
+              </>
+            )}
+
             <button
               onClick={handleNone}
-              className="w-full py-2 bg-gray-300 hover:bg-gray-400 rounded-md font-medium"
+              className="w-full py-2 mt-3 bg-gray-300 hover:bg-gray-400 rounded-md font-medium"
             >
               None
             </button>
