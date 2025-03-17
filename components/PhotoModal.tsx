@@ -19,6 +19,13 @@ async function convertHeicFileToJpeg(file: File, quality = 0.6): Promise<File> {
   });
 }
 
+function normalizeCategory(cat: string): string {
+  if (cat.toLowerCase().endsWith("s")) {
+    return cat.slice(0, -1);
+  }
+  return cat;
+}
+
 function createPreviewUrl(file: File): string {
   return URL.createObjectURL(file);
 }
@@ -34,12 +41,10 @@ export default function PhotoModal({ onClose, onSelectCategory }: PhotoModalProp
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  // New: store the API results
   const [categories, setCategories] = useState<string[]>([]);
   const [description, setDescription] = useState("");
   const [recommendation, setRecommendation] = useState("");
 
-  // This function closes the modal if we click the "outer" area
   const handleOuterClick = (e: MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) {
       onClose();
@@ -49,7 +54,6 @@ export default function PhotoModal({ onClose, onSelectCategory }: PhotoModalProp
   const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(e.target.files || []);
     if (selectedFiles.length === 0) return;
-
     if (files.length + selectedFiles.length > 1) {
       alert("You can upload up to 1 photo total.");
       e.target.value = "";
@@ -70,6 +74,7 @@ export default function PhotoModal({ onClose, onSelectCategory }: PhotoModalProp
         if (isHeic) {
           convertedFile = await convertHeicFileToJpeg(rawFile, 0.6);
         }
+
         const options = {
           maxWidthOrHeight: 1024,
           maxSizeMB: 0.3,
@@ -78,14 +83,12 @@ export default function PhotoModal({ onClose, onSelectCategory }: PhotoModalProp
         const compressedFile = await imageCompression(convertedFile, options);
         newFiles.push(compressedFile);
       } catch (err: any) {
-        console.error("Error processing file:", err);
         setError(err.message || "File conversion/compression error");
       }
     }
 
     setFiles((prev) => [...prev, ...newFiles]);
     e.target.value = "";
-    // Reset previous results
     setCategories([]);
     setDescription("");
     setRecommendation("");
@@ -115,36 +118,48 @@ export default function PhotoModal({ onClose, onSelectCategory }: PhotoModalProp
       const formData = new FormData();
       formData.append("file", files[0], files[0].name);
 
-      // Updated URL to our new endpoint
       const response = await fetch("/api/predict", {
         method: "POST",
         body: formData,
       });
-
       if (!response.ok) {
         throw new Error(`Server responded with ${response.status}`);
       }
 
       const data = await response.json();
-      console.log("Predict result:", data);
-
       setCategories(data.categories || []);
       setDescription(data.description || "");
       setRecommendation(data.recommendation || "");
-
       setSubmitted(true);
     } catch (err: any) {
-      console.error("Upload error:", err);
       setError(err.message || "Upload error");
     } finally {
       setLoading(false);
     }
   };
 
-  // When the user clicks on a category button
-  const handlePredictionClick = (cat: string) => {
-    // Just pass it to the parent's onSelectCategory callback
-    onSelectCategory(cat);
+  const handlePredictionClick = async (cat: string) => {
+    const finalCat = normalizeCategory(cat);
+    onSelectCategory(finalCat);
+
+    if (files[0]) {
+      try {
+        const formData = new FormData();
+        formData.append("file", files[0]);
+        formData.append("category", finalCat);
+
+        const res = await fetch("/api/upload-gcs", {
+          method: "POST",
+          body: formData,
+        });
+        if (!res.ok) {
+          throw new Error(`GCS upload failed with status ${res.status}`);
+        }
+      } catch (err) {
+        setError((err as Error).message);
+      }
+    }
+
     onClose();
   };
 
@@ -152,7 +167,6 @@ export default function PhotoModal({ onClose, onSelectCategory }: PhotoModalProp
     onClose();
   };
 
-  // Button label depends on loading/submitted state
   const getButtonLabel = () => {
     if (loading) return "Analyzing...";
     if (submitted) return "See results below";
@@ -176,14 +190,13 @@ export default function PhotoModal({ onClose, onSelectCategory }: PhotoModalProp
         className="
           relative bg-white rounded-lg shadow-lg
           w-full 
-          h-screen           /* full height on mobile */
-          sm:h-auto          /* from sm onwards auto height */
+          h-screen
+          sm:h-auto
           sm:max-w-sm 
           sm:max-h-[90%]
           overflow-auto p-4
         "
       >
-        {/* Close button */}
         <button
           className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
           onClick={onClose}
@@ -200,7 +213,6 @@ export default function PhotoModal({ onClose, onSelectCategory }: PhotoModalProp
           Please attach 1 photo
         </p>
 
-        {/* File input */}
         <label
           htmlFor="photo-picker"
           className="block w-full text-center py-2 bg-blue-600 text-white
@@ -218,7 +230,6 @@ export default function PhotoModal({ onClose, onSelectCategory }: PhotoModalProp
 
         {error && <div className="text-red-500 mt-2 text-sm">{error}</div>}
 
-        {/* Preview chosen file(s) */}
         <div className="mt-4 grid grid-cols-1 gap-3">
           {files.map((file, idx) => {
             const previewUrl = createPreviewUrl(file);
@@ -243,7 +254,6 @@ export default function PhotoModal({ onClose, onSelectCategory }: PhotoModalProp
           })}
         </div>
 
-        {/* "Send / Recognize" button */}
         <button
           onClick={handleSubmit}
           disabled={isButtonDisabled()}
@@ -253,7 +263,6 @@ export default function PhotoModal({ onClose, onSelectCategory }: PhotoModalProp
           {getButtonLabel()}
         </button>
 
-        {/* Show results if we have categories/description */}
         {submitted && (categories.length > 0 || description || recommendation) && (
           <div className="mt-4 flex flex-col gap-2 border-t pt-3">
             <h3 className="text-sm font-semibold">Possible Categories:</h3>
