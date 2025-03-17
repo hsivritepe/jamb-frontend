@@ -4,9 +4,6 @@ import React, { ChangeEvent, useState, MouseEvent } from "react";
 import { X } from "lucide-react";
 import imageCompression from "browser-image-compression";
 
-/**
- * Dynamically import heic2any to handle HEIC/HEIF => JPEG conversion.
- */
 async function convertHeicFileToJpeg(file: File, quality = 0.6): Promise<File> {
   const { default: heic2any } = await import("heic2any");
   const converted = await heic2any({
@@ -22,16 +19,8 @@ async function convertHeicFileToJpeg(file: File, quality = 0.6): Promise<File> {
   });
 }
 
-/**
- * Creates an object URL for previewing an image in <img src="...">.
- */
 function createPreviewUrl(file: File): string {
   return URL.createObjectURL(file);
-}
-
-interface Prediction {
-  category: string;
-  confidence: number;
 }
 
 interface PhotoModalProps {
@@ -41,10 +30,16 @@ interface PhotoModalProps {
 
 export default function PhotoModal({ onClose, onSelectCategory }: PhotoModalProps) {
   const [files, setFiles] = useState<File[]>([]);
-  const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+
+  // New: store the API results
+  const [categories, setCategories] = useState<string[]>([]);
+  const [description, setDescription] = useState("");
+  const [recommendation, setRecommendation] = useState("");
+
+  // This function closes the modal if we click the "outer" area
   const handleOuterClick = (e: MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) {
       onClose();
@@ -75,7 +70,6 @@ export default function PhotoModal({ onClose, onSelectCategory }: PhotoModalProp
         if (isHeic) {
           convertedFile = await convertHeicFileToJpeg(rawFile, 0.6);
         }
-
         const options = {
           maxWidthOrHeight: 1024,
           maxSizeMB: 0.3,
@@ -91,13 +85,18 @@ export default function PhotoModal({ onClose, onSelectCategory }: PhotoModalProp
 
     setFiles((prev) => [...prev, ...newFiles]);
     e.target.value = "";
-    setPredictions([]);
-    setSubmitted(false)
+    // Reset previous results
+    setCategories([]);
+    setDescription("");
+    setRecommendation("");
+    setSubmitted(false);
   };
 
   const handleRemoveFile = (index: number) => {
     setFiles((prev) => prev.filter((_, i) => i !== index));
-    setPredictions([]);
+    setCategories([]);
+    setDescription("");
+    setRecommendation("");
     setSubmitted(false);
   };
 
@@ -108,23 +107,31 @@ export default function PhotoModal({ onClose, onSelectCategory }: PhotoModalProp
     }
     setError(null);
     setLoading(true);
-    setPredictions([]);
+    setCategories([]);
+    setDescription("");
+    setRecommendation("");
 
     try {
       const formData = new FormData();
       formData.append("file", files[0], files[0].name);
 
-      const response = await fetch("http://127.0.0.1:8000/predict", {
+      // Updated URL to our new endpoint
+      const response = await fetch("/api/predict", {
         method: "POST",
         body: formData,
       });
+
       if (!response.ok) {
         throw new Error(`Server responded with ${response.status}`);
       }
 
       const data = await response.json();
       console.log("Predict result:", data);
-      setPredictions(data.predictions || []);
+
+      setCategories(data.categories || []);
+      setDescription(data.description || "");
+      setRecommendation(data.recommendation || "");
+
       setSubmitted(true);
     } catch (err: any) {
       console.error("Upload error:", err);
@@ -134,9 +141,10 @@ export default function PhotoModal({ onClose, onSelectCategory }: PhotoModalProp
     }
   };
 
+  // When the user clicks on a category button
   const handlePredictionClick = (cat: string) => {
-    const displayCat = cat.replace(/_/g, " ");
-    onSelectCategory(displayCat);
+    // Just pass it to the parent's onSelectCategory callback
+    onSelectCategory(cat);
     onClose();
   };
 
@@ -144,9 +152,10 @@ export default function PhotoModal({ onClose, onSelectCategory }: PhotoModalProp
     onClose();
   };
 
+  // Button label depends on loading/submitted state
   const getButtonLabel = () => {
     if (loading) return "Analyzing...";
-    if (submitted) return "See options below";
+    if (submitted) return "See results below";
     return "Send / Recognize";
   };
 
@@ -162,7 +171,6 @@ export default function PhotoModal({ onClose, onSelectCategory }: PhotoModalProp
       className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60"
       onClick={handleOuterClick}
     >
-
       <div
         onClick={(e) => e.stopPropagation()}
         className="
@@ -245,27 +253,33 @@ export default function PhotoModal({ onClose, onSelectCategory }: PhotoModalProp
           {getButtonLabel()}
         </button>
 
-        {/* Predictions & "None" only if we have predictions */}
-        {predictions.length > 0 && (
-          <div className="mt-4 flex flex-col gap-2">
-            {predictions.map((p, i) => {
-              // Replace underscores with spaces
-              const displayCat = p.category.replace(/_/g, " ");
-              return (
-                <button
-                  key={i}
-                  onClick={() => handlePredictionClick(p.category)}
-                  className="text-left px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded"
-                >
-                  {displayCat}
-                </button>
-              );
-            })}
+        {/* Show results if we have categories/description */}
+        {submitted && (categories.length > 0 || description || recommendation) && (
+          <div className="mt-4 flex flex-col gap-2 border-t pt-3">
+            <h3 className="text-sm font-semibold">Possible Categories:</h3>
+            {categories.map((cat, i) => (
+              <button
+                key={i}
+                onClick={() => handlePredictionClick(cat)}
+                className="text-left px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded"
+              >
+                {cat}
+              </button>
+            ))}
 
-            {/* None button to close without selecting */}
+            <h3 className="text-sm font-semibold mt-2">Description:</h3>
+            <p className="text-gray-800 text-sm">{description}</p>
+
+            {recommendation && (
+              <>
+                <h3 className="text-sm font-semibold mt-2">Recommendation:</h3>
+                <p className="text-gray-800 text-sm">{recommendation}</p>
+              </>
+            )}
+
             <button
               onClick={handleNone}
-              className="w-full py-2 bg-gray-300 hover:bg-gray-400 rounded-md font-medium"
+              className="w-full py-2 mt-3 bg-gray-300 hover:bg-gray-400 rounded-md font-medium"
             >
               None
             </button>
