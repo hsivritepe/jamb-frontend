@@ -16,7 +16,8 @@ export function middleware(request: NextRequest) {
     pathname.startsWith('/favicon.ico') ||
     pathname.startsWith('/robots.txt') ||
     pathname.startsWith('/access') ||
-    pathname.startsWith('/api/gcs-upload') // <--- Added exception here
+    pathname.startsWith('/api/gcs-upload') ||
+    pathname.startsWith('/api/predict')
   ) {
     return NextResponse.next();
   }
