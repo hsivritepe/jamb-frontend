@@ -198,11 +198,11 @@ export default function PhotoModal({ onClose, onSelectCategory }: PhotoModalProp
         "
       >
         <button
-          className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+          className="absolute top-4 right-3 text-gray-500 hover:text-gray-700"
           onClick={onClose}
           aria-label="Close modal"
         >
-          <X size={20} />
+          <X size={30} />
         </button>
 
         <h2 className="text-xl font-semibold text-gray-800 mb-4">
@@ -257,7 +257,7 @@ export default function PhotoModal({ onClose, onSelectCategory }: PhotoModalProp
         <button
           onClick={handleSubmit}
           disabled={isButtonDisabled()}
-          className="mt-4 w-full py-2 bg-green-600 text-white rounded-md font-medium
+          className="mt-4 w-full py-2 mb-3 bg-green-600 text-white rounded-md font-medium
                      hover:bg-green-700 disabled:bg-gray-400"
         >
           {getButtonLabel()}
@@ -288,7 +288,7 @@ export default function PhotoModal({ onClose, onSelectCategory }: PhotoModalProp
 
             <button
               onClick={handleNone}
-              className="w-full py-2 mt-3 bg-gray-300 hover:bg-gray-400 rounded-md font-medium"
+              className="w-full py-2 mt-3 mb-3 bg-gray-300 hover:bg-gray-400 rounded-md font-medium"
             >
               None
             </button>
