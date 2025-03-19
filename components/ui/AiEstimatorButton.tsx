@@ -14,7 +14,7 @@ export default function AiEstimatorButton() {
         href="/ai-estimate"
         className="
           w-full 
-          md:w-[400px] 
+          lg:w-[49%] 
           flex 
           items-center 
           justify-center 
