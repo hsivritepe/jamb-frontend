@@ -1,10 +1,32 @@
 "use client";
 
-import React, { useState, useEffect, ChangeEvent, useMemo } from "react";
+import React, {
+  useState,
+  useEffect,
+  ChangeEvent,
+  useMemo,
+  FocusEvent,
+} from "react";
 import { useRouter } from "next/navigation";
 import { useLocation } from "@/context/LocationContext";
 import { setSessionItem } from "@/utils/session";
 import { ALL_SERVICES } from "@/constants/services";
+import imageCompression from "browser-image-compression";
+
+async function convertHeicFileToJpeg(file: File, quality = 0.6): Promise<File> {
+  const { default: heic2any } = await import("heic2any");
+  const converted = await heic2any({
+    blob: file,
+    toType: "image/jpeg",
+    quality,
+  });
+  const blobs = Array.isArray(converted) ? converted : [converted];
+  const jpegBlob = blobs[0] as Blob;
+  return new File([jpegBlob], file.name.replace(/\.(heic|heif)$/i, ".jpg"), {
+    type: "image/jpeg",
+    lastModified: Date.now(),
+  });
+}
 
 const PREDICT_URL = "/api/predict";
 
@@ -12,6 +34,7 @@ function normalizeCategory(str: string) {
   return str.trim().toLowerCase();
 }
 
+/** Finds services that match a set of normalized categories. */
 function findServicesFromCategories(categories: string[]) {
   const catSet = new Set(categories.map((c) => normalizeCategory(c)));
   return ALL_SERVICES.filter((svc) =>
@@ -19,14 +42,17 @@ function findServicesFromCategories(categories: string[]) {
   );
 }
 
+/** Creates a local URL for previewing a File. */
 function createPreviewUrl(file: File) {
   return URL.createObjectURL(file);
 }
 
+/** Base API or fallback. */
 function getApiBaseUrl(): string {
   return process.env.NEXT_PUBLIC_API_BASE_URL || "https://dev.thejamb.com";
 }
 
+/** POST /calculate => compute labor+materials cost. */
 async function calculatePrice(params: {
   work_code: string;
   zipcode: string;
@@ -51,10 +77,12 @@ async function calculatePrice(params: {
   return res.json();
 }
 
+/** Converts dashes in an ID string to dots (e.g. "1-1-1" => "1.1.1"). */
 function dashToDot(str: string) {
   return str.replaceAll("-", ".");
 }
 
+/** Formats a numeric value with commas and two decimals. */
 function formatWithSeparator(value: number) {
   return new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 2,
@@ -62,6 +90,7 @@ function formatWithSeparator(value: number) {
   }).format(value);
 }
 
+/** Displays the service image or falls back if loading fails. */
 function ServiceImage({ serviceId }: { serviceId: string }) {
   const [imgSrc, setImgSrc] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
@@ -74,7 +103,6 @@ function ServiceImage({ serviceId }: { serviceId: string }) {
   }, [serviceId]);
 
   if (!imgSrc) return null;
-
   if (failed) {
     return (
       <img
@@ -84,7 +112,6 @@ function ServiceImage({ serviceId }: { serviceId: string }) {
       />
     );
   }
-
   return (
     <img
       src={imgSrc}
@@ -98,19 +125,22 @@ function ServiceImage({ serviceId }: { serviceId: string }) {
 export default function AiEstimatePhotoPage() {
   const router = useRouter();
   const { location } = useLocation();
-
   const [files, setFiles] = useState<File[]>([]);
-  const [recommendedServices, setRecommendedServices] = useState<
-    typeof ALL_SERVICES
-  >([]);
+  const [recommendedServices, setRecommendedServices] =
+    useState<typeof ALL_SERVICES>([]);
   const [selectedServices, setSelectedServices] = useState<
     Record<string, boolean>
   >({});
   const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const [manualInputs, setManualInputs] = useState<Record<string, string | null>>(
+    {}
+  );
   const [costs, setCosts] = useState<Record<string, number>>({});
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [analysisDone, setAnalysisDone] = useState(false);
   const [showAll, setShowAll] = useState(false);
+  const [analysisDescription, setAnalysisDescription] = useState("");
 
   useEffect(() => {
     if (error) {
@@ -119,29 +149,97 @@ export default function AiEstimatePhotoPage() {
     }
   }, [error]);
 
-  function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
-    const newFiles = Array.from(e.target.files || []);
+  /**
+   * Convert or compress new files to get them ready for preview/analysis.
+   */
+  async function processFilesForPreview(newFiles: File[]): Promise<File[]> {
+    const processed: File[] = [];
+    for (const rawFile of newFiles) {
+      try {
+        let fileToUse = rawFile;
+
+        // Step 1) convert HEIC => JPEG if needed
+        const lower = fileToUse.name.toLowerCase();
+        const isHeic =
+          lower.endsWith(".heic") ||
+          lower.endsWith(".heif") ||
+          fileToUse.type.includes("heic") ||
+          fileToUse.type.includes("heif");
+
+        if (isHeic) {
+          fileToUse = await convertHeicFileToJpeg(fileToUse, 0.6);
+        }
+
+        // Step 2) compress the image to ~0.3MB
+        const opts = {
+          maxWidthOrHeight: 1024,
+          maxSizeMB: 0.3,
+          useWebWorker: true,
+        };
+        const compressed = await imageCompression(fileToUse, opts);
+        processed.push(compressed);
+      } catch (err: any) {
+        setError(err.message || "File conversion/compression error");
+      }
+    }
+    return processed;
+  }
+
+  /**
+   * Handle user file selection (up to 4 images).
+   */
+  async function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
+    const selected = Array.from(e.target.files || []);
+    // Clear the input so user can re-select the same file if needed
     e.target.value = "";
-    if (files.length + newFiles.length > 4) {
+
+    if (!selected.length) return;
+
+    if (files.length + selected.length > 4) {
       setError("You can upload up to 4 photos.");
       return;
     }
-    setFiles((prev) => [...prev, ...newFiles]);
+
+    // If we've already done an analysis, reset everything
+    if (analysisDone) {
+      setFiles([]);
+      setRecommendedServices([]);
+      setSelectedServices({});
+      setQuantities({});
+      setCosts({});
+      setAnalysisDescription("");
+      setAnalysisDone(false);
+    }
+
+    // Convert/compress the new files
+    const processed = await processFilesForPreview(selected);
+    setFiles((prev) => [...prev, ...processed]);
   }
 
+  /**
+   * Remove a photo from the preview list.
+   */
   function removeFile(idx: number) {
     setFiles((prev) => prev.filter((_, i) => i !== idx));
   }
 
+  /**
+   * Send images to /api/predict to get categories, then match to services.
+   */
   async function handleAnalyze() {
     if (files.length === 0) {
       setError("Please upload at least 1 photo.");
       return;
     }
     setLoading(true);
+    setAnalysisDone(false);
+    setAnalysisDescription("");
 
     try {
-      const uniqueCats = new Set<string>();
+      const uniqueCategories = new Set<string>();
+      let descAcc = "";
+
+      // For each file, call /api/predict
       for (const file of files) {
         const fd = new FormData();
         fd.append("file", file);
@@ -151,16 +249,24 @@ export default function AiEstimatePhotoPage() {
           throw new Error(`Predict error: ${resp.status}`);
         }
         const data = await resp.json();
+
         for (const c of data.categories || []) {
-          uniqueCats.add(c);
+          uniqueCategories.add(c);
+        }
+        if (data.description) {
+          descAcc += data.description.trim() + " ";
         }
       }
 
-      const recognizedArr = Array.from(uniqueCats);
+      setAnalysisDescription(descAcc.trim());
+
+      // Match recognized categories => known services
+      const recognizedArr = Array.from(uniqueCategories);
       const matched = findServicesFromCategories(recognizedArr);
       setRecommendedServices(matched);
       setShowAll(false);
 
+      // Initialize quantity + selection state
       const initQty: Record<string, number> = {};
       const initSel: Record<string, boolean> = {};
       matched.forEach((svc) => {
@@ -169,6 +275,7 @@ export default function AiEstimatePhotoPage() {
       });
       setQuantities(initQty);
       setSelectedServices(initSel);
+      setAnalysisDone(true);
     } catch (err: any) {
       setError(err.message || "Error analyzing images");
     } finally {
@@ -176,16 +283,18 @@ export default function AiEstimatePhotoPage() {
     }
   }
 
+  /**
+   * Recompute costs whenever recommendedServices or quantity or location changes.
+   */
   useEffect(() => {
     async function recalcAll() {
-      if (recommendedServices.length === 0) {
+      if (!recommendedServices.length) {
         setCosts({});
         return;
       }
       const { zip } = location;
-      if (!/^\d{5}$/.test(zip)) {
-        return;
-      }
+      if (!/^\d{5}$/.test(zip)) return;
+
       const nextCosts: Record<string, number> = {};
       for (const svc of recommendedServices) {
         const q = quantities[svc.id] ?? svc.min_quantity ?? 1;
@@ -209,21 +318,50 @@ export default function AiEstimatePhotoPage() {
     recalcAll();
   }, [recommendedServices, quantities, location]);
 
-  function handleManualChange(
+  /**
+   * Similar logic to RecommendedActivities:
+   * We store the typed input separately in `manualInputs` so the user
+   * can type partial numbers without being forced to minQuantity on every keystroke.
+   */
+  function handleSvcManualChange(
     svcId: string,
     val: string,
     unit: string,
     minQ: number
   ) {
-    let n = parseFloat(val.replace(/,/g, "")) || 0;
-    if (n < minQ) n = minQ;
+    // Always store the raw typed string so user sees exactly what they typed
+    setManualInputs((prev) => ({ ...prev, [svcId]: val }));
+
+    // Attempt to parse and clamp
+    let numericVal = parseFloat(val.replace(/,/g, "")) || 0;
+    if (numericVal < minQ) numericVal = minQ;
+
     const found = recommendedServices.find((x) => x.id === svcId);
     if (!found) return;
+
     const maxQ = found.max_quantity ?? 9999;
-    if (n > maxQ) n = maxQ;
-    setQuantities((prev) => ({ ...prev, [svcId]: n }));
+    if (numericVal > maxQ) numericVal = maxQ;
+
+    // If it's "each", round it
+    setQuantities((prev) => ({
+      ...prev,
+      [svcId]: unit === "each" ? Math.round(numericVal) : numericVal,
+    }));
   }
 
+  /** If user clicks inside the input, reset the stored string to empty (""). */
+  function handleSvcClickInput(svcId: string) {
+    setManualInputs((prev) => ({ ...prev, [svcId]: "" }));
+  }
+
+  /** On blur, if the user ended up with an empty typed string, revert to null. */
+  function handleSvcBlur(svcId: string) {
+    if (manualInputs[svcId] === "") {
+      setManualInputs((prev) => ({ ...prev, [svcId]: null }));
+    }
+  }
+
+  /** Increment or decrement. After that, we reset manualInputs to null so it shows numeric. */
   function handlePlusMinus(
     svcId: string,
     increment: boolean,
@@ -234,21 +372,27 @@ export default function AiEstimatePhotoPage() {
       const found = recommendedServices.find((x) => x.id === svcId);
       if (!found) return prev;
       const maxQ = found.max_quantity ?? 9999;
+
       const oldVal = prev[svcId] ?? minQ;
       let newVal = increment ? oldVal + 1 : oldVal - 1;
       if (newVal < minQ) newVal = minQ;
       if (newVal > maxQ) newVal = maxQ;
-      return { ...prev, [svcId]: newVal };
+
+      return { ...prev, [svcId]: unit === "each" ? Math.round(newVal) : newVal };
     });
+    // After a manual +/- click, we clear the manual input so we display the new numeric
+    setManualInputs((prev) => ({ ...prev, [svcId]: null }));
   }
 
+  /** Toggle whether a service is selected or not. */
   function toggleSelected(svcId: string) {
     setSelectedServices((old) => ({ ...old, [svcId]: !old[svcId] }));
   }
 
+  /** On "Proceed", store selected services + their quantities, then go to the next page. */
   function handleContinue() {
     const chosen = recommendedServices.filter((svc) => selectedServices[svc.id]);
-    if (chosen.length === 0) {
+    if (!chosen.length) {
       alert("No services selected. Please pick at least one service.");
       return;
     }
@@ -260,14 +404,28 @@ export default function AiEstimatePhotoPage() {
     router.push("/calculate/details");
   }
 
+  /** A sorted array of recommended services to display. */
   const sortedServices = useMemo(() => {
     return [...recommendedServices];
   }, [recommendedServices]);
 
   const hasMoreThan10 = sortedServices.length > 10;
-  const displayServices = showAll
-    ? sortedServices
-    : sortedServices.slice(0, 10);
+  const displayServices = showAll ? sortedServices : sortedServices.slice(0, 10);
+
+  /** Calculate how many are selected and the total cost. */
+  function getSelectedCountAndTotal() {
+    let count = 0;
+    let total = 0;
+    for (const svc of recommendedServices) {
+      if (selectedServices[svc.id]) {
+        count++;
+        total += costs[svc.id] || 0;
+      }
+    }
+    return { count, total };
+  }
+
+  const { count: selectedCount, total: selectedTotal } = getSelectedCountAndTotal();
 
   return (
     <div className="p-0">
@@ -278,36 +436,42 @@ export default function AiEstimatePhotoPage() {
         Upload up to 4 photos and we'll suggest relevant services with prices.
       </p>
 
+      {/* Upload UI */}
       <div className="mb-4">
         <label
           htmlFor="ai-photos"
           className="
             inline-block
             w-full 
-            md:w-[300px]
+            lg:w-[300px]
             border
             border-blue-600
             text-blue-600
             text-center
             py-2
+            mb-2
             rounded
             cursor-pointer
             hover:bg-blue-50
           "
         >
-          {files.length === 0 ? "Choose up to 4 photos" : "Add more photos"}
+          {analysisDone
+            ? "New recognition"
+            : files.length === 0
+            ? "Choose up to 4 photos"
+            : "Add more photos"}
         </label>
         <input
           type="file"
           id="ai-photos"
           multiple
-          accept="image/*"
+          accept="image/*,.heic,.heif"
           className="hidden"
           onChange={handleFileChange}
         />
 
         {files.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-3">
+          <div className="my-3 flex flex-wrap gap-3">
             {files.map((file, idx) => (
               <div key={idx} className="relative w-[40%] sm:w-40 h-40">
                 <img
@@ -317,7 +481,7 @@ export default function AiEstimatePhotoPage() {
                 />
                 <button
                   onClick={() => removeFile(idx)}
-                  className="absolute top-0 right-0 bg-gray-500 text-white w-6 h-6 rounded-full flex items-center justify-center"
+                  className="absolute top-1 right-1 bg-gray-500 text-white w-6 h-6 rounded-full flex items-center justify-center"
                 >
                   ✕
                 </button>
@@ -327,23 +491,49 @@ export default function AiEstimatePhotoPage() {
         )}
       </div>
 
-      <div className="mb-4">
-        {loading ? (
-          <p className="text-gray-500">Analyzing...</p>
-        ) : (
-          files.length > 0 && (
-            <button
-              onClick={handleAnalyze}
-              className="w-full md:w-[300px] bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-            >
-              Analyze Images
-            </button>
-          )
+      {/* Analyze / Loading / Done */}
+      <div className="my-3">
+        {!analysisDone && !loading && files.length > 0 && (
+          <button
+            onClick={handleAnalyze}
+            className="w-full lg:w-[300px] bg-blue-600 text-white px-4 py-2 my-2 rounded hover:bg-blue-700"
+          >
+            Analyze Images
+          </button>
+        )}
+        {loading && (
+          <button
+            disabled
+            className="w-full lg:w-[300px] bg-gray-300 text-gray-600 px-4 py-2 my-2 rounded cursor-not-allowed"
+          >
+            Analyzing<span className="ml-1 animate-pulse">...</span>
+          </button>
+        )}
+        {!loading && analysisDone && (
+          <button
+            disabled
+            className="w-full lg:w-[300px] bg-gray-300 text-gray-600 px-4 py-2 my-2 rounded cursor-not-allowed"
+          >
+            See results below
+          </button>
         )}
       </div>
 
+      {/* AI Observations */}
+      {analysisDescription && (
+        <div className="mb-6 bg-gray-50 p-3 border border-gray-200 rounded">
+          <h2 className="text-xl font-medium text-gray-800 mb-2">
+            AI Observations
+          </h2>
+          <p className="text-base text-gray-700 whitespace-pre-wrap">
+            {analysisDescription}
+          </p>
+        </div>
+      )}
+
+      {/* Recommended Services */}
       {displayServices.length > 0 && (
-        <div className="mt-8">
+        <div className="mt-6">
           <h2 className="text-xl font-medium text-gray-800 mb-3">
             Recommended Services
           </h2>
@@ -353,12 +543,22 @@ export default function AiEstimatePhotoPage() {
               const costVal = costs[svc.id] ?? 0;
               const isSelected = !!selectedServices[svc.id];
               const minQ = svc.min_quantity ?? 1;
-              const displayVal = String(qty);
+
+              // If user typed something in manualInputs, show that string, else show the numeric
+              const typedVal = manualInputs[svc.id];
+              const displayVal =
+                typedVal !== null && typedVal !== undefined
+                  ? typedVal
+                  : String(qty);
+
+              const borderClass = isSelected
+                ? "border-blue-500"
+                : "border-gray-300";
 
               return (
                 <div
                   key={svc.id}
-                  className="border rounded p-3 bg-white shadow-sm flex flex-col"
+                  className={`border ${borderClass} rounded p-3 bg-white shadow-sm flex flex-col`}
                 >
                   <div className="h-32 w-full overflow-hidden mb-2">
                     <ServiceImage serviceId={svc.id} />
@@ -370,6 +570,7 @@ export default function AiEstimatePhotoPage() {
                   <p className="text-xs text-gray-500">{svc.category}</p>
 
                   <div className="mt-auto">
+                    {/* Quantity controls */}
                     <div className="flex items-center gap-1 mt-2 mb-2">
                       <button
                         onClick={() =>
@@ -387,14 +588,18 @@ export default function AiEstimatePhotoPage() {
                       <input
                         type="text"
                         value={displayVal}
+                        // Similar to the recommendedActivities "onClick -> set input to ''"
+                        onClick={() => handleSvcClickInput(svc.id)}
+                        onBlur={() => handleSvcBlur(svc.id)}
                         onChange={(e) =>
-                          handleManualChange(
+                          handleSvcManualChange(
                             svc.id,
                             e.target.value,
                             svc.unit_of_measurement,
                             minQ
                           )
                         }
+                        onFocus={(e) => e.target.select()}
                         className="w-16 text-center px-1 py-1 border rounded text-sm"
                       />
                       <button
@@ -415,8 +620,9 @@ export default function AiEstimatePhotoPage() {
                       </span>
                     </div>
 
+                    {/* Cost + Add/Remove */}
                     <div className="flex justify-between items-center">
-                      <span className="text-blue-600 font-bold">
+                      <span className="font-bold text-gray-800">
                         ${formatWithSeparator(costVal)}
                       </span>
                       <button
@@ -443,7 +649,7 @@ export default function AiEstimatePhotoPage() {
             <div className="mt-4">
               <button
                 onClick={() => setShowAll(true)}
-                className="w-full md:w-[200px] bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded text-sm text-gray-700"
+                className="w-full lg:w-[300px] bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded text-base font-semibold text-gray-700"
               >
                 Show More Services
               </button>
@@ -452,13 +658,27 @@ export default function AiEstimatePhotoPage() {
         </div>
       )}
 
+      {/* Selected summary + "Proceed" button */}
       {displayServices.length > 0 && (
-        <div className="mt-6">
+        <div className="mt-4">
+          {selectedCount > 0 && (
+            <div className="mb-4 text-gray-700 text-base font-semibold">
+              You selected {selectedCount} services totaling{" "}
+              <span className="text-red-600">
+                ${formatWithSeparator(selectedTotal)}
+              </span>
+              <p className="text-base font-normal text-gray-600 mt-1">
+                On the next page, you can pick finishing materials, needed
+                equipment, and set up scheduling to finalize your estimate.
+              </p>
+            </div>
+          )}
+
           <button
             onClick={handleContinue}
-            className="w-full md:w-[200px] px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            className="w-full lg:w-[300px] px-4 py-2 bg-blue-600 text-white mt-2 font-semibold rounded hover:bg-blue-700"
           >
-            Continue
+            Proceed
           </button>
         </div>
       )}
