@@ -14,7 +14,7 @@ export default function AiEstimateTabs() {
   const pathname = usePathname() || "";
 
   return (
-    <div className="border-b flex gap-6">
+    <div className="border-b flex gap-6 font-semibold sm:font-medium text-gray-700">
       <Link
         href="/ai-estimate/photo"
         className={`pb-2 ${

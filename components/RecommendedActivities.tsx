@@ -91,7 +91,6 @@ function ServiceImage({ serviceId }: { serviceId: string }) {
       alt="Service"
       width={600}
       height={400}
-      //unoptimized
       className="w-full h-full object-cover"
     />
   );
