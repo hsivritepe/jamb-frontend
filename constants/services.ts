@@ -7676,7 +7676,7 @@ export const ALL_SERVICES = [
     {
         id: "20-4-6",
         unit_of_measurement: "each",
-        min_quantity: 1,
+        min_quantity: 5,
         max_quantity: 100,
         title: "Perennial Grasses Planting",
         description: "Planting perennial grasses to enhance landscape aesthetics. This service includes preparing the soil, planting grasses, and adding mulch. Includes comprehensive labor, rough materials, and necessary equipment. Promotes healthy growth and establishment of perennial grasses.",
