@@ -118,7 +118,7 @@ export default function HeroSection() {
           )}
         </div>
 
-        <div className="hidden md:flex bg-white rounded-2xl overflow-hidden min-h-[500px]">
+        <div className="flex bg-white rounded-2xl overflow-hidden h-300px sm:min-h-[500px]">
           <img
             src="/images/hero-service-professional.jpg"
             alt="Professional service provider"
