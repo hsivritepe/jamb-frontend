@@ -3,72 +3,59 @@ import OpenAI from "openai";
 
 export const runtime = "nodejs";
 
-/**
- * Create an instance of the OpenAI client using the secret key.
- * Adjust or remove if you are using a different setup.
- */
-const openAiClient = new OpenAI({
+// Create an OpenAI instance
+const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
 });
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   try {
-    const { userInputText, topServicesList } = await request.json();
+    const { userInputText, topServicesList } = await req.json();
 
-    if (!userInputText) {
-      return NextResponse.json({ error: "No userInputText" }, { status: 400 });
-    }
-    if (!topServicesList || !Array.isArray(topServicesList)) {
+    if (!userInputText || !Array.isArray(topServicesList)) {
       return NextResponse.json(
-        { error: "No or invalid topServicesList" },
+        { error: "No userInputText or invalid topServicesList" },
         { status: 400 }
       );
     }
 
-    // Define the system instruction for the language model
-    const promptForSystem = `
-      You are a home-improvement assistant. 
-      The user has described their project, and we have a set of recommended services.
-      Please provide a short (1-2 sentence) recommendation to the user, focusing on solutions and steps.
+    const systemPrompt = `
+      You are a home-improvement marketing assistant.
+      We have a user's project text, and a list of recommended services:
+      Return a concise 1-3 sentence recommendation from the company's perspective,
+      describing how these services help solve the user's problem.
+      Return ONLY the text, no extra JSON or formatting.
     `.trim();
 
-    // Prepare a summary of the services, possibly including their similarity scores
-    let servicesBulletedList = topServicesList
-      .map((service: any) => {
-        const scoreText = service.similarityScore
-          ? `(score: ${service.similarityScore.toFixed(3)})`
-          : "(score: unknown)";
-        return `- ${service.title} ${scoreText}`;
-      })
+    // Construct a small bullet list
+    const bulletList = topServicesList
+      .map((s: any) => `- ${s.title} (score: ${s.similarityScore.toFixed(2)})`)
       .join("\n");
 
-    // Construct the user-facing prompt
-    const promptForUser = `
-      The user says: "${userInputText}"
+    const userPrompt = `
+      The user said: "${userInputText}"
+      Our recommended services:
+      ${bulletList}
+      Please provide a short recommendation.
+    `;
 
-      We found these relevant services:
-      ${servicesBulletedList}
-
-      Please provide a concise recommendation from our company's perspective,
-      addressing how these services could help solve the user's issue.
-    `.trim();
-
-    // Create a chat completion request
-    const response = await openAiClient.chat.completions.create({
+    const resp = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [
-        { role: "system", content: promptForSystem },
-        { role: "user", content: promptForUser },
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
       ],
-      max_tokens: 300,
       temperature: 0.7,
+      max_tokens: 200,
     });
 
-    const rawResponseText = response.choices?.[0]?.message?.content || "";
+    const raw = resp.choices?.[0]?.message?.content?.trim() || "";
 
-    return NextResponse.json({ recommendation: rawResponseText });
-  } catch (errorObject: any) {
-    console.error("[chat-summarize] error:", errorObject);
-    return NextResponse.json({ error: errorObject.message }, { status: 500 });
+    return NextResponse.json({
+      recommendation: raw,
+    });
+  } catch (err: any) {
+    console.error("[chat-summarize] error:", err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
