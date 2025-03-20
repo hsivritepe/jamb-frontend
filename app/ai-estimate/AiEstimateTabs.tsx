@@ -35,7 +35,7 @@ export default function AiEstimateTabs() {
 
       <Link
         href="/ai-estimate/pdf"
-        className={`pb-2 ${
+        className={`pb-2 hidden ${
           isActive(pathname, "pdf") ? "border-b-2 border-blue-600 text-blue-600" : ""
         }`}
       >
@@ -44,7 +44,7 @@ export default function AiEstimateTabs() {
 
       <Link
         href="/ai-estimate/chat"
-        className={`pb-2 ${
+        className={`pb-2 hidden ${
           isActive(pathname, "chat") ? "border-b-2 border-blue-600 text-blue-600" : ""
         }`}
       >

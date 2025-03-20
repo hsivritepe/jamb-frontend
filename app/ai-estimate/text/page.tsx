@@ -8,36 +8,51 @@ import { ALL_SERVICES } from "@/constants/services";
 import { ALL_CATEGORIES } from "@/constants/categories";
 import ServiceCard from "@/components/ui/ServiceCard";
 
+function getApiBaseUrl(): string {
+  return process.env.NEXT_PUBLIC_API_BASE_URL || "https://dev.thejamb.com";
+}
+
+async function fetchFinishingMaterials(workCode: string) {
+  const url = `${getApiBaseUrl()}/work/finishing_materials`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify({ work_code: workCode }),
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to fetch finishing materials (work_code=${workCode}).`);
+  }
+  return res.json();
+}
+
 function formatWithSeparator(value: number) {
   return new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value);
 }
+
 function dashToDot(str: string) {
   return str.replaceAll("-", ".");
 }
+
 async function calculatePrice(params: {
   work_code: string;
   zipcode: string;
   unit_of_measurement: string;
   square: number;
+  finishing_materials: string[];
 }) {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_API_BASE_URL || "https://dev.thejamb.com";
-  const url = `${baseUrl}/calculate`;
+  const url = `${getApiBaseUrl()}/calculate`;
   const res = await fetch(url, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
     body: JSON.stringify({
       work_code: params.work_code,
       zipcode: params.zipcode,
       unit_of_measurement: params.unit_of_measurement,
       square: params.square,
-      finishing_materials: [],
+      finishing_materials: params.finishing_materials,
     }),
   });
   if (!res.ok) {
@@ -81,6 +96,10 @@ export default function AiEstimateTextPage() {
   const [recommendation, setRecommendation] = useState("");
   const [visibleCount, setVisibleCount] = useState(8);
 
+  // Finishing materials
+  const [finishingMaterialsMap, setFinishingMaterialsMap] = useState<Record<string, any>>({});
+  const [finishingMaterialSelections, setFinishingMaterialSelections] = useState<Record<string, string[]>>({});
+
   useEffect(() => {
     if (error) {
       alert(error);
@@ -88,6 +107,59 @@ export default function AiEstimateTextPage() {
     }
   }, [error]);
 
+  // Fetch finishing materials for each recommended service
+  useEffect(() => {
+    async function loadMaterials() {
+      const copyMap = { ...finishingMaterialsMap };
+      let mapChanged = false;
+
+      for (const svc of recommendedServices) {
+        if (!copyMap[svc.id]) {
+          try {
+            const dot = dashToDot(svc.id);
+            const data = await fetchFinishingMaterials(dot);
+            copyMap[svc.id] = data;
+            mapChanged = true;
+          } catch (err) {
+            console.error("Error fetching finishing materials:", svc.id, err);
+          }
+        }
+      }
+
+      if (mapChanged) {
+        setFinishingMaterialsMap(copyMap);
+      }
+
+      const copySelections = { ...finishingMaterialSelections };
+      let selectionsChanged = false;
+
+      for (const svc of recommendedServices) {
+        const materialData = copyMap[svc.id];
+        if (!materialData) continue;
+        if (!copySelections[svc.id]) {
+          const sections = materialData.sections || {};
+          const picks: string[] = [];
+          for (const arr of Object.values(sections)) {
+            if (Array.isArray(arr) && arr.length > 0) {
+              picks.push(arr[0].external_id);
+            }
+          }
+          copySelections[svc.id] = picks;
+          selectionsChanged = true;
+        }
+      }
+
+      if (selectionsChanged) {
+        setFinishingMaterialSelections(copySelections);
+      }
+    }
+
+    if (recommendedServices.length > 0) {
+      loadMaterials();
+    }
+  }, [recommendedServices]);
+
+  // Recalculate costs
   useEffect(() => {
     async function recalcAll() {
       if (!recommendedServices.length) {
@@ -102,12 +174,15 @@ export default function AiEstimateTextPage() {
         const qty = quantities[svc.id] ?? svc.min_quantity ?? 1;
         const dotId = dashToDot(svc.id);
         const unit = svc.unit_of_measurement || "each";
+        const finishMats = finishingMaterialSelections[svc.id] || [];
+
         try {
           const calcResult = await calculatePrice({
             work_code: dotId,
             zipcode: zip,
             unit_of_measurement: unit,
             square: qty,
+            finishing_materials: finishMats,
           });
           const labor = parseFloat(calcResult.work_cost || "0");
           const mat = parseFloat(calcResult.material_cost || "0");
@@ -119,7 +194,7 @@ export default function AiEstimateTextPage() {
       setCosts(newCosts);
     }
     recalcAll();
-  }, [recommendedServices, quantities, location]);
+  }, [recommendedServices, quantities, location, finishingMaterialSelections]);
 
   function resetAllSessionData() {
     removeSessionItem("services_selectedSections");
@@ -186,9 +261,7 @@ export default function AiEstimateTextPage() {
           const sumData = await summarizeResp.json();
           chatRec = sumData.recommendation || "";
         }
-      } catch (_) {
-        // optional catch
-      }
+      } catch {}
 
       const joinedList: CombinedService[] = topServices.map((result) => {
         const found = ALL_SERVICES.find((x) => x.id === result.id);
@@ -239,9 +312,7 @@ export default function AiEstimateTextPage() {
   }
 
   function handleNewAnalysis() {
-    const ok = window.confirm(
-      "Start a new analysis? This will clear the current results."
-    );
+    const ok = window.confirm("Start a new analysis? This will clear the current results.");
     if (!ok) return;
     setAnalysisDone(false);
     setLoading(false);
@@ -260,12 +331,7 @@ export default function AiEstimateTextPage() {
     setSelectedServices((prev) => ({ ...prev, [svcId]: !prev[svcId] }));
   }
 
-  function handlePlusMinus(
-    svcId: string,
-    increment: boolean,
-    unit: string,
-    minQ: number
-  ) {
+  function handlePlusMinus(svcId: string, increment: boolean, unit: string, minQ: number) {
     setManualInputs((old) => ({ ...old, [svcId]: null }));
     setQuantities((old) => {
       const found = recommendedServices.find((x) => x.id === svcId);
@@ -281,12 +347,7 @@ export default function AiEstimateTextPage() {
     });
   }
 
-  function handleQuantityChange(
-    svcId: string,
-    typedValue: string,
-    unit: string,
-    minQ: number
-  ) {
+  function handleQuantityChange(svcId: string, typedValue: string, unit: string, minQ: number) {
     setManualInputs((old) => ({ ...old, [svcId]: typedValue }));
     let numVal = parseFloat(typedValue.replace(/,/g, "")) || 0;
     if (numVal < minQ) numVal = minQ;
@@ -347,6 +408,7 @@ export default function AiEstimateTextPage() {
   function showMore() {
     setVisibleCount((old) => old + 8);
   }
+
   const currentServices = recommendedServices.slice(0, visibleCount);
 
   function getSelectedCountAndTotal() {
@@ -362,7 +424,6 @@ export default function AiEstimateTextPage() {
   }
   const { count: selectedCount, total: selectedTotal } = getSelectedCountAndTotal();
 
-  // Wrappers for ServiceCard
   const onMinusClick = (serviceId: string) => {
     const svc = recommendedServices.find((x) => x.id === serviceId);
     if (!svc) return;
@@ -391,9 +452,7 @@ export default function AiEstimateTextPage() {
   return (
     <main className="min-h-screen">
       <div className="container mx-auto">
-        <h1 className="text-2xl font-semibold text-gray-800 mb-4">
-          AI Text Estimate
-        </h1>
+        <h1 className="text-2xl font-semibold text-gray-800 mb-4">AI Text Estimate</h1>
         <p className="text-gray-600 mb-4">
           Describe your home project, and we’ll suggest relevant services.
         </p>
@@ -451,9 +510,7 @@ export default function AiEstimateTextPage() {
 
         {analysisDone && currentServices.length > 0 && (
           <div>
-            <h2 className="text-xl font-medium text-gray-800 mb-3">
-              Recommended Services
-            </h2>
+            <h2 className="text-xl font-medium text-gray-800 mb-3">Recommended Services</h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {currentServices.map((svc) => {
@@ -496,12 +553,9 @@ export default function AiEstimateTextPage() {
             {selectedCount > 0 && (
               <div className="mt-4 mb-4 text-gray-700 text-base font-semibold">
                 You selected {selectedCount} services totaling{" "}
-                <span className="text-red-600">
-                  ${formatWithSeparator(selectedTotal)}
-                </span>
+                <span className="text-red-600">${formatWithSeparator(selectedTotal)}</span>
                 <p className="text-base font-normal text-gray-600 mt-1">
-                  On the next page, you can pick finishing materials, needed
-                  equipment, and finalize your estimate.
+                  On the next page, you can pick finishing materials, needed equipment, and finalize your estimate.
                 </p>
               </div>
             )}

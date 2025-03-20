@@ -127,7 +127,7 @@ export default function ServiceCard({
           </div>
 
           <div className="flex justify-between items-center">
-            <span className="font-bold text-gray-800">
+            <span className="font-bold text-lg text-gray-800">
               ${formatWithSeparator(cost)}
             </span>
             <button

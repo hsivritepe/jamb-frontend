@@ -11,11 +11,7 @@ import ServiceCard from "@/components/ui/ServiceCard";
 
 async function convertHeicFileToJpeg(file: File, quality = 0.6): Promise<File> {
   const { default: heic2any } = await import("heic2any");
-  const converted = await heic2any({
-    blob: file,
-    toType: "image/jpeg",
-    quality,
-  });
+  const converted = await heic2any({ blob: file, toType: "image/jpeg", quality });
   const blobs = Array.isArray(converted) ? converted : [converted];
   const jpegBlob = blobs[0] as Blob;
   return new File([jpegBlob], file.name.replace(/\.(heic|heif)$/i, ".jpg"), {
@@ -27,23 +23,39 @@ async function convertHeicFileToJpeg(file: File, quality = 0.6): Promise<File> {
 function normalizeCategory(str: string) {
   return str.trim().toLowerCase();
 }
+
 function findServicesFromCategories(categories: string[]) {
   const catSet = new Set(categories.map(normalizeCategory));
-  return ALL_SERVICES.filter((svc) =>
-    catSet.has((svc.category || "").toLowerCase())
-  );
+  return ALL_SERVICES.filter((svc) => catSet.has((svc.category || "").toLowerCase()));
 }
+
 function createPreviewUrl(file: File) {
   return URL.createObjectURL(file);
 }
+
 function getApiBaseUrl(): string {
   return process.env.NEXT_PUBLIC_API_BASE_URL || "https://dev.thejamb.com";
 }
+
+async function fetchFinishingMaterials(workCode: string) {
+  const url = `${getApiBaseUrl()}/work/finishing_materials`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify({ work_code: workCode }),
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to fetch finishing materials (work_code=${workCode}).`);
+  }
+  return res.json();
+}
+
 async function calculatePrice(params: {
   work_code: string;
   zipcode: string;
   unit_of_measurement: string;
   square: number;
+  finishing_materials: string[];
 }) {
   const url = `${getApiBaseUrl()}/calculate`;
   const res = await fetch(url, {
@@ -54,7 +66,7 @@ async function calculatePrice(params: {
       zipcode: params.zipcode,
       unit_of_measurement: params.unit_of_measurement,
       square: params.square,
-      finishing_materials: [],
+      finishing_materials: params.finishing_materials,
     }),
   });
   if (!res.ok) {
@@ -62,9 +74,11 @@ async function calculatePrice(params: {
   }
   return res.json();
 }
+
 function dashToDot(str: string) {
   return str.replaceAll("-", ".");
 }
+
 function formatWithSeparator(value: number) {
   return new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 2,
@@ -87,6 +101,10 @@ export default function AiEstimatePhotoPage() {
   const [analysisDone, setAnalysisDone] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const [analysisDescription, setAnalysisDescription] = useState("");
+
+  // Finishing materials handling
+  const [finishingMaterialsMap, setFinishingMaterialsMap] = useState<Record<string, any>>({});
+  const [finishingMaterialSelections, setFinishingMaterialSelections] = useState<Record<string, string[]>>({});
 
   useEffect(() => {
     if (error) {
@@ -210,6 +228,51 @@ export default function AiEstimatePhotoPage() {
   }
 
   useEffect(() => {
+    // Load finishing materials for recommended services
+    async function loadFinishingMaterials() {
+      const copyMap = { ...finishingMaterialsMap };
+      for (const svc of recommendedServices) {
+        if (!copyMap[svc.id]) {
+          try {
+            const dotCode = dashToDot(svc.id);
+            const data = await fetchFinishingMaterials(dotCode);
+            copyMap[svc.id] = data;
+          } catch (err) {
+            console.error("Error fetching finishing materials:", svc.id, err);
+          }
+        }
+      }
+      setFinishingMaterialsMap(copyMap);
+
+      // Set default selections
+      const copySelections = { ...finishingMaterialSelections };
+      let updated = false;
+      for (const svc of recommendedServices) {
+        if (!copyMap[svc.id]) continue;
+        if (!copySelections[svc.id]) {
+          const sections = copyMap[svc.id].sections || {};
+          const picks: string[] = [];
+          for (const arr of Object.values(sections)) {
+            if (Array.isArray(arr) && arr.length > 0) {
+              picks.push(arr[0].external_id);
+            }
+          }
+          copySelections[svc.id] = picks;
+          updated = true;
+        }
+      }
+      if (updated) {
+        setFinishingMaterialSelections(copySelections);
+      }
+    }
+
+    if (recommendedServices.length > 0) {
+      loadFinishingMaterials();
+    }
+  }, [recommendedServices]);
+
+  useEffect(() => {
+    // Recalculate costs when services/quantities/finishing materials/location change
     async function recalcAll() {
       if (!recommendedServices.length) {
         setCosts({});
@@ -221,12 +284,14 @@ export default function AiEstimatePhotoPage() {
       for (const svc of recommendedServices) {
         const q = quantities[svc.id] ?? svc.min_quantity ?? 1;
         const code = dashToDot(svc.id);
+        const finMats = finishingMaterialSelections[svc.id] || [];
         try {
           const resp = await calculatePrice({
             work_code: code,
             zipcode: zip,
             unit_of_measurement: svc.unit_of_measurement!,
             square: q,
+            finishing_materials: finMats,
           });
           const labor = parseFloat(resp.work_cost || "0");
           const mat = parseFloat(resp.material_cost || "0");
@@ -238,7 +303,7 @@ export default function AiEstimatePhotoPage() {
       setCosts(nextCosts);
     }
     recalcAll();
-  }, [recommendedServices, quantities, location]);
+  }, [recommendedServices, quantities, location, finishingMaterialSelections]);
 
   function handleSvcManualChange(
     svcId: string,
@@ -269,12 +334,7 @@ export default function AiEstimatePhotoPage() {
     }
   }
 
-  function handlePlusMinus(
-    svcId: string,
-    increment: boolean,
-    unit: string,
-    minQ: number
-  ) {
+  function handlePlusMinus(svcId: string, increment: boolean, unit: string, minQ: number) {
     setQuantities((prev) => {
       const found = recommendedServices.find((x) => x.id === svcId);
       if (!found) return prev;
@@ -316,9 +376,7 @@ export default function AiEstimatePhotoPage() {
     if (location.city) setSessionItem("address", location.city);
     if (location.state) setSessionItem("stateName", location.state);
     if (location.zip) setSessionItem("zip", location.zip);
-    const combinedAddress = [location.city, location.state, location.zip]
-      .filter(Boolean)
-      .join(", ");
+    const combinedAddress = [location.city, location.state, location.zip].filter(Boolean).join(", ");
     if (combinedAddress) {
       setSessionItem("fullAddress", combinedAddress);
     }
@@ -343,39 +401,42 @@ export default function AiEstimatePhotoPage() {
     }
     return { count, total };
   }
+
   const { count: selectedCount, total: selectedTotal } = getSelectedCountAndTotal();
 
-  // Wrappers for ServiceCard
   const onMinusClick = (serviceId: string) => {
     const svc = recommendedServices.find((x) => x.id === serviceId);
     if (!svc) return;
     handlePlusMinus(serviceId, false, svc.unit_of_measurement || "each", svc.min_quantity || 1);
   };
+
   const onPlusClick = (serviceId: string) => {
     const svc = recommendedServices.find((x) => x.id === serviceId);
     if (!svc) return;
     handlePlusMinus(serviceId, true, svc.unit_of_measurement || "each", svc.min_quantity || 1);
   };
+
   const onChangeQuantity = (serviceId: string, value: string) => {
     const svc = recommendedServices.find((x) => x.id === serviceId);
     if (!svc) return;
     handleSvcManualChange(serviceId, value, svc.unit_of_measurement || "each", svc.min_quantity || 1);
   };
+
   const onFocusQuantity = (serviceId: string) => {
     handleSvcClickInput(serviceId);
   };
+
   const onBlurQuantity = (serviceId: string) => {
     handleSvcBlur(serviceId);
   };
+
   const onToggleSelect = (serviceId: string) => {
     toggleSelected(serviceId);
   };
 
   return (
     <div className="p-0">
-      <h1 className="text-2xl font-semibold text-gray-800 mb-4">
-        AI Image Recognition
-      </h1>
+      <h1 className="text-2xl font-semibold text-gray-800 mb-4">AI Image Recognition</h1>
       <p className="text-gray-600 mb-4">
         Upload up to 4 photos and we'll suggest relevant services with prices.
       </p>
@@ -463,20 +524,14 @@ export default function AiEstimatePhotoPage() {
 
       {analysisDescription && (
         <div className="mb-6 bg-gray-50 p-3 border border-gray-200 rounded">
-          <h2 className="text-xl font-medium text-gray-800 mb-2">
-            AI Observations
-          </h2>
-          <p className="text-base text-gray-700 whitespace-pre-wrap">
-            {analysisDescription}
-          </p>
+          <h2 className="text-xl font-medium text-gray-800 mb-2">AI Observations</h2>
+          <p className="text-base text-gray-700 whitespace-pre-wrap">{analysisDescription}</p>
         </div>
       )}
 
       {displayServices.length > 0 && (
         <div className="mt-6">
-          <h2 className="text-xl font-medium text-gray-800 mb-3">
-            Recommended Services
-          </h2>
+          <h2 className="text-xl font-medium text-gray-800 mb-3">Recommended Services</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {displayServices.map((svc) => {
               const qty = quantities[svc.id] ?? svc.min_quantity ?? 1;
@@ -522,12 +577,9 @@ export default function AiEstimatePhotoPage() {
           {selectedCount > 0 && (
             <div className="mb-4 text-gray-700 text-base font-semibold">
               You selected {selectedCount} services totaling{" "}
-              <span className="text-red-600">
-                ${formatWithSeparator(selectedTotal)}
-              </span>
+              <span className="text-red-600">${formatWithSeparator(selectedTotal)}</span>
               <p className="text-base font-normal text-gray-600 mt-1">
-                On the next page, you can pick finishing materials, needed
-                equipment, and finalize your estimate.
+                On the next page, you can pick finishing materials, needed equipment, and finalize your estimate.
               </p>
             </div>
           )}
