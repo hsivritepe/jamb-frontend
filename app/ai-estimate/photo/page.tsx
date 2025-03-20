@@ -689,7 +689,7 @@ export default function AiEstimatePhotoPage() {
             <div className="mt-4">
               <button
                 onClick={() => setShowAll(true)}
-                className="w-full lg:w-[300px] bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded text-base font-semibold text-gray-700"
+                className="w-full lg:w-[300px] bg-gray-200 hover:bg-gray-300 px-4 py-2 mt-4 rounded text-base font-semibold text-gray-700"
               >
                 Show More Services
               </button>
@@ -716,7 +716,7 @@ export default function AiEstimatePhotoPage() {
 
           <button
             onClick={handleContinue}
-            className="w-full lg:w-[300px] px-4 py-2 bg-blue-600 text-white mt-2 font-semibold rounded hover:bg-blue-700"
+            className="w-full lg:w-[300px] px-4 py-2 bg-blue-600 text-white mt-4 font-semibold rounded hover:bg-blue-700"
           >
             Proceed
           </button>

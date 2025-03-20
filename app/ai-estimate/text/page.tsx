@@ -314,6 +314,31 @@ export default function AiEstimateTextPage() {
     }
   }
 
+  /** 
+   * New analysis: confirm, then clear all states so user can do another query.
+   */
+  function handleNewAnalysis() {
+    const ok = window.confirm(
+      "Start a new analysis? This will clear the current results."
+    );
+    if (!ok) return;
+
+    // Reset everything
+    setAnalysisDone(false);
+    setLoading(false);
+    setRecommendedServices([]);
+    setSelectedServices({});
+    setQuantities({});
+    setManualInputs({});
+    setCosts({});
+    setAnalysisDescription("");
+    setRecommendation("");
+    setUserText("");
+
+    // Also clear session data if needed
+    resetAllSessionData();
+  }
+
   /** Toggle selected vs not. */
   function toggleSelected(svcId: string) {
     setSelectedServices((prev) => ({ ...prev, [svcId]: !prev[svcId] }));
@@ -468,7 +493,7 @@ export default function AiEstimateTextPage() {
           {!analysisDone && !loading && (
             <button
               onClick={handleAnalyze}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              className="w-full lg:w-[300px] px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
             >
               Analyze
             </button>
@@ -476,17 +501,17 @@ export default function AiEstimateTextPage() {
           {loading && (
             <button
               disabled
-              className="px-4 py-2 bg-gray-300 text-gray-600 rounded cursor-not-allowed"
+              className="w-full lg:w-[300px] px-4 py-2 bg-gray-300 text-gray-600 rounded cursor-not-allowed"
             >
               Analyzing...
             </button>
           )}
           {analysisDone && !loading && (
             <button
-              disabled
-              className="px-4 py-2 bg-gray-300 text-gray-600 rounded cursor-not-allowed"
+              onClick={handleNewAnalysis}
+              className="w-full lg:w-[300px] px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
             >
-              Analysis complete
+              New analysis
             </button>
           )}
         </div>
@@ -621,7 +646,7 @@ export default function AiEstimateTextPage() {
               <div className="mt-4">
                 <button
                   onClick={showMore}
-                  className="w-full lg:w-[300px] bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded text-base font-semibold text-gray-700"
+                  className="w-full lg:w-[300px] bg-gray-200 hover:bg-gray-300 px-4 py-2 mt-4 rounded text-base font-semibold text-gray-700"
                 >
                   Show More Services
                 </button>
@@ -635,13 +660,17 @@ export default function AiEstimateTextPage() {
                 <span className="text-red-600">
                   ${formatWithSeparator(selectedTotal)}
                 </span>
+                <p className="text-base font-normal text-gray-600 mt-1">
+                On the next page, you can pick finishing materials, needed
+                equipment, and finalize your estimate.
+              </p>
               </div>
             )}
 
             {/* Proceed */}
             <button
               onClick={handleProceed}
-              className="w-full lg:w-[300px] px-4 py-2 bg-blue-600 text-white mt-2 font-semibold rounded hover:bg-blue-700"
+              className="w-full lg:w-[300px] px-4 py-2 bg-blue-600 text-white mt-4 font-semibold rounded hover:bg-blue-700"
             >
               Proceed
             </button>
