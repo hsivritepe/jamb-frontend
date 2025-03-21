@@ -86,12 +86,9 @@ export default function ServiceCard({
   const borderClass = isSelected ? "border border-blue-500" : "border border-gray-300";
 
   return (
-    <div className={`border ${borderClass} rounded-md bg-white shadow-sm flex flex-col`}>
-      {/* Top block for image - no padding, increased height, gradient fade at bottom */}
-      <div className="relative h-40 w-full overflow-hidden rounded">
+    <div className={`border ${borderClass} rounded-md bg-white shadow-md flex flex-col`}>
+      <div className="relative h-40 w-full overflow-hidden rounded-t">
         <ServiceImage serviceId={service.id} />
-        {/* Gradient overlay for fade-out */}
-        <div className="pointer-events-none absolute bottom-0 left-0 w-full h-16 bg-gradient-to-t from-white to-transparent" />
       </div>
 
       {/* Content block with padding */}
@@ -113,7 +110,7 @@ export default function ServiceCard({
               onClick={() => onFocusQuantity(service.id)}
               onBlur={() => onBlurQuantity(service.id)}
               onChange={(e) => onChangeQuantity(service.id, e.target.value)}
-              className="w-16 text-center px-1 py-1 border rounded text-sm"
+              className="w-16 text-center px-1 py-1 border rounded text-md text-gray-600"
             />
             <button
               onClick={() => onPlusClick(service.id)}
@@ -121,7 +118,7 @@ export default function ServiceCard({
             >
               +
             </button>
-            <span className="text-sm text-gray-600 ml-1">
+            <span className="text-md text-gray-600 ml-1">
               {service.unit_of_measurement || "each"}
             </span>
           </div>
