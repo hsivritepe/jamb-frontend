@@ -44,7 +44,7 @@ export default function AiEstimateTabs() {
 
       <Link
         href="/ai-estimate/chat"
-        className={`pb-2 hidden ${
+        className={`pb-2 ${
           isActive(pathname, "chat") ? "border-b-2 border-blue-600 text-blue-600" : ""
         }`}
       >
