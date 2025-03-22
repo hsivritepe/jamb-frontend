@@ -2,7 +2,7 @@ import React from "react";
 import AiEstimateTabs from "./AiEstimateTabs";
 
 export const metadata = {
-  title: "AI Estimate",
+  title: "Jamb - AI Assistant",
 };
 
 export default function AiEstimateLayout({
