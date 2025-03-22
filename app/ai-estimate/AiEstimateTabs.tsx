@@ -50,6 +50,15 @@ export default function AiEstimateTabs() {
       >
         PDF
       </Link>
+
+      <Link
+        href="/ai-estimate/emergency"
+        className={`pb-2 ${
+          isActive(pathname, "emergency") ? "border-b-2 border-red-600 text-red-600" : ""
+        }`}
+      >
+        Emergency
+      </Link>
     </div>
   );
 }
