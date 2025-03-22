@@ -26,7 +26,7 @@
     "localforage": "^1.10.0",
     "lucide-react": "^0.460.0",
     "mysql2": "^3.12.0",
-    "next": "^15.1.5",
+    "next": "^15.2.3",
     "nodemailer": "^6.10.0",
     "openai": "^4.87.3",
     "pdf-parse": "^1.1.1",
